@@ -1,0 +1,55 @@
+From b09f908a5a2c8bf2199424e616954d149e296118 Mon Sep 17 00:00:00 2001
+From: funil <funil@example.com>
+Date: Sun, 18 Jan 2026 20:02:19 -0300
+Subject: [PATCH 2/2] chore: remove local artifacts and add ignore rules
+
+---
+ .gitignore                       |   3 +++
+ .vscode/settings.json            |   3 ---
+ APP-STOFGARD-2026                |   1 -
+ cadastros-local-artifacts.tar.gz | Bin 45 -> 0 bytes
+ 4 files changed, 3 insertions(+), 4 deletions(-)
+ create mode 100644 .gitignore
+ delete mode 100644 .vscode/settings.json
+ delete mode 160000 APP-STOFGARD-2026
+ delete mode 100644 cadastros-local-artifacts.tar.gz
+
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..533849b
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,3 @@
++.vscode/
++*.tar.gz
++APP-STOFGARD-2026/
+diff --git a/.vscode/settings.json b/.vscode/settings.json
+deleted file mode 100644
+index a367af4..0000000
+--- a/.vscode/settings.json
++++ /dev/null
+@@ -1,3 +0,0 @@
+-{
+-    "chat.agent.maxRequests": 1000
+-}
+\ No newline at end of file
+diff --git a/APP-STOFGARD-2026 b/APP-STOFGARD-2026
+deleted file mode 160000
+index 17e4b3d..0000000
+--- a/APP-STOFGARD-2026
++++ /dev/null
+@@ -1 +0,0 @@
+-Subproject commit 17e4b3dea4ccea169c03cbaf8ccc5510f4b0abd9
+diff --git a/cadastros-local-artifacts.tar.gz b/cadastros-local-artifacts.tar.gz
+deleted file mode 100644
+index 872c01559ea7ac2302b7d73ae653f7ad29f8981d..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 45
+qcmb2|=3oE==C=nKd4a4$3%>j3@|iDyhyuw5bLLt1WYrlo7#IN4*9i&$
+
+-- 
+2.43.0
+

@@ -1,0 +1,45 @@
+name: Dusk (self-hosted)
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  dusk-self-hosted:
+    runs-on: [self-hosted, linux, dusk]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP setup (optional)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, pdo_sqlite, mbstring, xml, intl, zip
+
+      - name: Composer install
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Setup DB
+        run: |
+          cp .env.example .env || true
+          php artisan key:generate || true
+          php artisan migrate --force || true
+
+      - name: Run Dusk
+        env:
+          RUN_DUSK_TESTS: 1
+          DUSK_DRIVER_URL: http://127.0.0.1:9515/wd/hub
+        run: |
+          echo "Running Dusk on self-hosted runner using chromedriver at ${DUSK_DRIVER_URL}"
+          composer dusk:ci
+
+      - name: Upload screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dusk-self-hosted-artifacts
+          path: |
+            tests/Browser/screenshots
+            /tmp/chromedriver.log
+            /tmp/*.log

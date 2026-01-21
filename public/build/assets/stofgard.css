@@ -1,0 +1,102 @@
+/* Stofgard Manager - Custom Styles (build assets fallback) */
+
+/* Dashboard sem sidebar */
+body[data-page="dashboard"] .fi-sidebar {
+    display: none !important;
+}
+
+body[data-page="dashboard"] .fi-main {
+    margin-left: 0 !important;
+}
+
+/* Melhorias nos cards dos módulos */
+.group:hover .transition-colors {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Animação suave para os ícones */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.group:hover svg {
+    animation: float 2s ease-in-out infinite;
+}
+
+/* Responsividade aprimorada para tablets */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .grid-cols-2 {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Estilo para o widget do clima */
+#weather-icon {
+    animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Mobile improvements */
+@media (max-width: 640px) {
+    body {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .header {
+        display: block;
+        border-bottom: 2px solid #1E6DD8;
+    }
+
+    .header-left, .header-right {
+        display: block;
+        width: 100%;
+        text-align: left;
+    }
+
+    .logo {
+        max-width: 140px;
+    }
+
+    .orcamento-box {
+        margin-top: 12px;
+    }
+
+    table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+    }
+
+    thead tr {
+        display: none;
+    }
+
+    td {
+        border: none;
+        padding: 6px 0;
+    }
+
+    .totals-section {
+        width: 100% !important;
+        float: none !important;
+    }
+
+    .pagamento-container table td {
+        display: block;
+        width: 100%;
+        text-align: left !important;
+    }
+}

@@ -1,0 +1,139 @@
+name: Dusk tests
+
+on:
+  push: {}
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  dusk:
+    runs-on: ubuntu-latest
+
+    services:
+      selenium:
+        image: selenium/standalone-chrome:115.0
+        ports:
+          - 4444:4444
+        options: >-
+          --shm-size=2g
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, pdo_sqlite, mbstring, xml, intl, zip
+
+      - name: Install Chrome
+        run: |
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt update
+          sudo apt install -y google-chrome-stable          
+
+      - name: Smoke test Google Chrome (headless)
+        run: |
+          echo "Chrome version:" && google-chrome --version || true
+          nohup google-chrome --headless --no-sandbox --disable-gpu --remote-debugging-port=9222 > /tmp/chrome.manual.log 2>&1 &
+          sleep 2
+          pgrep -a chrome || true
+          echo "Try remote debug ping:" && curl -sS http://127.0.0.1:9222/json/version || true
+          echo "--- tail /tmp/chrome.manual.log ---" && tail -n 200 /tmp/chrome.manual.log || true
+          pkill -f 'google-chrome' || true
+          wget -N https://chromedriver.storage.googleapis.com/$LATEST/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+
+      - name: Check Chromedriver binary
+        run: |
+          echo "ls -la /usr/local/bin/chromedriver:" && ls -la /usr/local/bin/chromedriver || true
+          echo "file /usr/local/bin/chromedriver:" && file /usr/local/bin/chromedriver || true
+          echo "ldd chromedriver (first lines):" && ldd /usr/local/bin/chromedriver | head -n 20 || true
+          echo "chromedriver --version:" && chromedriver --version || true
+          echo "Try starting chromedriver briefly:" 
+          nohup chromedriver --port=9516 --whitelisted-ips='' > /tmp/chromedriver.manual.log 2>&1 &
+          sleep 1
+          echo "pgrep chromedriver:" && pgrep -a chromedriver || true
+          echo "chromedriver manual status:" && curl -sS http://127.0.0.1:9516/status || true
+          echo "--- tail chromedriver.manual.log ---" && tail -n 200 /tmp/chromedriver.manual.log || true
+          pkill -f chromedriver || true
+
+      - name: Composer install
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Setup DB
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate --force
+
+      - name: Diagnostics: system & Chrome info
+        run: |
+          echo "--- Uname ---" && uname -a
+          echo "--- distro ---" && lsb_release -a || true
+          echo "--- disk & mem ---" && df -h && free -m || true
+          echo "--- php ---" && php -v && php -m | grep -E "curl|pdo_sqlite" || true
+          echo "--- composer ---" && composer --version || true
+          echo "--- google-chrome ---" && google-chrome --version || true
+          echo "--- which chrome/chromedriver ---" && which google-chrome || true && which chromedriver || true
+          echo "--- chromedriver version (if present) ---" && (chromedriver --version || true)
+          echo "--- listening ports (short) ---" && ss -lntp | head -n 20 || true
+
+      - name: (Optional) Start Selenium via Docker (debug)
+        run: |
+          # Try to start selenium in docker for better isolation and logs
+          if command -v docker > /dev/null; then
+            echo "Starting selenium-debug container..."
+            docker run -d --name selenium-debug -p 4444:4444 --shm-size=2g selenium/standalone-chrome:115.0 || true
+            sleep 3
+            echo "docker ps: " && docker ps --filter name=selenium-debug || true
+            docker logs selenium-debug > /tmp/selenium-docker.log 2>&1 || true
+          else
+            echo "Docker not available; relying on service container (if configured)."
+          fi
+
+      - name: Wait for Selenium service
+        run: |
+          echo "Waiting for Selenium at http://127.0.0.1:4444/status"
+          for i in {1..30}; do
+            curl -sS http://127.0.0.1:4444/status | tee /tmp/selenium-status.json && break || echo "Waiting... ($i)" && sleep 1
+          done
+          curl -sS http://127.0.0.1:4444/status | tee /tmp/selenium-status.json || true
+
+      - name: Quick WebDriver API check
+        run: |
+          echo '{"capabilities":{"alwaysMatch":{"browserName":"chrome"}}}' > /tmp/new_session.json
+          echo "Posting new session request to Selenium"
+          curl -sS -X POST http://127.0.0.1:4444/wd/hub/session -H "Content-Type: application/json" -d @/tmp/new_session.json -o /tmp/new_session_response.json || true
+          echo "Response:"
+          cat /tmp/new_session_response.json || true
+
+      - name: Run Dusk (via Selenium service)
+        env:
+          RUN_DUSK_TESTS: 1
+          DUSK_DRIVER_URL: http://127.0.0.1:4444/wd/hub
+          DUSK_CHROME_ARGS: "--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-features=VizDisplayCompositor --remote-debugging-port=9222"
+        run: |
+          set -o pipefail
+          echo "Running Dusk (verbose) against Selenium service"
+          composer dusk:ci || (echo "Dusk failed - collecting diagnostics"; ps aux | egrep 'chrome|chromedriver|selenium' || true; echo "--- Selenium status ---"; curl -sS http://127.0.0.1:4444/status || true; echo "--- /tmp/chromedriver.log ---"; tail -n 2000 /tmp/chromedriver.log || true; echo "--- /tmp/chrome.manual.log ---"; tail -n 2000 /tmp/chrome.manual.log || true; echo "--- /var/log/syslog (tail) ---"; tail -n 200 /var/log/syslog || true; exit 1)
+
+      - name: Upload Dusk screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dusk-screenshots
+          path: tests/Browser/screenshots
+
+      - name: Upload Dusk diagnostics (logs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dusk-logs
+          path: |
+            /tmp/chromedriver.log
+            /tmp/*.log
+            tests/Browser/screenshots
+            tests/Browser/debug_*.html

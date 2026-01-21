@@ -1,0 +1,26 @@
+/* Central theme file for Filament admin: use for all color/layout variables (REGRA GERAL) */
+:root {
+  --brand-primary: #2563eb; /* Stofgard royal blue */
+  --brand-secondary: #06b6d4; /* ciano */
+  --brand-gray: #64748b;
+  --brand-warning: #d97706;
+}
+
+/* Example utility classes to keep visuals consistent */
+.text-brand-primary { color: var(--brand-primary) !important; }
+.bg-brand-primary { background-color: var(--brand-primary) !important; }
+.border-brand-primary { border-color: var(--brand-primary) !important; }
+
+/* Header tweaks consistent with header view */
+.fi-logo { height: 3rem; }
+
+/* Dashboard shortcuts card adjustments to match design */
+.fw-shortcut-card { border-radius: 20px; box-shadow: 0 4px 16px rgba(16,24,40,0.04); }
+
+/* Ensure primary color utilities are available to blade components */
+.btn-primary {
+  background-color: var(--brand-primary);
+  color: #fff;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}

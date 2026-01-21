@@ -1,0 +1,1 @@
+Deprecated: the `login-with-csrf.sh` helper was removed because POST /admin/login was reverted to only use Filament's interactive UI. Authenticate via the Filament login page at `/admin/login`.

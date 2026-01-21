@@ -1,0 +1,13 @@
+[Unit]
+Description=ChromeDriver Service for Laravel Dusk
+After=network.target
+
+[Service]
+Type=simple
+User=runner
+ExecStart=/usr/local/bin/chromedriver --port=9515 --whitelisted-ips='' --url-base=/wd/hub
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+.phpunit.result.cache
+/storage/debug/
+/public/pdfs/
+/node_modules/
+/vendor/
+.env
+.DS_Store
+.idea/
+.vscode/
