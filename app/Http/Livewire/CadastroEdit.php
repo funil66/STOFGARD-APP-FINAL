@@ -16,6 +16,7 @@ class CadastroEdit extends Component
     public $uuid;
     public $model;
     public $type;
+    public $cadastroTipo;
 
     // Generic fields
     public $nome;
@@ -51,6 +52,13 @@ class CadastroEdit extends Component
         }
 
         $this->fillFromModel();
+
+        // determine UI-level cadastro kind (cliente|loja|vendedor) now that model fields are filled
+        if ($this->type === 'cliente') {
+            $this->cadastroTipo = 'cliente';
+        } else {
+            $this->cadastroTipo = $this->tipo ?? 'loja';
+        }
     }
 
     protected function fillFromModel()
@@ -76,6 +84,17 @@ class CadastroEdit extends Component
     {
         // Keep server state consistent for dynamic type changes
         $this->tipo = $val;
+    }
+
+    public function updatedCadastroTipo($val)
+    {
+        // Map the UI-level selection (cliente|loja|vendedor)
+        if ($val === 'cliente') {
+            $this->type = 'cliente';
+        } else {
+            $this->type = 'parceiro';
+            $this->tipo = $val;
+        }
     }
 
     public function save()
