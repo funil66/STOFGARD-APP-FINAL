@@ -546,12 +546,9 @@ class OrdemServicoResource extends Resource
                             ->label('')
                             ->required(),
 
-                Forms\Components\Placeholder::make('assinatura_pad')
-                    ->label('Área de Assinatura')
-                    ->content(function () {
-                        return view('filament.components.signature-pad-inline')->render();
-                    })
-                    ->columnSpanFull(),
+                        Forms\Components\ViewField::make('assinatura_base64')
+                            ->view('filament.forms.components.signature-pad')
+                            ->columnSpanFull(),
                     ])
                     ->action(function (OrdemServico $record, array $data) {
                         if (empty($data['assinatura_base64'])) {

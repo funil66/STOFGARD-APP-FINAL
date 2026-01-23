@@ -19,7 +19,7 @@ return new class extends Migration
             $table->date('data_validade'); // 7 dias a partir da data_orcamento
 
             // Serviço
-            $table->string('tipo_servico');
+            $table->string('tipo_servico', 255);
             $table->text('descricao_servico');
             $table->decimal('area_m2', 10, 2)->nullable(); // Área em m²
 

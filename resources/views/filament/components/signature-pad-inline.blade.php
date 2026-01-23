@@ -20,34 +20,15 @@
         canvas.height = canvas.offsetHeight * ratio;
         canvas.getContext('2d').scale(ratio, ratio);
 
-        const pad = new SignaturePad(canvas, { backgroundColor: 'rgb(255,255,255)', penColor: 'rgb(0,0,0)' });
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)'
+        });
 
-        // Botão limpar (delegado)
-        const limparBtn = document.querySelector('button.signature-clear-btn[data-canvas-id="{{ $id }}"]');
-        if (limparBtn) {
-            limparBtn.addEventListener('click', function(){
-                pad.clear();
-                const input = canvas.closest('form')?.querySelector('input[name="assinatura_base64"]');
-                if (input) input.value = '';
-            });
-        }
-
-        // Ao submeter o formulário, grava o dataURL no hidden input
-        const form = canvas.closest('form');
-        if (form) {
-            form.addEventListener('submit', function(){
-                const input = form.querySelector('input[name="assinatura_base64"]');
-                if (input) {
-                    if (pad.isEmpty()) {
-                        input.value = '';
-                    } else {
-                        input.value = pad.toDataURL();
-                    }
-                }
-            });
-        }
+        document.querySelector(`[data-canvas-id="{{ $id }}"]`).addEventListener('click', () => {
+            signaturePad.clear();
+        });
     } catch (e) {
-        console.error('SignaturePad init failed', e);
+        console.error('Erro ao inicializar o SignaturePad:', e);
     }
 })();
 </script>

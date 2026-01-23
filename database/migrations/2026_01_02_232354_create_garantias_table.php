@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('garantias', function (Blueprint $table) {
             $table->id();
             $table->foreignId('ordem_servico_id')->constrained('ordens_servico')->cascadeOnDelete();
-            $table->enum('tipo_servico', ['higienizacao', 'impermeabilizacao']);
+            $table->string('tipo_servico', 255);
             $table->date('data_inicio'); // Data conclusão do serviço
             $table->date('data_fim'); // Calculada automaticamente
             $table->integer('dias_garantia'); // 90 ou 365
