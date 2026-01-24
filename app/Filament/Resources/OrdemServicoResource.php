@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Filament\Resources;
+use Filament\Infolists\Components\ImageEntry;
+use Saade\FilamentAutograph\Forms\Components\SignaturePad;
 
 use App\Filament\Resources\OrdemServicoResource\Pages;
 use App\Models\OrdemServico;
@@ -430,11 +432,7 @@ class OrdemServicoResource extends Resource
                 Tables\Columns\ImageColumn::make('assinatura_cliente_path')
                     ->label('Assinatura')
                     ->disk('public')
-                    ->visibility('public')
-                    ->checkFileExistence(false)
-                    ->openUrlInNewTab()
-                    ->square()
-                    ->toggleable(),
+                    ->height(40),
 
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Serviço')
@@ -536,47 +534,45 @@ class OrdemServicoResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('concluir_e_assinar')
-                    ->label('Concluir e Assinar')
+                    ->label('Concluir e Assinar (Plugin)')
                     ->icon('heroicon-o-pencil-square')
                     ->color('success')
-                    ->modalHeading('Assinatura do Cliente')
-                    ->modalDescription('O cliente deve assinar abaixo para confirmar a execução do serviço.')
+                    ->modalHeading('Assinatura Digital')
+                    ->modalWidth('md')
                     ->form([
-                        Forms\Components\Hidden::make('assinatura_base64')
-                            ->label('')
-                            ->required(),
-
-                        Forms\Components\ViewField::make('assinatura_base64')
-                            ->view('filament.forms.components.signature-pad')
-                            ->columnSpanFull(),
+                        SignaturePad::make('assinatura')
+                            ->label('Assine abaixo')
+                            ->required()
+                            ->clearable()
+                            ->filename(fn ($record) => 'OS-' . $record->numero_os),
                     ])
-                    ->action(function (OrdemServico $record, array $data) {
-                        if (empty($data['assinatura_base64'])) {
+                    ->action(function (array $data, OrdemServico $record) {
+                        $assinaturaData = $data['assinatura'];
+
+                        if (!$assinaturaData) {
+                            \Filament\Notifications\Notification::make()->title('Erro')->body('Assinatura vazia.')->danger()->send();
                             return;
                         }
 
-                        $image_parts = explode(';base64,', $data['assinatura_base64']);
-                        if (count($image_parts) < 2) {
-                            return;
+                        // Tratamento do Base64
+                        if (is_string($assinaturaData)) {
+                            if (strpos($assinaturaData, ',') !== false) {
+                                $assinaturaData = explode(',', $assinaturaData)[1];
+                            }
+
+                            $image_base64 = base64_decode($assinaturaData);
+                            $path = 'assinaturas/assinatura_os_' . $record->numero_os . '_' . time() . '.png';
+
+                            \Illuminate\Support\Facades\Storage::disk('public')->put($path, $image_base64);
+
+                            $record->update([
+                                'status' => 'concluida',
+                                'assinatura_cliente_path' => $path,
+                                'data_conclusao' => now(),
+                            ]);
                         }
 
-                        $image_type_aux = explode('image/', $image_parts[0]);
-                        $image_type = $image_type_aux[1] ?? 'png';
-                        $image_base64 = base64_decode($image_parts[1]);
-
-                        $filename = 'ordens-servico/assinaturas/os-' . $record->id . '-' . \Illuminate\Support\Str::random(10) . '.' . $image_type;
-                        \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $image_base64);
-
-                        $record->update([
-                            'status' => 'concluida',
-                            'data_conclusao' => now(),
-                            'assinatura_cliente_path' => $filename,
-                        ]);
-
-                        \Filament\Notifications\Notification::make()
-                            ->title('Serviço concluído e assinado com sucesso!')
-                            ->success()
-                            ->send();
+                        \Filament\Notifications\Notification::make()->title('Sucesso!')->body('Assinado e Concluído.')->success()->send();
                     })
                     ->visible(fn (OrdemServico $record) => $record->status !== 'concluida'),
                 Tables\Actions\Action::make('concluir_servico')
@@ -634,7 +630,7 @@ class OrdemServicoResource extends Resource
                             // 3. Atualizar evento na agenda
                             if ($record->agendas()->exists()) {
                                 $record->agendas()->update([
-                                    'status' => 'concluido',
+                                    'status' => 'concluida',
                                 ]);
                             }
                         });
@@ -941,19 +937,20 @@ class OrdemServicoResource extends Resource
                     ->collapsible()
                     ->collapsed(),
 
-                    Infolists\Components\Section::make('Assinatura')
-                        ->schema([
-                            Infolists\Components\ImageEntry::make('assinatura_cliente_path')
-                                ->label('Assinatura do Cliente')
-                                ->disk('public')
-                                ->visibility('public')
-                                ->height(220)
-                                ->openUrlInNewTab()
-                                ->columnSpanFull(),
-                        ])
-                        ->columns(1)
-                        ->collapsible()
-                        ->collapsed(),
+                Infolists\Components\Section::make('Assinatura do Cliente')
+                    ->schema([
+                        Infolists\Components\ImageEntry::make('assinatura_cliente_path')
+                            ->label('Assinatura do Cliente')
+                            ->disk('public')
+                            ->extraImgAttributes([
+                                'class' => 'rounded-lg border border-gray-200 p-2',
+                                'style' => 'max-height: 200px; width: auto;',
+                            ])
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(1)
+                    ->collapsible()
+                    ->collapsed(),
 
                 Infolists\Components\Section::make('Observações')
                     ->schema([

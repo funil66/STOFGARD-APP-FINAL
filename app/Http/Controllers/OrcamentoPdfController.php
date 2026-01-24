@@ -29,12 +29,10 @@ class OrcamentoPdfController extends Controller
         $orcamento->load(['cliente', 'itens', 'itens.tabelaPreco']);
         $orcamento->calcularTotal();
 
-        // --- DADOS DINÂMICOS (Com Padrões Solicitados) ---
         $pixConfig = [
             'chave' => ConfiguracaoService::financeiro('pix_chave') ?: (config('services.pix.chave') ?: '16 99753-9698'),
             'banco' => ConfiguracaoService::financeiro('pix_banco') ?? 'BANCO ITAÚ', 
             'beneficiario' => ConfiguracaoService::financeiro('pix_beneficiario') ?? 'MARIA DE JESUS SILVA',
-            // Tipo de chave pode ser inferido ou configurado. Vou deixar genérico no layout.
         ];
 
         $qrCodeBase64 = $orcamento->pix_qrcode_base64;
@@ -63,34 +61,37 @@ class OrcamentoPdfController extends Controller
             'logoBase64' => $logoBase64
         ])->render();
 
-        // Detecção Chrome
-        $chromePath = '';
-        try {
-            $localChrome = glob(base_path('chrome/linux-*/chrome-linux64/chrome'));
-            if (!empty($localChrome)) $chromePath = $localChrome[0];
-        } catch (\Exception $e) {}
+        // --- DETECÇÃO INFALÍVEL DO CHROME ---
+        $chromePath = null;
 
-        if (empty($chromePath)) {
-            $chromePath = trim(shell_exec('which google-chrome-stable') ?: shell_exec('which chromium-browser') ?: '');
+        // 1. Prioridade: Chrome local instalado via npx na pasta chrome-bin
+        $localChrome = glob(base_path('chrome-bin/chrome/linux-*/chrome-linux64/chrome'));
+        if (!empty($localChrome)) {
+            $chromePath = $localChrome[0];
         }
-        
-        if (empty($chromePath)) {
-             $home = getenv('HOME') ?: '/home/sail';
-             $cachePath = $home . '/.cache/puppeteer/chrome';
-             $found = glob("$cachePath/*/chrome-linux64/chrome");
-             if (!empty($found)) $chromePath = $found[0];
+
+        // 2. Fallback: Google Chrome do Sistema (se instalado via apt-get)
+        if (!$chromePath) {
+            $sysChrome = trim(shell_exec('which google-chrome-stable'));
+            if (!empty($sysChrome)) $chromePath = $sysChrome;
+        }
+
+        // 3. Fallback Final: Chromium (mesmo que bugado, é melhor que nada)
+        if (!$chromePath) {
+            $chromePath = trim(shell_exec('which chromium-browser') ?: shell_exec('which chromium'));
+        }
+
+        if (!$chromePath) {
+            throw new \Exception("Navegador Chrome não encontrado! Execute: docker compose exec laravel.test npx @puppeteer/browsers install chrome@stable --path /var/www/html/chrome-bin");
         }
 
         $pdfGenerator = Browsershot::html($html)
+            ->setChromePath($chromePath)
             ->setOption('args', ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'])
             ->margins(10, 10, 10, 10)
             ->format('A4')
             ->showBackground()
             ->waitUntilNetworkIdle();
-
-        if ($chromePath) {
-            $pdfGenerator->setChromePath($chromePath);
-        }
 
         if ($mode === 'save') {
             $path = public_path("pdfs/orcamento-{$orcamento->id}.pdf");
