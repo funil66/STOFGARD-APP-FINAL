@@ -23,9 +23,9 @@ class ParceiroResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Parceiros';
 
-    protected static ?string $navigationGroup = 'Gestão';
+    protected static ?string $navigationGroup = 'Cadastros';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 2;
 
     // Use the unified `Cadastro` resource for navigation; keep this resource available
     // but excluded from the sidebar to avoid confusion.

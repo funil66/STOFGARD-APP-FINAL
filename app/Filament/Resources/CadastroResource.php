@@ -27,8 +27,8 @@ class CadastroResource extends Resource
     protected static ?string $navigationLabel = 'Cadastro';
     protected static ?string $modelLabel = 'Cadastro';
     protected static ?string $pluralModelLabel = 'Cadastros';
-    protected static ?string $navigationGroup = 'Gestão';
-    protected static ?int $navigationSort = 2;
+    protected static ?string $navigationGroup = 'Cadastros';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -65,10 +65,13 @@ class CadastroResource extends Resource
                             ->tel()
                             ->mask('(99) 9999-9999')
                             ->placeholder('(16) 3333-4444')
-                            ->afterStateUpdated(function ($state, callable $set) {
-                                // Mirror telefone into celular by default
-                                $set('celular', $state);
-                            }),
+                            ->url(fn ($state) => 'tel:' . preg_replace('/[^0-9]/', '', $state))
+                            ->suffixAction(
+                                Forms\Components\Actions\Action::make('whatsapp')
+                                    ->icon('heroicon-o-chat-bubble-left-right')
+                                    ->url(fn ($state) => 'https://wa.me/55' . preg_replace('/[^0-9]/', '', $state))
+                                    ->openUrlInNewTab()
+                            ),
 
                         Forms\Components\TextInput::make('celular')
                             ->tel()

@@ -17,6 +17,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Models\OrdemServico;
+use App\Models\TransacaoFinanceira;
+use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class OrcamentoResource extends Resource
 {
@@ -30,9 +34,9 @@ class OrcamentoResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Orçamentos';
 
-    protected static ?string $navigationGroup = 'Gestão';
+    protected static ?string $navigationGroup = 'Operacional';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 2;
 
     public static function getItensHigienizacaoOptions(): array
     {
@@ -75,404 +79,130 @@ class OrcamentoResource extends Resource
     {
         return $form
             ->schema([
-                // Seção: Informações do Orçamento
-                Forms\Components\Section::make('Informações do Orçamento')
+                // 1. SEÇÃO DE NEGOCIAÇÃO (NO TOPO)
+                Forms\Components\Section::make('Negociação e Condições de Pagamento')
+                    ->description('Defina as regras comerciais para este orçamento.')
                     ->schema([
-                        Forms\Components\Grid::make(3)
-                            ->schema([
-                                Forms\Components\TextInput::make('numero_orcamento')
-                                    ->label('Número do Orçamento')
-                                    ->disabled()
-                                    ->dehydrated()
-                                    ->placeholder('Gerado automaticamente')
-                                    ->columnSpan(1),
-
-                                Forms\Components\DatePicker::make('data_orcamento')
-                                    ->label('Data do Orçamento')
-                                    ->default(now())
-                                    ->required()
-                                    ->native(false)
-                                    ->displayFormat('d/m/Y')
-                                    ->columnSpan(1),
-
-                                Forms\Components\DatePicker::make('data_validade')
-                                    ->label('Válido até')
-                                    ->default(now()->addDays(7))
-                                    ->required()
-                                    ->native(false)
-                                    ->displayFormat('d/m/Y')
-                                    ->helperText('Orçamento válido por 7 dias')
-                                    ->columnSpan(1),
-                            ]),
-
-                        Forms\Components\Select::make('cadastro_id')
-                            ->label('Cadastro (Cliente, Loja ou Vendedor)')
-                            ->options(function () {
-                                $clientes = \App\Models\Cliente::all()->mapWithKeys(fn($c) => [
-                                    'cliente_' . $c->id => '🧑 Cliente: ' . $c->nome
-                                ]);
-                                $parceiros = \App\Models\Parceiro::all()->mapWithKeys(fn($p) => [
-                                    'parceiro_' . $p->id => ($p->tipo === 'loja' ? '🏪 Loja: ' : '🧑‍💼 Vendedor: ') . $p->nome
-                                ]);
-                                return $clientes->union($parceiros)->toArray();
+                        Forms\Components\Group::make([
+                            Forms\Components\Toggle::make('aplicar_desconto_pix')
+                                ->label('Aplicar 10% no Pix/Dinheiro')
+                                ->default(true)
+                                ->live(),
+                            Forms\Components\Toggle::make('repassar_taxas')
+                                ->label('Repassar Taxas de Parcelamento (Cliente Paga)')
+                                ->helperText('Desligue para assumir os juros (Cortesia Stofgard).')
+                                ->default(true)
+                                ->live(),
+                        ])->columns(2),
+                        // SIMULADOR EM TEMPO REAL (6x)
+                        Forms\Components\Placeholder::make('simulador_pagamento')
+                            ->label('Simulação de Pagamento')
+                            ->content(function (\Filament\Forms\Get $get) {
+                                $valorTotal = floatval($get('valor_total') ?? 0);
+                                if ($valorTotal <= 0) return 'Adicione itens para ver a simulação.';
+                                $aplicarPix = $get('aplicar_desconto_pix');
+                                $repassar = $get('repassar_taxas');
+                                
+                                // Busca config
+                                $config = \App\Models\Configuracao::first();
+                                $descontoPixPct = $config?->desconto_pix ?? 10;
+                                $taxas = $config?->taxas_parcelamento ?? []; 
+                                $valorPix = $valorTotal * (1 - ($descontoPixPct / 100));
+                                
+                                // HTML Table
+                                $html = '<div class=\"overflow-x-auto\"><table class=\"w-full text-sm text-left text-gray-500 dark:text-gray-400\">';
+                                $html .= '<thead class=\"text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400\"><tr><th class=\"px-4 py-2\">Forma</th><th class=\"px-4 py-2 text-right\">Valor</th></tr></thead><tbody>';
+                                
+                                // Pix
+                                if ($aplicarPix) {
+                                    $html .= '<tr class=\"border-b dark:border-gray-700 bg-green-50 dark:bg-green-900/20\"><td class=\"px-4 py-2 font-bold text-green-700 dark:text-green-400\">À Vista (Pix/Dinheiro)</td><td class=\"px-4 py-2 text-right font-bold text-green-700 dark:text-green-400\">R$ ' . number_format($valorPix, 2, ',', '.') . ' (-'.$descontoPixPct.'%)</td></tr>';
+                                }
+                                // 1x
+                                $html .= '<tr class=\"border-b dark:border-gray-700\"><td class=\"px-4 py-2\">Crédito 1x / Boleto</td><td class=\"px-4 py-2 text-right\">R$ ' . number_format($valorTotal, 2, ',', '.') . '</td></tr>';
+                                // 2x a 6x
+                                for ($i = 2; $i <= 6; $i++) {
+                                    $coeficiente = isset($taxas[$i]) ? floatval($taxas[$i]) : 1;
+                                    // Se repassar=true, multiplica pelo coeficiente. Se false, valor cheio.
+                                    $totalParcelado = $repassar ? ($valorTotal * $coeficiente) : $valorTotal;
+                                    $valorParcela = $totalParcelado / $i;
+                                    
+                                    $infoTaxa = ($repassar && $coeficiente > 1) ? '' : ' <span class=\"text-xs text-blue-600 font-bold\">(Sem Juros)</span>';
+                                    
+                                    $html .= '<tr class=\"border-b dark:border-gray-700\"><td class=\"px-4 py-2\">'.$i.'x'.$infoTaxa.'</td><td class=\"px-4 py-2 text-right\">R$ ' . number_format($valorParcela, 2, ',', '.') . ' <span class=\"text-xs text-gray-400\">(Total: R$ ' . number_format($totalParcelado, 2, ',', '.') . ')</span></td></tr>';
+                                }
+                                $html .= '</tbody></table></div>';
+                                
+                                return new \Illuminate\Support\HtmlString($html);
                             })
-                            ->searchable()
-                            ->required()
-                            ->helperText('Selecione um cliente, loja ou vendedor para este orçamento.'),
-
-                        Forms\Components\TextInput::make('numero_pedido_parceiro')
-                            ->label('Número do Pedido do Parceiro')
-                            ->helperText('Número de referência do parceiro/vendedor'),
-
-                        Forms\Components\Hidden::make('tipo_servico')
-                            ->default('higienizacao_impermeabilizacao'),
-
-                        Forms\Components\Textarea::make('descricao_servico')
-                            ->label('Descrição do Serviço')
-                            ->required()
-                            ->rows(3)
-                            ->default('Conforme especificado nos itens do orçamento')
-                            ->helperText('Descrição detalhada do serviço a ser realizado')
                             ->columnSpanFull(),
                     ]),
-
-                // Seção: Itens de Higienização
-                Forms\Components\Section::make('Itens de Higienização 🧼')
+                // 2. SEÇÃO DE INFORMAÇÕES
+                Forms\Components\Section::make('Informações do Orçamento')
                     ->schema([
-                        Forms\Components\Repeater::make('itens_higienizacao')
-                            ->relationship('itensHigienizacao')
-                            ->schema([
-                                Forms\Components\Select::make('tabela_preco_id')
-                                    ->label('Item da Tabela')
-                                    ->placeholder('Selecione o Serviço')
-                                    ->options(self::getItensHigienizacaoOptions())
-                                    ->searchable()
-                                    ->preload()
-                                    ->live()
-                                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                        if ($state) {
-                                            $item = TabelaPreco::find($state);
-                                            if ($item) {
-                                                $set('descricao_item', $item->nome_item);
-                                                $set('unidade_medida', $item->unidade_medida);
-                                                $set('valor_unitario', $item->preco_vista);
-                                            }
-                                        }
-                                    })
-                                    ->columnSpan(2),
-
-                                Forms\Components\TextInput::make('descricao_item')
-                                    ->label('Descrição')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->columnSpan(2),
-
-                                Forms\Components\Select::make('unidade_medida')
-                                    ->label('Unidade')
-                                    ->options([
-                                        'unidade' => 'UN',
-                                        'm2' => 'M²',
-                                    ])
-                                    ->required()
-                                    ->native(false)
-                                    ->columnSpan(1),
-
-                                Forms\Components\TextInput::make('quantidade')
-                                    ->label('Quantidade')
-                                    ->numeric()
-                                    ->required()
-                                    ->default(1)
-                                    ->minValue(0.01)
-                                    ->step(0.01)
-                                    ->live(onBlur: true)
-                                    ->columnSpan(1),
-
-                                Forms\Components\TextInput::make('valor_unitario')
-                                    ->label('Valor Unit.')
-                                    ->numeric()
-                                    ->prefix('R$')
-                                    ->required()
-                                    ->minValue(0)
-                                    ->step(0.01)
-                                    ->live(onBlur: true)
-                                    ->columnSpan(1),
-
-                                Forms\Components\Placeholder::make('subtotal_item')
-                                    ->label('Subtotal')
-                                    ->content(function (Get $get): string {
-                                        $qtd = (float) ($get('quantidade') ?? 0);
-                                        $valor = (float) ($get('valor_unitario') ?? 0);
-                                        $subtotal = $qtd * $valor;
-
-                                        return 'R$ '.number_format($subtotal, 2, ',', '.');
-                                    })
-                                    ->columnSpan(1),
-                            ])
-                            ->columns(6)
-                            ->defaultItems(0)
-                            ->reorderable()
-                            ->collapsible()
-                            ->collapsed(false)
-                            ->itemLabel(fn (array $state): ?string => $state['descricao_item'] ?? null)
-                            ->addActionLabel('➕ Adicionar Item de Higienização')
-                            ->deleteAction(
-                                fn (Forms\Components\Actions\Action $action) => $action
-                                    ->requiresConfirmation()
-                            ),
-                    ])
-                    ->description('Adicione itens de higienização')
-                    ->collapsible(),
-
-                // Seção: Itens de Impermeabilização
-                Forms\Components\Section::make('Itens de Impermeabilização 💧')
+                        Forms\Components\Select::make('cliente_id')
+                            ->relationship('cliente', 'nome')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->createOptionForm([\App\Filament\Resources\ClienteResource::class, 'form'])
+                            ->columnSpan(2),
+                        Forms\Components\DatePicker::make('data')
+                            ->default(now())
+                            ->required(),
+                        Forms\Components\DatePicker::make('validade')
+                            ->default(now()->addDays(7))
+                            ->required(),
+                    ])->columns(4),
+                // 3. SEÇÃO DE ITENS (Mantenha a lógica existente de Repeater aqui)
+                Forms\Components\Section::make('Itens do Orçamento')
                     ->schema([
-                        Forms\Components\Repeater::make('itens_impermeabilizacao')
-                            ->relationship('itensImpermeabilizacao')
+                        Forms\Components\Repeater::make('itens')
+                            ->relationship()
                             ->schema([
-                                Forms\Components\Select::make('tabela_preco_id')
-                                    ->label('Item da Tabela')
-                                    ->placeholder('Selecione o Serviço')
-                                    ->options(self::getItensImpermeabilizacaoOptions())
-                                    ->searchable()
-                                    ->preload()
-                                    ->live()
-                                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                        if ($state) {
-                                            $item = TabelaPreco::find($state);
-                                            if ($item) {
-                                                $set('descricao_item', $item->nome_item);
-                                                $set('unidade_medida', $item->unidade_medida);
-                                                $set('valor_unitario', $item->preco_vista);
-                                            }
-                                        }
-                                    })
-                                    ->columnSpan(2),
-
-                                Forms\Components\TextInput::make('descricao_item')
-                                    ->label('Descrição')
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->columnSpan(2),
-
-                                Forms\Components\Select::make('unidade_medida')
-                                    ->label('Unidade')
-                                    ->options([
-                                        'unidade' => 'UN',
-                                        'm2' => 'M²',
-                                    ])
-                                    ->required()
-                                    ->native(false)
-                                    ->columnSpan(1),
-
-                                Forms\Components\TextInput::make('quantidade')
-                                    ->label('Quantidade')
-                                    ->numeric()
-                                    ->required()
-                                    ->default(1)
-                                    ->minValue(0.01)
-                                    ->step(0.01)
-                                    ->live(onBlur: true)
-                                    ->columnSpan(1),
-
-                                Forms\Components\TextInput::make('valor_unitario')
-                                    ->label('Valor Unit.')
-                                    ->numeric()
-                                    ->prefix('R$')
-                                    ->required()
-                                    ->minValue(0)
-                                    ->step(0.01)
-                                    ->live(onBlur: true)
-                                    ->columnSpan(1),
-
-                                Forms\Components\Placeholder::make('subtotal_item')
-                                    ->label('Subtotal')
-                                    ->content(function (Get $get): string {
-                                        $qtd = (float) ($get('quantidade') ?? 0);
-                                        $valor = (float) ($get('valor_unitario') ?? 0);
-                                        $subtotal = $qtd * $valor;
-
-                                        return 'R$ '.number_format($subtotal, 2, ',', '.');
-                                    })
-                                    ->columnSpan(1),
+                                Forms\Components\TextInput::make('item')->required()->columnSpan(2),
+                                Forms\Components\TextInput::make('quantidade')->numeric()->default(1)->live()->columnSpan(1),
+                                Forms\Components\TextInput::make('valor_unitario')->numeric()->prefix('R$')->live()->columnSpan(1),
+                                Forms\Components\TextInput::make('subtotal')->numeric()->prefix('R$')->disabled()->dehydrated()->columnSpan(1)
+                                    ->placeholder(fn ($get) => 'R$ ' . number_format((floatval($get('quantidade')??0) * floatval($get('valor_unitario')??0)), 2, ',', '.'))
                             ])
-                            ->columns(6)
-                            ->defaultItems(0)
-                            ->reorderable()
-                            ->collapsible()
-                            ->collapsed(false)
-                            ->itemLabel(fn (array $state): ?string => $state['descricao_item'] ?? null)
-                            ->addActionLabel('➕ Adicionar Item de Impermeabilização')
-                            ->deleteAction(
-                                fn (Forms\Components\Actions\Action $action) => $action
-                                    ->requiresConfirmation()
-                            ),
-                    ])
-                    ->description('Adicione itens de impermeabilização')
-                    ->collapsible(),
-
-                // Seção: Valores Totais
+                            ->columns(5)
+                            ->live()
+                            ->afterStateUpdated(function ($state, callable $set) {
+                                // Recalcula total simples
+                                $total = collect($state)->sum(fn ($item) => floatval($item['quantidade']??0) * floatval($item['valor_unitario']??0));
+                                $set('valor_total', $total);
+                            }),
+                    ]),
+                // 4. SEÇÃO DE VALORES TOTAIS (LIMPA - SEM DUPLICIDADE)
                 Forms\Components\Section::make('Valores Totais')
                     ->schema([
-                        Forms\Components\Grid::make(4)
-                            ->schema([
-                                Forms\Components\Placeholder::make('valor_subtotal_calc')
-                                    ->label('Subtotal dos Itens')
-                                    ->content(function (Get $get): string {
-                                        $itensHigi = $get('itens_higienizacao') ?? [];
-                                        $itensImper = $get('itens_impermeabilizacao') ?? [];
-                                        $total = 0;
-
-                                        foreach ($itensHigi as $item) {
-                                            $qtd = (float) ($item['quantidade'] ?? 0);
-                                            $valor = (float) ($item['valor_unitario'] ?? 0);
-                                            $total += $qtd * $valor;
-                                        }
-
-                                        foreach ($itensImper as $item) {
-                                            $qtd = (float) ($item['quantidade'] ?? 0);
-                                            $valor = (float) ($item['valor_unitario'] ?? 0);
-                                            $total += $qtd * $valor;
-                                        }
-
-                                        return 'R$ '.number_format($total, 2, ',', '.');
-                                    })
-                                    ->columnSpan(1),
-
-                                Forms\Components\Toggle::make('desconto_pix_aplicado')
-                                    ->label('Aplicar Desconto PIX (10%)')
-                                    ->inline(false)
-                                    ->live()
-                                    ->columnSpan(1),
-
-                                Forms\Components\Placeholder::make('valor_desconto_calc')
-                                    ->label('Desconto')
-                                    ->content(function (Get $get): string {
-                                        $itensHigi = $get('itens_higienizacao') ?? [];
-                                        $itensImper = $get('itens_impermeabilizacao') ?? [];
-                                        $subtotal = 0;
-
-                                        foreach ($itensHigi as $item) {
-                                            $qtd = (float) ($item['quantidade'] ?? 0);
-                                            $valor = (float) ($item['valor_unitario'] ?? 0);
-                                            $subtotal += $qtd * $valor;
-                                        }
-
-                                        foreach ($itensImper as $item) {
-                                            $qtd = (float) ($item['quantidade'] ?? 0);
-                                            $valor = (float) ($item['valor_unitario'] ?? 0);
-                                            $subtotal += $qtd * $valor;
-                                        }
-
-                                        $desconto = $get('desconto_pix_aplicado') ? ($subtotal * 0.10) : 0;
-
-                                        return 'R$ '.number_format($desconto, 2, ',', '.');
-                                    })
-                                    ->columnSpan(1),
-
-                                Forms\Components\Placeholder::make('valor_total_calc')
-                                    ->label('VALOR TOTAL')
-                                    ->content(function (Get $get): string {
-                                        $itensHigi = $get('itens_higienizacao') ?? [];
-                                        $itensImper = $get('itens_impermeabilizacao') ?? [];
-                                        $subtotal = 0;
-
-                                        foreach ($itensHigi as $item) {
-                                            $qtd = (float) ($item['quantidade'] ?? 0);
-                                            $valor = (float) ($item['valor_unitario'] ?? 0);
-                                            $subtotal += $qtd * $valor;
-                                        }
-
-                                        foreach ($itensImper as $item) {
-                                            $qtd = (float) ($item['quantidade'] ?? 0);
-                                            $valor = (float) ($item['valor_unitario'] ?? 0);
-                                            $subtotal += $qtd * $valor;
-                                        }
-
-                                        $desconto = $get('desconto_pix_aplicado') ? ($subtotal * 0.10) : 0;
-                                        $total = $subtotal - $desconto;
-
-                                        return 'R$ '.number_format($total, 2, ',', '.');
-                                    })
-                                    ->extraAttributes(['style' => 'font-size: 1.5rem; font-weight: bold; color: #10b981;'])
-                                    ->columnSpan(1),
-                            ]),
-
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\Select::make('forma_pagamento')
-                                    ->label('Forma de Pagamento')
-                                    ->options([
-                                        'pix' => '💰 PIX',
-                                        'dinheiro' => '💵 Dinheiro',
-                                        'cartao_credito' => '💳 Cartão de Crédito',
-                                        'cartao_debito' => '💳 Cartão de Débito',
-                                        'boleto' => '📄 Boleto',
-                                        'transferencia' => '🏦 Transferência',
-                                    ])
-                                    ->native(false)
-                                    ->live()
-                                    ->helperText('Forma de pagamento prevista')
-                                    ->columnSpan(1),
-
-                                Forms\Components\Select::make('pix_chave_tipo')
-                                    ->label('Chave PIX para Cobrança')
-                                    ->options([
-                                        'cnpj' => 'CNPJ: 58.794.846/0001-20',
-                                        'telefone' => 'Telefone: (16) 99753-9698',
-                                    ])
-                                    ->native(false)
-                                    ->live()
-                                    ->helperText('Escolha a chave PIX para gerar o QR Code')
-                                    ->visible(fn (Get $get) => $get('forma_pagamento') === 'pix')
-                                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                        if ($state === 'cnpj') {
-                                            $set('pix_chave_valor', '58794846000120');
-                                        } elseif ($state === 'telefone') {
-                                            $set('pix_chave_valor', '5516997539698');
-                                        }
-                                    })
-                                    ->columnSpan(1),
-
-                                Forms\Components\Hidden::make('pix_chave_valor'),
-                            ]),
-                    ])
-                    ->columns(1),
-
-                // Seção: Observações
+                        Forms\Components\TextInput::make('valor_total')
+                            ->label('Valor Total dos Itens (Base)')
+                            ->numeric()
+                            ->prefix('R$')
+                            ->disabled() // O valor base não se mexe, é a soma dos itens
+                            ->dehydrated()
+                            ->columnSpan(1),
+                            
+                        Forms\Components\Select::make('forma_pagamento')
+                            ->options([
+                                'pix' => 'Pix',
+                                'dinheiro' => 'Dinheiro',
+                                'cartao_credito' => 'Cartão de Crédito',
+                                'boleto' => '📄 Boleto Bancário',
+                            ])
+                            ->columnSpan(1),
+                            
+                        Forms\Components\Select::make('status')
+                            ->options(['pendente' => 'Pendente', 'aprovado' => 'Aprovado', 'rejeitado' => 'Rejeitado'])
+                            ->default('pendente')
+                            ->required()
+                            ->columnSpan(1),
+                    ])->columns(3),
                 Forms\Components\Section::make('Observações')
                     ->schema([
-                        Forms\Components\Textarea::make('observacoes')
-                            ->label('Observações para o Cliente')
-                            ->rows(3)
-                            ->placeholder('Observações que aparecerão no orçamento...')
-                            ->columnSpanFull(),
-
-                        Forms\Components\Textarea::make('observacoes_internas')
-                            ->label('Observações Internas')
-                            ->rows(2)
-                            ->placeholder('Anotações internas (não aparecem para o cliente)...')
-                            ->columnSpanFull(),
-
-                        Forms\Components\FileUpload::make('documentos')
-                            ->label('Anexos do Orçamento')
-                            ->multiple()
-                            ->directory('orcamentos-documentos')
-                            ->visibility('public')
-                            ->disk('public')
-                            ->image()
-                            ->imagePreviewHeight('180')
-                            ->panelLayout('grid')
-                            ->imageEditor()
-                            ->imageEditorAspectRatios([null, '16:9', '4:3', '1:1'])
-                            ->downloadable()
-                            ->openable()
-                            ->previewable()
-                            ->reorderable()
-                            ->columnSpanFull()
-                            ->helperText('Documentos e fotos relacionados ao orçamento'),
-                    ])
-                    ->collapsed()
-                    ->columns(1),
+                        Forms\Components\Textarea::make('observacoes')->columnSpanFull(),
+                    ])->collapsed(),
             ]);
     }
 
@@ -613,91 +343,39 @@ class OrcamentoResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\Action::make('aprovar')
+                Tables\Actions\Action::make('aprovarOrcamento')
                     ->label('Aprovar')
                     ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Aprovar Orçamento')
-                    ->modalDescription('Ao aprovar este orçamento, será criada automaticamente uma Ordem de Serviço, registro na Agenda e lançamento no Financeiro.')
-                    ->modalSubmitActionLabel('Sim, Aprovar')
-                    ->visible(fn (Orcamento $record): bool => $record->status === 'pendente')
-                    ->form([
-                        Forms\Components\DatePicker::make('data_servico')
-                            ->label('Data do Serviço')
-                            ->required()
-                            ->native(false)
-                            ->displayFormat('d/m/Y')
-                            ->default(now()->addDays(3))
-                            ->helperText('Data prevista para execução do serviço'),
+                    ->action(function ($record) {
+                        $record->update(['status' => 'aprovado']);
 
-                        Forms\Components\TimePicker::make('hora_inicio')
-                            ->label('Hora de Início')
-                            ->required()
-                            ->default('09:00')
-                            ->native(false),
-
-                        Forms\Components\TimePicker::make('hora_fim')
-                            ->label('Hora de Término (estimada)')
-                            ->required()
-                            ->default('17:00')
-                            ->native(false),
-
-                        Forms\Components\Textarea::make('observacoes_os')
-                            ->label('Observações para a OS')
-                            ->rows(3)
-                            ->placeholder('Observações adicionais para a Ordem de Serviço...'),
-                    ])
-                    ->action(function (Orcamento $record, array $data): void {
-                        // Apenas marcar o orçamento como aprovado e salvar a data agendada; a lógica de criação
-                        // da OS/Agenda/Financeiro é centralizada no Observer (`OrcamentoObserver`).
-                        $record->update([
-                            'status' => 'aprovado',
-                            'aprovado_em' => now(),
-                            'data_servico_agendada' => $data['data_servico'],
-                            'observacoes_os' => $data['observacoes_os'] ?? $record->observacoes,
+                        $ordemServico = OrdemServico::create([
+                            'cliente_id' => $record->cliente_id,
+                            'itens' => $record->itens,
+                            'valor_total' => $record->valor_total,
+                            'descricao' => $record->descricao,
+                            'status' => 'aberta',
                         ]);
-                    })
-                    ->successNotificationTitle('Orçamento aprovado com sucesso!')
-                    ->successNotification(function () {
-                        return \Filament\Notifications\Notification::make()
+
+                        TransacaoFinanceira::create([
+                            'tipo' => 'receita',
+                            'status' => 'pendente',
+                            'categoria' => 'Serviço Prestado',
+                            'descricao' => 'Receita prevista Ref. Orçamento #' . $record->numero_orcamento,
+                            'valor_previsto' => $record->valor_total,
+                            'data_vencimento' => now(),
+                            'origem_type' => OrdemServico::class,
+                            'origem_id' => $ordemServico->id,
+                        ]);
+
+                        Notification::make()
+                            ->title('Orçamento aprovado!')
+                            ->body('OS e Lançamento Financeiro gerados com sucesso.')
                             ->success()
-                            ->title('Orçamento Aprovado!')
-                            ->body('A Ordem de Serviço, Agenda e Financeiro foram criados automaticamente.')
                             ->send();
-                    }),
 
-                Tables\Actions\Action::make('reprovar')
-                    ->label('Reprovar')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Reprovar Orçamento')
-                    ->modalDescription('Confirma a reprovação deste orçamento pelo cliente?')
-                    ->modalSubmitActionLabel('Sim, Reprovar')
-                    ->visible(fn (Orcamento $record): bool => $record->status === 'pendente')
-                    ->form([
-                        Forms\Components\Textarea::make('motivo_reprovacao')
-                            ->label('Motivo da Reprovação')
-                            ->rows(3)
-                            ->placeholder('Opcional: descreva o motivo da reprovação...'),
-                    ])
-                    ->action(function (Orcamento $record, array $data): void {
-                        $record->update([
-                            'status' => 'recusado',
-                            'reprovado_em' => now(),
-                            'motivo_reprovacao' => $data['motivo_reprovacao'] ?? null,
-                        ]);
-                    })
-                    ->successNotificationTitle('Orçamento reprovado')
-                    ->successNotification(function () {
-                        return \Filament\Notifications\Notification::make()
-                            ->warning()
-                            ->title('Orçamento Reprovado')
-                            ->body('O orçamento foi marcado como recusado.')
-                            ->send();
+                        return redirect(OrdemServicoResource::getUrl('edit', ['record' => $ordemServico->id]));
                     }),
-
                 Tables\Actions\Action::make('visualizar_pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-document-text')
@@ -891,6 +569,24 @@ class OrcamentoResource extends Resource
                             ]),
                     ])
                     ->collapsed(),
+
+                Infolists\Components\Section::make('Valores Totais')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('valor_vista')
+                            ->label('Valor à Vista (Pix/Dinheiro)')
+                            ->state(fn ($record) => $record->valor_total * 0.90)
+                            ->money('BRL')
+                            ->color('success')
+                            ->weight('bold')
+                            ->helperText('Já aplicado desconto padrão de 10%.'),
+
+                        Infolists\Components\TextEntry::make('regra_pagamento')
+                            ->label('Condições')
+                            ->default('Tabela base refere-se a valor a prazo (Cartão). Desconto de 10% exclusivo para Pix/Dinheiro.')
+                            ->columnSpanFull()
+                            ->icon('heroicon-o-information-circle')
+                            ->color('gray'),
+                    ]),
             ]);
     }
 

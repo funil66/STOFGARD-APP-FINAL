@@ -14,12 +14,25 @@ class Configuracao extends Model
         'valor',
         'tipo',
         'descricao',
+        'empresa_nome',
+        'empresa_cnpj',
+        'empresa_telefone',
+        'empresa_logo',
+        'pdf_header',
+        'pdf_footer',
+        'termos_garantia',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'taxas_parcelamento' => 'array',
     ];
+
+    public function tabela_precos()
+    {
+        return $this->hasMany(TabelaPreco::class);
+    }
 
     /**
      * Retorna o valor convertido conforme o tipo

@@ -38,8 +38,9 @@ class TransacaoFinanceira extends Model
         'atualizado_por',
     ];
 
+    protected $guarded = [];
+
     protected $casts = [
-        'data_transacao' => 'date',
         'data_vencimento' => 'date',
         'data_pagamento' => 'date',
         'valor' => 'decimal:2',
@@ -48,18 +49,32 @@ class TransacaoFinanceira extends Model
         'conciliado' => 'boolean',
     ];
 
+    /**
+     * Polymorphic relationship to the originating model.
+     */
+    public function origem()
+    {
+        return $this->morphTo();
+    }
+
     // Relacionamentos
     public function ordemServico(): BelongsTo
     {
         return $this->belongsTo(OrdemServico::class);
     }
 
-    public function cliente(): BelongsTo
+    /**
+     * Relationship to the Cliente model.
+     */
+    public function cliente()
     {
         return $this->belongsTo(Cliente::class);
     }
 
-    public function parceiro(): BelongsTo
+    /**
+     * Relationship to the Parceiro model.
+     */
+    public function parceiro()
     {
         return $this->belongsTo(Parceiro::class);
     }

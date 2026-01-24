@@ -21,6 +21,7 @@ class TabelaPreco extends Model
         'preco_prazo',
         'ativo',
         'observacoes',
+        'configuracao_id',
     ];
 
     protected $casts = [
@@ -35,6 +36,11 @@ class TabelaPreco extends Model
     public function orcamentosItens()
     {
         return $this->hasMany(OrcamentoItem::class, 'tabela_preco_id');
+    }
+
+    public function configuracao()
+    {
+        return $this->belongsTo(Configuracao::class);
     }
 
     // Scopes

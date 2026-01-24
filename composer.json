@@ -11,7 +11,6 @@
         "efipay/sdk-php-apis-efi": "^1.17",
         "filament/filament": "^3.3",
         "gerencianet/gerencianet-sdk-php": "^5.1",
-        "google/apiclient": "^2.0",
         "laravel/framework": "^12.0",
         "laravel/socialite": "^5.24",
         "laravel/tinker": "^2.10.1",

@@ -53,12 +53,15 @@ class OrcamentoPdfController extends Controller
             $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
         }
 
+        $valorVista = $orcamento->valor_total * 0.90;
+
         $html = view('pdf.orcamento_premium', [
             'orcamento' => $orcamento,
             'qrCodePix' => $qrCodeBase64,
             'pixPayload' => $payload,
             'pixConfig' => $pixConfig,
-            'logoBase64' => $logoBase64
+            'logoBase64' => $logoBase64,
+            'valorVista' => $valorVista
         ])->render();
 
         // --- DETECÇÃO INFALÍVEL DO CHROME ---

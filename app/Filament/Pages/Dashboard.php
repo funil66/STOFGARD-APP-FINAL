@@ -3,42 +3,83 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
+use App\Filament\Resources\ClienteResource;
+use App\Filament\Resources\OrdemServicoResource;
+use App\Filament\Resources\AgendaResource;
+use App\Filament\Resources\OrcamentoResource;
+use App\Filament\Resources\ParceiroResource;
+use App\Filament\Resources\FinanceiroResource;
+use App\Filament\Resources\EstoqueResource;
+use App\Filament\Resources\ConfiguracaoResource;
+use App\Filament\Pages\BuscaAvancada;
 
 class Dashboard extends BaseDashboard
 {
-    protected static ?string $navigationIcon = 'heroicon-o-home';
+    protected static ?string $title = 'Painel Principal';
 
-    protected static ?string $title = '';
-
-    protected static ?string $navigationLabel = 'Dashboard';
-
-    protected static ?int $navigationSort = 1;
-
+    // Define explicitamente a view personalizada que criamos
     protected static string $view = 'filament.pages.dashboard';
 
-    public function getHeading(): string
+    // Injeta os dados dos cards na view
+    protected function getViewData(): array
     {
-        return '';
-    }
-
-    public function getTitle(): string
-    {
-        return 'Dashboard - Stofgard Manager';
-    }
-
-    /**
-     * Widgets exibidos no dashboard
-     */
-    public function getWidgets(): array
-    {
-        return [];
-    }
-
-    /**
-     * Largura das colunas dos widgets
-     */
-    public function getColumns(): int|array
-    {
-        return 1;
+        return [
+            'modules' => [
+                [
+                    'name' => 'Clientes',
+                    'route' => ClienteResource::getUrl(),
+                    'icon' => 'heroicon-o-users',
+                    'color' => '#3b82f6', // blue
+                ],
+                [
+                    'name' => 'Parceiros',
+                    'route' => ParceiroResource::getUrl(),
+                    'icon' => 'heroicon-o-briefcase',
+                    'color' => '#6366f1', // indigo
+                ],
+                [
+                    'name' => 'Ordens de Serviço',
+                    'route' => OrdemServicoResource::getUrl(),
+                    'icon' => 'heroicon-o-clipboard-document-list',
+                    'color' => '#f97316', // orange
+                ],
+                [
+                    'name' => 'Agenda',
+                    'route' => AgendaResource::getUrl(),
+                    'icon' => 'heroicon-o-calendar',
+                    'color' => '#8b5cf6', // violet
+                ],
+                [
+                    'name' => 'Financeiro',
+                    'route' => \App\Filament\Resources\TransacaoFinanceiraResource::getUrl(),
+                    'icon' => 'heroicon-o-currency-dollar',
+                    'color' => '#22c55e', // green
+                ],
+                [
+                    'name' => 'Orçamentos',
+                    'route' => OrcamentoResource::getUrl(),
+                    'icon' => 'heroicon-o-banknotes',
+                    'color' => '#059669', // green
+                ],
+                [
+                    'name' => 'Almoxarifado',
+                    'route' => EstoqueResource::getUrl(),
+                    'icon' => 'heroicon-o-cube',
+                    'color' => '#db2777', // pink
+                ],
+                [
+                    'name' => 'Configurações',
+                    'route' => ConfiguracaoResource::getUrl('edit', ['record' => 1]),
+                    'icon' => 'heroicon-o-cog-6-tooth',
+                    'color' => '#64748b', // gray
+                ],
+                [
+                    'name' => 'Busca Avançada',
+                    'route' => BuscaAvancada::getUrl(),
+                    'icon' => 'heroicon-o-magnifying-glass-circle',
+                    'color' => '#db2777', // pink
+                ],
+            ],
+        ];
     }
 }

@@ -28,7 +28,7 @@ class AgendaResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Agenda';
 
-    protected static ?string $navigationGroup = 'Gestão';
+    protected static ?string $navigationGroup = 'Operacional';
 
     protected static ?int $navigationSort = 3;
 
