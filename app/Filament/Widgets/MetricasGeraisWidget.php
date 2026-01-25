@@ -6,7 +6,6 @@ use App\Models\Cliente;
 use App\Models\Financeiro;
 use App\Models\Orcamento;
 use App\Models\OrdemServico;
-use App\Models\Produto;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
