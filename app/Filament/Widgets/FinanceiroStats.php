@@ -20,11 +20,11 @@ class FinanceiroStats extends BaseWidget
 
         $aReceber = TransacaoFinanceira::where('status', 'pendente')
             ->where('tipo', 'receita')
-            ->sum('valor_previsto');
+            ->sum('valor');
 
         $aPagar = TransacaoFinanceira::where('status', 'pendente')
             ->where('tipo', 'despesa')
-            ->sum('valor_previsto');
+            ->sum('valor');
 
         return [
             Stat::make('Saldo Mês', 'R$ ' . number_format($saldoMes, 2, ',', '.'))
