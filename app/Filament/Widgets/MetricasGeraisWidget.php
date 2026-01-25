@@ -58,12 +58,12 @@ class MetricasGeraisWidget extends BaseWidget
             ? (($receitaMes - $receitaAnterior) / $receitaAnterior) * 100
             : 0;
 
-        // Orçamentos Pendentes
+        // Orçamentos Pendentes (usar coluna correta data_validade)
         $orcamentosPendentes = Orcamento::where('status', 'pendente')
-            ->whereDate('validade', '>=', now())
+            ->whereDate('data_validade', '>=', now())
             ->count();
         $valorOrcamentos = Orcamento::where('status', 'pendente')
-            ->whereDate('validade', '>=', now())
+            ->whereDate('data_validade', '>=', now())
             ->sum('valor_total');
 
         // Produtos com Estoque Baixo
