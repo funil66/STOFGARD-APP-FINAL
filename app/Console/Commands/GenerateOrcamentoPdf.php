@@ -75,7 +75,7 @@ class GenerateOrcamentoPdf extends Command
         } elseif ($this->option('clean')) {
             $view = 'pdf.orcamento_clean';
         } elseif ($this->option('v2')) {
-            $view = 'pdf.orcamento_v2';
+            $view = 'pdf.orcamento_oficial';
         } else {
             $view = 'pdf.orcamento';
         }
