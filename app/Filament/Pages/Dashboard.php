@@ -9,14 +9,11 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
-            // Seus cards de topo (R$ Saldo, etc)
-            \App\Filament\Widgets\FinanceiroStats::class,
+            // Mantém o widget de Clima/Boas-vindas
+            \App\Filament\Widgets\DashboardWeatherWidget::class,
 
-            // O Grid de 9 Ícones
+            // Os 9 Ícones de Acesso Rápido
             \App\Filament\Widgets\DashboardShortcutsWidget::class,
-
-            // Gráficos (opcional, se quiser remover, comente a linha abaixo)
-            \App\Filament\Widgets\MetricasGeraisWidget::class,
         ];
     }
 }

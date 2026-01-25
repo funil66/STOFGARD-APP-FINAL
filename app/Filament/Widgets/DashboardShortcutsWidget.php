@@ -3,7 +3,7 @@ namespace App\Filament\Widgets;
 
 use Filament\Widgets\Widget;
 
-class DashboardShortcutsWidget extends Widget { protected static string $view = 'filament.widgets.dashboard-shortcuts-widget'; protected int | string | array $columnSpan = 'full'; protected static ?int $sort = 1;
+class DashboardShortcutsWidget extends Widget { protected static string $view = 'filament.widgets.dashboard-shortcuts-widget'; protected int | string | array $columnSpan = 'full';
 
 public function getShortcuts(): array
 {
