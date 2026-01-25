@@ -47,163 +47,108 @@ Route::post('/webhook/pix', [PixWebhookController::class, 'handle'])
 Route::get('/webhook/pix/status', [PixWebhookController::class, 'status'])
     ->name('webhook.pix.status');
 
-// Debug route: retorna JSON com clientes e itens (temporária)
-Route::get('/debug/orcamento-data', function () {
-    if (! app()->environment('local') && ! auth()->check()) {
-        abort(403);
-    }
+if (app()->environment('local')) {
+    // Debug route: retorna JSON com clientes e itens (temporária)
+    Route::get('/debug/orcamento-data', function () {
+        $clientes = App\Filament\Resources\OrcamentoResource::getClientesOptions();
+        $higi = App\Filament\Resources\OrcamentoResource::getItensHigienizacaoOptions();
+        $imper = App\Filament\Resources\OrcamentoResource::getItensImpermeabilizacaoOptions();
 
-    $clientes = App\Filament\Resources\OrcamentoResource::getClientesOptions();
-    $higi = App\Filament\Resources\OrcamentoResource::getItensHigienizacaoOptions();
-    $imper = App\Filament\Resources\OrcamentoResource::getItensImpermeabilizacaoOptions();
-
-    return response()->json([
-        'clientes_count' => count($clientes),
-        'clientes' => $clientes,
-        'itens_higienizacao_count' => count($higi),
-        'itens_higienizacao' => $higi,
-        'itens_impermeabilizacao_count' => count($imper),
-        'itens_impermeabilizacao' => $imper,
-    ]);
-});
-
-// Debug: forçar geração de QR para um orçamento (apenas local)
-Route::get('/debug/orcamento/{id}/ensure-pix', function ($id) {
-    if (! app()->environment('local') && ! auth()->check()) {
-        abort(403);
-    }
-
-    $orc = App\Models\Orcamento::find($id);
-    if (! $orc) {
-        return response()->json(['error' => 'not_found'], 404);
-    }
-
-    // Se forma de pagamento é pix e não tem QR salvo, tenta gerar
-    if ($orc->forma_pagamento === 'pix' && empty($orc->pix_qrcode_base64)) {
-        app(App\Services\StaticPixQrCodeService::class)->generate($orc);
-        $orc->refresh();
-    }
-
-    return response()->json([
-        'id' => $orc->id,
-        'forma_pagamento' => $orc->forma_pagamento,
-        'pix_qrcode_base64_exists' => ! empty($orc->pix_qrcode_base64),
-        'pix_qrcode_base64_preview' => $orc->pix_qrcode_base64 ? substr($orc->pix_qrcode_base64, 0, 40) : null,
-        'pix_copia_cola' => $orc->pix_copia_cola,
-        'pix_chave_tipo' => $orc->pix_chave_tipo,
-        'pix_chave_valor' => $orc->pix_chave_valor,
-    ]);
-});
-
-// Local-only debug: report PHP upload/post limits used by the webserver
-Route::get('/debug/php-ini', function () {
-    if (! app()->environment('local')) {
-        abort(404);
-    }
-
-    return response()->json([
-        'upload_max_filesize' => ini_get('upload_max_filesize'),
-        'post_max_size' => ini_get('post_max_size'),
-        'memory_limit' => ini_get('memory_limit'),
-    ]);
-});
-
-// Local-only upload tester: GET shows a simple form, POST accepts multipart file field 'file' and saves it to storage/app/debug-uploads
-Route::get('/debug/upload-test-form', function (\Illuminate\Http\Request $request) {
-    if (! app()->environment('local')) {
-        abort(404);
-    }
-
-    try {
-        \Illuminate\Support\Facades\Log::info('Serving upload test form', [
-            'path' => $request->path(),
-            'method' => $request->method(),
-            'session_id' => $request->session()->getId(),
-            'session_token' => $request->session()->token(),
-            'headers' => $request->headers->all(),
-            'cookies' => $request->cookies->all(),
-            'content_length' => $request->server('CONTENT_LENGTH'),
+        return response()->json([
+            'clientes_count' => count($clientes),
+            'clientes' => $clientes,
+            'itens_higienizacao_count' => count($higi),
+            'itens_higienizacao' => $higi,
+            'itens_impermeabilizacao_count' => count($imper),
+            'itens_impermeabilizacao' => $imper,
         ]);
-    } catch (\Throwable $e) {
-        \Illuminate\Support\Facades\Log::warning('Failed to log upload form request: ' . $e->getMessage());
-    }
+    });
 
-    // Return a minimal HTML form to test multipart uploads from a browser (includes CSRF field)
-    $html = '';
-    $html .= '<!doctype html><html><head><meta charset="utf-8"><title>Upload Test</title></head><body>';
-    $html .= '<h1>Local Upload Test</h1>';
-    $html .= '<form method="POST" action="/debug/upload-test" enctype="multipart/form-data">';
-    $html .= csrf_field();
-    $html .= '<input type="file" name="file"> <button type="submit">Upload</button>';
-    $html .= '</form></body></html>';
+    // Debug: forçar geração de QR para um orçamento (apenas local)
+    Route::get('/debug/orcamento/{id}/ensure-pix', function ($id) {
+        $orc = App\Models\Orcamento::find($id);
+        if (! $orc) {
+            return response()->json(['error' => 'not_found'], 404);
+        }
 
-    return response($html, 200, ['Content-Type' => 'text/html']);
-});
+        // Se forma de pagamento é pix e não tem QR salvo, tenta gerar
+        if ($orc->forma_pagamento === 'pix' && empty($orc->pix_qrcode_base64)) {
+            app(App\Services\StaticPixQrCodeService::class)->generate($orc);
+            $orc->refresh();
+        }
 
-Route::post('/debug/upload-test', function (\Illuminate\Http\Request $request) {
-    if (! app()->environment('local')) {
-        abort(404);
-    }
-
-    try {
-        \Illuminate\Support\Facades\Log::info('Debug upload request', [
-            'path' => $request->path(),
-            'method' => $request->method(),
-            'session_id' => $request->session()->getId(),
-            'session_token' => $request->session()->token(),
-            'x_xsrf_header' => $request->header('X-XSRF-TOKEN'),
-            'headers' => $request->headers->all(),
-            'cookies' => $request->cookies->all(),
-            'content_length' => $request->server('CONTENT_LENGTH'),
-            'content_type' => $request->server('CONTENT_TYPE'),
-            'files' => array_map(function($f) { return [
-                'name' => $f->getClientOriginalName() ?? null,
-                'size' => $f->getSize() ?? null,
-            ]; }, $request->files->all()),
-            'raw_files' => isset($_FILES) ? $_FILES : null,
-            'referer' => $request->header('Referer'),
-            'user_agent' => $request->header('User-Agent'),
+        return response()->json([
+            'id' => $orc->id,
+            'forma_pagamento' => $orc->forma_pagamento,
+            'pix_qrcode_base64_exists' => ! empty($orc->pix_qrcode_base64),
+            'pix_qrcode_base64_preview' => $orc->pix_qrcode_base64 ? substr($orc->pix_qrcode_base64, 0, 40) : null,
+            'pix_copia_cola' => $orc->pix_copia_cola,
+            'pix_chave_tipo' => $orc->pix_chave_tipo,
+            'pix_chave_valor' => $orc->pix_chave_valor,
         ]);
-    } catch (\Throwable $e) {
-        \Illuminate\Support\Facades\Log::warning('Failed to log upload request: ' . $e->getMessage());
-    }
+    });
 
-    if (! $request->hasFile('file')) {
-        return response()->json(['error' => 'no_file_provided'], 400);
-    }
+    // Local-only upload tester: GET shows a simple form (POST upload removed for security)
+    Route::get('/debug/upload-test-form', function (\Illuminate\Http\Request $request) {
+        try {
+            \Illuminate\Support\Facades\Log::info('Serving upload test form', [
+                'path' => $request->path(),
+                'method' => $request->method(),
+                'session_id' => $request->session()->getId(),
+                'session_token' => $request->session()->token(),
+                'headers' => $request->headers->all(),
+                'cookies' => $request->cookies->all(),
+                'content_length' => $request->server('CONTENT_LENGTH'),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to log upload form request: ' . $e->getMessage());
+        }
 
-    $file = $request->file('file');
+        // Return a minimal HTML form to test multipart uploads from a browser (includes CSRF field)
+        $html = '';
+        $html .= '<!doctype html><html><head><meta charset="utf-8"><title>Upload Test</title></head><body>';
+        $html .= '<h1>Local Upload Test</h1>';
+        $html .= '<form method="POST" action="/debug/upload-test" enctype="multipart/form-data">';
+        $html .= csrf_field();
+        $html .= '<input type="file" name="file"> <button type="submit">Upload</button>';
+        $html .= '</form></body></html>';
 
-    // store in local disk
-    $path = $file->store('debug-uploads');
+        return response($html, 200, ['Content-Type' => 'text/html']);
+    });
 
-    return response()->json([
-        'stored_path' => $path,
-        'size' => $file->getSize(),
-        'original_name' => $file->getClientOriginalName(),
-    ]);
-});
+    // Alternative local-only endpoint that uses the API middleware (no CSRF/session) for testing
+    Route::post('/debug/upload-test-no-csrf', function (\Illuminate\Http\Request $request) {
+        if (! $request->hasFile('file')) {
+            return response()->json(['error' => 'no_file_provided'], 400);
+        }
 
-// Alternative local-only endpoint that uses the API middleware (no CSRF/session) for testing
-Route::post('/debug/upload-test-no-csrf', function (\Illuminate\Http\Request $request) {
-    if (! app()->environment('local')) {
-        abort(404);
-    }
+        $file = $request->file('file');
 
-    if (! $request->hasFile('file')) {
-        return response()->json(['error' => 'no_file_provided'], 400);
-    }
+        $path = $file->store('debug-uploads');
 
-    $file = $request->file('file');
+        return response()->json([
+            'stored_path' => $path,
+            'size' => $file->getSize(),
+            'original_name' => $file->getClientOriginalName(),
+        ]);
+    })->middleware('api')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 
-    $path = $file->store('debug-uploads');
+    // Local-only debug: phpinfo() for troubleshooting which php.ini is loaded
+    Route::get('/debug/phpinfo', function () {
+        ob_start();
+        phpinfo();
+        $html = ob_get_clean();
 
-    return response()->json([
-        'stored_path' => $path,
-        'size' => $file->getSize(),
-        'original_name' => $file->getClientOriginalName(),
-    ]);
-})->middleware('api')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+        // Return a small subset: 'Loaded Configuration File' and SAPI
+        preg_match('/Loaded Configuration File.*?>(.*?)<\/div>/is', $html, $m1);
+        preg_match('/Server API.*?>(.*?)<\/div>/is', $html, $m2);
+
+        return response()->json([
+            'loaded_configuration_file' => $m1[1] ?? null,
+            'server_api' => $m2[1] ?? php_sapi_name(),
+        ]);
+    });
+}
 
 // Local-only debug: phpinfo() for troubleshooting which php.ini is loaded
 Route::get('/debug/phpinfo', function () {
