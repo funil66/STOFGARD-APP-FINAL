@@ -48,6 +48,15 @@ class DashboardShortcutsWidget extends Widget
                     'icon' => 'heroicon-o-calculator',
                     'icon_background' => '#10B981',
                 ],
+
+                // Produtos (restaurando 9 atalhos no dashboard)
+                [
+                    'name' => 'Produtos',
+                    'route' => $s('filament.admin.resources.produtos.index', '/admin/produtos'),
+                    'icon' => 'heroicon-o-box',
+                    'icon_background' => '#F59E0B',
+                ],
+
                 [
                     'name' => 'Financeiro',
                     'route' => $s('filament.admin.resources.transacao-financeiras.index', '/admin/financeiros'),
@@ -63,7 +72,7 @@ class DashboardShortcutsWidget extends Widget
 
                 [
                     'name' => 'Parceiros',
-                    'route' => $s('filament.admin.resources.parceiros.index', '/admin/parceiros'),
+                    'route' => url('/admin/cadastros'),
                     'icon' => 'heroicon-o-building-office',
                     'icon_background' => '#6366F1',
                 ],

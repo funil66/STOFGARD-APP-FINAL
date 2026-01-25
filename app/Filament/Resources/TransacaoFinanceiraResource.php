@@ -88,7 +88,8 @@ class TransacaoFinanceiraResource extends Resource
                 TextColumn::make('descricao')
                     ->searchable(),
 
-                TextColumn::make('valor_previsto')
+                TextColumn::make('valor')
+                    ->label('Valor')
                     ->money('BRL')
                     ->sortable(),
 
