@@ -53,7 +53,7 @@ class DashboardShortcutsWidget extends Widget
                 [
                     'name' => 'Produtos',
                     'route' => $s('filament.admin.resources.produtos.index', '/admin/produtos'),
-                    'icon' => 'heroicon-o-box',
+                    'icon' => 'heroicon-o-cube',
                     'icon_background' => '#F59E0B',
                 ],
 
