@@ -18,8 +18,8 @@ class CadastroResource extends Resource {
     protected static ?string $modelLabel = 'Cadastro';
     protected static ?int $navigationSort = 1;
 
-    // Removemos do menu lateral — o Dashboard serve como central de navegação
-    protected static bool $shouldRegisterNavigation = false;
+    // Mostrar no menu lateral
+    protected static bool $shouldRegisterNavigation = true;
 
     // --- 1. VISUALIZAÇÃO (Onde você quer ver os dados bonitos) ---
     public static function infolist(Infolist $infolist): Infolist
@@ -108,6 +108,7 @@ class CadastroResource extends Resource {
                         Forms\Components\Select::make('tipo')
                             ->options([
                                 'cliente' => 'Cliente Final',
+                                'parceiro' => 'Parceiro',
                                 'loja' => 'Loja Parceira',
                                 'arquiteto' => 'Arquiteto/Designer',
                             ])

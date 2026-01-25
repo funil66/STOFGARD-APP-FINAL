@@ -15,7 +15,7 @@ class FinanceiroStats extends BaseWidget
 
         $saldoMes = TransacaoFinanceira::where('status', 'pago')
             ->where('data_pagamento', '>=', $currentMonth)
-            ->selectRaw("SUM(CASE WHEN tipo = 'receita' THEN valor_pago ELSE -valor_pago END) as saldo")
+            ->selectRaw("SUM(CASE WHEN tipo = 'receita' THEN valor ELSE -valor END) as saldo")
             ->value('saldo') ?? 0;
 
         $aReceber = TransacaoFinanceira::where('status', 'pendente')
