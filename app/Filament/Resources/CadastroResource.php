@@ -14,9 +14,12 @@ use Filament\Tables\Table;
 class CadastroResource extends Resource {
     protected static ?string $model = Cliente::class;
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
-    protected static ?string $navigationLabel = 'Cadastros Unificados';
+    protected static ?string $navigationLabel = 'Gestão de Cadastros';
     protected static ?string $modelLabel = 'Cadastro';
     protected static ?int $navigationSort = 1;
+
+    // Removemos do menu lateral — o Dashboard serve como central de navegação
+    protected static bool $shouldRegisterNavigation = false;
 
     // --- 1. VISUALIZAÇÃO (Onde você quer ver os dados bonitos) ---
     public static function infolist(Infolist $infolist): Infolist

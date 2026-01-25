@@ -26,6 +26,9 @@ class OrcamentoResource extends Resource
     protected static ?string $pluralModelLabel = 'Orçamentos';
     protected static ?int $navigationSort = 2;
 
+    // Removemos do menu lateral — acesso via Dashboard
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Form $form): Form
     {
         return $form

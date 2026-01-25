@@ -19,6 +19,15 @@ class Dashboard extends BaseDashboard
     // Define explicitamente a view personalizada que criamos
     protected static string $view = 'filament.pages.dashboard';
 
+    // Header widgets (atalhos e indicadores)
+    public function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Widgets\AtalhosRapidos::class,
+            \Filament\Widgets\StatsOverviewWidget::class,
+        ];
+    }
+
     // Injeta os dados dos cards na view
     protected function getViewData(): array
     {
