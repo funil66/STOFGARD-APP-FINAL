@@ -25,13 +25,10 @@ class OrcamentoPdfController extends Controller
         // 2. Carrega Relacionamentos Necessários para o Blade
         $orcamento->load(['cliente', 'itens']);
 
-        // 3. Renderiza HTML 
-        // AQUI ESTÁ A CORREÇÃO DO ERRO $record:
-        // Passamos 'record' porque o template orcamento_premium.blade.php usa $record
-        $html = view('pdf.orcamento_premium', [
-            'record'    => $orcamento, // Vital: O Blade espera esta variável
-            'orcamento' => $orcamento, // Redundância segura
-            'config'    => $config
+        // 3. Renderiza HTML - usar a versão oficial do template e passar apenas as variáveis necessárias
+        $html = view('pdf.orcamento_oficial', [
+            'orcamento' => $orcamento,
+            'config'    => $config,
         ])->render();
 
         // 4. Gera PDF com Browsershot (Puppeteer)
@@ -62,7 +59,47 @@ class OrcamentoPdfController extends Controller
     // Método para gerar e salvar (usado na rota generate-pdf linha 127)
     public function generateAndSave(Orcamento $orcamento)
     {
-        // Implementação similar se necessária, ou redireciona para o gerarPdf
-        return $this->gerarPdf($orcamento);
+        $config = Configuracao::first();
+        if (! $config) {
+            $config = new Configuracao([
+                'empresa_nome' => 'Stofgard',
+            ]);
+        }
+
+        $orcamento->load(['cliente', 'itens']);
+
+        $html = view('pdf.orcamento_oficial', [
+            'orcamento' => $orcamento,
+            'config' => $config,
+        ])->render();
+
+        try {
+            $pdfContent = Browsershot::html($html)
+                ->format('A4')
+                ->margins(10, 10, 10, 10)
+                ->showBackground()
+                ->noSandbox()
+                ->setOption('args', ['--disable-web-security'])
+                ->waitUntilNetworkIdle()
+                ->pdf();
+
+            // Salva em storage public/orcamentos
+            $dir = 'orcamentos';
+            $filename = 'orcamento-' . $orcamento->id . '-' . time() . '.pdf';
+            $path = $dir . '/' . $filename;
+
+            \Illuminate\Support\Facades\Storage::disk('public')->makeDirectory($dir);
+            \Illuminate\Support\Facades\Storage::disk('public')->put($path, $pdfContent);
+
+            return response()->json([
+                'status' => 'success',
+                'path' => Storage::disk('public')->url($path),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
