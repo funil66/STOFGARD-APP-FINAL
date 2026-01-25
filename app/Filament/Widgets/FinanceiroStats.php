@@ -4,8 +4,7 @@ namespace App\Filament\Widgets;
 
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Models\TransacaoFinanceira;
-use Illuminate\Support\Facades\DB;
+use App\Models\Financeiro;
 
 class FinanceiroStats extends BaseWidget
 {
@@ -13,17 +12,17 @@ class FinanceiroStats extends BaseWidget
     {
         $currentMonth = now()->startOfMonth();
 
-        $saldoMes = TransacaoFinanceira::where('status', 'pago')
+        $saldoMes = Financeiro::where('status', 'pago')
             ->where('data_pagamento', '>=', $currentMonth)
-            ->selectRaw("SUM(CASE WHEN tipo = 'receita' THEN valor ELSE -valor END) as saldo")
+            ->selectRaw("SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE -valor END) as saldo")
             ->value('saldo') ?? 0;
 
-        $aReceber = TransacaoFinanceira::where('status', 'pendente')
-            ->where('tipo', 'receita')
+        $aReceber = Financeiro::where('status', 'pendente')
+            ->where('tipo', 'entrada')
             ->sum('valor');
 
-        $aPagar = TransacaoFinanceira::where('status', 'pendente')
-            ->where('tipo', 'despesa')
+        $aPagar = Financeiro::where('status', 'pendente')
+            ->where('tipo', 'saida')
             ->sum('valor');
 
         return [

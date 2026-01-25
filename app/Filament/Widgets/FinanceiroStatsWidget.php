@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\TransacaoFinanceira;
+use App\Models\Financeiro;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -13,39 +13,47 @@ class FinanceiroStatsWidget extends BaseWidget
         $mesAtual = now()->month;
         $anoAtual = now()->year;
 
-        // Receitas do mês
-        $receitasMes = TransacaoFinanceira::receitas()
-            ->pagas()
-            ->doMes($mesAtual, $anoAtual)
+        // Calcular mês anterior com wrap-around
+        $mesAnterior = $mesAtual - 1;
+        $anoAnterior = $anoAtual;
+        if ($mesAnterior < 1) { $mesAnterior = 12; $anoAnterior = $anoAtual - 1; }
+
+        // Receitas do mês (Financeiro: tipo 'entrada', status 'pago', considerar data_pagamento)
+        $receitasMes = Financeiro::entrada()
+            ->pago()
+            ->whereYear('data_pagamento', $anoAtual)
+            ->whereMonth('data_pagamento', $mesAtual)
             ->sum('valor');
 
-        // Despesas do mês
-        $despesasMes = TransacaoFinanceira::despesas()
-            ->pagas()
-            ->doMes($mesAtual, $anoAtual)
+        // Despesas do mês (tipo 'saida')
+        $despesasMes = Financeiro::saida()
+            ->pago()
+            ->whereYear('data_pagamento', $anoAtual)
+            ->whereMonth('data_pagamento', $mesAtual)
             ->sum('valor');
 
         // Saldo do mês
         $saldoMes = $receitasMes - $despesasMes;
 
         // Contas a receber
-        $contasReceber = TransacaoFinanceira::receitas()
-            ->pendentes()
+        $contasReceber = Financeiro::entrada()
+            ->pendente()
             ->sum('valor');
 
         // Contas a pagar
-        $contasPagar = TransacaoFinanceira::despesas()
-            ->pendentes()
+        $contasPagar = Financeiro::saida()
+            ->pendente()
             ->sum('valor');
 
         // Contas vencidas
-        $contasVencidas = TransacaoFinanceira::vencidas()
+        $contasVencidas = Financeiro::vencido()
             ->count();
 
         // Receitas do mês anterior para comparação
-        $receitasMesAnterior = TransacaoFinanceira::receitas()
-            ->pagas()
-            ->doMes($mesAtual - 1, $anoAtual)
+        $receitasMesAnterior = Financeiro::entrada()
+            ->pago()
+            ->whereYear('data_pagamento', $anoAnterior)
+            ->whereMonth('data_pagamento', $mesAnterior)
             ->sum('valor');
 
         $receitasVariacao = $receitasMesAnterior > 0
@@ -53,9 +61,10 @@ class FinanceiroStatsWidget extends BaseWidget
             : 0;
 
         // Despesas do mês anterior para comparação
-        $despesasMesAnterior = TransacaoFinanceira::despesas()
-            ->pagas()
-            ->doMes($mesAtual - 1, $anoAtual)
+        $despesasMesAnterior = Financeiro::saida()
+            ->pago()
+            ->whereYear('data_pagamento', $anoAnterior)
+            ->whereMonth('data_pagamento', $mesAnterior)
             ->sum('valor');
 
         $despesasVariacao = $despesasMesAnterior > 0
@@ -120,8 +129,10 @@ class FinanceiroStatsWidget extends BaseWidget
         for ($i = 6; $i >= 0; $i--) {
             $data = now()->subDays($i);
 
-            $valor = TransacaoFinanceira::where('tipo', $tipo)
-                ->pagas()
+            $tipoModel = $tipo === 'receita' ? 'entrada' : 'saida';
+
+            $valor = Financeiro::where('tipo', $tipoModel)
+                ->pago()
                 ->whereDate('data_pagamento', $data)
                 ->sum('valor');
 

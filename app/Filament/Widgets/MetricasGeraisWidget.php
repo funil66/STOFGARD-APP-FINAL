@@ -66,13 +66,8 @@ class MetricasGeraisWidget extends BaseWidget
             ->whereDate('data_validade', '>=', now())
             ->sum('valor_total');
 
-        // Produtos com Estoque Baixo
-        $produtosBaixos = Produto::where('ativo', true)
-            ->whereRaw('quantidade_estoque <= estoque_minimo')
-            ->count();
-        $produtosCriticos = Produto::where('ativo', true)
-            ->whereRaw('quantidade_estoque <= estoque_minimo / 2')
-            ->count();
+        // Total de Cadastros (substitui métrica de produtos para estabilidade)
+        $totalCadastros = Cliente::count();
 
         // Contas a Receber
         $contasReceber = Financeiro::where('tipo', 'receita')
@@ -107,10 +102,10 @@ class MetricasGeraisWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('warning'),
 
-            Stat::make('Estoque', $produtosBaixos.' produtos baixos')
-                ->description($produtosCriticos > 0 ? $produtosCriticos.' críticos ⚠️' : 'Sob controle')
-                ->descriptionIcon($produtosCriticos > 0 ? 'heroicon-m-exclamation-triangle' : 'heroicon-m-check-circle')
-                ->color($produtosCriticos > 0 ? 'danger' : ($produtosBaixos > 0 ? 'warning' : 'success')),
+            Stat::make('Total de Cadastros', $totalCadastros)
+                ->description('Cadastros registrados')
+                ->descriptionIcon('heroicon-m-user')
+                ->color('primary'),
 
             Stat::make('Contas a Receber (30d)', 'R$ '.number_format($contasReceber, 2, ',', '.'))
                 ->description('Vencendo nos próximos 30 dias')
