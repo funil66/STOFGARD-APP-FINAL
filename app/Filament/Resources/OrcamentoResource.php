@@ -75,10 +75,18 @@ class OrcamentoResource extends Resource
                             Forms\Components\TextInput::make('quantidade')
                                 ->numeric()
                                 ->default(1)
-                                ->required(),
+                                ->required()
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    self::updateTotals($get, $set);
+                                }),
                             Forms\Components\TextInput::make('valor_unitario')
                                 ->numeric()
-                                ->required(),
+                                ->required()
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function (Get $get, Set $set) {
+                                    self::updateTotals($get, $set);
+                                }),
                         ])
                         ->columns(4)
                 ]),
@@ -148,6 +156,19 @@ class OrcamentoResource extends Resource
         return [
             \App\Filament\Resources\RelationManagers\AuditsRelationManager::class,
         ];
+    }
+
+    // Helper para recalcular total a partir dos itens do repeater
+    public static function updateTotals(Get $get, Set $set): void
+    {
+        $itens = $get('itens') ?? [];
+        $total = 0;
+        foreach ($itens as $item) {
+            $qtd = floatval($item['quantidade'] ?? 0);
+            $val = floatval($item['valor_unitario'] ?? 0);
+            $total += $qtd * $val;
+        }
+        $set('valor_total', $total);
     }
 
     public static function getPages(): array
