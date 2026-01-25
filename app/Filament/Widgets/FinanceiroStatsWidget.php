@@ -90,12 +90,12 @@ class FinanceiroStatsWidget extends BaseWidget
                 ->color($saldoMes >= 0 ? 'success' : 'danger'),
 
             Stat::make('📥 Contas a Receber', 'R$ '.number_format($contasReceber, 2, ',', '.'))
-                ->description(TransacaoFinanceira::receitas()->pendentes()->count().' transações pendentes')
+                ->description(Financeiro::entrada()->pendente()->count().' transações pendentes')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('info'),
 
             Stat::make('📤 Contas a Pagar', 'R$ '.number_format($contasPagar, 2, ',', '.'))
-                ->description(TransacaoFinanceira::despesas()->pendentes()->count().' transações pendentes')
+                ->description(Financeiro::saida()->pendente()->count().' transações pendentes')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('warning'),
 
