@@ -133,6 +133,8 @@ class OrcamentoObserver
                     ]);
                 }
 
+                $os->parceiro_id = $orcamento->parceiro_id;
+                $os->saveQuietly();
             }
 
         } finally {

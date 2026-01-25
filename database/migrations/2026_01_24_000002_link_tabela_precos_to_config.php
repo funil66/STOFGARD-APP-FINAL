@@ -13,7 +13,9 @@ return new class extends Migration {
     public function up()
     {
         Schema::table('tabela_precos', function (Blueprint $table) {
-            $table->foreignId('configuracao_id')->default(1)->constrained('configuracaos');
+            if (! Schema::hasColumn('tabela_precos', 'configuracao_id')) {
+                $table->foreignId('configuracao_id')->default(1)->constrained('configuracoes');
+            }
         });
     }
 

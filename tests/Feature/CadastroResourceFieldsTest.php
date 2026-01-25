@@ -20,11 +20,11 @@ class CadastroResourceFieldsTest extends TestCase
 
         // Request the resource view page (read-only) which should include the 'Loja vinculada' field in the record details for a vendedor
         $response = $this->actingAs($admin)
-            ->get(\App\Filament\Resources\ParceiroResource::getUrl('view', ['record' => $vendedor->uuid]));
+            ->get(\App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $vendedor->uuid]));
 
         // Request the resource edit page to verify the 'Loja vinculada' select is shown for vendedores
         $response = $this->actingAs($admin)
-            ->get(\App\Filament\Resources\ParceiroResource::getUrl('edit', ['record' => $vendedor->uuid]));
+            ->get(\App\Filament\Resources\CadastroResource::getUrl('edit', ['record' => $vendedor->uuid]));
 
         $response->assertSeeText('Loja vinculada');
     }

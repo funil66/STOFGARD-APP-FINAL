@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Orcamento extends Model
+class Orcamento extends Model implements \OwenIt\Auditing\Contracts\Auditable
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'numero_orcamento',
@@ -189,5 +189,25 @@ class Orcamento extends Model
                 $this->attributes['parceiro_id'] = $id;
             }
         }
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Orcamento $orcamento) {
+            // Preenche data do orçamento se vazia
+            if (empty($orcamento->data_orcamento)) {
+                $orcamento->data_orcamento = now();
+            }
+            
+            // Define validade padrão de 7 dias se vazia
+            if (empty($orcamento->data_validade)) {
+                $orcamento->data_validade = now()->addDays(7);
+            }
+
+            // Garante número do orçamento se vazio
+            if (empty($orcamento->numero_orcamento)) {
+                $orcamento->numero_orcamento = 'ORC' . now()->format('Y') . str_pad((Orcamento::max('id') + 1), 4, '0', STR_PAD_LEFT);
+            }
+        });
     }
 }

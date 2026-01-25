@@ -65,7 +65,7 @@ class Agenda extends Model
         }
 
         if ($cad instanceof Parceiro) {
-            return \App\Filament\Resources\ParceiroResource::getUrl('view', ['record' => $cad]);
+            return \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $cad]);
         }
 
         return null;

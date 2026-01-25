@@ -17,6 +17,7 @@ class OrcamentoItem extends Model
         'quantidade',
         'valor_unitario',
         'observacoes',
+        'tipo_servico',
     ];
 
     protected $casts = [

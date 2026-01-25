@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('configuracaos', function (Blueprint $table) {
+        Schema::table('configuracoes', function (Blueprint $table) {
             $table->decimal('desconto_pix', 5, 2)->default(10.00);
             $table->json('taxas_parcelamento')->nullable();
         });

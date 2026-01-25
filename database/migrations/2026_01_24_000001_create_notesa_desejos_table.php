@@ -13,17 +13,19 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('lista_desejos', function (Blueprint $table) {
-            $table->id();
-            $table->string('item'); // Nome do item da lista de desejos
-            $table->decimal('valor_estimado', 10, 2); // Valor estimado do item
-            $table->date('data_prevista'); // Data prevista para aquisição
-            $table->string('link_referencia')->nullable(); // Link de referência
-            $table->enum('prioridade', ['alta', 'media', 'baixa'])->default('media'); // Prioridade do item
-            $table->enum('status', ['pendente', 'comprado', 'cancelado'])->default('pendente'); // Status do item
-            $table->text('observacoes')->nullable(); // Observações adicionais
-            $table->timestamps(); // Timestamps padrão
-        });
+        if (! Schema::hasTable('lista_desejos')) {
+            Schema::create('lista_desejos', function (Blueprint $table) {
+                $table->id();
+                $table->string('item'); // Nome do item da lista de desejos
+                $table->decimal('valor_estimado', 10, 2); // Valor estimado do item
+                $table->date('data_prevista'); // Data prevista para aquisição
+                $table->string('link_referencia')->nullable(); // Link de referência
+                $table->enum('prioridade', ['alta', 'media', 'baixa'])->default('media'); // Prioridade do item
+                $table->enum('status', ['pendente', 'comprado', 'cancelado'])->default('pendente'); // Status do item
+                $table->text('observacoes')->nullable(); // Observações adicionais
+                $table->timestamps(); // Timestamps padrão
+            });
+        }
     }
 
     /**

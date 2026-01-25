@@ -8,8 +8,12 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('orcamentos', function (Blueprint $table) {
-            $table->boolean('aplicar_desconto_pix')->default(true);
-            $table->boolean('repassar_taxas')->default(true);
+            if (! Schema::hasColumn('orcamentos', 'aplicar_desconto_pix')) {
+                $table->boolean('aplicar_desconto_pix')->default(true);
+            }
+            if (! Schema::hasColumn('orcamentos', 'repassar_taxas')) {
+                $table->boolean('repassar_taxas')->default(true);
+            }
         });
     }
 

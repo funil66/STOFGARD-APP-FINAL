@@ -3,11 +3,10 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
-use App\Filament\Resources\ClienteResource;
+use App\Filament\Resources\CadastroResource;
 use App\Filament\Resources\OrdemServicoResource;
 use App\Filament\Resources\AgendaResource;
 use App\Filament\Resources\OrcamentoResource;
-use App\Filament\Resources\ParceiroResource;
 use App\Filament\Resources\FinanceiroResource;
 use App\Filament\Resources\EstoqueResource;
 use App\Filament\Resources\ConfiguracaoResource;
@@ -27,13 +26,13 @@ class Dashboard extends BaseDashboard
             'modules' => [
                 [
                     'name' => 'Clientes',
-                    'route' => ClienteResource::getUrl(),
+                    'route' => CadastroResource::getUrl(),
                     'icon' => 'heroicon-o-users',
                     'color' => '#3b82f6', // blue
                 ],
                 [
                     'name' => 'Parceiros',
-                    'route' => ParceiroResource::getUrl(),
+                    'route' => CadastroResource::getUrl(),
                     'icon' => 'heroicon-o-briefcase',
                     'color' => '#6366f1', // indigo
                 ],

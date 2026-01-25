@@ -4,116 +4,11 @@ use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\OrcamentoPdfController;
 use App\Http\Controllers\PagamentoController;
 use App\Http\Controllers\PixWebhookController;
-use App\Http\Controllers\CadastroController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
-
-// Rota de login pública usada como destino de redirecionamento quando middleware auth chama route('login')
-Route::get('/login', function () {
-    // Redireciona para a URL de login do Filament (se disponível)
-    return redirect(\Filament\Facades\Filament::getLoginUrl());
-})->name('login');
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
-
-// Compatibility: accept POSTs to /admin/login for clients that submit a traditional
-// form (non-Livewire). Enforce CSRF; this endpoint performs the authentication
-// attempt and redirects back with errors on failure.
-Route::post('admin/login', function (Request $request) {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
-
-    $key = Str::lower($request->ip() . '|' . $request->input('email'));
-
-    // Limit to 5 attempts per minute per IP+email
-    if (RateLimiter::tooManyAttempts($key, 5)) {
-        return back()->withErrors(['email' => __('Too many attempts. Please try again later.')])->setStatusCode(429);
-    }
-
-    if (! \Filament\Facades\Filament::auth()->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-        RateLimiter::hit($key, 60);
-        return back()->withErrors(['email' => __('filament-panels::pages/auth/login.messages.failed')]);
-    }
-
-    RateLimiter::clear($key);
-
-    $request->session()->regenerate();
-
-    return redirect()->intended(\Filament\Facades\Filament::getUrl());
-});
-
-// Temporary debug endpoint (local only) to inspect session and CSRF state.
-Route::get('debug/session', function (Request $request) {
-    if (! app()->environment('local')) {
-        abort(404);
-    }
-
-    return response()->json([
-        'session_id' => $request->session()->getId(),
-        'session_token' => $request->session()->token(),
-        'x_xsrf_token_header' => $request->header('X-XSRF-TOKEN'),
-        'cookies' => $request->cookies->all(),
-    ]);
-});
-
-// Serve Livewire published assets from public/vendor/livewire for compatibility
-Route::get('livewire/{file}', function ($file) {
-    $path = public_path('vendor/livewire/' . $file);
-
-    if (! file_exists($path)) {
-        abort(404);
-    }
-
-    return response()->file($path, ['Content-Type' => 'application/javascript']);
-})->where('file', '.*');
-
-// Local-only helper: create or update a test admin user with the provided credentials.
-Route::get('debug/ensure-admin-user', function (Request $request) {
-    if (! app()->environment('local')) {
-        abort(404);
-    }
-
-    $user = \App\Models\User::updateOrCreate(
-        ['email' => 'allisson@stofgard.com'],
-        ['name' => 'Allisson', 'password' => \Illuminate\Support\Facades\Hash::make('Swordfish')]
-    );
-
-    return response()->json(['created' => (bool) $user, 'email' => $user->email]);
-});
-
-
-// Compatibilidade para quem acessa diretamente /admin/dashboard
-Route::redirect('/admin/dashboard', '/admin')->name('admin.dashboard.redirect');
-
-
-
-// Redirecionamentos para compatibilidade com URLs antigas do módulo Clientes
-// As rotas e páginas do recurso Cliente foram removidas em favor do recurso
-// unificado `Cadastros`. Mantemos esses redirects para evitar links quebrados.
-Route::redirect('/admin/clientes', '/admin/cadastros')->name('admin.clientes.redirect');
-Route::redirect('/admin/clientes/{any}', '/admin/cadastros')->where('any', '.*');
-
-// Named redirects to satisfy Filament resource route lookups (prevents RouteNotFoundException)
-Route::any('/admin/clientes', fn () => redirect('/admin/cadastros'))
-    ->name('filament.admin.resources.clientes.index');
-
-Route::any('/admin/clientes/create', fn () => redirect('/admin/cadastros'))
-    ->name('filament.admin.resources.clientes.create');
-
-Route::any('/admin/clientes/{record}', fn ($record) => redirect('/admin/cadastros'))
-    ->where('record', '.*')
-    ->name('filament.admin.resources.clientes.view');
-
-Route::any('/admin/clientes/{record}/edit', fn ($record) => redirect('/admin/cadastros'))
-    ->where('record', '.*')
-    ->name('filament.admin.resources.clientes.edit');
 
 // Rotas de autenticação do Google Calendar
 Route::middleware(['auth'])->group(function () {
@@ -344,16 +239,3 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/financeiro/grafico/categoria', [\App\Http\Controllers\RelatorioFinanceiroController::class, 'graficoPorCategoria'])
         ->name('financeiro.grafico.categoria');
 });
-
-// Public: Cadastros (list, view, edit, update, delete). Edit/update/delete protected by auth.
-Route::get('/cadastros', [CadastroController::class, 'index'])->name('cadastros.index');
-Route::get('/cadastros/lojas', [CadastroController::class, 'lojas'])->name('cadastros.lojas');
-Route::get('/cadastros/vendedores', [CadastroController::class, 'vendedores'])->name('cadastros.vendedores');
-Route::get('/cadastros/{uuid}', [CadastroController::class, 'show'])->name('cadastros.show');
-Route::get('/cadastros/{uuid}/edit', [CadastroController::class, 'edit'])->middleware('auth')->name('cadastros.edit');
-Route::put('/cadastros/{uuid}', [CadastroController::class, 'update'])->middleware('auth')->name('cadastros.update');
-Route::delete('/cadastros/{uuid}', [CadastroController::class, 'destroy'])->middleware('auth')->name('cadastros.destroy');
-Route::delete('/cadastros', [CadastroController::class, 'bulkDestroy'])->middleware('auth')->name('cadastros.bulk.destroy');
-Route::get('/cadastros/{uuid}/download', [CadastroController::class, 'downloadArquivos'])->middleware('auth')->name('cadastros.download');
-Route::get('/cadastros/{uuid}/arquivo', [CadastroController::class, 'downloadArquivo'])->middleware('auth')->name('cadastros.arquivo.download');
-Route::post('/cadastros/{uuid}/arquivo/delete', [CadastroController::class, 'destroyArquivo'])->middleware('auth')->name('cadastros.arquivo.delete');

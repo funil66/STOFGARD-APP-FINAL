@@ -52,7 +52,7 @@ class CreateCadastro extends CreateRecord
         }
 
         if ($model instanceof \App\Models\Parceiro) {
-            return \App\Filament\Resources\ParceiroResource::getUrl('view', ['record' => $model]);
+            return \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $model]);
         }
 
         return parent::getRedirectUrl();

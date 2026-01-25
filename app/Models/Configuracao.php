@@ -21,12 +21,18 @@ class Configuracao extends Model
         'pdf_header',
         'pdf_footer',
         'termos_garantia',
+        'status_orcamento_personalizado',
+        'formas_pagamento_personalizado',
+        'cores_pdf',
     ];
 
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'taxas_parcelamento' => 'array',
+        'status_orcamento_personalizado' => 'array',
+        'formas_pagamento_personalizado' => 'array',
+        'cores_pdf' => 'array',
     ];
 
     public function tabela_precos()
@@ -58,5 +64,29 @@ class Configuracao extends Model
     public function scopeChave($query, string $chave)
     {
         return $query->where('chave', $chave);
+    }
+
+    public static function getStatusOrcamentoOptions(): array
+    {
+        $config = self::first();
+        return $config && !empty($config->status_orcamento_personalizado)
+            ? $config->status_orcamento_personalizado
+            : [
+                'pendente' => 'Pendente',
+                'aprovado' => 'Aprovado',
+                'rejeitado' => 'Rejeitado',
+            ];
+    }
+
+    public static function getFormasPagamentoOptions(): array
+    {
+        $config = self::first();
+        return $config && !empty($config->formas_pagamento_personalizado)
+            ? $config->formas_pagamento_personalizado
+            : [
+                'pix' => 'Pix',
+                'credito' => 'Crédito',
+                'debito' => 'Débito',
+            ];
     }
 }

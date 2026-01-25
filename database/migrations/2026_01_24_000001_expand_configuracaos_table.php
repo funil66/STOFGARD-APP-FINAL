@@ -12,7 +12,7 @@ return new class extends Migration {
      */
     public function up()
     {
-        Schema::table('configuracaos', function (Blueprint $table) {
+        Schema::table('configuracoes', function (Blueprint $table) {
             $table->string('empresa_nome')->default('Stofgard');
             $table->string('empresa_cnpj')->nullable();
             $table->string('empresa_telefone')->nullable();

@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasArquivos;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\HasMedia;
 
-class Cliente extends Model
+class Cliente extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
-    use HasFactory, SoftDeletes, HasArquivos;
+    use HasFactory, SoftDeletes, HasArquivos, InteractsWithMedia, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'uuid',
@@ -29,14 +31,24 @@ class Cliente extends Model
         'observacoes',
         'arquivos',
         'registrado_por',
+        'chave_pix',
+        'comissao_percentual',
+        'dados_bancarios',
     ];
 
     protected $casts = [
         'arquivos' => 'array',
+        'comissao_percentual' => 'float',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('documentos_cadastro')
+            ->useDisk('public');
+    }
 
     /**
      * Check if a feature flag is enabled for this client.

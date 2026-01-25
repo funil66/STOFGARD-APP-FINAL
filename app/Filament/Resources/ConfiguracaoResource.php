@@ -35,18 +35,19 @@ class ConfiguracaoResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Tabs::make('Hub Configurações')
+                Forms\Components\Tabs::make('Configurações')
                     ->tabs([
-                        Forms\Components\Tabs\Tab::make('🏢 Institucional')
+                        Forms\Components\Tabs\Tab::make('🏢 Identidade Visual')
                             ->schema([
                                 Forms\Components\FileUpload::make('empresa_logo')
                                     ->image()->avatar()->directory('logos'),
                                 Forms\Components\TextInput::make('empresa_nome')->required(),
                                 Forms\Components\TextInput::make('empresa_cnpj')->mask('99.999.999/9999-99'),
-                                Forms\Components\TextInput::make('empresa_telefone')->mask('(99) 99999-9999'),
+                                Forms\Components\ColorPicker::make('cores_pdf.primaria')
+                                    ->label('Cor Principal do PDF'),
                             ])->columns(2),
 
-                        Forms\Components\Tabs\Tab::make('💰 Financeiro & Taxas')
+                        Forms\Components\Tabs\Tab::make('💰 Motor Financeiro')
                             ->schema([
                                 Forms\Components\TextInput::make('desconto_pix')
                                     ->label('Desconto Pix (%)')->numeric(),
@@ -55,9 +56,21 @@ class ConfiguracaoResource extends Resource
                                     ->keyLabel('Parcelas (ex: 2)')
                                     ->valueLabel('Coeficiente (ex: 1.0459)')
                                     ->helperText('Defina os multiplicadores para 2x até 6x.'),
+                                Forms\Components\KeyValue::make('formas_pagamento_personalizado')
+                                    ->label('Gerenciar Formas de Pagamento Aceitas')
+                                    ->keyLabel('Slug (ex: crypto)')
+                                    ->valueLabel('Nome (ex: Criptomoeda)'),
                             ]),
 
-                        Forms\Components\Tabs\Tab::make('📄 Documentos PDF')
+                        Forms\Components\Tabs\Tab::make('🔄 Workflow & Status')
+                            ->schema([
+                                Forms\Components\KeyValue::make('status_orcamento_personalizado')
+                                    ->label('Personalizar Status do Orçamento')
+                                    ->keyLabel('Slug (ex: aguardando_peca)')
+                                    ->valueLabel('Nome (ex: Aguardando Peça)'),
+                            ]),
+
+                        Forms\Components\Tabs\Tab::make('📄 Textos Legais')
                             ->schema([
                                 Forms\Components\RichEditor::make('pdf_header')->label('Cabeçalho'),
                                 Forms\Components\RichEditor::make('termos_garantia')->label('Termos de Garantia'),

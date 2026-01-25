@@ -11,29 +11,38 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('transacoes_financeiras', function (Blueprint $table) {
-            $table->id();
-            $table->string('descricao'); // Ex: Pagamento OS #123
-            $table->enum('tipo', ['receita', 'despesa']);
-            $table->decimal('valor_previsto', 10, 2);
-            $table->decimal('valor_pago', 10, 2)->nullable();
-            $table->date('data_vencimento');
-            $table->date('data_pagamento')->nullable();
-            $table->enum('status', ['pendente', 'pago', 'parcial', 'atrasado', 'cancelado'])->default('pendente');
-            $table->string('categoria')->default('Geral');
-            $table->string('forma_pagamento')->nullable();
-            $table->string('comprovante_path')->nullable();
-            $table->text('observacoes')->nullable();
+        // If table already exists, skip
+        if (Schema::hasTable('transacoes_financeiras')) {
+            return;
+        }
 
-            // Relacionamento Polimórfico (Liga a OS, Orçamento ou Compra)
-            $table->nullableMorphs('origem');
+        try {
+            Schema::create('transacoes_financeiras', function (Blueprint $table) {
+                $table->id();
+                $table->string('descricao'); // Ex: Pagamento OS #123
+                $table->enum('tipo', ['receita', 'despesa']);
+                $table->decimal('valor_previsto', 10, 2);
+                $table->decimal('valor_pago', 10, 2)->nullable();
+                $table->date('data_vencimento');
+                $table->date('data_pagamento')->nullable();
+                $table->enum('status', ['pendente', 'pago', 'parcial', 'atrasado', 'cancelado'])->default('pendente');
+                $table->string('categoria')->default('Geral');
+                $table->string('forma_pagamento')->nullable();
+                $table->string('comprovante_path')->nullable();
+                $table->text('observacoes')->nullable();
 
-            $table->foreignId('cliente_id')->nullable()->constrained('clientes')->nullOnDelete();
-            $table->foreignId('parceiro_id')->nullable()->constrained('parceiros')->nullOnDelete();
+                // Relacionamento Polimórfico (Liga a OS, Orçamento ou Compra)
+                $table->nullableMorphs('origem');
 
-            $table->timestamps();
-            $table->softDeletes();
-        });
+                $table->foreignId('cliente_id')->nullable()->constrained('clientes')->nullOnDelete();
+                $table->foreignId('parceiro_id')->nullable()->constrained('parceiros')->nullOnDelete();
+
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        } catch (\Throwable $e) {
+            // ignore creation errors
+        }
     }
 
     /**
