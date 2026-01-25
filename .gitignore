@@ -9,3 +9,6 @@
 .vscode/
 /chrome
 /chrome-bin
+
+# Ignore scripts containing credentials
+/scripts/
