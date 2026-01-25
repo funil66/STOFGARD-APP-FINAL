@@ -19,13 +19,11 @@ class ListCadastros extends ListRecords {
     public function getTabs(): array
     {
         return [
-            'clientes' => \Filament\Resources\Components\Tab::make('Meus Clientes')
-                ->modifyQueryUsing(fn ($query) => $query->where('tipo', 'cliente'))
-                ->icon('heroicon-m-user'),
+            'clientes' => \Filament\Resources\Components\Tab::make('Clientes')
+                ->modifyQueryUsing(fn ($query) => $query->where('tipo', 'cliente')),
             'parceiros' => \Filament\Resources\Components\Tab::make('Parceiros e Lojas')
-                ->modifyQueryUsing(fn ($query) => $query->whereIn('tipo', ['parceiro', 'loja', 'arquiteto']))
-                ->icon('heroicon-m-briefcase'),
-            'todos' => \Filament\Resources\Components\Tab::make('Todos'),
+                ->modifyQueryUsing(fn ($query) => $query->whereIn('tipo', ['parceiro', 'loja', 'arquiteto'])),
+            'todos' => \Filament\Resources\Components\Tab::make('Todos os Registros'),
         ];
     }
 }
