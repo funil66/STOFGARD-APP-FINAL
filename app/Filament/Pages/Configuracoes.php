@@ -45,6 +45,11 @@ class Configuracoes extends Page implements HasForms
             }
         }
 
+        // Auto-seed default services if not present
+        if (empty($settings['tabela_precos_padrao'])) {
+            $settings['tabela_precos_padrao'] = $this->getServicosPadrao();
+        }
+
         $this->form->fill($settings);
     }
 
@@ -62,11 +67,13 @@ class Configuracoes extends Page implements HasForms
                                     ->schema([
                                         TextInput::make('empresa_nome')->label('Razão Social')->required(),
                                         TextInput::make('empresa_cnpj')->label('CNPJ/CPF')->mask('99.999.999/9999-99'),
-                                        // Substituído FileUpload por TextInput para evitar crash de ícone
-                                        TextInput::make('empresa_logo_path')
-                                            ->label('Nome do Arquivo da Logo')
-                                            ->helperText('Ex: logo_stofgard.png (Deve estar na pasta public/images)')
-                                            ->default('logo_stofgard.png'),
+                                        FileUpload::make('empresa_logo')
+                                            ->label('Logo do Sistema')
+                                            ->image()
+                                            ->directory('logos')
+                                            ->preserveFilenames()
+                                            ->imageEditor()
+                                            ->columnSpanFull(),
                                         ColorPicker::make('cor_primaria')->label('Cor do Sistema')->default('#2563EB'),
                                     ])->columns(2),
                                 Section::make('Contato')
@@ -76,7 +83,38 @@ class Configuracoes extends Page implements HasForms
                                         Textarea::make('empresa_endereco')->label('Endereço')->rows(2)->columnSpanFull(),
                                     ])->columns(2),
                             ]),
-                        // 2. FINANCEIRO (Ícone Banknotes Seguro)
+                        // 2. CATÁLOGO DE SERVIÇOS (NOVO)
+                        Tabs\Tab::make('Catálogo de Serviços')
+                            ->icon('heroicon-m-tag')
+                            ->schema([
+                                Section::make('Tabela de Preços')
+                                    ->description('Gerencie todos os seus serviços e preços aqui. Eles aparecerão nos Orçamentos.')
+                                    ->schema([
+                                        Repeater::make('tabela_precos_padrao')
+                                            ->label('Lista de Serviços')
+                                            ->schema([
+                                                TextInput::make('nome')->label('Nome do Serviço')->required()->columnSpan(3),
+                                                Select::make('categoria')
+                                                    ->options([
+                                                        'Higienização' => 'Higienização',
+                                                        'Impermeabilização' => 'Impermeabilização',
+                                                        'Automotivo' => 'Automotivo',
+                                                        'Tapetes' => 'Tapetes',
+                                                    ])->required(),
+                                                TextInput::make('preco')
+                                                    ->label('Preço Venda (R$)')
+                                                    ->numeric()
+                                                    ->prefix('R$')
+                                                    ->required(),
+                                            ])
+                                            ->columns(5)
+                                            ->cloneable()
+                                            ->collapsible()
+                                            ->collapsed(true)
+                                            ->itemLabel(fn (array $state): ?string => $state['nome'] ?? null),
+                                    ]),
+                            ]),
+                        // 3. FINANCEIRO (Ícone Banknotes Seguro)
                         Tabs\Tab::make('Financeiro')
                             ->icon('heroicon-m-banknotes')
                             ->schema([
@@ -123,10 +161,14 @@ class Configuracoes extends Page implements HasForms
     public function save(): void
     {
         foreach ($this->form->getState() as $key => $value) {
-            Setting::set($key, $value);
+            if (is_array($value)) {
+                Setting::set($key, $value, 'geral', 'json');
+            } else {
+                Setting::set($key, $value);
+            }
         }
 
-        Notification::make()->title('Configurações Salvas')->success()->send();
+        Notification::make()->title('Configurações e Tabela de Preços Salvas!')->success()->send();
     }
 
     protected function getHeaderActions(): array
