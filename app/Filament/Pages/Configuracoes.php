@@ -185,5 +185,34 @@ class Configuracoes extends Page implements HasForms
                 })->requiresConfirmation(),
         ];
     }
+
+    // --- O SEED MANUAL PROTEGIDO - LISTA PADRÃO ---
+    protected function getServicosPadrao(): array
+    {
+        return [
+            ['nome' => 'Higienização Sofá Retrátil 2 Lugares', 'categoria' => 'Higienização', 'preco' => '180.00'],
+            ['nome' => 'Higienização Sofá Retrátil 3 Lugares', 'categoria' => 'Higienização', 'preco' => '220.00'],
+            ['nome' => 'Higienização Sofá Retrátil 4 Lugares', 'categoria' => 'Higienização', 'preco' => '280.00'],
+            ['nome' => 'Higienização Sofá de Canto (5 Lugares)', 'categoria' => 'Higienização', 'preco' => '300.00'],
+            ['nome' => 'Higienização Sofá de Canto (6 Lugares)', 'categoria' => 'Higienização', 'preco' => '350.00'],
+            ['nome' => 'Higienização Poltrona Simples', 'categoria' => 'Higienização', 'preco' => '90.00'],
+            ['nome' => 'Higienização Poltrona do Papai', 'categoria' => 'Higienização', 'preco' => '120.00'],
+            ['nome' => 'Higienização Cadeira de Jantar (Assento)', 'categoria' => 'Higienização', 'preco' => '35.00'],
+            ['nome' => 'Higienização Cadeira de Jantar (Completa)', 'categoria' => 'Higienização', 'preco' => '50.00'],
+            ['nome' => 'Higienização Puff', 'categoria' => 'Higienização', 'preco' => '40.00'],
+            ['nome' => 'Impermeabilização Sofá 2 Lugares', 'categoria' => 'Impermeabilização', 'preco' => '350.00'],
+            ['nome' => 'Impermeabilização Sofá 3 Lugares', 'categoria' => 'Impermeabilização', 'preco' => '450.00'],
+            ['nome' => 'Impermeabilização Sofá 4 Lugares', 'categoria' => 'Impermeabilização', 'preco' => '550.00'],
+            ['nome' => 'Impermeabilização Cadeira', 'categoria' => 'Impermeabilização', 'preco' => '60.00'],
+            ['nome' => 'Higienização Colchão Solteiro', 'categoria' => 'Higienização', 'preco' => '120.00'],
+            ['nome' => 'Higienização Colchão Casal', 'categoria' => 'Higienização', 'preco' => '160.00'],
+            ['nome' => 'Higienização Colchão Queen', 'categoria' => 'Higienização', 'preco' => '200.00'],
+            ['nome' => 'Higienização Colchão King', 'categoria' => 'Higienização', 'preco' => '250.00'],
+            ['nome' => 'Higienização Interna Carro P', 'categoria' => 'Automotivo', 'preco' => '250.00'],
+            ['nome' => 'Higienização Interna SUV', 'categoria' => 'Automotivo', 'preco' => '350.00'],
+            ['nome' => 'Lavagem Tapete Pelo Curto (m2)', 'categoria' => 'Tapetes', 'preco' => '25.00'],
+            ['nome' => 'Lavagem Tapete Pelo Longo (m2)', 'categoria' => 'Tapetes', 'preco' => '35.00'],
+        ];
+    }
 }
 
