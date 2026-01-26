@@ -1,4 +1,4 @@
-<x-filament::widget class="w-full col-span-full mb-6">
+<x-filament::widget class="w-full col-span-full">
     <div class="relative w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg text-white p-8 overflow-hidden">
         {{-- Gradiente de Fundo --}}
         <div class='absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-500'></div>
