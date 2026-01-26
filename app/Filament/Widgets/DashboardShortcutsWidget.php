@@ -16,56 +16,56 @@ class DashboardShortcutsWidget extends Widget
             [
                 'label' => 'Novo Cadastro',
                 'icon' => 'heroicon-o-user-plus',
-                'url' => '/admin/cadastros/create',
-                'color' => 'bg-blue-600',
+                'url' => route('filament.admin.resources.cadastros.create'),
+                'color' => '#2563EB', // Blue 600
             ],
             [
                 'label' => 'Novo Orçamento',
                 'icon' => 'heroicon-o-document-plus',
-                'url' => '/admin/orcamentos/create',
-                'color' => 'bg-green-600',
+                'url' => route('filament.admin.resources.orcamentos.create'),
+                'color' => '#16A34A', // Green 600
             ],
             [
                 'label' => 'Gestão Financeira',
                 'icon' => 'heroicon-o-banknotes',
                 'url' => '/admin/financeiros',
-                'color' => 'bg-emerald-600',
+                'color' => '#059669', // Emerald 600
             ],
             [
                 'label' => 'Meus Clientes',
                 'icon' => 'heroicon-o-users',
                 'url' => '/admin/cadastros?activeTab=clientes',
-                'color' => 'bg-indigo-600',
+                'color' => '#4F46E5', // Indigo 600
             ],
             [
                 'label' => 'Parceiros e Lojas',
                 'icon' => 'heroicon-o-briefcase',
                 'url' => '/admin/cadastros?activeTab=parceiros',
-                'color' => 'bg-purple-600',
+                'color' => '#9333EA', // Purple 600
             ],
             [
                 'label' => 'Orçamentos',
                 'icon' => 'heroicon-o-clipboard-document-list',
-                'url' => '/admin/orcamentos',
-                'color' => 'bg-orange-500',
+                'url' => route('filament.admin.resources.orcamentos.index'),
+                'color' => '#F97316', // Orange 500
             ],
             [
                 'label' => 'Ordens de Serviço',
                 'icon' => 'heroicon-o-wrench-screwdriver',
                 'url' => '/admin/ordens-servico',
-                'color' => 'bg-red-600',
+                'color' => '#DC2626', // Red 600
             ],
             [
                 'label' => 'Relatórios',
                 'icon' => 'heroicon-o-chart-bar',
-                'url' => '/admin',
-                'color' => 'bg-gray-600',
+                'url' => '/admin', 
+                'color' => '#4B5563', // Gray 600
             ],
             [
                 'label' => 'Configurações',
                 'icon' => 'heroicon-o-cog-6-tooth',
-                'url' => '/admin',
-                'color' => 'bg-slate-700',
+                'url' => '/admin', 
+                'color' => '#334155', // Slate 700
             ],
         ];
     }
