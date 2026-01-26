@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\TransacaoFinanceiraResource\Pages;
 use App\Filament\Resources\TransacaoFinanceiraResource\RelationManagers;
 use App\Models\TransacaoFinanceira;
-use App\Filament\Widgets\FinanceiroStats;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -77,7 +76,7 @@ class TransacaoFinanceiraResource extends Resource
     public static function getHeaderWidgets(): array
     {
         return [
-            FinanceiroStats::class,
+            // FinanceiroStats removed — header widgets intentionally empty
         ];
     }
 

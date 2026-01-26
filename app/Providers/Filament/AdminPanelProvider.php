@@ -49,7 +49,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
+                // No global widgets — keeping list empty to avoid default Filament widgets
             ])
             ->plugins([
                 FilamentFullCalendarPlugin::make(),
