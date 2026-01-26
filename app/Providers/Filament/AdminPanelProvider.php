@@ -47,8 +47,15 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 \Filament\Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([])
+            // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets') // COMENTADO PARA NÃO CARREGAR WIDGETS AUTOMÁTICOS
+            ->widgets([
+                // Widgets Padrão (Removidos para limpeza total)
+                // Widgets\\AccountWidget::class,
+                // Widgets\\FilamentInfoWidget::class,
+                // APENAS OS PERMITIDOS:
+                \App\Filament\Widgets\DashboardWeatherWidget::class,
+                \App\Filament\Widgets\DashboardShortcutsWidget::class,
+            ])
             ->plugins([
                 FilamentFullCalendarPlugin::make(),
             ])
