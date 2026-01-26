@@ -10,13 +10,10 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
-            // 1. Apenas o Widget do Tempo/Boas-vindas (usando o nome correto)
-            \App\Filament\Widgets\DashboardWeatherWidget::class,
+            // 1. Faixa Azul (Widget de Boas-vindas/Tempo)
+            \App\Filament\Widgets\WeatherWidget::class,
 
-            // 2. O Calendário (Se for um widget, inclua; se não, remova)
-            // \App\Filament\Widgets\CalendarioWidget::class,
-
-            // 3. Os 9 Botões de Acesso Rápido
+            // 2. Os 9 Botões de Acesso Rápido (abaixo)
             \App\Filament\Widgets\DashboardShortcutsWidget::class,
         ];
     }
