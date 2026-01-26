@@ -23,7 +23,7 @@ class ListCadastros extends ListRecords {
                 ->modifyQueryUsing(fn ($query) => $query->where('tipo', 'cliente'))
                 ->icon('heroicon-m-user'),
             'parceiros' => \Filament\Resources\Components\Tab::make('Parceiros e Lojas')
-                ->modifyQueryUsing(fn ($query) => $query->whereIn('tipo', ['parceiro', 'loja', 'arquiteto']))
+                ->modifyQueryUsing(fn ($query) => $query->whereIn('tipo', ['loja', 'vendedor', 'arquiteto']))
                 ->icon('heroicon-m-briefcase'),
             'todos' => \Filament\Resources\Components\Tab::make('Todos'),
         ];

@@ -36,7 +36,7 @@ class CadastroResource extends Resource {
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {
                                 'cliente' => 'info',
-                                'loja', 'parceiro', 'arquiteto' => 'purple',
+                                'loja', 'vendedor', 'arquiteto' => 'purple',
                                 default => 'gray',
                             })
                             ->formatStateUsing(fn (string $state): string => ucfirst($state)),
@@ -109,8 +109,8 @@ class CadastroResource extends Resource {
                         Forms\Components\Select::make('tipo')
                             ->options([
                                 'cliente' => 'Cliente Final',
-                                'parceiro' => 'Parceiro',
-                                'loja' => 'Loja Parceira',
+                                'loja' => 'Loja (Parceiro)',
+                                'vendedor' => 'Vendedor (Parceiro)',
                                 'arquiteto' => 'Arquiteto/Designer',
                             ])
                             ->default('cliente')
@@ -126,6 +126,7 @@ class CadastroResource extends Resource {
 
                         Forms\Components\Select::make('parent_id')
                             ->label('Loja Vinculada')
+                            ->helperText('Selecione a loja à qual este vendedor pertence.')
                             ->relationship('loja', 'nome', fn ($query) => $query->where('tipo', 'loja'))
                             ->searchable()
                             ->preload()
@@ -178,7 +179,7 @@ class CadastroResource extends Resource {
                             ->columnSpanFull(),
                     ])
                     ->columns(2)
-                    ->visible(fn (Forms\Get $get) => in_array($get('tipo'), ['loja', 'arquiteto', 'parceiro'])),
+                    ->visible(fn (Forms\Get $get) => in_array($get('tipo'), ['loja', 'arquiteto', 'vendedor'])) ,
 
                 // Adicionar Componente de Upload Spatie (Arquivos do Cadastro)
                 Forms\Components\Section::make('Documentos & Arquivos')
