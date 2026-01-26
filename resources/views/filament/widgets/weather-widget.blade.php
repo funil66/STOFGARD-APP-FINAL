@@ -1,9 +1,9 @@
-<x-filament::widget class='col-span-full'>
-    <div class='relative w-full overflow-hidden rounded-xl bg-blue-600 shadow-lg text-white p-6'>
+<x-filament::widget class="w-full col-span-full">
+    <div class="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg text-white p-6">
         {{-- Gradiente de Fundo --}}
         <div class='absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-500'></div>
         
-        <div class='relative z-10 flex flex-col md:flex-row items-center justify-between gap-6'>
+        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 w-full">
             <div class='text-center md:text-left'>
                 <h1 class='text-2xl font-bold'>
                     @php
