@@ -81,7 +81,7 @@ class Configuracoes extends Page implements HasForms
 
                         // 2. FINANCEIRO (PIX e Taxas)
                         Tabs\Tab::make('Engenharia Financeira')
-                            ->icon('heroicon-m-banknotes')
+                            ->icon('heroicon-m-currency-dollar')
                             ->schema([
                                 Section::make('Tesouraria Digital (PIX)')
                                     ->schema([
@@ -113,7 +113,7 @@ class Configuracoes extends Page implements HasForms
 
                         // 3. OPERACIONAL (Regras de Serviço)
                         Tabs\Tab::make('Regras Operacionais')
-                            ->icon('heroicon-m-cog')
+                            ->icon('heroicon-m-clipboard-document-check')
                             ->schema([
                                 Section::make('Parâmetros de Orçamento')
                                     ->schema([
@@ -136,7 +136,7 @@ class Configuracoes extends Page implements HasForms
 
                         // 4. JURÍDICO (Termos e Garantia)
                         Tabs\Tab::make('Jurídico & Garantia')
-                            ->icon('heroicon-m-document-text')
+                            ->icon('heroicon-m-shield-check')
                             ->schema([
                                 Section::make('Certificado de Garantia')
                                     ->schema([
