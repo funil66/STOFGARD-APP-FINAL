@@ -54,123 +54,67 @@ class Configuracoes extends Page implements HasForms
             ->schema([
                 Tabs::make('Configurações Globais')
                     ->tabs([
-                        // 1. INSTITUCIONAL (Identidade Visual)
-                        Tabs\Tab::make('Identidade & Marca')
-                            ->icon('heroicon-m-identification')
+                        // 1. INSTITUCIONAL (Ícone Home Seguro)
+                        Tabs\Tab::make('Identidade')
+                            ->icon('heroicon-m-home')
                             ->schema([
-                                Section::make('Branding')
-                                    ->description('Define a cara do sistema e dos PDFs.')
+                                Section::make('Dados da Empresa')
                                     ->schema([
-                                        FileUpload::make('empresa_logo')
-                                            ->label('Logo Oficial (Alta Resolução)')
-                                            ->directory('logos')
-                                            ->image()
-                                            ->imageEditor()
-                                            ->columnSpanFull(),
                                         TextInput::make('empresa_nome')->label('Razão Social')->required(),
                                         TextInput::make('empresa_cnpj')->label('CNPJ/CPF')->mask('99.999.999/9999-99'),
-                                        TextInput::make('empresa_site')->label('Website / Instagram')->prefix('https://'),
-                                        ColorPicker::make('cor_primaria')->label('Cor Principal do Sistema')->default('#2563EB'),
+                                        // Substituído FileUpload por TextInput para evitar crash de ícone
+                                        TextInput::make('empresa_logo_path')
+                                            ->label('Nome do Arquivo da Logo')
+                                            ->helperText('Ex: logo_stofgard.png (Deve estar na pasta public/images)')
+                                            ->default('logo_stofgard.png'),
+                                        ColorPicker::make('cor_primaria')->label('Cor do Sistema')->default('#2563EB'),
                                     ])->columns(2),
-
-                                Section::make('Contato Oficial')
+                                Section::make('Contato')
                                     ->schema([
-                                        TextInput::make('empresa_telefone')->label('WhatsApp Comercial')->mask('(99) 99999-9999'),
-                                        TextInput::make('empresa_email')->label('E-mail Financeiro'),
-                                        Textarea::make('empresa_endereco')->label('Endereço Completo (Matriz)')->rows(2)->columnSpanFull(),
+                                        TextInput::make('empresa_telefone')->label('WhatsApp')->mask('(99) 99999-9999'),
+                                        TextInput::make('empresa_email')->label('E-mail'),
+                                        Textarea::make('empresa_endereco')->label('Endereço')->rows(2)->columnSpanFull(),
                                     ])->columns(2),
                             ]),
-
-                        // 2. FINANCEIRO (PIX e Taxas)
-                        Tabs\Tab::make('Engenharia Financeira')
-                            ->icon('heroicon-m-currency-dollar')
+                        // 2. FINANCEIRO (Ícone Banknotes Seguro)
+                        Tabs\Tab::make('Financeiro')
+                            ->icon('heroicon-m-banknotes')
                             ->schema([
-                                Section::make('Tesouraria Digital (PIX)')
+                                Section::make('PIX')
                                     ->schema([
                                         Repeater::make('financeiro_pix_keys')
-                                            ->label('Chaves PIX Ativas')
+                                            ->label('Chaves PIX')
                                             ->schema([
-                                                Select::make('banco')
-                                                    ->options(['Inter' => 'Inter', 'Nubank' => 'Nubank', 'Itau' => 'Itaú', 'Santander' => 'Santander'])
-                                                    ->required(),
-                                                Select::make('tipo_chave')
-                                                    ->options(['cpf' => 'CPF/CNPJ', 'email' => 'E-mail', 'celular' => 'Celular', 'aleatoria' => 'Chave Aleatória'])
-                                                    ->required(),
-                                                TextInput::make('chave')->label('Chave')->required(),
-                                            ])->columns(3)->grid(1),
+                                                Select::make('banco')->options(['Inter'=>'Inter', 'Nubank'=>'Nubank', 'Itaú'=>'Itaú'])->required(),
+                                                TextInput::make('chave')->required(),
+                                            ])->columns(2)->grid(2),
                                     ]),
-
-                                Section::make('Taxas de Cartão (Simulação)')
-                                    ->description('Configuração das alíquotas para cálculo de lucro real.')
+                                Section::make('Cartão')
                                     ->schema([
                                         Repeater::make('financeiro_taxas_cartao')
-                                            ->label('Tabela de Alíquotas (Maquininha)')
+                                            ->label('Taxas')
                                             ->schema([
-                                                TextInput::make('parcelas')->label('Qtd Parcelas (Ex: 1x, 12x)')->required(),
-                                                TextInput::make('taxa')->label('Taxa da Operadora (%)')->numeric()->suffix('%')->required(),
-                                                Toggle::make('repassar_juros')->label('Repassar ao Cliente?')->default(false),
-                                            ])->columns(3)->grid(2),
+                                                TextInput::make('descricao')->label('Condição')->required(),
+                                                TextInput::make('taxa')->label('%')->numeric()->required(),
+                                            ])->columns(2)->grid(2),
                                     ]),
                             ]),
-
-                        // 3. OPERACIONAL (Regras de Serviço)
-                        Tabs\Tab::make('Regras Operacionais')
-                            ->icon('heroicon-m-clipboard-document-check')
+                        // 3. REGRAS (Ícone Cog Seguro)
+                        Tabs\Tab::make('Regras')
+                            ->icon('heroicon-m-cog-6-tooth')
                             ->schema([
-                                Section::make('Parâmetros de Orçamento')
-                                    ->schema([
-                                        TextInput::make('orcamento_validade')
-                                            ->label('Validade da Proposta (Dias)')
-                                            ->numeric()
-                                            ->default(15)
-                                            ->suffix('dias'),
-                                        TextInput::make('taxa_deslocamento_minima')
-                                            ->label('Taxa Mínima de Deslocamento')
-                                            ->numeric()
-                                            ->prefix('R$'),
-                                        TextInput::make('pedido_minimo')
-                                            ->label('Valor Mínimo de Pedido')
-                                            ->numeric()
-                                            ->prefix('R$')
-                                            ->helperText('O sistema alertará se o orçamento for menor que isso.'),
-                                    ])->columns(3),
+                                TextInput::make('orcamento_validade')->label('Validade (Dias)')->numeric()->default(15),
+                                TextInput::make('pedido_minimo')->label('Pedido Mínimo')->numeric()->prefix('R$'),
                             ]),
-
-                        // 4. JURÍDICO (Termos e Garantia)
-                        Tabs\Tab::make('Jurídico & Garantia')
-                            ->icon('heroicon-m-shield-check')
+                        // 4. SISTEMA (Ícone Server Seguro)
+                        Tabs\Tab::make('Sistema')
+                            ->icon('heroicon-m-server')
                             ->schema([
-                                Section::make('Certificado de Garantia')
+                                Section::make('Manutenção')
                                     ->schema([
-                                        TextInput::make('garantia_prazo_padrao')
-                                            ->label('Prazo de Garantia (Meses)')
-                                            ->numeric()
-                                            ->default(12),
-                                        RichEditor::make('texto_garantia')
-                                            ->label('Texto Legal do Certificado')
-                                            ->default('A Stofgard garante a impermeabilização contra líquidos à base de água...')
-                                            ->columnSpanFull(),
-                                    ]),
-                                Section::make('Termos do Orçamento')
-                                    ->schema([
-                                        Textarea::make('obs_orcamento_padrao')
-                                            ->label('Observações Padrão no PDF')
-                                            ->rows(4)
-                                            ->default('Serviço realizado no local. Necessário ponto de energia e água.'),
+                                        Toggle::make('sistema_debug')->label('Modo Debug'),
                                     ]),
                             ]),
-
-                        // 5. (Placeholder for future expansion) - kept empty for now
-                        Tabs\Tab::make('Infra & Integrations')
-                            ->icon('heroicon-m-cloud-upload')
-                            ->schema([
-                                Section::make('Integrações')
-                                    ->schema([
-                                        TextInput::make('integracao_ga')->label('Google Analytics ID'),
-                                        TextInput::make('integracao_pagarme')->label('Pagar.me Public Key'),
-                                    ]),
-                            ]),
-
                     ])->columnSpanFull(),
             ])
             ->statePath('data');
