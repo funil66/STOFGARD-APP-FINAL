@@ -115,6 +115,7 @@ class CadastroResource extends Resource {
                             ])
                             ->default('cliente')
                             ->live()
+                            ->afterStateUpdated(fn ($state, callable $set) => $state !== 'vendedor' ? $set('parent_id', null) : null)
                             ->required(),
                         Forms\Components\TextInput::make('nome')
                             ->label('Nome Completo / Razão Social')
