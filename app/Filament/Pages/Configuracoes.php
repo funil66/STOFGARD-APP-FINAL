@@ -17,7 +17,9 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Notifications\Notification;
+use Filament\Actions\Action;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Artisan;
 
 class Configuracoes extends Page implements HasForms
 {
@@ -177,14 +179,25 @@ class Configuracoes extends Page implements HasForms
     public function save(): void
     {
         foreach ($this->form->getState() as $key => $value) {
-            if (is_array($value)) {
-                Setting::set($key, $value, 'geral', 'json');
-            } else {
-                Setting::set($key, $value);
-            }
+            Setting::set($key, $value);
         }
 
-        Notification::make()->title('Sistema Atualizado com Sucesso')->success()->send();
+        Notification::make()->title('Configurações Salvas')->success()->send();
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('limpar_cache')
+                ->label('Limpar Cache e Otimizar')
+                ->color('danger')
+                ->icon('heroicon-m-arrow-path')
+                ->action(function() {
+                    Artisan::call('optimize:clear');
+                    Artisan::call('view:clear');
+                    Notification::make()->title('Sistema Otimizado!')->success()->send();
+                })->requiresConfirmation(),
+        ];
     }
 }
 
