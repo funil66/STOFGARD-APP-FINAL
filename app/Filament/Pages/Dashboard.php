@@ -4,7 +4,13 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
 
-class Dashboard extends BaseDashboard { // Sobrescreve a descoberta automática e define manualmente public function getWidgets(): array { return [ // 1. Apenas o Widget do Tempo/Boas-vindas (usando o nome correto)
+class Dashboard extends BaseDashboard
+{
+    // Sobrescreve a descoberta automática e define manualmente
+    public function getWidgets(): array
+    {
+        return [
+            // 1. Apenas o Widget do Tempo/Boas-vindas (usando o nome correto)
             \App\Filament\Widgets\DashboardWeatherWidget::class,
 
             // 2. O Calendário (Se for um widget, inclua; se não, remova)
