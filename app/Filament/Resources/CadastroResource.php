@@ -6,6 +6,8 @@ use App\Models\Cliente;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Illuminate\Support\Facades\Http;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -153,8 +155,20 @@ class CadastroResource extends Resource {
                     ->schema([
                         Forms\Components\TextInput::make('cep')
                             ->mask('99999-999')
-                            ->live(onBlur: true), 
-                            // Futuramente: Adicionar ViaCep aqui
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Set $set) {
+                                if (!$state) return;
+                                $cep = preg_replace('/[^0-9]/', '', $state);
+                                if (strlen($cep) !== 8) return;
+
+                                $response = Http::get("https://viacep.com.br/ws/{$cep}/json/")->json();
+                                if (!isset($response['erro'])) {
+                                    $set('endereco', $response['logradouro'] ?? '');
+                                    $set('bairro', $response['bairro'] ?? '');
+                                    $set('cidade', $response['localidade'] ?? '');
+                                    $set('estado', $response['uf'] ?? '');
+                                }
+                            }),
                         Forms\Components\TextInput::make('endereco')->label('Rua/Av'),
                         Forms\Components\TextInput::make('numero')->label('Nº'),
                         Forms\Components\TextInput::make('bairro'),

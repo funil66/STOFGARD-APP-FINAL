@@ -158,4 +158,28 @@ class Cliente extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Audi
     {
         return $this->belongsTo(\App\Models\Cliente::class, 'parent_id')->where('tipo', 'loja');
     }
+
+    /**
+     * Uma Loja tem muitos Vendedores
+     */
+    public function vendedores()
+    {
+        return $this->hasMany(\App\Models\Cliente::class, 'parent_id')->where('tipo', 'vendedor');
+    }
+
+    /**
+     * Escopo: Filtra apenas Parceiros (Lojas, Vendedores, Arquitetos)
+     */
+    public function scopeParceiros($query)
+    {
+        return $query->whereIn('tipo', ['loja', 'vendedor', 'arquiteto']);
+    }
+
+    /**
+     * Escopo: Filtra apenas Clientes Finais
+     */
+    public function scopeClientes($query)
+    {
+        return $query->where('tipo', 'cliente');
+    }
 }
