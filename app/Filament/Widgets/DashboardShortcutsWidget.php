@@ -12,9 +12,9 @@ class DashboardShortcutsWidget extends Widget {
     public function getShortcuts(): array
     {
         return [
-            ['label' => 'Busca Avançada', 'icon' => 'heroicon-o-magnifying-glass', 'url' => '/admin/busca', 'color' => '#0891B2'],
+            ['label' => 'Busca Avançada', 'icon' => 'heroicon-o-magnifying-glass', 'url' => '/admin/busca-avancada', 'color' => '#0891B2'],
             ['label' => 'Cadastro', 'icon' => 'heroicon-o-user-group', 'url' => '/admin/cadastros', 'color' => '#2563EB'],
-            ['label' => 'Ordem de Serviço', 'icon' => 'heroicon-o-wrench-screwdriver', 'url' => '/admin/ordens-servico', 'color' => '#DC2626'],
+            ['label' => 'Ordem de Serviço', 'icon' => 'heroicon-o-wrench-screwdriver', 'url' => '/admin/ordem-servicos', 'color' => '#DC2626'],
             ['label' => 'Orçamento', 'icon' => 'heroicon-o-document-plus', 'url' => '/admin/orcamentos', 'color' => '#16A34A'],
             ['label' => 'Agenda', 'icon' => 'heroicon-o-calendar', 'url' => '/admin/agenda', 'color' => '#F59E0B'],
             ['label' => 'Financeiro', 'icon' => 'heroicon-o-banknotes', 'url' => '/admin/financeiros', 'color' => '#059669'],

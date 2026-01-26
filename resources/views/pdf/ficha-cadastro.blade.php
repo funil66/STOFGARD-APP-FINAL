@@ -17,20 +17,29 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">STOFGARD</div>
-        <div class="title">FICHA CADASTRAL #{{ str_pad($record->id, 6, '0', STR_PAD_LEFT) }}</div>
+    <div class="header" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 20px 40px; display:flex; align-items:center; justify-content:space-between">
+        <div class="logo-container">
+            <img src="{{ public_path('images/logo_stofgard.png') }}" alt="STOFGARD" class="logo-img" style="max-height:70px" />
+        </div>
+        <div class="doc-title">
+            <div class="h1-title">FICHA CADASTRAL</div>
+            <div class="sub-title">#{{ str_pad($record->id, 6, '0', STR_PAD_LEFT) }}</div>
+        </div>
     </div>
 
     <div class="section-title">1. DADOS DE IDENTIFICAÇÃO</div>
     <div class="row">
-        <div class="col" style="width: 60%">
+        <div class="col" style="width: 60%;">
             <div class="label">Nome / Razão Social</div>
             <div class="value">{{ $record->nome }}</div>
         </div>
-        <div class="col">
-            <div class="label">Tipo</div>
-            <div class="value">{{ strtoupper($record->tipo) }}</div>
+        <div class="col" style="width: 40%;">
+            <div class="label">Tipo de Cadastro</div>
+            <div class="value">{{ strtoupper($record->tipo) }}
+                @if($record->tipo == 'vendedor' && $record->loja)
+                    <span style='font-size:10px; color:#64748b'> (Loja: {{ $record->loja->nome }})</span>
+                @endif
+            </div>
         </div>
     </div>
 
