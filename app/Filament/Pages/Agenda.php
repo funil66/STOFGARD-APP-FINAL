@@ -4,9 +4,9 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 
-class BuscaAvancada extends Page
+class Agenda extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
-    protected static string $view = 'filament.pages.busca-avancada';
+    protected static string $view = 'filament.pages.agenda';
 }

@@ -104,7 +104,7 @@ class OrcamentoResource extends Resource
                                 ->dehydrated(),
                         ])
                         ->columns(5)
-                        ->live();
+                        ->live()
                 ]),
             // GRUPO 4: FECHAMENTO
             Forms\Components\Section::make('Total')
