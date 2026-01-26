@@ -150,4 +150,12 @@ class Cliente extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Audi
     {
         return $this->hasMany(\App\Models\OrdemServico::class, 'cliente_id');
     }
+
+    /**
+     * Relacionamento para vincular um vendedor a sua loja (parent)
+     */
+    public function loja()
+    {
+        return $this->belongsTo(\App\Models\Cliente::class, 'parent_id')->where('tipo', 'loja');
+    }
 }

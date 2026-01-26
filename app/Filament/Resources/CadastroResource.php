@@ -5,6 +5,7 @@ use App\Filament\Resources\CadastroResource\Pages;
 use App\Models\Cliente;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -122,6 +123,14 @@ class CadastroResource extends Resource {
                         Forms\Components\TextInput::make('cpf_cnpj')
                             ->label('CPF / CNPJ')
                             ->maxLength(18),
+
+                        Forms\Components\Select::make('parent_id')
+                            ->label('Loja Vinculada')
+                            ->relationship('loja', 'nome', fn ($query) => $query->where('tipo', 'loja'))
+                            ->searchable()
+                            ->preload()
+                            ->required(fn (Get $get) => $get('tipo') === 'vendedor')
+                            ->visible(fn (Get $get) => $get('tipo') === 'vendedor'),
                     ])->columns(3),
                 Forms\Components\Section::make('Contato')
                     ->schema([
