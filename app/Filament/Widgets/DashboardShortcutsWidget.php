@@ -19,7 +19,7 @@ class DashboardShortcutsWidget extends Widget {
             ['label' => 'Agenda', 'icon' => 'heroicon-o-calendar', 'url' => '/admin/agenda', 'color' => '#F59E0B'],
             ['label' => 'Financeiro', 'icon' => 'heroicon-o-banknotes', 'url' => '/admin/financeiros', 'color' => '#059669'],
             ['label' => 'Almoxarifado', 'icon' => 'heroicon-o-cube', 'url' => '/admin/produtos', 'color' => '#EA580C'],
-            ['label' => 'Configurações', 'icon' => 'heroicon-o-cog-6-tooth', 'url' => '/admin', 'color' => '#475569'],
+            ['label' => 'Configurações', 'icon' => 'heroicon-o-cog-6-tooth', 'url' => '/admin/configuracoes', 'color' => '#475569'],
         ];
     }
 }

@@ -69,29 +69,42 @@ class OrcamentoResource extends Resource
                     Forms\Components\Repeater::make('itens')
                         ->relationship('itens')
                         ->schema([
-                            Forms\Components\Select::make('tipo_servico')
-                                ->options(['higienizacao'=>'Higienização', 'impermeabilizacao'=>'Impermeabilização'])
-                                ->default('higienizacao')
-                                ->required(),
-                            Forms\Components\TextInput::make('item')
-                                ->required(),
+                            Forms\Components\Select::make('produto_id')
+                                ->label('Item / Serviço')
+                                ->options(\App\Models\Produto::all()->pluck('nome','id'))
+                                ->searchable()
+                                ->required()
+                                ->reactive()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    $produto = \App\Models\Produto::find($state);
+                                    if ($produto) {
+                                        $set('valor_unitario', $produto->preco_venda);
+                                    }
+                                })
+                                ->columnSpan(2),
+
                             Forms\Components\TextInput::make('quantidade')
                                 ->numeric()
                                 ->default(1)
                                 ->required()
-                                ->live(onBlur: true)
-                                ->afterStateUpdated(function (Get $get, Set $set) {
-                                    self::updateTotals($get, $set);
-                                }),
+                                ->reactive()
+                                ->afterStateUpdated(fn ($state, callable $set, $get) => $set('subtotal', $state * $get('valor_unitario'))),
+                                
                             Forms\Components\TextInput::make('valor_unitario')
                                 ->numeric()
+                                ->prefix('R$')
                                 ->required()
-                                ->live(onBlur: true)
-                                ->afterStateUpdated(function (Get $get, Set $set) {
-                                    self::updateTotals($get, $set);
-                                }),
+                                ->reactive()
+                                ->afterStateUpdated(fn ($state, callable $set, $get) => $set('subtotal', $state * $get('quantidade'))),
+                                
+                            Forms\Components\TextInput::make('subtotal')
+                                ->numeric()
+                                ->prefix('R$')
+                                ->disabled()
+                                ->dehydrated(),
                         ])
-                        ->columns(4)
+                        ->columns(5)
+                        ->live();
                 ]),
             // GRUPO 4: FECHAMENTO
             Forms\Components\Section::make('Total')
