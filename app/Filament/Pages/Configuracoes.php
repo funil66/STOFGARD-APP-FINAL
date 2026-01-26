@@ -22,14 +22,24 @@ class Configuracoes extends Page implements HasForms
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
     protected static string $view = 'filament.pages.configuracoes';
-    protected static ?string $title = 'Configurações do Sistema';
+    protected static ?string $title = 'Central de Comando Stofgard';
     protected static ?string $slug = 'configuracoes';
 
     public ?array $data = [];
 
     public function mount(): void
     {
-        $settings = Setting::all()->pluck('value','key')->toArray();
+        $settings = [];
+        foreach (Setting::all() as $s) {
+            $val = $s->value;
+            if (is_string($val) && (str_starts_with($val, '{') || str_starts_with($val, '['))) {
+                $decoded = json_decode($val, true);
+                $settings[$s->key] = $decoded !== null ? $decoded : $val;
+            } else {
+                $settings[$s->key] = $val;
+            }
+        }
+
         $this->form->fill($settings);
     }
 
@@ -39,64 +49,49 @@ class Configuracoes extends Page implements HasForms
             ->schema([
                 Tabs::make('Configurações')
                     ->tabs([
-                        Tabs\Tab::make('Institucional')
-                            ->icon('heroicon-m-building-office')
-                            ->schema([
-                                Section::make('Dados da Empresa')
-                                    ->description('Informações usadas em cabeçalhos e rodapés.')
-                                    ->schema([
-                                        TextInput::make('empresa_nome')->label('Razão Social / Nome')->required(),
-                                        TextInput::make('empresa_cnpj')->label('CNPJ / CPF'),
-                                        TextInput::make('empresa_telefone')->label('Telefone de Contato'),
-                                        TextInput::make('empresa_email')->label('E-mail Principal'),
-                                        Textarea::make('empresa_endereco')->label('Endereço Completo')->rows(2),
-                                    ])->columns(2),
-                            ]),
-
-                        Tabs\Tab::make('Personalização & PDF')
+                        // ABA 1: IDENTIDADE VISUAL
+                        Tabs\Tab::make('Identidade Visual')
                             ->icon('heroicon-m-paint-brush')
                             ->schema([
-                                Section::make('Identidade Visual')
+                                Section::make('Marca e Documentos')
                                     ->schema([
                                         FileUpload::make('empresa_logo')
-                                            ->label('Logo do Sistema (PDF)')
+                                            ->label('Logo Oficial (PDF e Sistema)')
                                             ->directory('logos')
                                             ->image()
-                                            ->imageEditor(),
-                                        ColorPicker::make('cor_primaria')
-                                            ->label('Cor Principal dos Documentos')
-                                            ->default('#2563EB'),
+                                            ->preserveFilenames(),
+                                        TextInput::make('empresa_nome')
+                                            ->label('Nome Fantasia')
+                                            ->default('Stofgard Higienização'),
                                     ])->columns(2),
-
-                                Section::make('Textos Padrão')
-                                    ->schema([
-                                        Textarea::make('pdf_obs_padrao')
-                                            ->label('Observações Padrão (Orçamentos)')
-                                            ->helperText('Texto que aparece automaticamente no rodapé dos orçamentos.')
-                                            ->rows(3),
-                                    ]),
                             ]),
 
-                        Tabs\Tab::make('Parâmetros Financeiros')
-                            ->icon('heroicon-m-banknotes')
+                        // ABA 2: FINANCEIRO AVANÇADO
+                        Tabs\Tab::make('Financeiro & Taxas')
+                            ->icon('heroicon-m-currency-dollar')
                             ->schema([
-                                TextInput::make('financeiro_validade_orcamento')
-                                    ->label('Validade do Orçamento (Dias)')
-                                    ->numeric()
-                                    ->default(15),
-                                TextInput::make('financeiro_chave_pix')
-                                    ->label('Chave PIX Padrão'),
-                            ])->columns(2),
-
-                        Tabs\Tab::make('Sistema & Segurança')
-                            ->icon('heroicon-m-shield-check')
-                            ->schema([
-                                Section::make('Manutenção')
+                                Section::make('Recebimentos PIX')
                                     ->schema([
-                                        TextInput::make('sistema_versao')
-                                            ->label('Versão do Sistema')
-                                            ->disabled()
-                                            ->default('Stofgard v2.0 Iron'),
+                                        \Filament\Forms\Components\Repeater::make('financeiro_pix_keys')
+                                            ->label('Chaves PIX Disponíveis')
+                                            ->schema([
+                                                TextInput::make('tipo')->label('Tipo (CPF/CNPJ/Email)')->required(),
+                                                TextInput::make('chave')->label('Chave PIX')->required(),
+                                            ])->columns(2),
+                                    ]),
+                                Section::make('Máquina de Cartão')
+                                    ->description('Configure as taxas para cálculo automático de repasse.')
+                                    ->schema([
+                                        \Filament\Forms\Components\Repeater::make('financeiro_taxas_cartao')
+                                            ->label('Tabela de Alíquotas')
+                                            ->schema([
+                                                TextInput::make('descricao')->label('Condição (Ex: 1x Crédito, 12x)')->required(),
+                                                TextInput::make('taxa_percentual')
+                                                    ->label('Taxa (%)')
+                                                    ->numeric()
+                                                    ->suffix('%')
+                                                    ->required(),
+                                            ])->columns(2)->grid(2),
                                     ]),
                             ]),
                     ])->columnSpanFull(),
@@ -108,11 +103,15 @@ class Configuracoes extends Page implements HasForms
     {
         $state = $this->form->getState();
         foreach ($state as $key => $value) {
-            Setting::set($key, $value);
+            if (is_array($value)) {
+                Setting::set($key, $value, 'geral', 'json');
+            } else {
+                Setting::set($key, $value);
+            }
         }
 
         Notification::make()
-            ->title('Configurações salvas com sucesso!')
+            ->title('Parâmetros Atualizados')
             ->success()
             ->send();
     }
