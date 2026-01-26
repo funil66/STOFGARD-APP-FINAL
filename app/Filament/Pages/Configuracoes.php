@@ -9,10 +9,13 @@ use Filament\Forms\Form;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
-use Filament\Actions\Action;
+use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Notifications\Notification;
 use App\Models\Setting;
 
@@ -47,53 +50,125 @@ class Configuracoes extends Page implements HasForms
     {
         return $form
             ->schema([
-                Tabs::make('Configurações')
+                Tabs::make('Configurações Globais')
                     ->tabs([
-                        // ABA 1: IDENTIDADE VISUAL
-                        Tabs\Tab::make('Identidade Visual')
-                            ->icon('heroicon-m-paint-brush')
+                        // 1. INSTITUCIONAL (Identidade Visual)
+                        Tabs\Tab::make('Identidade & Marca')
+                            ->icon('heroicon-m-finger-print')
                             ->schema([
-                                Section::make('Marca e Documentos')
+                                Section::make('Branding')
+                                    ->description('Define a cara do sistema e dos PDFs.')
                                     ->schema([
                                         FileUpload::make('empresa_logo')
-                                            ->label('Logo Oficial (PDF e Sistema)')
+                                            ->label('Logo Oficial (Alta Resolução)')
                                             ->directory('logos')
                                             ->image()
-                                            ->preserveFilenames(),
-                                        TextInput::make('empresa_nome')
-                                            ->label('Nome Fantasia')
-                                            ->default('Stofgard Higienização'),
+                                            ->imageEditor()
+                                            ->columnSpanFull(),
+                                        TextInput::make('empresa_nome')->label('Razão Social')->required(),
+                                        TextInput::make('empresa_cnpj')->label('CNPJ/CPF')->mask('99.999.999/9999-99'),
+                                        TextInput::make('empresa_site')->label('Website / Instagram')->prefix('https://'),
+                                        ColorPicker::make('cor_primaria')->label('Cor Principal do Sistema')->default('#2563EB'),
+                                    ])->columns(2),
+
+                                Section::make('Contato Oficial')
+                                    ->schema([
+                                        TextInput::make('empresa_telefone')->label('WhatsApp Comercial')->mask('(99) 99999-9999'),
+                                        TextInput::make('empresa_email')->label('E-mail Financeiro'),
+                                        Textarea::make('empresa_endereco')->label('Endereço Completo (Matriz)')->rows(2)->columnSpanFull(),
                                     ])->columns(2),
                             ]),
 
-                        // ABA 2: FINANCEIRO AVANÇADO
-                        Tabs\Tab::make('Financeiro & Taxas')
-                            ->icon('heroicon-m-currency-dollar')
+                        // 2. FINANCEIRO (PIX e Taxas)
+                        Tabs\Tab::make('Engenharia Financeira')
+                            ->icon('heroicon-m-calculator')
                             ->schema([
-                                Section::make('Recebimentos PIX')
+                                Section::make('Tesouraria Digital (PIX)')
                                     ->schema([
-                                        \Filament\Forms\Components\Repeater::make('financeiro_pix_keys')
-                                            ->label('Chaves PIX Disponíveis')
+                                        Repeater::make('financeiro_pix_keys')
+                                            ->label('Chaves PIX Ativas')
                                             ->schema([
-                                                TextInput::make('tipo')->label('Tipo (CPF/CNPJ/Email)')->required(),
-                                                TextInput::make('chave')->label('Chave PIX')->required(),
-                                            ])->columns(2),
-                                    ]),
-                                Section::make('Máquina de Cartão')
-                                    ->description('Configure as taxas para cálculo automático de repasse.')
-                                    ->schema([
-                                        \Filament\Forms\Components\Repeater::make('financeiro_taxas_cartao')
-                                            ->label('Tabela de Alíquotas')
-                                            ->schema([
-                                                TextInput::make('descricao')->label('Condição (Ex: 1x Crédito, 12x)')->required(),
-                                                TextInput::make('taxa_percentual')
-                                                    ->label('Taxa (%)')
-                                                    ->numeric()
-                                                    ->suffix('%')
+                                                Select::make('banco')
+                                                    ->options(['Inter' => 'Inter', 'Nubank' => 'Nubank', 'Itau' => 'Itaú', 'Santander' => 'Santander'])
                                                     ->required(),
-                                            ])->columns(2)->grid(2),
+                                                Select::make('tipo_chave')
+                                                    ->options(['cpf' => 'CPF/CNPJ', 'email' => 'E-mail', 'celular' => 'Celular', 'aleatoria' => 'Chave Aleatória'])
+                                                    ->required(),
+                                                TextInput::make('chave')->label('Chave')->required(),
+                                            ])->columns(3)->grid(1),
+                                    ]),
+
+                                Section::make('Taxas de Cartão (Simulação)')
+                                    ->description('Configuração das alíquotas para cálculo de lucro real.')
+                                    ->schema([
+                                        Repeater::make('financeiro_taxas_cartao')
+                                            ->label('Tabela de Alíquotas (Maquininha)')
+                                            ->schema([
+                                                TextInput::make('parcelas')->label('Qtd Parcelas (Ex: 1x, 12x)')->required(),
+                                                TextInput::make('taxa')->label('Taxa da Operadora (%)')->numeric()->suffix('%')->required(),
+                                                Toggle::make('repassar_juros')->label('Repassar ao Cliente?')->default(false),
+                                            ])->columns(3)->grid(2),
                                     ]),
                             ]),
+
+                        // 3. OPERACIONAL (Regras de Serviço)
+                        Tabs\Tab::make('Regras Operacionais')
+                            ->icon('heroicon-m-wrench-screwdriver')
+                            ->schema([
+                                Section::make('Parâmetros de Orçamento')
+                                    ->schema([
+                                        TextInput::make('orcamento_validade')
+                                            ->label('Validade da Proposta (Dias)')
+                                            ->numeric()
+                                            ->default(15)
+                                            ->suffix('dias'),
+                                        TextInput::make('taxa_deslocamento_minima')
+                                            ->label('Taxa Mínima de Deslocamento')
+                                            ->numeric()
+                                            ->prefix('R$'),
+                                        TextInput::make('pedido_minimo')
+                                            ->label('Valor Mínimo de Pedido')
+                                            ->numeric()
+                                            ->prefix('R$')
+                                            ->helperText('O sistema alertará se o orçamento for menor que isso.'),
+                                    ])->columns(3),
+                            ]),
+
+                        // 4. JURÍDICO (Termos e Garantia)
+                        Tabs\Tab::make('Jurídico & Garantia')
+                            ->icon('heroicon-m-scale')
+                            ->schema([
+                                Section::make('Certificado de Garantia')
+                                    ->schema([
+                                        TextInput::make('garantia_prazo_padrao')
+                                            ->label('Prazo de Garantia (Meses)')
+                                            ->numeric()
+                                            ->default(12),
+                                        RichEditor::make('texto_garantia')
+                                            ->label('Texto Legal do Certificado')
+                                            ->default('A Stofgard garante a impermeabilização contra líquidos à base de água...')
+                                            ->columnSpanFull(),
+                                    ]),
+                                Section::make('Termos do Orçamento')
+                                    ->schema([
+                                        Textarea::make('obs_orcamento_padrao')
+                                            ->label('Observações Padrão no PDF')
+                                            ->rows(4)
+                                            ->default('Serviço realizado no local. Necessário ponto de energia e água.'),
+                                    ]),
+                            ]),
+
+                        // 5. (Placeholder for future expansion) - kept empty for now
+                        Tabs\Tab::make('Infra & Integrations')
+                            ->icon('heroicon-m-cloud-upload')
+                            ->schema([
+                                Section::make('Integrações')
+                                    ->schema([
+                                        TextInput::make('integracao_ga')->label('Google Analytics ID'),
+                                        TextInput::make('integracao_pagarme')->label('Pagar.me Public Key'),
+                                    ]),
+                            ]),
+
                     ])->columnSpanFull(),
             ])
             ->statePath('data');
@@ -101,8 +176,7 @@ class Configuracoes extends Page implements HasForms
 
     public function save(): void
     {
-        $state = $this->form->getState();
-        foreach ($state as $key => $value) {
+        foreach ($this->form->getState() as $key => $value) {
             if (is_array($value)) {
                 Setting::set($key, $value, 'geral', 'json');
             } else {
@@ -110,29 +184,7 @@ class Configuracoes extends Page implements HasForms
             }
         }
 
-        Notification::make()
-            ->title('Parâmetros Atualizados')
-            ->success()
-            ->send();
-    }
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            Action::make('save')
-                ->label('Salvar Alterações')
-                ->action('save')
-                ->color('primary'),
-
-            Action::make('limpar_cache')
-                ->label('Limpar Cache')
-                ->color('danger')
-                ->action(function() {
-                    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
-                    Notification::make()->title('Cache do Sistema Limpo!')->success()->send();
-                })
-                ->requiresConfirmation(),
-        ];
+        Notification::make()->title('Sistema Atualizado com Sucesso')->success()->send();
     }
 }
 
