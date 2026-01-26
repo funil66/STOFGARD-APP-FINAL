@@ -54,7 +54,7 @@ class Configuracoes extends Page implements HasForms
                     ->tabs([
                         // 1. INSTITUCIONAL (Identidade Visual)
                         Tabs\Tab::make('Identidade & Marca')
-                            ->icon('heroicon-m-finger-print')
+                            ->icon('heroicon-m-identification')
                             ->schema([
                                 Section::make('Branding')
                                     ->description('Define a cara do sistema e dos PDFs.')
@@ -81,7 +81,7 @@ class Configuracoes extends Page implements HasForms
 
                         // 2. FINANCEIRO (PIX e Taxas)
                         Tabs\Tab::make('Engenharia Financeira')
-                            ->icon('heroicon-m-calculator')
+                            ->icon('heroicon-m-banknotes')
                             ->schema([
                                 Section::make('Tesouraria Digital (PIX)')
                                     ->schema([
@@ -113,7 +113,7 @@ class Configuracoes extends Page implements HasForms
 
                         // 3. OPERACIONAL (Regras de Serviço)
                         Tabs\Tab::make('Regras Operacionais')
-                            ->icon('heroicon-m-wrench-screwdriver')
+                            ->icon('heroicon-m-cog')
                             ->schema([
                                 Section::make('Parâmetros de Orçamento')
                                     ->schema([
@@ -136,7 +136,7 @@ class Configuracoes extends Page implements HasForms
 
                         // 4. JURÍDICO (Termos e Garantia)
                         Tabs\Tab::make('Jurídico & Garantia')
-                            ->icon('heroicon-m-scale')
+                            ->icon('heroicon-m-document-text')
                             ->schema([
                                 Section::make('Certificado de Garantia')
                                     ->schema([
