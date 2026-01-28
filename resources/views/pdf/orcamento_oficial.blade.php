@@ -241,25 +241,48 @@
     // --- GERAÇÃO DO QR CODE ---
     $qrCodeImg = null;
     $beneficiario = substr($config['empresa_nome'] ?? 'Stofgard', 0, 25);
+
+    // 3. TRATAMENTO CRÍTICO DE TELEFONE (+55)
+    // Se a chave for apenas números e tiver 10 ou 11 dígitos, é telefone.
+    // O PIX exige +55. Vamos forçar isso aqui para garantir o QR Code válido.
+    if (!empty($pixKey)) {
+        $onlyNums = preg_replace('/[^0-9]/', '', $pixKey);
+        $isPhone = (strlen($onlyNums) == 10 || strlen($onlyNums) == 11);
+        $hasCountryCode = str_starts_with($pixKey, '+55');
+
+        // Se for email (tem @) ou aleatória (tem -), não mexe.
+        // Se for telefone sem +55, adiciona.
+        if ($isPhone && !$hasCountryCode && strpos($pixKey, '@') === false && strpos($pixKey, '-') === false) {
+            $pixKeyForPayload = '+55' . $onlyNums;
+        } else {
+            $pixKeyForPayload = $pixKey;
+        }
+    } else {
+        $pixKeyForPayload = null;
+    }
     
     // Só mostra se o toggle estiver ON E se existir uma chave válida
     $shouldShowPix = ($orcamento->pdf_incluir_pix ?? true) && !empty($pixKey);
 
     if ($shouldShowPix && class_exists('App\Services\PixPayload')) {
-        $cidade = 'Ribeirao Preto';
-        // Gera payload usando a chave $pixKey DEFINITIVA
-        $payload = \App\Services\PixPayload::gerar((string)$pixKey, $beneficiario, $cidade, $orcamento->numero, $totalAvista);
-        
-        $apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=0&data=' . urlencode($payload);
-        
-        try {
-            $context = stream_context_create(['http' => ['timeout' => 4]]);
-            $imageData = @file_get_contents($apiUrl, false, $context);
-            if ($imageData) {
-                $qrCodeImg = 'data:image/png;base64,' . base64_encode($imageData);
+            // Usa a chave tratada ($pixKeyForPayload) para o código
+            $payload = \App\Services\PixPayload::gerar($pixKeyForPayload, $beneficiario, 'Ribeirao Preto', $orcamento->numero, $totalAvista);
+            
+            // Gera imagem LOCALMENTE (SVG/PNG)
+            try {
+                // Tenta usar a biblioteca local
+                if (class_exists('\\SimpleSoftwareIO\\QrCode\\Facades\\QrCode')) {
+                    $qrCodeImg = 'data:image/png;base64,' . base64_encode(
+                        \\SimpleSoftwareIO\\QrCode\\Facades\\QrCode::format('png')
+                            ->size(200)
+                            ->margin(0)
+                            ->generate($payload)
+                    );
+                }
+            } catch (\Exception $e) {
+                // Se falhar local, não quebra o PDF, apenas não exibe
             }
-        } catch (\Exception $e) {}
-    }
+        }
     
     $emissao = \Carbon\Carbon::parse($orcamento->created_at)->setTimezone('America/Sao_Paulo');
     $validade = \Carbon\Carbon::parse($orcamento->data_validade);
