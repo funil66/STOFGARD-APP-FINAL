@@ -14,7 +14,7 @@ class OrcamentoPdfController extends Controller
 {
     public function gerarPdf(Orcamento $orcamento)
     {
-        // 1. Carrega dados e relacionamentos
+        // 1. Carrega dados
         $orcamento->load(['cliente', 'itens', 'vendedor', 'loja']);
 
         // 2. Prepara configurações
@@ -36,51 +36,47 @@ class OrcamentoPdfController extends Controller
             'config' => $config,
         ])->render();
 
-        // 4. Salva HTML Temporário
+        // 4. Salva HTML Temporário para o Node ler
         $tempId = $orcamento->id . '_' . time();
         $htmlPath = storage_path("app/public/temp_orc_{$tempId}.html");
         $pdfPath = storage_path("app/public/temp_orc_{$tempId}.pdf");
 
-        // Garante que a pasta existe
+        // Garante pasta
         if (!File::exists(dirname($htmlPath))) {
             File::makeDirectory(dirname($htmlPath), 0755, true);
         }
 
         file_put_contents($htmlPath, $html);
 
-        // 5. Executa o Script Puppeteer (Node.js)
+        // 5. Define caminho do script Puppeteer
         $scriptPath = base_path('scripts/generate-pdf.js');
         
         if (!file_exists($scriptPath)) {
-            // Fallback de emergência ou erro fatal
-            abort(500, "Script Puppeteer não encontrado: $scriptPath");
+            abort(500, "Script Puppeteer não encontrado em: $scriptPath");
         }
 
-        // Executa: node scripts/generate-pdf.js input.html output.pdf
+        // 6. Executa: node scripts/generate-pdf.js input.html output.pdf
+        // Isso remove o DomPDF da jogada completamente
         $result = Process::run(['node', $scriptPath, $htmlPath, $pdfPath]);
 
-        // 6. Verifica Erros
+        // 7. Tratamento de Erro
         if ($result->failed()) {
             Log::error("Erro Puppeteer: " . $result->errorOutput());
             Log::error("Output Puppeteer: " . $result->output());
             
-            // Se falhar, tenta limpar e retorna erro na tela
             @unlink($htmlPath);
             return response()->json([
                 'message' => 'Erro ao gerar PDF com Puppeteer.',
-                'error' => $result->errorOutput(),
-                'details' => 'Verifique se o node e puppeteer estão instalados no container.'
+                'error' => $result->errorOutput()
             ], 500);
         }
 
-        // 7. Retorna o PDF gerado
+        // 8. Entrega o PDF
         if (file_exists($pdfPath)) {
-            // Remove o HTML temporário para não acumular lixo
-            @unlink($htmlPath);
-            
+            @unlink($htmlPath); // Limpa HTML
             return response()->file($pdfPath)->deleteFileAfterSend();
         } else {
-            return response()->json(['error' => 'Arquivo PDF não foi criado pelo script.'], 500);
+            return response()->json(['error' => 'Arquivo PDF não foi criado.'], 500);
         }
     }
 }
