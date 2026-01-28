@@ -21,6 +21,9 @@ class FinanceiroResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
 
+    // Não registrar no menu de navegação (oculto)
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?string $navigationLabel = 'Financeiro';
 
     protected static ?string $modelLabel = 'Registro Financeiro';
