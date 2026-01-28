@@ -77,27 +77,34 @@
 @endphp
 
 <div class="footer">
-    <span style="color:#f97316; font-weight:bold;">Validade: Orçamento e QR Code válidos por 7 dias.</span><br>
-    Este documento não representa um contrato firmado.<br>
-    <span style="color:#cbd5e1;">Documento gerado em {{ now()->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') }}</span>
+    Orçamento válido até <strong style="color:#f97316">{{ $validade->format('d/m/Y') }}</strong>. Este documento não representa vínculo contratual.
 </div>
 
-<table class="header-table">
-    <tr>
-        <td class="logo-cell">
-            @php $logoPath = public_path('storage/' . ($config['empresa_logo'] ?? 'logos/default.png')); @endphp
-            @if(file_exists($logoPath)) <img src="{{ $logoPath }}" class="logo-img"> @endif
-            <div class="company-info">CNPJ: {{ $config['empresa_cnpj'] ?? '' }}<br>{{ $config['empresa_telefone'] ?? '' }}<br>{{ $config['empresa_email'] ?? '' }}</div>
-        </td>
-        <td class="meta-cell">
-            <span class="orc-label">ORÇAMENTO Nº</span>
-            <span class="orc-value">{{ $orcamento->numero }}</span>
-            <div>EMISSÃO: <strong>{{ $emissao->format('d/m/Y H:i') }}</strong></div>
-            <div>VALIDADE: <span class="validade-destaque">{{ $validade->format('d/m/Y') }}</span></div>
-            <div style="margin-top:8px; border-top:1px dashed #bae6fd; padding-top:5px; font-weight:bold; color:#0284c7;">{{ strtoupper($orcamento->cliente->nome) }}</div>
-        </td>
-    </tr>
-</table>
+<div class="container">
+    
+    <table class="header-table">
+        <tr>
+            <td class="logo-cell">
+                @php $logoPath = public_path('storage/' . ($config['empresa_logo'] ?? 'logos/default.png')); @endphp
+                @if(file_exists($logoPath)) 
+                    <img src="{{ asset('storage/' . ($config['empresa_logo'] ?? 'logos/default.png')) }}" class="logo-img"> 
+                @endif
+                <div style="color:#64748b; font-size:10px;">
+                    <strong>{{ strtoupper($config['empresa_nome'] ?? 'Stofgard') }}</strong><br>
+                    CNPJ: {{ $config['empresa_cnpj'] ?? '' }}<br>
+                    {{ $config['empresa_telefone'] ?? '' }} | {{ $config['empresa_email'] ?? '' }}
+                </div>
+            </td>
+            <td class="meta-cell">
+                <span style="font-size:10px; font-weight:bold; color:#64748b;">ORÇAMENTO Nº</span>
+                <span class="orc-number">{{ $orcamento->numero }}</span>
+                <div>Emissão: <strong>{{ $emissao->format('d/m/Y H:i') }}</strong></div>
+                <div style="margin-top:5px; padding-top:5px; border-top:1px dashed #cbd5e1; color:#0f172a; font-weight:bold;">
+                    {{ strtoupper($orcamento->cliente->nome) }}
+                </div>
+            </td>
+        </tr>
+    </table>
 
 <div class="section-title">DADOS DO CLIENTE</div>
 <table style="width:100%; margin-bottom:20px;">

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-// Importação das Classes de Serviço
+// Importação correta das classes
 use App\Services\PixPayload;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
@@ -17,10 +17,10 @@ class OrcamentoPdfController extends Controller
 {
     public function gerarPdf(Orcamento $orcamento)
     {
-        // 1. Carrega dados
+        // 1. Carregar dados
         $orcamento->load(['cliente', 'itens', 'vendedor', 'loja']);
 
-        // 2. Prepara configurações
+        // 2. Carregar configurações
         $config = Setting::all()->pluck('value', 'key')->toArray();
         $jsonFields = ['catalogo_servicos_v2', 'financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento'];
         
@@ -33,15 +33,15 @@ class OrcamentoPdfController extends Controller
             }
         }
 
-        // --- LÓGICA FINANCEIRA E PIX (Movida da View para cá) ---
-        
-        // A. Cálculos
+        // --- LÓGICA DE NEGÓCIO (PIX & CÁLCULOS) ---
+
+        // A. Cálculos Totais
         $total = $orcamento->itens->sum('subtotal');
         $percDesconto = (float) ($config['financeiro_desconto_avista'] ?? 10);
         $totalAvista = $total * (1 - ($percDesconto / 100));
         $regrasParcelamento = $config['financeiro_parcelamento'] ?? [];
 
-        // B. Determinar Chave PIX
+        // B. Seleção da Chave PIX
         $pixKey = trim($orcamento->pix_chave_selecionada);
         if (empty($pixKey)) {
             $rawPixKeys = $config['financeiro_pix_keys'] ?? [];
@@ -51,19 +51,19 @@ class OrcamentoPdfController extends Controller
             }
         }
 
-        // C. Tratamento da Chave (EVP/Email vs Telefone)
+        // C. Tratamento Inteligente da Chave (EVP vs Telefone)
         $pixKeyForPayload = $pixKey;
         if (!empty($pixKey)) {
-            // Regex para Chave Aleatória (UUID)
-            $isEVP = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $pixKey);
-            $isEmail = filter_var($pixKey, FILTER_VALIDATE_EMAIL);
+            // Se tem letras e traços, é EVP (Aleatória) ou Email -> Não mexe
+            $isEVP = preg_match('/[a-zA-Z]/', $pixKey) && strpos($pixKey, '-') !== false;
+            $isEmail = strpos($pixKey, '@') !== false;
 
             if (!$isEVP && !$isEmail) {
-                // Limpa se for telefone/CPF
+                // É numérico (Telefone/CPF/CNPJ)
                 $onlyNums = preg_replace('/[^0-9]/', '', $pixKey);
                 $isPhone = (strlen($onlyNums) == 10 || strlen($onlyNums) == 11);
                 
-                // Adiciona +55 se for telefone sem código
+                // Se for telefone sem +55, adiciona
                 if ($isPhone && !str_starts_with($pixKey, '+55')) {
                     $pixKeyForPayload = '+55' . $onlyNums;
                 } else {
@@ -72,58 +72,59 @@ class OrcamentoPdfController extends Controller
             }
         }
 
-        // D. Geração do QR Code
-        $qrCodeImg = null;
+        // D. Geração do QR Code (Base64)
+        $qrCodeBase64 = null;
         $shouldShowPix = ($orcamento->pdf_incluir_pix ?? true) && !empty($pixKey);
         $beneficiario = substr($config['empresa_nome'] ?? 'Stofgard', 0, 25);
 
-        if ($shouldShowPix) {
-            if (class_exists(PixPayload::class) && class_exists(QrCode::class)) {
-                try {
-                    $payload = PixPayload::gerar((string)$pixKeyForPayload, $beneficiario, 'Ribeirao Preto', $orcamento->numero, $totalAvista);
-                    
+        if ($shouldShowPix && class_exists(PixPayload::class)) {
+            try {
+                // Gera a string de pagamento (Copy & Paste)
+                $payload = PixPayload::gerar(
+                    (string)$pixKeyForPayload, 
+                    $beneficiario, 
+                    'Ribeirao Preto', 
+                    $orcamento->numero, 
+                    $totalAvista
+                );
+                
+                // Gera a imagem do QR Code se a lib existir
+                if (class_exists(QrCode::class)) {
                     $pngData = QrCode::format('png')
-                        ->size(200)
-                        ->margin(0)
+                        ->size(300) // Tamanho bom para leitura
+                        ->margin(1)
                         ->generate($payload);
-                        
-                    $qrCodeImg = 'data:image/png;base64,' . base64_encode($pngData);
-                } catch (\Exception $e) {
-                    Log::error("Erro ao gerar QR Code no Controller: " . $e->getMessage());
+                    $qrCodeBase64 = 'data:image/png;base64,' . base64_encode($pngData);
                 }
+            } catch (\Exception $e) {
+                Log::error("Erro ao gerar QR Code: " . $e->getMessage());
             }
         }
 
-        // 3. Renderiza o HTML (Agora a View é limpa)
+        // 3. Renderiza a View (Passando APENAS dados prontos)
         $html = view('pdf.orcamento_oficial', [
             'orcamento' => $orcamento,
             'config' => $config,
-            // Variáveis calculadas
             'total' => $total,
             'totalAvista' => $totalAvista,
             'percDesconto' => $percDesconto,
             'regras' => $regrasParcelamento,
-            'pixKey' => $pixKey,
-            'qrCodeImg' => $qrCodeImg,
+            'pixKey' => $pixKey, // Chave visual (original)
+            'qrCodeImg' => $qrCodeBase64, // Imagem pronta
             'shouldShowPix' => $shouldShowPix,
         ])->render();
 
-        // 4. Salva e Gera PDF (Puppeteer)
+        // 4. Salva HTML Temp
         $tempId = $orcamento->id . '_' . time();
         $htmlPath = storage_path("app/public/temp_orc_{$tempId}.html");
         $pdfPath = storage_path("app/public/temp_orc_{$tempId}.pdf");
 
-        if (!File::exists(dirname($htmlPath))) {
-            File::makeDirectory(dirname($htmlPath), 0755, true);
-        }
-
+        if (!File::exists(dirname($htmlPath))) File::makeDirectory(dirname($htmlPath), 0755, true);
         file_put_contents($htmlPath, $html);
 
+        // 5. Gera PDF com Puppeteer
         $scriptPath = base_path('scripts/generate-pdf.js');
-        
-        if (!file_exists($scriptPath)) {
-            abort(500, "Script Puppeteer ausente.");
-        }
+        if (!file_exists($scriptPath)) abort(500, "Script Puppeteer não encontrado.");
 
         $result = Process::run(['node', $scriptPath, $htmlPath, $pdfPath]);
 
@@ -133,11 +134,12 @@ class OrcamentoPdfController extends Controller
             return response()->json(['error' => 'Falha na geração do PDF', 'details' => $result->errorOutput()], 500);
         }
 
+        // 6. Entrega
         if (file_exists($pdfPath)) {
             @unlink($htmlPath);
             return response()->file($pdfPath)->deleteFileAfterSend();
-        } else {
-            return response()->json(['error' => 'PDF não criado.'], 500);
         }
+        
+        return response()->json(['error' => 'PDF não criado.'], 500);
     }
 }
