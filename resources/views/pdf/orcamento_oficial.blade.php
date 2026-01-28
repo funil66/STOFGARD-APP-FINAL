@@ -242,20 +242,30 @@
     $qrCodeImg = null;
     $beneficiario = substr($config['empresa_nome'] ?? 'Stofgard', 0, 25);
 
-    // 3. TRATAMENTO CRÍTICO DE TELEFONE (+55)
-    // Se a chave for apenas números e tiver 10 ou 11 dígitos, é telefone.
-    // O PIX exige +55. Vamos forçar isso aqui para garantir o QR Code válido.
+    // 3. TRATAMENTO INTELIGENTE DA CHAVE (EVP vs Telefone)
+    $pixKeyForPayload = $pixKey;
+    
     if (!empty($pixKey)) {
-        $onlyNums = preg_replace('/[^0-9]/', '', $pixKey);
-        $isPhone = (strlen($onlyNums) == 10 || strlen($onlyNums) == 11);
-        $hasCountryCode = str_starts_with($pixKey, '+55');
-
-        // Se for email (tem @) ou aleatória (tem -), não mexe.
-        // Se for telefone sem +55, adiciona.
-        if ($isPhone && !$hasCountryCode && strpos($pixKey, '@') === false && strpos($pixKey, '-') === false) {
-            $pixKeyForPayload = '+55' . $onlyNums;
-        } else {
+        // Se tiver hífens e for longa (EVP - Chave Aleatória), NÃO MEXE!
+        if (strpos($pixKey, '-') !== false && strlen($pixKey) > 20) {
             $pixKeyForPayload = $pixKey;
+        }
+        // Se tiver @ (Email), NÃO MEXE!
+        elseif (strpos($pixKey, '@') !== false) {
+            $pixKeyForPayload = $pixKey;
+        }
+        // Se for Telefone (apenas números, 10 ou 11 dígitos)
+        else {
+            $onlyNums = preg_replace('/[^0-9]/', '', $pixKey);
+            $isPhone = (strlen($onlyNums) == 10 || strlen($onlyNums) == 11);
+            $hasCountryCode = str_starts_with($pixKey, '+55');
+
+            // Se for telefone e não tiver +55, adiciona.
+            if ($isPhone && !$hasCountryCode) {
+                $pixKeyForPayload = '+55' . $onlyNums;
+            } else {
+                $pixKeyForPayload = $pixKey;
+            }
         }
     } else {
         $pixKeyForPayload = null;
