@@ -123,17 +123,17 @@
         if ($shouldShowPix && class_exists('App\Services\PixPayload')) {
             $payload = \App\Services\PixPayload::gerar((string)$pixKeyForPayload, $beneficiario, 'Ribeirao Preto', $orcamento->numero, $totalAvista);
             
-            try {
-                $qrClass = '\\SimpleSoftwareIO\\QrCode\\Facades\\QrCode';
-                if (class_exists($qrClass)) {
-                    $pngData = $qrClass::format('png')
+            // CORREÇÃO: Uso do alias registrado no container do Laravel (sem barra inicial) ou chamada direta
+            if (class_exists('SimpleSoftwareIO\QrCode\Facades\QrCode')) {
+                try {
+                    $pngData = SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
                         ->size(200)
                         ->margin(0)
                         ->generate($payload);
                     $qrCodeImg = 'data:image/png;base64,' . base64_encode($pngData);
+                } catch (\Exception $e) {
+                    // Silencioso
                 }
-            } catch (\\Exception $e) {
-                // Silencioso
             }
         }
         
