@@ -24,9 +24,18 @@
         .final-price { font-size: 14px; font-weight: 900; color: #0f172a; }
         .discount-badge { background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-size:8px; font-weight:bold; margin-left: 5px; }
         .pix-box { border: 2px solid #16a34a; border-radius: 8px; padding: 15px; text-align: center; background-color: #f0fdf4; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .qr-img { width: 120px; height: 120px; margin: 10px auto; display: block; }
+        .qr-img { width: 120px; height: 120px; margin: 10px auto; border: 4px solid #fff; display: block; }
         .pix-data-container { background: #fff; padding: 8px; border-radius: 6px; margin-top: 12px; border: 1px dashed #16a34a; }
-        .pix-key-value { font-family: monospace; font-size: 11px; color: #166534; font-weight: bold; word-break: break-all; display: block; }
+
+        /* CORREÇÃO DO ERRO DE SINTAXE CSS AQUI (Estava '(' virou '{') */
+        .pix-key-value { 
+            font-family: monospace; 
+            font-size: 11px; 
+            color: #166534; 
+            font-weight: bold; 
+            word-break: break-all; 
+            display: block; 
+        }
         .footer { position: fixed; bottom: 20px; left: 0; right: 0; text-align: center; font-size: 9px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; background-color: #fff; }
     </style>
 </head>
@@ -196,10 +205,19 @@
             background-color: #f0fdf4; /* Fundo Verde Claro */
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
-        .qr-img { width: 110px; height: 110px; margin: 10px auto; border: 2px solid #fff; display: block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .qr-img { width: 120px; height: 120px; margin: 10px auto; border: 4px solid #fff; display: block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         
         .pix-data-container { background: #fff; padding: 8px; border-radius: 6px; margin-top: 12px; border: 1px dashed #16a34a; }
-        .pix-key-value { font-family: monospace; font-size: 11px; color: #166534; font-weight: bold; word-break: break-all; display: block; }
+
+        /* CORREÇÃO DO ERRO DE SINTAXE CSS AQUI (Estava '(' virou '{') */
+        .pix-key-value { 
+            font-family: monospace; 
+            font-size: 11px; 
+            color: #166534; 
+            font-weight: bold; 
+            word-break: break-all; 
+            display: block; 
+        }
     
     /* FOOTER (Posicionado com margem de segurança) */
     .footer { 
