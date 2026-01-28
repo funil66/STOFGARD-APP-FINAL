@@ -72,74 +72,38 @@
 <body>
 
     @php
-        $total = $orcamento->itens->sum('subtotal');
-        $percDesconto = (float) ($config['financeiro_desconto_avista'] ?? 10);
-        $totalAvista = $total * (1 - ($percDesconto / 100));
-        $regras = $config['financeiro_parcelamento'] ?? [];
-        
-        $pixKey = trim($orcamento->pix_chave_selecionada);
-        
-        // Fallback
-        if (empty($pixKey)) {
-            $rawPixKeys = $config['financeiro_pix_keys'] ?? [];
-            if (is_array($rawPixKeys) && !empty($rawPixKeys)) {
-                $first = reset($rawPixKeys);
-                $pixKey = trim($first['chave'] ?? null);
-            }
-        }
+    $emissao = \Carbon\Carbon::parse($orcamento->created_at)->setTimezone('America/Sao_Paulo');
+    $validade = \Carbon\Carbon::parse($orcamento->data_validade);
+@endphp
 
-        // LÓGICA DE TRATAMENTO DE CHAVE (BLINDADA)
-        $pixKeyForPayload = $pixKey;
-        
-        if (!empty($pixKey)) {
-            // 1. Verifica se é Chave Aleatória (EVP) - Formato UUID
-            $isEVP = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $pixKey);
-            
-            // 2. Verifica se é Email
-            $isEmail = filter_var($pixKey, FILTER_VALIDATE_EMAIL);
+<div class="footer">
+    <span style="color:#f97316; font-weight:bold;">Validade: Orçamento e QR Code válidos por 7 dias.</span><br>
+    Este documento não representa um contrato firmado.<br>
+    <span style="color:#cbd5e1;">Documento gerado em {{ now()->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') }}</span>
+</div>
 
-            if ($isEVP || $isEmail) {
-                // Se for Aleatória ou Email, USA EXATAMENTE COMO ESTÁ
-                $pixKeyForPayload = $pixKey;
-            } else {
-                // Se não, assume que é Telefone, CPF ou CNPJ e limpa caracteres
-                $onlyNums = preg_replace('/[^0-9]/', '', $pixKey);
-                
-                // Se for Telefone (10 ou 11 dígitos começando com DDD)
-                $isPhone = (strlen($onlyNums) == 10 || strlen($onlyNums) == 11);
-                
-                if ($isPhone && !str_starts_with($pixKey, '+55')) {
-                    $pixKeyForPayload = '+55' . $onlyNums;
-                } else {
-                    $pixKeyForPayload = $onlyNums; // CPF ou CNPJ
-                }
-            }
-        }
-        
-        $qrCodeImg = null;
-        $shouldShowPix = ($orcamento->pdf_incluir_pix ?? true) && !empty($pixKey);
-        $beneficiario = substr($config['empresa_nome'] ?? 'Stofgard', 0, 25);
+<table class="header-table">
+    <tr>
+        <td class="logo-cell">
+            @php $logoPath = public_path('storage/' . ($config['empresa_logo'] ?? 'logos/default.png')); @endphp
+            @if(file_exists($logoPath)) <img src="{{ $logoPath }}" class="logo-img"> @endif
+            <div class="company-info">CNPJ: {{ $config['empresa_cnpj'] ?? '' }}<br>{{ $config['empresa_telefone'] ?? '' }}<br>{{ $config['empresa_email'] ?? '' }}</div>
+        </td>
+        <td class="meta-cell">
+            <span class="orc-label">ORÇAMENTO Nº</span>
+            <span class="orc-value">{{ $orcamento->numero }}</span>
+            <div>EMISSÃO: <strong>{{ $emissao->format('d/m/Y H:i') }}</strong></div>
+            <div>VALIDADE: <span class="validade-destaque">{{ $validade->format('d/m/Y') }}</span></div>
+            <div style="margin-top:8px; border-top:1px dashed #bae6fd; padding-top:5px; font-weight:bold; color:#0284c7;">{{ strtoupper($orcamento->cliente->nome) }}</div>
+        </td>
+    </tr>
+</table>
 
-        if ($shouldShowPix && class_exists('App\Services\PixPayload')) {
-            $payload = \App\Services\PixPayload::gerar((string)$pixKeyForPayload, $beneficiario, 'Ribeirao Preto', $orcamento->numero, $totalAvista);
-            
-            // CORREÇÃO: Uso do alias registrado no container do Laravel (sem barra inicial) ou chamada direta
-            if (class_exists('SimpleSoftwareIO\QrCode\Facades\QrCode')) {
-                try {
-                    $pngData = SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
-                        ->size(200)
-                        ->margin(0)
-                        ->generate($payload);
-                    $qrCodeImg = 'data:image/png;base64,' . base64_encode($pngData);
-                } catch (\Exception $e) {
-                    // Silencioso
-                }
-            }
-        }
-        
-        $emissao = \Carbon\Carbon::parse($orcamento->created_at)->setTimezone('America/Sao_Paulo');
-        $validade = \Carbon\Carbon::parse($orcamento->data_validade);
-    @endphp
+<div class="section-title">DADOS DO CLIENTE</div>
+<table style="width:100%; margin-bottom:20px;">
+    <tr><td width="60%"><strong>CLIENTE:</strong> {{ strtoupper($orcamento->cliente->nome) }}</td><td width="40%"><strong>CONTATO:</strong> {{ $orcamento->cliente->telefone }}</td></tr>
+    <tr><td><strong>EMAIL:</strong> {{ $orcamento->cliente->email }}</td><td><strong>LOCAL:</strong> {{ $orcamento->cliente->cidade }}/{{ $orcamento->cliente->estado }}</td></tr>
+</table>
 
     <table class="header-table">
         <tr>
