@@ -2,281 +2,184 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CadastroResource\Pages;
-use App\Models\Cliente;
+use App\Models\Cadastro;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Illuminate\Support\Facades\Http;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\Grid;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Support\RawJs;
+use Illuminate\Support\Facades\Http;
 
-class CadastroResource extends Resource {
-    protected static ?string $model = Cliente::class;
+class CadastroResource extends Resource
+{
+    protected static ?string $model = Cadastro::class;
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
-    protected static ?string $navigationLabel = 'Gestão de Cadastros';
-    protected static ?string $modelLabel = 'Cadastro';
-    protected static ?int $navigationSort = 1;
+    protected static ?string $label = 'Cadastro';
+    protected static ?string $pluralLabel = 'Cadastros';
 
-    // Mostrar no menu lateral
-    protected static bool $shouldRegisterNavigation = true;
-
-    // --- 1. VISUALIZAÇÃO (Onde você quer ver os dados bonitos) ---
+    // --- INFOLIST (VISUALIZAÇÃO PREMIUM) ---
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('Identificação')
+                Section::make('Identificação')
+                    ->columns(4)
                     ->schema([
-                        Infolists\Components\TextEntry::make('nome')
-                            ->weight('bold')
-                            ->size(Infolists\Components\TextEntry\TextEntrySize::Large),
-                        Infolists\Components\TextEntry::make('tipo')
+                        TextEntry::make('nome')->weight('bold')->columnSpan(2),
+                        TextEntry::make('tipo')
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {
                                 'cliente' => 'info',
-                                'loja', 'vendedor', 'arquiteto' => 'purple',
+                                'loja' => 'success',
+                                'vendedor' => 'warning',
                                 default => 'gray',
-                            })
-                            ->formatStateUsing(fn (string $state): string => ucfirst($state)),
-                        Infolists\Components\TextEntry::make('cpf_cnpj')
-                            ->label('Documento'),
-                    ])->columns(3),
-                Infolists\Components\Section::make('Canais de Contato')
+                            }),
+                        TextEntry::make('documento')->label('CPF / CNPJ')->icon('heroicon-m-identification'),
+                    ]),
+                Section::make('Contato')
+                    ->columns(3)
                     ->schema([
-                        Infolists\Components\TextEntry::make('celular')
-                            ->label('WhatsApp / Celular')
-                            ->url(fn ($state) => 'https://wa.me/55' . preg_replace('/\D/', '', $state))
-                            ->openUrlInNewTab()
-                            ->icon('heroicon-m-chat-bubble-left-right')
-                            ->color('success')
-                            ->weight('bold'),
-                        Infolists\Components\TextEntry::make('email')
-                            ->icon('heroicon-m-envelope')
-                            ->copyable(),
-                        Infolists\Components\TextEntry::make('telefone')
-                            ->label('Telefone Fixo')
-                            ->placeholder('-'),
-                    ])->columns(3),
-                Infolists\Components\Section::make('Endereço')
+                        TextEntry::make('telefone')->label('WhatsApp')->icon('heroicon-m-chat-bubble-left-right'),
+                        TextEntry::make('email')->label('E-mail')->icon('heroicon-m-envelope'),
+                        TextEntry::make('telefone_fixo')->label('Fixo'),
+                    ]),
+                Section::make('Endereço')
+                    ->columns(3)
                     ->schema([
-                        Infolists\Components\TextEntry::make('endereco_completo')
-                            ->label('Logradouro')
-                            ->state(fn ($record) => "{$record->endereco}, {$record->numero} - {$record->bairro}")
-                            ->icon('heroicon-m-map-pin')
-                            ->columnSpan(2),
-                        Infolists\Components\TextEntry::make('cidade_uf')
-                            ->label('Cidade')
-                            ->state(fn ($record) => "{$record->cidade} / {$record->estado}"),
-                        Infolists\Components\TextEntry::make('cep'),
-                    ])->columns(4),
-                
-                Infolists\Components\Section::make('Dados Bancários (Parceiros)')
-                    ->schema([
-                        Infolists\Components\TextEntry::make('chave_pix')
-                            ->label('Chave Pix (Comissão)')
-                            ->icon('heroicon-m-banknotes')
-                            ->copyable()
-                            ->weight('bold'),
-                        Infolists\Components\TextEntry::make('comissao_percentual')
-                            ->label('Comissão (%)')
-                            ->formatStateUsing(fn ($state) => $state ? (float) $state . '%' : '0%'),
-                        Infolists\Components\TextEntry::make('dados_bancarios')
-                            ->label('Dados Bancários')
-                            ->placeholder('-'),
-                    ])
-                    ->visible(fn ($record) => in_array($record->tipo, ['loja', 'parceiro', 'arquiteto'])),
-
-                \Filament\Infolists\Components\Section::make('Galeria de Arquivos')
-                    ->schema([
-                        \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('documentos')
-                            ->collection('documentos_cadastro')
-                            ->label('Documentos Anexados')
-                            ->hiddenLabel()
-                            ->columns(4), // Grid de imagens
-                    ])
-                    ->collapsible(),
+                        TextEntry::make('logradouro')->label('Rua')->columnSpan(2),
+                        TextEntry::make('numero')->label('Nº'),
+                        TextEntry::make('bairro'),
+                        TextEntry::make('cidade'),
+                        TextEntry::make('estado')->label('UF'),
+                    ]),
             ]);
     }
-    // --- 2. FORMULÁRIO (Cadastro e Edição) ---
+
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make('Dados Principais')
-                    ->schema([
-                        Forms\Components\Select::make('tipo')
-                            ->options([
-                                'cliente' => 'Cliente Final',
-                                'loja' => 'Loja (Parceiro)',
-                                'vendedor' => 'Vendedor (Parceiro)',
-                                'arquiteto' => 'Arquiteto/Designer',
-                            ])
-                            ->default('cliente')
-                            ->live()
-                            ->afterStateUpdated(fn ($state, callable $set) => $state !== 'vendedor' ? $set('parent_id', null) : null)
-                            ->required(),
-                        Forms\Components\TextInput::make('nome')
-                            ->label('Nome Completo / Razão Social')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('cpf_cnpj')
-                            ->label('CPF / CNPJ')
-                            ->maxLength(18),
-
-                        Forms\Components\Select::make('parent_id')
-                            ->label('Loja Vinculada')
-                            ->helperText('Selecione a loja à qual este vendedor pertence.')
-                            ->relationship('loja', 'nome', fn ($query) => $query->where('tipo', 'loja'))
-                            ->searchable()
-                            ->preload()
-                            ->required(fn (Get $get) => $get('tipo') === 'vendedor')
-                            ->visible(fn (Get $get) => $get('tipo') === 'vendedor'),
-                    ])->columns(3),
-                Forms\Components\Section::make('Contato')
-                    ->schema([
-                        Forms\Components\TextInput::make('celular')
-                            ->label('Celular (WhatsApp)')
-                            ->mask('(99) 99999-9999')
-                            ->required()
-                            ->columnSpan(1),
-                        Forms\Components\TextInput::make('telefone')
-                            ->label('Telefone Fixo (Opcional)')
-                            ->mask('(99) 9999-9999')
-                            ->columnSpan(1),
-                        Forms\Components\TextInput::make('email')
-                            ->email()
-                            ->columnSpan(1),
-                    ])->columns(3),
-                Forms\Components\Section::make('Endereço')
-                    ->schema([
-                        Forms\Components\TextInput::make('cep')
-                            ->mask('99999-999')
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, Set $set) {
-                                if (!$state) return;
-                                $cep = preg_replace('/[^0-9]/', '', $state);
-                                if (strlen($cep) !== 8) return;
-
-                                $response = Http::get("https://viacep.com.br/ws/{$cep}/json/")->json();
-                                if (!isset($response['erro'])) {
-                                    $set('endereco', $response['logradouro'] ?? '');
-                                    $set('bairro', $response['bairro'] ?? '');
-                                    $set('cidade', $response['localidade'] ?? '');
-                                    $set('estado', $response['uf'] ?? '');
-                                }
-                            }),
-                        Forms\Components\TextInput::make('endereco')->label('Rua/Av'),
-                        Forms\Components\TextInput::make('numero')->label('Nº'),
-                        Forms\Components\TextInput::make('bairro'),
-                        Forms\Components\TextInput::make('complemento'),
-                        Forms\Components\TextInput::make('cidade')->default('Ribeirão Preto'),
-                        Forms\Components\TextInput::make('estado')->default('SP')->maxLength(2),
-                    ])->columns(4),
-                
-                Forms\Components\Section::make('Parceria & Financeiro')
-                    ->schema([
-                        Forms\Components\TextInput::make('chave_pix')
-                            ->label('Chave Pix')
-                            ->prefixIcon('heroicon-m-banknotes'),
-                        Forms\Components\TextInput::make('comissao_percentual')
-                            ->label('Comissão (%)')
-                            ->numeric()
-                            ->suffix('%')
-                            ->maxValue(100)
-                            ->default(0),
-                        Forms\Components\Textarea::make('dados_bancarios')
-                            ->label('Dados Bancários Completos')
-                            ->rows(3)
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2)
-                    ->visible(fn (Forms\Get $get) => in_array($get('tipo'), ['loja', 'arquiteto', 'vendedor'])) ,
-
-                // Adicionar Componente de Upload Spatie (Arquivos do Cadastro)
-                Forms\Components\Section::make('Documentos & Arquivos')
-                    ->schema([
-                        \Filament\Forms\Components\SpatieMediaLibraryFileUpload::make('documentos')
-                            ->label('Anexos (Contratos, Docs, Fotos)')
-                            ->collection('documentos_cadastro') // Coleção Spatie
-                            ->multiple()
-                            ->reorderable()
-                            ->openable()
-                            ->downloadable()
-                            ->maxSize(51200) // 50MB (em KB)
-                            ->rules(['max:51200']) // Validação Laravel (em KB)
-                            ->columnSpanFull(),
-                    ])
-                    ->collapsible(),
-            ]);
+        return $form->schema(self::getFormSchema());
     }
-    // --- 3. TABELA (Listagem) ---
+
+    // Reutilizável
+    public static function getFormSchema(): array
+    {
+        return [
+            Forms\Components\Section::make('Classificação & Vínculos')
+                ->schema([
+                    Forms\Components\Select::make('tipo')
+                        ->options([
+                            'cliente' => 'Cliente Final',
+                            'loja' => 'Loja (Parceiro)',
+                            'vendedor' => 'Vendedor (Parceiro)',
+                            'arquiteto' => 'Arquiteto',
+                        ])
+                        ->required()
+                        ->live(),
+                    Forms\Components\Select::make('parent_id')
+                        ->label('Loja Vinculada')
+                        ->relationship('loja', 'nome', fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('tipo', 'loja'))
+                        ->visible(fn (Forms\Get $get) => $get('tipo') === 'vendedor')
+                        ->searchable(),
+                    // CAMPO DE COMISSÃO
+                    Forms\Components\TextInput::make('comissao_percentual')
+                        ->label('Comissão Padrão (%)')
+                        ->numeric()
+                        ->suffix('%')
+                        ->default(0)
+                        ->visible(fn (Forms\Get $get) => in_array($get('tipo'), ['vendedor', 'loja', 'arquiteto']))
+                        ->helperText('Porcentagem que será aplicada automaticamente nos orçamentos.'),
+                ])->columns(3),
+            Forms\Components\Section::make('Dados Principais')
+                ->schema([
+                    Forms\Components\TextInput::make('nome')->required()->columnSpan(2),
+                    Forms\Components\TextInput::make('documento')->label('CPF / CNPJ')
+                        ->mask(\Filament\Support\RawJs::make(<<<'JS'
+                            $input.length > 14 ? '99.999.999/9999-99' : '999.999.999-99'
+                        JS)),
+                    Forms\Components\TextInput::make('rg_ie')->label('RG / Inscrição'),
+                ])->columns(4),
+            Forms\Components\Section::make('Contato & Endereço')
+                ->schema([
+                    Forms\Components\TextInput::make('email')->email()->columnSpan(2),
+                    Forms\Components\TextInput::make('telefone')->mask('(99) 99999-9999')->required(),
+                    Forms\Components\TextInput::make('cep')->mask('99999-999')
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(function ($state, Forms\Set $set) {
+                            if (strlen(preg_replace('/[^0-9]/', '', $state)) === 8) {
+                                $data = \Illuminate\Support\Facades\Http::get("https://viacep.com.br/ws/{$state}/json/")->json();
+                                if (!isset($data['erro'])) {
+                                    $set('logradouro', $data['logradouro']);
+                                    $set('bairro', $data['bairro']);
+                                    $set('cidade', $data['localidade']);
+                                    $set('estado', $data['uf']);
+                                }
+                            }
+                        }),
+                    Forms\Components\TextInput::make('logradouro')->required(),
+                    Forms\Components\TextInput::make('numero')->required(),
+                    Forms\Components\TextInput::make('bairro')->required(),
+                    Forms\Components\TextInput::make('cidade')->required(),
+                    Forms\Components\TextInput::make('estado')->maxLength(2)->required(),
+                    Forms\Components\TextInput::make('complemento'),
+                ])->columns(4),
+        ];
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nome')
-                    ->searchable()
-                    ->sortable()
-                    ->weight('bold'),
+                Tables\Columns\TextColumn::make('nome')->searchable()->sortable()->weight('bold'),
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'cliente' => 'info',
-                        'loja', 'parceiro' => 'success',
-                        'arquiteto' => 'warning',
+                        'loja' => 'success',
+                        'vendedor' => 'warning',
                         default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
-                Tables\Columns\TextColumn::make('celular')
-                    ->icon('heroicon-m-phone'),
-                Tables\Columns\TextColumn::make('cidade'),
+                    }),
+                Tables\Columns\TextColumn::make('telefone')->label('WhatsApp')->icon('heroicon-m-phone'),
+                Tables\Columns\TextColumn::make('cidade')->label('Cidade'),
             ])
             ->actions([
-                // Botões expostos diretamente (sem grupo) para teste
-                Tables\Actions\EditAction::make()->iconButton(),
-                Tables\Actions\DeleteAction::make()->iconButton(),
-                Tables\Actions\ViewAction::make()->iconButton(),
+                // 1. PDF (Verde Destaque)
                 Tables\Actions\Action::make('pdf')
-                    ->label('PDF')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->iconButton()
-                    ->action(function ($record) {
-                        return response()->streamDownload(function () use ($record) {
-                            echo \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.ficha-cadastro', ['record' => $record])->output();
-                        }, 'ficha-' . \Illuminate\Support\Str::slug($record->nome) . '.pdf');
-                    }),
+                    ->label('Ficha')
+                    ->icon('heroicon-o-document-text')
+                    ->color('success')
+                    ->button()
+                    ->url(fn (Cadastro $record) => route('cadastro.pdf', $record))
+                    ->openUrlInNewTab(),
+                // 2. VISUALIZAR (Olho)
+                Tables\Actions\ViewAction::make()->label('')->tooltip('Ver Detalhes'),
+                // 3. EDITAR (Lápis)
+                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
+                // 4. EXCLUIR (Lixeira)
+                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
-                        ->label('Excluir Selecionados')
-                        ->icon('heroicon-o-trash')
-                        ->requiresConfirmation()
-                        ->modalHeading('Deletar registros selecionados?')
-                        ->modalDescription('Tem certeza? Essa ação não pode ser desfeita.')
-                        ->modalSubmitActionLabel('Sim, excluir tudo'),
-                ])
-                ->label('Ações')
-                ->icon('heroicon-m-ellipsis-vertical')
-                ->color('primary'),
-            ]);
+            ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
+
     public static function getRelations(): array
     {
-        return [
-            \App\Filament\Resources\RelationManagers\AuditsRelationManager::class,
-        ];
+        return [];
     }
+
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListCadastros::route('/'),
             'create' => Pages\CreateCadastro::route('/create'),
-            'view' => Pages\ViewCadastro::route('/{record}'),
             'edit' => Pages\EditCadastro::route('/{record}/edit'),
         ];
     }

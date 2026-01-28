@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\OrcamentoPdfController;
+use App\Http\Controllers\CadastroPdfController;
 use App\Http\Controllers\PagamentoController;
 use App\Http\Controllers\PixWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,10 @@ Route::middleware(['auth'])->group(function () {
     // Rota para visualizar PDF do orçamento
     Route::get('/orcamento/{orcamento}/pdf', [OrcamentoPdfController::class, 'gerarPdf'])
         ->name('orcamento.pdf');
+
+    // Rota para visualizar Ficha Cadastral (PDF)
+    Route::get('/cadastro/{cadastro}/pdf', [CadastroPdfController::class, 'gerarPdf'])
+        ->name('cadastro.pdf');
 
     // Rota para gerar e salvar PDF (inclui opção include_pix e persist)
     Route::post('/orcamento/{orcamento}/generate-pdf', [OrcamentoPdfController::class, 'generateAndSave'])

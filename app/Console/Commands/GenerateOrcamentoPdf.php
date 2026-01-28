@@ -60,6 +60,17 @@ class GenerateOrcamentoPdf extends Command
 
         $qrCodeBase64 = $qrCodeBase64 ?? $orc->pix_qrcode_base64;
 
+        $config = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
+        $jsonFields = ['catalogo_servicos_v2', 'financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento'];
+        foreach ($jsonFields as $key) {
+            if (isset($config[$key]) && is_string($config[$key])) {
+                $decoded = json_decode($config[$key], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $config[$key] = $decoded;
+                }
+            }
+        }
+
         $viewData = [
             'orcamento' => $orc,
             'qrCodePix' => $qrCodeBase64,
@@ -68,6 +79,7 @@ class GenerateOrcamentoPdf extends Command
             'banco' => \App\Services\ConfiguracaoService::financeiro('banco'),
             'agencia' => \App\Services\ConfiguracaoService::financeiro('agencia'),
             'conta' => \App\Services\ConfiguracaoService::financeiro('conta'),
+            'config' => $config,
         ];
 
         if ($this->option('minimal')) {

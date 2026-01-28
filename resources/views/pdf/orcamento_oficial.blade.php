@@ -2,200 +2,288 @@
 <html lang="pt-BR">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Orcamento {{ $orcamento->numero_orcamento }}</title>
+    <title>Orçamento {{ $orcamento->numero }}</title>
     <style>
-        @page { size: A4; margin: 8mm 10mm; }
-        body{font-family:Arial,Helvetica,sans-serif;font-size:9px;color:#333;line-height:1.2}
+        @page { margin: 0cm; }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            margin: 0cm;
+            padding: 40px 50px 80px 50px; /* Padding inferior maior para o rodapé não sobrepor */
+            font-size: 10px;
+            color: #334155;
+            line-height: 1.5;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        
+        /* HEADER */
+        .header-table { margin-bottom: 30px; }
+        .logo-cell { width: 55%; vertical-align: top; padding-right: 20px; }
+        .meta-cell { 
+            width: 45%; vertical-align: top; 
+            background-color: #f0f9ff; border: 1px solid #bae6fd; 
+            border-radius: 8px; padding: 15px 20px; text-align: right; 
+        }
+        .logo-img { max-height: 80px; margin-bottom: 10px; display: block; }
+        .company-info { font-size: 9px; color: #64748b; line-height: 1.4; }
+        
+        .orc-label { font-size: 9px; font-weight: bold; color: #0ea5e9; text-transform: uppercase; letter-spacing: 1px; }
+        .orc-value { font-size: 20px; font-weight: 900; color: #0369a1; margin-bottom: 8px; display: block; }
+        
+        /* 1. MENU / SEÇÕES COM EFEITO */
+        .section-title {
+            font-size: 11px; font-weight: 900; color: #0f172a; text-transform: uppercase;
+            border-left: 5px solid #0369a1; 
+            padding: 8px 15px; 
+            margin-top: 30px; margin-bottom: 15px;
+            /* Efeito Gradiente e Sombra */
+            background: linear-gradient(90deg, #e0f2fe 0%, #ffffff 100%);
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* TABELAS */
+        .items-table th { background: #f1f5f9; text-align: left; font-size: 9px; padding: 8px 5px; border-bottom: 1px solid #cbd5e1; }
+        .items-table td { padding: 10px 5px; font-size: 10px; border-bottom: 1px solid #f1f5f9; }
+        
+        /* TAGS */
+        .tag-blue { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 9px; border: 1px solid #bae6fd; display:inline-block; margin-bottom:5px; }
+        .tag-yellow { background: #fef9c3; color: #b45309; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 9px; border: 1px solid #fde047; display:inline-block; margin-bottom:5px; }
+        /* FINANCEIRO */
+        .col-values { width: 60%; vertical-align: top; padding-right: 25px; }
+        .col-pix { width: 40%; vertical-align: top; }
+        
+        .values-table { border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+        .values-table th { background: #f8fafc; text-align: left; padding: 10px; font-size: 9px; border-bottom: 1px solid #e2e8f0; }
+        .values-table td { padding: 10px; font-size: 10px; border-bottom: 1px solid #f1f5f9; }
+    
+    /* ESTILO DISCRETO PARA PARCELAMENTO */
+    .installment-row td { color: #64748b; font-size: 8px; padding-top: 4px; padding-bottom: 4px; }
+    .installment-label { font-weight: 500; }
+    
+    .final-price { font-size: 14px; font-weight: 900; color: #0f172a; }
+    .discount-badge { background:#dcfce7; color:#166534; padding:2px 6px; border-radius:4px; font-size:8px; font-weight:bold; margin-left: 5px; }
+        /* 3. BOX PIX VERDE */
+        .pix-box { 
+            border: 2px solid #16a34a; /* Borda Verde Forte */
+            border-radius: 8px; 
+            padding: 15px; 
+            text-align: center; 
+            background-color: #f0fdf4; /* Fundo Verde Claro */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .qr-img { width: 110px; height: 110px; margin: 10px auto; border: 2px solid #fff; display: block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        .pix-data-container { background: #fff; padding: 8px; border-radius: 6px; margin-top: 12px; border: 1px dashed #16a34a; }
+        .pix-key-value { font-family: monospace; font-size: 11px; color: #166534; font-weight: bold; word-break: break-all; display: block; }
+    
+    /* FOOTER (Posicionado com margem de segurança) */
+    .footer { 
+        position: fixed; 
+        bottom: 20px; /* Sobe 20px do fim da folha */
+        left: 0; right: 0; 
+        height: 50px; 
+        text-align: center; 
+        font-size: 9px; 
+        color: #94a3b8; 
+        border-top: 1px solid #e2e8f0; 
+        padding-top: 10px; 
+        background-color: #fff;
+    }
+    .validity-text { color: #f97316; font-weight: bold; font-size: 10px; }
+</style>
+@php
+    // --- CÁLCULOS FINANCEIROS ---
+    $total = $orcamento->itens->sum('subtotal');
+    $percDesconto = (float) ($config['financeiro_desconto_avista'] ?? 10);
+    $totalAvista = $total * (1 - ($percDesconto / 100));
+    $regras = $config['financeiro_parcelamento'] ?? [];
+    
+    // --- LÓGICA DE SELEÇÃO DA CHAVE PIX (PRIORIDADE TOTAL) ---
+    
+    // 1. Tenta pegar a chave que foi SALVA na coluna 'pix_chave_selecionada' do banco
+    $pixKey = $orcamento->pix_chave_selecionada;
 
-        /* Palette: logo blue + green accent */
-        :root{--brand:#1E6DD8;--accent:#059669;--muted:#f3f4f6}
+    // 2. Se estiver vazia (orçamento antigo ou não selecionou), tenta pegar a primeira das configurações
+    if (empty($pixKey)) {
+        $rawPixKeys = $config['financeiro_pix_keys'] ?? [];
+        if (is_array($rawPixKeys) && !empty($rawPixKeys)) {
+            // Normaliza e pega a primeira
+            $first = reset($rawPixKeys); 
+            $pixKey = $first['chave'] ?? null;
+        }
+    }
+    
+    // --- GERAÇÃO DO QR CODE ---
+    $qrCodeImg = null;
+    $beneficiario = substr($config['empresa_nome'] ?? 'Stofgard', 0, 25);
+    
+    // Só mostra se o toggle estiver ON E se existir uma chave válida
+    $shouldShowPix = ($orcamento->pdf_incluir_pix ?? true) && !empty($pixKey);
 
-        /* Utilities */
-        .text-right{text-align:right}.text-center{text-align:center}.bold{font-weight:700}.uppercase{text-transform:uppercase}
+    if ($shouldShowPix && class_exists('App\Services\PixPayload')) {
+        $cidade = 'Ribeirao Preto';
+        // Gera payload usando a chave $pixKey DEFINITIVA
+        $payload = \App\Services\PixPayload::gerar((string)$pixKey, $beneficiario, $cidade, $orcamento->numero, $totalAvista);
+        
+        $apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=0&data=' . urlencode($payload);
+        
+        try {
+            $context = stream_context_create(['http' => ['timeout' => 4]]);
+            $imageData = @file_get_contents($apiUrl, false, $context);
+            if ($imageData) {
+                $qrCodeImg = 'data:image/png;base64,' . base64_encode($imageData);
+            }
+        } catch (\Exception $e) {}
+    }
+    
+    $emissao = \Carbon\Carbon::parse($orcamento->created_at)->setTimezone('America/Sao_Paulo');
+    $validade = \Carbon\Carbon::parse($orcamento->data_validade);
+@endphp
 
-        /* HEADER: reuse current header style but keep markup consistent with main template */
-        .header-tbl{width:100%;border-bottom:2px solid var(--brand);margin-bottom:8px;padding-bottom:5px}
-        .logo-box{width:60%;vertical-align:middle}
-        .meta-box{width:40%;vertical-align:middle;text-align:right}
-        .brand{font-size:18px;font-weight:700;color:var(--brand)}
-        .tagline{font-size:9px;color:#666}
-        .company-data{font-size:8px;color:#555}
+<table class="header-table">
+    <tr>
+        <td class="logo-cell">
+            @php $logoPath = public_path('storage/' . ($config['empresa_logo'] ?? 'logos/default.png')); @endphp
+            @if(file_exists($logoPath)) 
+                <img src="{{ $logoPath }}" class="logo-img"> 
+            @endif
+            
+            <div class="company-info">
+                CNPJ: {{ $config['empresa_cnpj'] ?? '' }}<br>
+                {{ $config['empresa_telefone'] ?? '' }}<br>
+                {{ $config['empresa_email'] ?? '' }}
+            </div>
+        </td>
+        <td class="meta-cell">
+            <span class="orc-label">ORÇAMENTO Nº</span>
+            <span class="orc-value">{{ $orcamento->numero }}</span>
+            <div>EMISSÃO: <strong>{{ $emissao->format('d/m/Y H:i') }}</strong></div>
+            <div>VALIDADE: <span style="color:#f97316; font-weight:bold;">{{ $validade->format('d/m/Y') }}</span></div>
+            <div style="margin-top:8px; border-top:1px dashed #bae6fd; padding-top:5px; font-weight:bold; color:#0284c7; font-size:10px;">
+                {{ strtoupper($orcamento->cliente->nome) }}
+            </div>
+        </td>
+    </tr>
+</table>
 
-        /* Client bar */
-        .client-bar{background:var(--muted);border-left:4px solid var(--brand);padding:6px;margin-bottom:8px;border-radius:0 4px 4px 0}
-        .client-tbl{width:100%}.client-tbl td{padding:1px 6px;font-size:9px}
-        .lbl{color:var(--brand);font-weight:700;margin-right:6px}
+<div class="section-title">DADOS DO CLIENTE</div>
+<table style="width:100%; margin-bottom:20px;">
+    <tr>
+        <td width="60%"><strong>CLIENTE:</strong> {{ strtoupper($orcamento->cliente->nome) }}</td>
+        <td width="40%"><strong>CONTATO:</strong> {{ $orcamento->cliente->telefone }}</td>
+    </tr>
+    <tr>
+        <td><strong>EMAIL:</strong> {{ $orcamento->cliente->email }}</td>
+        <td><strong>LOCAL:</strong> {{ $orcamento->cliente->cidade }}/{{ $orcamento->cliente->estado }}</td>
+    </tr>
+</table>
 
-        /* Items table slim */
-        .items-tbl{width:100%;border-collapse:collapse;margin-bottom:8px}
-        .items-tbl th{background:var(--brand);color:#fff;padding:4px 6px;font-size:8px;text-align:left}
-        .items-tbl td{padding:4px 6px;border-bottom:1px solid #eee;font-size:9px;vertical-align:top}
-        .items-tbl tr:nth-child(even){background:#f9fafb}
-
-        .badge-type{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;margin-top:6px;display:inline-block}
-        .bg-higi{background:#dbeafe;color:#1e40af}
-        .bg-imper{background:#fef3c7;color:#92400e}
-
-        /* Observacoes */
-        .obs-box{background:#fffbe6;border:1px solid #fcd34d;padding:6px;font-size:8px;text-align:justify;border-radius:4px}
-
-        /* Payment / Totals area */
-        .payment-container{width:100%;border-collapse:collapse;margin-top:6px;border:1px solid #e5e7eb;border-radius:6px}
-        .pay-left{width:60%;padding:8px;vertical-align:top;border-right:1px dashed #ddd}
-        .pay-right{width:40%;padding:8px;vertical-align:top;background:#f9fafb}
-
-        /* PIX BOX: green frame, reduced height but QR stays same */
-        .pix-box{background:#ecfdf5;border:1px solid #10b981;border-radius:6px;padding:6px;height:80px;overflow:hidden;box-sizing:border-box}
-        .pix-box table{height:100%}
-        .pix-box .pix-tbl td{vertical-align:middle}
-        .qr-code{width:65px;height:65px;border:1px solid #ddd;padding:1px;display:block;margin:0 auto}
-        .pix-info{padding-left:8px;vertical-align:middle;font-size:9px}
-        .validade-alert{margin-top:6px;font-size:8px;color:#9a3412;background:#ffedd5;padding:4px;border-radius:3px;font-weight:700;text-align:center;border:1px solid #fed7aa}
-
-        .total-tbl{width:100%}.total-tbl td{padding:2px 0;text-align:right}
-        .total-final{font-size:13px;color:var(--brand);font-weight:700;border-top:1px solid #ddd;padding-top:4px}
-
-        /* Footer small */
-        .footer{border-top:1px solid #ddd;padding-top:6px;margin-top:12px;text-align:center;font-size:7px;color:#888}
-
-        /* Ensure page-breaks are avoided inside key boxes */
-        .obs-box, .payment-container, .items-tbl, .total-tbl{page-break-inside:avoid}
-
-    </style>
-</head>
-<body>
-    <!-- Header: reuse markup (do not modify main header file) -->
-    <table class="header-tbl">
-        <tr>
-            <td class="logo-box">
-                @if(file_exists(public_path('images/logo-stofgard.png')))
-                    <img src="{{ public_path('images/logo-stofgard.png') }}" alt="logo" style="max-width:120px;height:auto;display:block">
-                @else
-                    <div class="brand">STOFGARD</div>
-                    <div class="tagline">Higienização e Impermeabilização de Estofados</div>
-                @endif
-                <div class="company-data">CNPJ: 58.794.846/0001-20<br>(16) 99104-0195 | contato@stofgard.com.br</div>
-            </td>
-            <td class="meta-box">
-                <div style="display:inline-block;background:#f0f7ff;border:1px solid var(--brand);padding:6px;border-radius:4px;text-align:left">
-                    <div style="font-weight:700;color:var(--brand);font-size:12px">ORÇAMENTO #{{ $orcamento->numero_orcamento }}</div>
-                    <div style="font-size:9px">Emissão: {{ $orcamento->data_orcamento->format('d/m/Y') }}</div>
-                    <div style="font-size:9px">Validade: {{ $orcamento->data_validade->format('d/m/Y') }}</div>
-                    @if($orcamento->user) <div style="font-size:9px">Consultor: {{ $orcamento->user->name }}</div> @endif
-                </div>
-            </td>
-        </tr>
-    </table>
-
-    <div class="client-bar">
-        <table class="client-tbl">
-            <tr>
-                <td width="50%"><span class="lbl">Cliente:</span> {{ $orcamento->cliente->nome }}</td>
-                <td width="50%"><span class="lbl">Tel:</span> {{ $orcamento->cliente->celular }}</td>
-            </tr>
-            <tr>
-                <td><span class="lbl">Email:</span> {{ $orcamento->cliente->email ?? '-' }}</td>
-                <td><span class="lbl">Local:</span> {{ Str::limit($orcamento->cliente->endereco,45) ?? 'Não informado' }}</td>
-            </tr>
+<div class="section-title">ITENS DO ORÇAMENTO</div>
+@foreach(['higienizacao' => ['label'=>'HIGIENIZAÇÃO', 'class'=>'tag-blue'], 'impermeabilizacao' => ['label'=>'IMPERMEABILIZAÇÃO', 'class'=>'tag-yellow']] as $tipo => $style)
+    @php $itens = $orcamento->itens->filter(fn($i) => $i->servico_tipo === $tipo); @endphp
+    @if($itens->isNotEmpty())
+        <div><span class="{{ $style['class'] }}">{{ $style['label'] }}</span></div>
+        <table class="items-table" style="margin-bottom:20px;">
+            <thead>
+                <tr>
+                    <th width="50%">DESCRIÇÃO</th>
+                    <th width="10%">UN.</th>
+                    <th width="10%">QTD.</th>
+                    <th width="15%" align="right">UNIT.</th>
+                    <th width="15%" align="right">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($itens as $item)
+                <tr>
+                    <td>{{ $item->item_nome }}</td>
+                    <td>{{ strtoupper($item->unidade) }}</td>
+                    <td>{{ number_format($item->quantidade, 2, ',', '.') }}</td>
+                    <td align="right">R$ {{ number_format($item->valor_unitario, 2, ',', '.') }}</td>
+                    <td align="right"><strong>R$ {{ number_format($item->subtotal, 2, ',', '.') }}</strong></td>
+                </tr>
+                @endforeach
+            </tbody>
         </table>
-    </div>
+    @endif
+@endforeach
 
-    @php
-        $grupos = [
-            'higienizacao' => ['nome' => 'HIGIENIZAÇÃO', 'class' => 'bg-higi', 'itens' => $orcamento->itens->filter(fn($i) => $i->tabelaPreco && $i->tabelaPreco->tipo_servico === 'higienizacao')],
-            'impermeabilizacao' => ['nome' => 'IMPERMEABILIZAÇÃO (BLINDAGEM)', 'class' => 'bg-imper', 'itens' => $orcamento->itens->filter(fn($i) => $i->tabelaPreco && $i->tabelaPreco->tipo_servico === 'impermeabilizacao')],
-            'outros' => ['nome' => 'OUTROS SERVIÇOS', 'class' => 'bg-higi', 'itens' => $orcamento->itens->filter(fn($i) => !$i->tabelaPreco)]
-        ];
-    @endphp
-
-    @foreach($grupos as $tipo => $grupo)
-        @if($grupo['itens']->count() > 0)
-            <div class="badge-type {{ $grupo['class'] }}">{{ $grupo['nome'] }}</div>
-            <table class="items-tbl">
+<div class="section-title">VALORES & CONDIÇÕES</div>
+<table style="width:100%; margin-top:10px;">
+    <tr>
+        <td class="col-values">
+            <table class="values-table" width="100%">
                 <thead>
                     <tr>
-                        <th width="58%">Descrição</th>
-                        <th width="8%" class="text-center">Unid.</th>
-                        <th width="10%" class="text-right">Qtd.</th>
-                        <th width="12%" class="text-right">Unit.</th>
-                        <th width="12%" class="text-right">Total</th>
+                        <th width="70%">CONDIÇÃO</th>
+                        <th width="30%" align="right">VALOR</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($grupo['itens'] as $item)
-                    <tr>
-                        <td>{{ $item->descricao_item }}</td>
-                        <td class="text-center">{{ $item->unidade_medida === 'm2' ? 'm²' : 'un' }}</td>
-                        <td class="text-right">{{ number_format($item->quantidade, 2, ',', '.') }}</td>
-                        <td class="text-right">{{ number_format($item->valor_unitario, 2, ',', '.') }}</td>
-                        <td class="text-right bold">{{ number_format($item->subtotal, 2, ',', '.') }}</td>
+                    <tr style="background-color:#f8fafc;">
+                        <td style="padding: 12px 8px;">
+                            <strong style="font-size:11px; color:#0f172a;">PIX / DINHEIRO</strong> 
+                            <span class="discount-badge">{{ $percDesconto }}% OFF</span>
+                            <div style="font-size:9px; color:#64748b; margin-top:2px;">Pagamento à vista na execução.</div>
+                        </td>
+                        <td align="right" style="padding: 12px 8px;">
+                            <div class="final-price" style="color:#16a34a;">R$ {{ number_format($totalAvista, 2, ',', '.') }}</div>
+                            <div style="text-decoration:line-through; font-size:9px; color:#94a3b8;">R$ {{ number_format($total, 2, ',', '.') }}</div>
+                        </td>
                     </tr>
+                    
+                    @foreach($regras as $regra)
+                        @php
+                            $p = (int)$regra['parcelas'];
+                            $taxa = (float)$regra['taxa'];
+                            $totalParc = $total * (1 + ($taxa/100));
+                            $valParc = $totalParc / $p;
+                        @endphp
+                        <tr class="installment-row">
+                            <td>
+                                <span class="installment-label">Cartão {{ $p }}x</span>
+                                <span style="margin-left:5px;">({{ $p }}x de R$ {{ number_format($valParc, 2, ',', '.') }})</span>
+                            </td>
+                            <td align="right">
+                                R$ {{ number_format($totalParc, 2, ',', '.') }}
+                            </td>
+                        </tr>
                     @endforeach
                 </tbody>
             </table>
-        @endif
-    @endforeach
-
-    <table class="bottom-layout" style="width:100%;margin-top:6px;border-collapse:collapse">
-        @if($orcamento->observacoes)
-        <tr>
-            <td style="width:100%;padding-bottom:8px">
-                <div style="font-weight:700;color:var(--brand);font-size:10px;margin-bottom:4px">OBSERVAÇÕES TÉCNICAS</div>
-                <div class="obs-box">{!! nl2br(e($orcamento->observacoes)) !!}</div>
-            </td>
-        </tr>
-        @endif
-
-        <tr>
-            <td>
-                <table class="payment-container">
-                    <tr>
-                        <td class="pay-left">
-                            <div class="pix-box">
-                                <table class="pix-tbl" style="width:100%;border-collapse:collapse">
-                                    <tr>
-                                        <td width="70" style="vertical-align:middle;text-align:center">
-                                            @if(($qrCodePix ?? null) || $orcamento->pix_qrcode_base64)
-                                                <img src="{{ $qrCodePix ?? $orcamento->pix_qrcode_base64 }}" class="qr-code" alt="QR">
-                                            @endif
-                                        </td>
-                                        <td class="pix-info" style="vertical-align:middle">
-                                            <div class="bold" style="color:var(--accent);font-size:10px">PAGAMENTO VIA PIX</div>
-                                            <div style="font-size:8px;margin-bottom:2px">Desconto já aplicado no total.</div>
-                                            <div style="font-size:9px">Chave CNPJ: <strong>58.794.846/0001-20</strong></div>
-                                            <div style="font-size:8px;color:#666">Banco Inter</div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                            <div class="validade-alert">⚠ Este orçamento e o QR Code expiram em 7 dias após a emissão.</div>
-                        </td>
-
-                        <td class="pay-right">
-                            <table class="total-tbl">
-                                <tr>
-                                    <td>Subtotal:</td>
-                                    <td>R$ {{ number_format($orcamento->valor_subtotal, 2, ',', '.') }}</td>
-                                </tr>
-                                @if($orcamento->valor_desconto > 0)
-                                <tr>
-                                    <td style="color:var(--accent)">Desconto:</td>
-                                    <td style="color:var(--accent)">- R$ {{ number_format($orcamento->valor_desconto, 2, ',', '.') }}</td>
-                                </tr>
-                                @endif
-                                <tr>
-                                    <td class="total-final" style="vertical-align:bottom">TOTAL:</td>
-                                    <td class="total-final">R$ {{ number_format($orcamento->valor_total, 2, ',', '.') }}</td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-
-    <div class="footer">Stofgard - Higienização e Impermeabilização | CNPJ: 58.794.846/0001-20<br>Este documento não representa um contrato firmado. Após a aprovação, será gerada uma OS oficial.</div>
-
+        </td>
+        
+        <td class="col-pix">
+            @if($shouldShowPix)
+            <div class="pix-box">
+                <strong style="color:#15803d; font-size:11px; text-transform:uppercase;">Pague com PIX</strong><br>
+                
+                @if($qrCodeImg)
+                    <img src="{{ $qrCodeImg }}" class="qr-img">
+                @else
+                    <div style="height:100px; line-height:100px; color:#ccc; font-size:9px;">QR Code Indisponível</div>
+                @endif
+                
+                <div style="font-size:14px; font-weight:900; color:#166534; margin-top:5px;">
+                    R$ {{ number_format($totalAvista, 2, ',', '.') }}
+                </div>
+                
+                <div class="pix-data-container">
+                    <span style="font-size:7px; font-weight:bold; color:#15803d; display:block;">CHAVE PIX:</span>
+                    <span class="pix-key-value">{{ $pixKey }}</span>
+                    @if(!empty($beneficiario))
+                        <div style="font-size:7px; color:#166534; margin-top:2px;">{{ substr($beneficiario,0,18) }}...</div>
+                    @endif
+                </div>
+            </div>
+            @endif
+        </td>
+    </tr>
+</table>
+>     <div class="footer">
+    <span class="validity-text">Validade: Orçamento e QR Code válidos por 7 dias a partir da emissão.</span><br>
+    Este documento não representa um contrato firmado. Após a aprovação, será gerada uma Ordem de Serviço oficial.<br>
+    <span style="color:#cbd5e1; display:inline-block; margin-top:3px;">Documento gerado em {{ now()->setTimezone('America/Sao_Paulo')->format('d/m/Y H:i:s') }}</span>
+</div>
 </body>
 </html>

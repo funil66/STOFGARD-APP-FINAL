@@ -11,12 +11,14 @@ class OrdemServico extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'ordens_servico';
+    protected $table = 'ordem_servicos';
 
     protected $fillable = [
         'numero_os',
         'cadastro_id',
         'orcamento_id',
+        'vendedor_id',
+        'loja_id',
         'tipo_servico',
         'descricao_servico',
         'data_abertura',
@@ -121,7 +123,15 @@ class OrdemServico extends Model
     {
         return $this->belongsTo(Orcamento::class);
     }
+    public function vendedor(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Cadastro::class, 'vendedor_id');
+    }
 
+    public function loja(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Cadastro::class, 'loja_id');
+    }
     public function parceiro(): BelongsTo
     {
         return $this->belongsTo(Parceiro::class);

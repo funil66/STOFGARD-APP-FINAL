@@ -1,47 +1,30 @@
 <?php
-
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model; use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class OrcamentoItem extends Model
-{
-    protected $table = 'orcamentos_itens';
+class OrcamentoItem extends Model {
+    // Define explicitamente a tabela criada na migration
+    protected $table = 'orcamento_items';
 
     protected $fillable = [
         'orcamento_id',
-        'tabela_preco_id',
-        'descricao_item',
-        'unidade_medida',
+        'item_nome',
+        'servico_tipo',
+        'unidade',
         'quantidade',
         'valor_unitario',
-        'observacoes',
-        'tipo_servico',
+        'subtotal',
     ];
 
     protected $casts = [
-        'unidade_medida' => 'string',
         'quantidade' => 'decimal:2',
         'valor_unitario' => 'decimal:2',
+        'subtotal' => 'decimal:2',
     ];
 
-    protected $appends = ['subtotal'];
-
-    // Relacionamentos
     public function orcamento(): BelongsTo
     {
-        return $this->belongsTo(Orcamento::class, 'orcamento_id');
-    }
-
-    public function tabelaPreco(): BelongsTo
-    {
-        return $this->belongsTo(TabelaPreco::class, 'tabela_preco_id');
-    }
-
-    // Acessores
-    public function getSubtotalAttribute()
-    {
-        return $this->quantidade * $this->valor_unitario;
+        return $this->belongsTo(Orcamento::class);
     }
 }
