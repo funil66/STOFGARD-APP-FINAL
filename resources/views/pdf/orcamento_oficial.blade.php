@@ -270,8 +270,8 @@
             
             // Gera imagem LOCALMENTE (SVG/PNG)
             try {
-                // Usa classe via variável para evitar parser issues
-                $qrClass = '\\SimpleSoftwareIO\\QrCode\\Facades\\QrCode';
+                // Define a classe em uma variável string para evitar erro de parser do Blade
+                $qrClass = '\SimpleSoftwareIO\QrCode\Facades\QrCode';
                 if (class_exists($qrClass)) {
                     $pngData = $qrClass::format('png')
                         ->size(200)
