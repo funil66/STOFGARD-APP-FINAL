@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('categorias', function (Blueprint $table) {
-            $table->id();
-            $table->string('tipo'); // 'financeiro', 'produto', 'servico', etc
-            $table->string('nome');
-            $table->string('slug')->unique();
-            $table->string('cor')->nullable(); // cor para gráficos
-            $table->string('icone')->nullable(); // emoji ou classe ícone
-            $table->text('descricao')->nullable();
-            $table->boolean('ativo')->default(true);
-            $table->integer('ordem')->default(0);
-            $table->timestamps();
-            $table->softDeletes();
+        if (! Schema::hasTable('categorias')) {
+            Schema::create('categorias', function (Blueprint $table) {
+                $table->id();
+                $table->string('tipo'); // 'financeiro', 'produto', 'servico', etc
+                $table->string('nome');
+                $table->string('slug')->unique();
+                $table->string('cor')->nullable(); // cor para gráficos
+                $table->string('icone')->nullable(); // emoji ou classe ícone
+                $table->text('descricao')->nullable();
+                $table->boolean('ativo')->default(true);
+                $table->integer('ordem')->default(0);
+                $table->timestamps();
+                $table->softDeletes();
 
-            $table->index(['tipo', 'ativo']);
-        });
+                $table->index(['tipo', 'ativo']);
+            });
+        }
     }
 
     /**

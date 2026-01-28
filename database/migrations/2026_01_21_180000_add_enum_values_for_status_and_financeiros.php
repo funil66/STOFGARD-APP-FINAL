@@ -15,8 +15,10 @@ return new class extends Migration
             // Add 'pendente' to ordens_servico.status
             DB::statement("ALTER TABLE ordens_servico MODIFY COLUMN `status` ENUM('aberta','em_andamento','aguardando_pecas','concluida','cancelada','pendente') NOT NULL DEFAULT 'aberta'");
 
-            // Add 'receita' to financeiros.tipo
-            DB::statement("ALTER TABLE financeiros MODIFY COLUMN `tipo` ENUM('entrada','saida','receita') NOT NULL DEFAULT 'entrada'");
+            // Add 'receita' to financeiros.tipo (only if table exists)
+            if (Schema::hasTable('financeiros')) {
+                DB::statement("ALTER TABLE financeiros MODIFY COLUMN `tipo` ENUM('entrada','saida','receita') NOT NULL DEFAULT 'entrada'");
+            }
         } else {
             // SQLite and other drivers: no-op. Tests that use sqlite don't require
             // enum expansion; running no-op keeps the test suite stable.

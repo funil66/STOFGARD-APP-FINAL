@@ -11,11 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Corrigir foreign key em financeiros
-        Schema::table('financeiros', function (Blueprint $table) {
-            $table->dropForeign(['ordem_servico_id']);
-            $table->foreign('ordem_servico_id')->references('id')->on('ordens_servico')->onDelete('set null');
-        });
+        // Corrigir foreign key em financeiros (só se existir tabela 'financeiros')
+        if (Schema::hasTable('financeiros')) {
+            Schema::table('financeiros', function (Blueprint $table) {
+                if (Schema::hasColumn('financeiros', 'ordem_servico_id')) {
+                    try { $table->dropForeign(['ordem_servico_id']); } catch (\Exception $e) {}
+                    $table->foreign('ordem_servico_id')->references('id')->on('ordens_servico')->onDelete('set null');
+                }
+            });
+        }
 
         // Corrigir foreign key em agendas
         Schema::table('agendas', function (Blueprint $table) {

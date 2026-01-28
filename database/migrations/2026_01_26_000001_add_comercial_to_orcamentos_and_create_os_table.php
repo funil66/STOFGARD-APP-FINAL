@@ -10,10 +10,18 @@ return new class extends Migration {
         // 1. Atualiza Orçamentos (Adiciona Vendedor e Loja)
         Schema::table('orcamentos', function (Blueprint $table) {
             if (! Schema::hasColumn('orcamentos', 'vendedor_id')) {
-                $table->foreignId('vendedor_id')->nullable()->constrained('cadastros')->nullOnDelete();
+                if (Schema::hasTable('cadastros')) {
+                    $table->foreignId('vendedor_id')->nullable()->constrained('cadastros')->nullOnDelete();
+                } else {
+                    $table->unsignedBigInteger('vendedor_id')->nullable();
+                }
             }
             if (! Schema::hasColumn('orcamentos', 'loja_id')) {
-                $table->foreignId('loja_id')->nullable()->constrained('cadastros')->nullOnDelete();
+                if (Schema::hasTable('cadastros')) {
+                    $table->foreignId('loja_id')->nullable()->constrained('cadastros')->nullOnDelete();
+                } else {
+                    $table->unsignedBigInteger('loja_id')->nullable();
+                }
             }
         });
 
@@ -25,9 +33,15 @@ return new class extends Migration {
 
                 // Vínculos
                 $table->foreignId('orcamento_id')->constrained('orcamentos');
-                $table->foreignId('cadastro_id')->constrained('cadastros');
-                $table->foreignId('vendedor_id')->nullable()->constrained('cadastros');
-                $table->foreignId('loja_id')->nullable()->constrained('cadastros');
+                if (Schema::hasTable('cadastros')) {
+                    $table->foreignId('cadastro_id')->constrained('cadastros');
+                    $table->foreignId('vendedor_id')->nullable()->constrained('cadastros');
+                    $table->foreignId('loja_id')->nullable()->constrained('cadastros');
+                } else {
+                    $table->unsignedBigInteger('cadastro_id');
+                    $table->unsignedBigInteger('vendedor_id')->nullable();
+                    $table->unsignedBigInteger('loja_id')->nullable();
+                }
 
                 // Dados Operacionais
                 $table->date('data_agendamento')->nullable();

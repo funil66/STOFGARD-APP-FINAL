@@ -11,10 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('financeiros', function (Blueprint $table) {
-            $table->unsignedBigInteger('cadastro_id')->nullable()->after('cliente_id');
-            $table->index('cadastro_id');
-        });
+        if (Schema::hasTable('financeiros')) {
+            Schema::table('financeiros', function (Blueprint $table) {
+                if (! Schema::hasColumn('financeiros', 'cadastro_id')) {
+                    $table->unsignedBigInteger('cadastro_id')->nullable()->after('cliente_id');
+                    $table->index('cadastro_id');
+                }
+            });
+        }
     }
 
     /**

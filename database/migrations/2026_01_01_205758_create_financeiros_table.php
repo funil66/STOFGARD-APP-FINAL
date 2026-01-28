@@ -1,76 +1,55 @@
 <?php
+use Illuminate\Database\Migrations\Migration; use Illuminate\Database\Schema\Blueprint; use Illuminate\Support\Facades\Schema;
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+return new class extends Migration { public function up(): void { // 1. Categorias Financeiras (Ex: Serviços, Impostos, Material)
+        if (! Schema::hasTable('categorias')) {
+            Schema::create('categorias', function (Blueprint $table) {
+                $table->id();
+                $table->string('nome');
+                $table->enum('tipo', ['receita', 'despesa'])->index();
+                $table->string('cor')->nullable(); // Para gráficos
+                $table->boolean('ativo')->default(true);
+                $table->timestamps();
+            });
+        }
 
-return new class extends Migration
+        // 2. Transações Financeiras (O Coração)
+        if (! Schema::hasTable('transacoes_financeiras')) {
+            Schema::create('transacoes_financeiras', function (Blueprint $table) {
+                $table->id();
+                $table->string('descricao'); // O que é?
+                
+                // Valores
+                $table->decimal('valor_total', 10, 2);
+                $table->decimal('valor_pago', 10, 2)->default(0);
+                
+                // Datas
+                $table->date('data_vencimento');
+                $table->date('data_pagamento')->nullable();
+                
+                // Status e Tipo
+                $table->enum('tipo', ['receita', 'despesa'])->index();
+                $table->enum('status', ['pendente', 'pago', 'atrasado', 'cancelado'])->default('pendente')->index();
+                
+                // Relacionamentos (O Elo Perdido)
+                $table->foreignId('categoria_id')->nullable()->constrained('categorias')->nullOnDelete();
+                $table->foreignId('orcamento_id')->nullable()->constrained('orcamentos')->nullOnDelete();
+                $table->foreignId('ordem_servico_id')->nullable()->constrained('ordens_servico')->nullOnDelete();
+                
+                // Polimorfismo para vincular a Cliente ou Parceiro (Cadastro)
+                $table->foreignId('cadastro_id')->nullable()->constrained('cadastros')->nullOnDelete();
+                
+                $table->text('observacoes')->nullable();
+                $table->string('comprovante_path')->nullable();
+                
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
+    }
+public function down(): void
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::create('financeiros', function (Blueprint $table) {
-            $table->id();
-
-            // Relacionamentos
-            $table->foreignId('cliente_id')->nullable()->constrained('clientes')->onDelete('set null');
-            $table->foreignId('orcamento_id')->nullable()->constrained('orcamentos')->onDelete('set null');
-            $table->foreignId('ordem_servico_id')->nullable()->constrained('ordens_servico')->onDelete('set null');
-
-            // Dados básicos
-            $table->enum('tipo', ['entrada', 'saida'])->default('entrada');
-            $table->string('descricao');
-            $table->text('observacoes')->nullable();
-            $table->string('categoria', 100)->nullable();
-
-            // Valores
-            $table->decimal('valor', 10, 2);
-            $table->decimal('valor_pago', 10, 2)->nullable();
-            $table->decimal('desconto', 10, 2)->default(0);
-            $table->decimal('juros', 10, 2)->default(0);
-            $table->decimal('multa', 10, 2)->default(0);
-
-            // Datas
-            $table->date('data');
-            $table->date('data_vencimento')->nullable();
-            $table->datetime('data_pagamento')->nullable();
-
-            // Status e forma de pagamento
-            $table->enum('status', ['pendente', 'pago', 'cancelado', 'atrasado'])->default('pendente');
-            $table->string('forma_pagamento', 50)->nullable(); // dinheiro, pix, cartao, boleto, etc
-            $table->string('comprovante')->nullable();
-
-            // Campos PIX
-            $table->string('pix_txid', 100)->nullable()->unique();
-            $table->text('pix_qrcode_base64')->nullable();
-            $table->text('pix_copia_cola')->nullable();
-            $table->string('pix_location', 255)->nullable();
-            $table->datetime('pix_expiracao')->nullable();
-            $table->string('pix_status', 50)->nullable();
-            $table->text('pix_response')->nullable();
-            $table->datetime('pix_data_pagamento')->nullable();
-            $table->decimal('pix_valor_pago', 10, 2)->nullable();
-
-            // Link público de pagamento
-            $table->string('link_pagamento_hash', 100)->nullable()->unique();
-
-            $table->timestamps();
-
-            // Índices
-            $table->index('data');
-            $table->index('status');
-            $table->index('tipo');
-            $table->index('data_vencimento');
-        });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('financeiros');
-    }
+    Schema::dropIfExists('transacoes_financeiras');
+    Schema::dropIfExists('categorias');
+}
 };

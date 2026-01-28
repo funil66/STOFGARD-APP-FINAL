@@ -53,10 +53,23 @@ class ConfiguracaoSeeder extends Seeder {
         }
 
         if (! empty($allowed)) {
+            // Ensure required 'grupo' exists for the insert (legacy compatibility)
+            if (\Illuminate\Support\Facades\Schema::hasColumn('configuracoes', 'grupo') && ! isset($allowed['grupo'])) {
+                $allowed['grupo'] = 'empresa';
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn('configuracoes', 'chave') && ! isset($allowed['chave'])) {
+                $allowed['chave'] = 'padrao';
+            }
+
             Configuracao::updateOrCreate(['id' => 1], $allowed);
         } else {
             // Fallback: ensure at least a single row exists for legacy code
-            Configuracao::firstOrCreate(['id' => 1]);
+            // Use a safe default for 'grupo' if the column exists
+            if (\Illuminate\Support\Facades\Schema::hasColumn('configuracoes', 'grupo')) {
+                Configuracao::firstOrCreate(['id' => 1], ['grupo' => 'empresa']);
+            } else {
+                Configuracao::firstOrCreate(['id' => 1]);
+            }
         }
     }
 }
