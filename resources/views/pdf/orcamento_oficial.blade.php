@@ -270,13 +270,14 @@
             
             // Gera imagem LOCALMENTE (SVG/PNG)
             try {
-                // CORREÇÃO AQUI: Uso seguro da Facade sem barra invertida inicial ou com alias completo
-                if (class_exists('SimpleSoftwareIO\\QrCode\\Facades\\QrCode')) {
-                    $pngData = SimpleSoftwareIO\\QrCode\\Facades\\QrCode::format('png')
+                // Usa classe via variável para evitar parser issues
+                $qrClass = '\\SimpleSoftwareIO\\QrCode\\Facades\\QrCode';
+                if (class_exists($qrClass)) {
+                    $pngData = $qrClass::format('png')
                         ->size(200)
                         ->margin(0)
                         ->generate($payload);
-                        
+
                     $qrCodeImg = 'data:image/png;base64,' . base64_encode($pngData);
                 }
             } catch (\Exception $e) {
