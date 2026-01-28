@@ -63,28 +63,49 @@ return $form
                     ->label('Gerar QR Code PIX')
                     ->default(true),
                 Forms\Components\Select::make('pix_chave_selecionada')
-                    ->label('Escolha a Chave PIX')
-                    ->options(function () {
-                        $raw = \App\Models\Setting::where('key', 'financeiro_pix_keys')->value('value');
-                        $data = is_string($raw) ? json_decode($raw, true) : ($raw ?? []);
-                        
-                        $options = [];
-                        if (is_array($data)) {
-                            foreach ($data as $item) {
-                                if (!empty($item['chave'])) {
-                                    // Mostra Chave + Titular no dropdown
-                                    $options[$item['chave']] = $item['chave'] . ' - ' . ($item['titular'] ?? '');
-                                }
-                            }
-                        }
-                        return $options;
-                    })
-                    ->searchable()
-                    ->preload() // Carrega a lista na hora
-                    ->live()
-                    ->required(fn (Forms\Get $get) => $get('pdf_incluir_pix'))
-                    ->visible(fn (Forms\Get $get) => $get('pdf_incluir_pix'))
-                    ->columnSpanFull(),
+    ->label('Selecionar Chave PIX')
+    ->options(function () {
+        // 1. Tenta buscar via Model (pode vir array se tiver cast)
+        $setting = \App\Models\Setting::find('financeiro_pix_keys'); 
+        $valor = $setting ? $setting->value : null;
+
+        // 2. Se não veio pelo Model, tenta via Query Builder (vem string bruta)
+        if (!$valor) {
+            $valor = \Illuminate\Support\Facades\DB::table('settings')
+                ->where('key', 'financeiro_pix_keys')
+                ->value('value');
+        }
+
+        // 3. Normalização Bruta: Garante que temos um array
+        $dados = [];
+        if (is_array($valor)) {
+            $dados = $valor; // Já era array
+        } elseif (is_string($valor)) {
+            $dados = json_decode($valor, true) ?? []; // Era string, virou array
+        }
+
+        // 4. Monta a lista para o Dropdown
+        $opcoes = [];
+        foreach ($dados as $item) {
+            if (!empty($item['chave'])) {
+                // Formata: "CHAVE - TITULAR"
+                $label = $item['chave'];
+                if (!empty($item['titular'])) {
+                    $label .= " ({$item['titular']})";
+                }
+                // O valor salvo é a própria chave
+                $opcoes[$item['chave']] = $label;
+            }
+        }
+        
+        return $opcoes;
+    })
+    ->searchable()
+    ->preload()
+    ->live()
+    ->required(fn (Forms\Get $get) => $get('pdf_incluir_pix'))
+    ->visible(fn (Forms\Get $get) => $get('pdf_incluir_pix'))
+    ->columnSpanFull(),
                 // Seleção de Vendedor com Trigger de Cálculo
                 Forms\Components\Select::make('vendedor_id')
                     ->label('Vendedor')

@@ -1,43 +1,54 @@
 <?php
 namespace App\Services;
 
-class PixPayload {
-    public static function gerar(string $chave, string $beneficiario, string $cidade, string $txid, float $valor): string {
-        // 1. HIGIENIZAÇÃO DA CHAVE (Inteligente)
+class PixPayload
+{
+    public static function gerar(string $chave, string $beneficiario, string $cidade, string $txid, float $valor): string
+    {
         $chave = trim($chave);
-
-        // Se tem @, é E-mail. Mantém.
+        
+        // 1. DETECÇÃO INTELIGENTE DE TIPO DE CHAVE
+        
+        // E-mail: Contém @
         if (strpos($chave, '@') !== false) {
-            // Email ok
+            // Mantém como está
         }
-        // Se tem hifens e letras (ex: 123-ab-cd), é Chave Aleatória (EVP).
-        // Removemos tudo que não for letra, número ou hífen.
-        elseif (preg_match('/[a-zA-Z]/', $chave) && strpos($chave, '-') !== false) {
-            $chave = preg_replace('/[^a-zA-Z0-9\-]/', '', $chave);
+        // Chave Aleatória (EVP): Contém hífens e tem 36 caracteres
+        elseif (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $chave)) {
+            // Mantém os hífens, pois são obrigatórios no EVP
         }
-        // Se só tem números ou caracteres de telefone/CPF
+        // Telefone/CPF/CNPJ: Apenas números
         else {
-            $numeros = preg_replace('/[^0-9]/', '', $chave);
-            // CPF (11) ou CNPJ (14)
-            if (strlen($numeros) === 11 || strlen($numeros) === 14) {
-                $chave = $numeros; 
-            } 
-            // Provável Celular (DDD + 9 + 8 digitos = 11) ou Fixo (10)
-            // No PIX, telefone SEMPRE precisa do +55
-            else {
-                $chave = '+55' . $numeros;
+            // Remove tudo que não for número
+            $apenasNumeros = preg_replace('/[^0-9]/', '', $chave);
+            
+            // Se for Telefone (começa com DDD e tem 10 ou 11 digitos), adiciona +55
+            // CPF (11) e CNPJ (14) não ganham +55
+            if (strlen($apenasNumeros) <= 11 && !in_array(strlen($apenasNumeros), [11])) {
+                 // Assumindo telefone se não for CPF exato (CPF tem 11, mas validação de digito é complexa, aqui simplificamos)
+                 // Melhor abordagem: Se tem cara de telefone e não é CPF
+                 $chave = '+55' . $apenasNumeros;
+            } elseif (strlen($apenasNumeros) === 11) {
+                // Pode ser CPF ou Celular. No PIX, CPF é só números. Celular precisa de +55.
+                // Como desambiguar? Geralmente CPF começa com 0..9. Celular tem DDD.
+                // REGRA PRÁTICA: Se o usuário digitou formatado (xx) x..., é telefone.
+                if (strpos($chave, '(') !== false || strpos($chave, ' ') !== false) {
+                     $chave = '+55' . $apenasNumeros;
+                } else {
+                     $chave = $apenasNumeros; // Assume CPF
+                }
+            } else {
+                $chave = $apenasNumeros; // CNPJ ou outros
             }
         }
 
-        // 2. FORMATAÇÃO DE CAMPOS
+        // 2. Formata Strings
         $beneficiario = substr(self::removeAcentos($beneficiario), 0, 25);
         $cidade = substr(self::removeAcentos($cidade), 0, 15);
         $valorStr = number_format($valor, 2, '.', '');
-        
-        // TXID deve ser *** se vazio, ou alfanumérico limpo
         $txid = empty($txid) ? '***' : substr(preg_replace('/[^a-zA-Z0-9]/', '', $txid), 0, 25);
 
-        // 3. MONTAGEM DO PAYLOAD
+        // 3. Payload BR Code
         $payload = "000201";
         $payload .= "26" . self::len(14 + strlen($chave)) . "0014br.gov.bcb.pix01" . self::len($chave) . $chave;
         $payload .= "52040000";
@@ -48,15 +59,18 @@ class PixPayload {
         $payload .= "60" . self::len($cidade) . $cidade;
         $payload .= "62" . self::len(4 + strlen($txid)) . "05" . self::len($txid) . $txid;
         $payload .= "6304";
+
         return $payload . self::calculaCRC16($payload);
     }
 
-    private static function len($strOrInt) { 
-        $len = is_int($strOrInt) ? $strOrInt : strlen($strOrInt);
-        return str_pad($len, 2, '0', STR_PAD_LEFT); 
+    private static function len($str) {
+        $len = is_int($str) ? $str : strlen($str);
+        return str_pad($len, 2, '0', STR_PAD_LEFT);
     }
-
-    private static function removeAcentos($string) { return preg_replace(['/(á|à|ã|â|ä)/','/(é|è|ê|ë)/','/(í|ì|î|ï)/','/(ó|ò|õ|ô|ö)/','/(ú|ù|û|ü)/','/(ç)/','/(ñ)/','/(Á|À|Ã|Â|Ä)/','/(É|È|Ê|Ë)/','/(Í|Ì|Î|Ï)/','/(Ó|Ò|Õ|Ô|Ö)/','/(Ú|Ù|Û|Ü)/','/(Ç)/','/(Ñ)/'], ['a','e','i','o','u','c','n','A','E','I','O','U','C','N'], $string); }
+    
+    private static function removeAcentos($string) {
+        return preg_replace(['/(á|à|ã|â|ä)/','/(é|è|ê|ë)/','/(í|ì|î|ï)/','/(ó|ò|õ|ô|ö)/','/(ú|ù|û|ü)/','/(ç)/','/(ñ)/','/(Á|À|Ã|Â|Ä)/','/(É|È|Ê|Ë)/','/(Í|Ì|Î|Ï)/','/(Ó|Ò|Õ|Ô|Ö)/','/(Ú|Ù|Û|Ü)/','/(Ç)/','/(Ñ)/'], ['a','e','i','o','u','c','n','A','E','I','O','U','C','N'], $string);
+    }
 
     private static function calculaCRC16($payload) {
         $resultado = 0xFFFF;
