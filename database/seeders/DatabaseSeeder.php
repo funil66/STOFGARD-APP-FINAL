@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ConfiguracaoSeeder::class,
             TabelaPrecosSeeder::class,
-            // UserSeeder::class, // (Se necessário)
+            UserSeeder::class, // Create default admin and users
             // ClienteFactory::class, // (Se necessário)
         ]);
     }
