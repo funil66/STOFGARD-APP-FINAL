@@ -270,17 +270,17 @@
             
             // Gera imagem LOCALMENTE (SVG/PNG)
             try {
-                // Tenta usar a biblioteca local
-                if (class_exists('\\SimpleSoftwareIO\\QrCode\\Facades\\QrCode')) {
-                    $qrCodeImg = 'data:image/png;base64,' . base64_encode(
-                        \\SimpleSoftwareIO\\QrCode\\Facades\\QrCode::format('png')
-                            ->size(200)
-                            ->margin(0)
-                            ->generate($payload)
-                    );
+                // CORREÇÃO AQUI: Uso seguro da Facade sem barra invertida inicial ou com alias completo
+                if (class_exists('SimpleSoftwareIO\\QrCode\\Facades\\QrCode')) {
+                    $pngData = SimpleSoftwareIO\\QrCode\\Facades\\QrCode::format('png')
+                        ->size(200)
+                        ->margin(0)
+                        ->generate($payload);
+                        
+                    $qrCodeImg = 'data:image/png;base64,' . base64_encode($pngData);
                 }
             } catch (\Exception $e) {
-                // Se falhar local, não quebra o PDF, apenas não exibe
+                // Silencioso
             }
         }
     
