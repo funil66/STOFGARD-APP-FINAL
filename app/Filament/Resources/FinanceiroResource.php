@@ -349,7 +349,7 @@ class FinanceiroResource extends Resource
                                 ->duration(10000)
                                 ->send();
                         }
-                    })
+                    }),
 
                 Action::make('confirmar_pix')
                     ->label('Confirmar Pagamento')
