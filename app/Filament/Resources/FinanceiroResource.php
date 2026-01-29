@@ -362,10 +362,9 @@ class FinanceiroResource extends Resource
 
                         Notification::make()->title('Pagamento Confirmado no Caixa!')->success()->send();
                     })
-                    ->requiresConfirmation()
-                    ->modalHeading('Gerar PIX')
-                    ->modalDescription('Deseja gerar um QR Code PIX para este pagamento?')
-                    ->modalSubmitActionLabel('Sim, gerar PIX'),
+                    ->modalHeading('Confirmar Pagamento')
+                    ->modalDescription('Deseja marcar este registro como pago?')
+                    ->modalSubmitActionLabel('Sim, confirmar'),
 
                 Action::make('verPix')
                     ->label('Ver PIX')
