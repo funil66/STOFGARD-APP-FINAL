@@ -22,7 +22,7 @@ class Cadastro extends Model
     public function getGlobalSearchResultDetails(): array
     {
         return [
-            'Email' => $this->email,
+            'Tipo' => ucfirst($this->tipo),
             'Telefone' => $this->telefone,
         ];
     }
@@ -72,4 +72,9 @@ class Cadastro extends Model
     {
         return $this->hasMany(Orcamento::class, 'cadastro_id');
     }
-}
+
+    public function ordensServico(): HasMany
+    {
+        return $this->hasMany(OrdemServico::class, 'cadastro_id');
+    }
+} 

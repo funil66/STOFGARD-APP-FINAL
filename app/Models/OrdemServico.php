@@ -44,12 +44,12 @@ class OrdemServico extends Model
         return "OS: {$this->numero_os}";
     }
 
-    // Mostra o status e valor na busca
+    // Mostra Cliente e Status na busca
     public function getGlobalSearchResultDetails(): array
     {
         return [
+            'Cliente' => $this->cadastro->nome ?? 'Desconhecido',
             'Status' => ucfirst($this->status),
-            'Valor' => 'R$ ' . number_format($this->valor_total, 2, ',', '.'),
         ];
     }
 

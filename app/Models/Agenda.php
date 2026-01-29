@@ -5,10 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Filament\Models\Contracts\FilamentUser;
 
 class Agenda extends Model
 {
     use SoftDeletes;
+
+    protected $table = 'agendas';
+
+    // ATIVA A BUSCA NO TOPO
+    public static $globallySearchableAttributes = ['titulo', 'descricao', 'local'];
 
     protected $fillable = [
         'titulo',
@@ -139,5 +145,10 @@ class Agenda extends Model
     public function estaFuturo(): bool
     {
         return $this->data_hora_inicio > now();
+    }
+
+    public function getGlobalSearchResultTitle(): string
+    {
+        return "Agenda: {$this->titulo}";
     }
 }
