@@ -3,139 +3,108 @@
 namespace App\Http\Controllers;
 
 use App\Models\Orcamento;
-use App\Models\Setting;
+use App\Models\Setting; // Ou Configuracao, dependendo de onde vc salva
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use App\Services\PixPayload;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Services\Pix\PixMasterService; // Importa o novo serviço
 
 class OrcamentoPdfController extends Controller
 {
+    protected $pixService;
+
+    public function __construct(PixMasterService $pixService)
+    {
+        $this->pixService = $pixService;
+    }
+
     public function gerarPdf(Orcamento $orcamento)
     {
-        $orcamento->load(['cliente', 'itens', 'vendedor', 'loja']);
+        // 1. Carregar dados vitais
+        $orcamento->load(['cliente', 'itens']);
 
-        $config = Setting::all()->pluck('value', 'key')->toArray();
-        $jsonFields = ['catalogo_servicos_v2', 'financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento'];
+        // 2. Carregar Configurações (Centralizar aqui)
+        // ATENÇÃO: Verifique se você usa o Model 'Setting' ou 'Configuracao' no Filament
+        $config = Setting::all()->pluck('value', 'key')->toArray(); 
         
-        foreach ($jsonFields as $key) {
+        // Decodificar JSONs comuns
+        foreach (['financeiro_pix_keys', 'financeiro_parcelamento'] as $key) {
             if (isset($config[$key]) && is_string($config[$key])) {
                 $decoded = json_decode($config[$key], true);
-                if (json_last_error() === JSON_ERROR_NONE) $config[$key] = $decoded;
+                $config[$key] = ($decoded) ? $decoded : [];
             }
         }
 
-        // --- CÁLCULOS ---
+        // 3. Cálculos Financeiros
         $total = $orcamento->itens->sum('subtotal');
         $percDesconto = (float) ($config['financeiro_desconto_avista'] ?? 10);
         $totalAvista = $total * (1 - ($percDesconto / 100));
-        $regrasParcelamento = $config['financeiro_parcelamento'] ?? [];
+        
+        // 4. Integração PIX (O Coração da mudança)
+        $dadosPix = [
+            'ativo' => false,
+            'img' => null,
+            'payload' => null,
+            'chave_visual' => null,
+            'beneficiario' => $config['empresa_nome'] ?? 'Stofgard'
+        ];
 
-        // --- TRATAMENTO DE CHAVE ---
-        $pixKey = trim($orcamento->pix_chave_selecionada);
-        if (empty($pixKey)) {
-            $rawPixKeys = $config['financeiro_pix_keys'] ?? [];
-            if (is_array($rawPixKeys) && !empty($rawPixKeys)) {
-                $first = reset($rawPixKeys);
-                $pixKey = trim($first['chave'] ?? null);
-            }
+        // Tenta pegar a chave do orçamento OU a padrão do sistema
+        $chavePix = $orcamento->pix_chave_selecionada;
+        
+        if (empty($chavePix) && !empty($config['financeiro_pix_keys'])) {
+            // Pega a primeira chave cadastrada se não tiver específica
+            $primeira = reset($config['financeiro_pix_keys']);
+            $chavePix = $primeira['chave'] ?? null;
         }
 
-        $pixKeyForPayload = $pixKey;
+        if (!empty($chavePix) && ($orcamento->pdf_incluir_pix ?? true)) {
+            // CHAMA O SERVIÇO NOVO
+            $resultado = $this->pixService->gerarQrCode(
+                $chavePix,
+                $dadosPix['beneficiario'],
+                'Ribeirao Preto', // Ideal vir do config['empresa_cidade']
+                'ORC' . $orcamento->numero,
+                $totalAvista
+            );
 
-        if (!empty($pixKey)) {
-            // 1. Detecta EVP (Aleatória): Letras, Números e Hífens
-            $isEVP = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $pixKey);
-            
-            // 2. Detecta Email
-            $isEmail = filter_var($pixKey, FILTER_VALIDATE_EMAIL);
-
-            if ($isEVP || $isEmail) {
-                // Se for EVP ou Email, NÃO MEXE. Manda como está.
-                $pixKeyForPayload = $pixKey;
-            } else {
-                // Assume que é numérico (Telefone, CPF, CNPJ)
-                $onlyNums = preg_replace('/[^0-9]/', '', $pixKey);
-                
-                // Se tiver 10 ou 11 dígitos, tratamos como CELULAR
-                if (strlen($onlyNums) == 10 || strlen($onlyNums) == 11) {
-                    // Regra de Ouro: Telefone PRECISA do +55
-                    $pixKeyForPayload = '+55' . $onlyNums;
-                } else {
-                    // CPF ou CNPJ (apenas números)
-                    $pixKeyForPayload = $onlyNums;
-                }
-            }
+            $dadosPix['ativo'] = true;
+            $dadosPix['img'] = $resultado['qr_code_img'];
+            $dadosPix['payload'] = $resultado['payload_pix'];
+            $dadosPix['chave_visual'] = $chavePix; // Mostra a original para o cliente ler
         }
 
-        // D. Gera o QR Code e as Strings para View
-        $qrCodeBase64 = null;
-        $shouldShowPix = ($orcamento->pdf_incluir_pix ?? true) && !empty($pixKey);
-        $beneficiario = $config['empresa_nome'] ?? 'Stofgard';
-
-        if ($shouldShowPix && class_exists(PixPayload::class)) {
-            try {
-                $payload = PixPayload::gerar(
-                    (string)$pixKeyForPayload,
-                    $beneficiario,
-                    'Ribeirao Preto',
-                    $orcamento->numero,
-                    (float)$totalAvista
-                );
-
-                if (class_exists(QrCode::class)) {
-                    $pngData = QrCode::format('png')
-                        ->size(300)
-                        ->margin(1)
-                        ->generate($payload);
-                    $qrCodeBase64 = 'data:image/png;base64,' . base64_encode($pngData);
-                }
-            } catch (\Exception $e) {
-                Log::error("Erro QR Code: " . $e->getMessage());
-            }
-        }
-
-        // --- RENDERIZAR VIEW ---
+        // 5. Renderiza HTML Limpo
         $html = view('pdf.orcamento_oficial', [
             'orcamento' => $orcamento,
             'config' => $config,
             'total' => $total,
             'totalAvista' => $totalAvista,
             'percDesconto' => $percDesconto,
-            'regras' => $regrasParcelamento,
-            
-            // Passamos os dados (sanitizados)
-            'pixKey' => $pixKeyForPayload,
-            'pixBeneficiario' => $config['empresa_nome'] ?? 'Stofgard',
-            
-            'qrCodeImg' => $qrCodeBase64,
-            'shouldShowPix' => $shouldShowPix,
+            'regras' => $config['financeiro_parcelamento'] ?? [],
+            'pix' => $dadosPix // Passamos tudo dentro de um array organizado
         ])->render();
 
+        // 6. Geração do Arquivo (Puppeteer)
         $tempId = $orcamento->id . '_' . time();
-        $htmlPath = storage_path("app/public/temp_orc_{$tempId}.html");
-        $pdfPath = storage_path("app/public/temp_orc_{$tempId}.pdf");
+        $htmlPath = storage_path("app/public/temp_{$tempId}.html");
+        $pdfPath = storage_path("app/public/temp_{$tempId}.pdf");
 
         if (!File::exists(dirname($htmlPath))) File::makeDirectory(dirname($htmlPath), 0755, true);
         file_put_contents($htmlPath, $html);
 
         $scriptPath = base_path('scripts/generate-pdf.js');
-        if (!file_exists($scriptPath)) abort(500, "Script Puppeteer ausente.");
-
-        $result = Process::run(['node', $scriptPath, $htmlPath, $pdfPath]);
-
-        if ($result->failed()) {
-            @unlink($htmlPath);
-            return response()->json(['error' => 'Falha PDF', 'details' => $result->errorOutput()], 500);
-        }
-
-        if (file_exists($pdfPath)) {
-            @unlink($htmlPath);
-            return response()->file($pdfPath)->deleteFileAfterSend();
-        }
         
-        return response()->json(['error' => 'PDF não criado.'], 500);
+        // Executa Node
+        $process = Process::run(['node', $scriptPath, $htmlPath, $pdfPath]);
+
+        if ($process->failed()) {
+            Log::error('Erro PDF: ' . $process->errorOutput());
+            @unlink($htmlPath);
+            return response()->json(['error' => 'Erro ao gerar PDF'], 500);
+        }
+
+        return response()->file($pdfPath)->deleteFileAfterSend();
     }
 }

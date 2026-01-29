@@ -134,19 +134,24 @@
             </td>
 
             <td class="finance-right">
-                @if($shouldShowPix)
-                <div class="pix-box">
-                    <strong style="color:#15803d; font-size:11px;">PAGUE COM PIX</strong>
-                    @if($qrCodeImg)
-                        <img src="{{ $qrCodeImg }}" class="qr-img">
-                        <div class="pix-info">
-                            <strong>Favorecido:</strong> {{ $pixBeneficiario }}<br>
-                            <strong>Chave:</strong> {{ $pixKey }}
+                @if(!empty($pix['ativo']) && $pix['ativo'])
+                    <div class="pix-box">
+                        <strong style="color:#15803d; font-size:11px;">PAGUE COM PIX</strong>
+                        @if(!empty($pix['img']))
+                            <img src="{{ $pix['img'] }}" class="qr-img">
+                        @else
+                            <div style="height:120px; padding-top:50px; color:#ccc; font-size:9px;">QR Indisponível</div>
+                        @endif
+
+                        <div class="pix-key-container" style="margin-top:8px;">
+                            <span style="color:#64748b; font-size:9px;">Chave:</span><br>
+                            {{ $pix['chave_visual'] }}
                         </div>
-                    @else
-                        <div style="height:100px; padding-top:40px; color:#ccc; font-size:9px;">QR Indisponível</div>
-                    @endif
-                </div>
+
+                        <div style="margin-top:5px; font-size:9px; color:#64748b;">
+                            Beneficiário: {{ substr($pix['beneficiario'], 0, 20) }}
+                        </div>
+                    </div>
                 @endif
             </td>
         </tr>
