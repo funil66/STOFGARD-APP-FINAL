@@ -366,6 +366,25 @@ class FinanceiroResource extends Resource
                     ->modalDescription('Deseja marcar este registro como pago?')
                     ->modalSubmitActionLabel('Sim, confirmar'),
 
+                // Quick confirm action directly on the table (alternative and visible when pendente)
+                Action::make('confirmar')
+                    ->label('Confirmar Pagamento')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (Financeiro $record) => $record->status === 'pendente')
+                    ->requiresConfirmation()
+                    ->action(function (Financeiro $record) {
+                        $record->update([
+                            'status' => 'pago',
+                            'data_pagamento' => now(),
+                        ]);
+
+                        Notification::make()
+                            ->title('Pagamento Confirmado')
+                            ->success()
+                            ->send();
+                    }),
+
                 Action::make('verPix')
                     ->label('Ver PIX')
                     ->icon('heroicon-o-qr-code')

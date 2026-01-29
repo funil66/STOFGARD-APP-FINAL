@@ -11,12 +11,20 @@ class Cadastro extends Model
 {
     use SoftDeletes;
 
-    // Global search config for Filament
-    public static $globallySearchableAttributes = ['nome', 'email', 'telefone', 'documento'];
+    // CONFIGURAÇÃO DA BUSCA GLOBAL
+    public static $globallySearchableAttributes = ['nome', 'email', 'telefone', 'cpf_cnpj'];
 
     public function getGlobalSearchResultTitle(): string
     {
         return "Cliente: {$this->nome}";
+    }
+
+    public function getGlobalSearchResultDetails(): array
+    {
+        return [
+            'Email' => $this->email,
+            'Telefone' => $this->telefone,
+        ];
     }
 
     public function getGlobalSearchResultUrl(): string

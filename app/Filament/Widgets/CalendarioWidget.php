@@ -2,9 +2,11 @@
 
 namespace App\Filament\Widgets;
 
-use App\Filament\Resources\AgendaResource;
-use App\Models\Agenda;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
+use App\Models\Agenda;
+use App\Models\OrdemServico;
+use Filament\Actions\Action;
+use Carbon\Carbon;
 
 class CalendarioWidget extends FullCalendarWidget
 {
@@ -12,107 +14,58 @@ class CalendarioWidget extends FullCalendarWidget
     {
         $events = [];
 
-        // Agendas avulsas
+        // 1. Puxar Agendamentos Manuais
         $agendas = Agenda::where('data_hora_inicio', '>=', $fetchInfo['start'])
-            ->where('data_hora_inicio', '<=', $fetchInfo['end'])
+            ->where('data_hora_fim', '<=', $fetchInfo['end'])
             ->get();
 
-        foreach ($agendas as $agenda) {
+        foreach ($agendas as $a) {
             $events[] = [
-                'id' => 'ag-' . $agenda->id,
-                'title' => $agenda->titulo,
-                'start' => $agenda->data_hora_inicio->toIso8601String(),
-                'end' => $agenda->data_hora_fim->toIso8601String(),
-                'url' => AgendaResource::getUrl('view', ['record' => $agenda->id]),
-                'backgroundColor' => $agenda->cor,
-                'borderColor' => $agenda->cor,
-                'textColor' => '#ffffff',
-                'allDay' => $agenda->dia_inteiro,
-                'extendedProps' => [
-                    'tipo' => $agenda->tipo,
-                    'status' => $agenda->status,
-                    'cliente' => $agenda->cliente?->nome,
-                    'local' => $agenda->local,
-                ],
+                'id' => 'agenda-' . $a->id,
+                'title' => $a->titulo,
+                'start' => $a->data_hora_inicio,
+                'end' => $a->data_hora_fim,
+                'backgroundColor' => match($a->status) {
+                    'concluido' => '#10b981', // Verde
+                    'cancelado' => '#ef4444', // Vermelho
+                    default => '#3b82f6',     // Azul
+                },
+                'url' => '/admin/agendas/' . $a->id . '/edit',
             ];
         }
 
-        // Ordens de Serviço agendadas
-        $oss = \App\Models\OrdemServico::where('data_inicio', '>=', $fetchInfo['start'])
-            ->where('data_inicio', '<=', $fetchInfo['end'])
-            ->get();
+        // 2. Puxar Ordens de Serviço (Previsão)
+        $oss = OrdemServico::where('data_inicio', '>=', $fetchInfo['start'])->get();
 
         foreach ($oss as $os) {
+            // Se não tiver data fim, assume 2 horas
+            $fim = $os->data_fim ?? Carbon::parse($os->data_inicio)->addHours(2);
+
             $events[] = [
                 'id' => 'os-' . $os->id,
-                'title' => "OS #{$os->id} - " . ($os->cadastro->nome ?? 'Cliente'),
+                'title' => "OS {$os->numero_os}",
                 'start' => $os->data_inicio,
-                'end' => \Carbon\Carbon::parse($os->data_inicio)->addHours(2)->toIso8601String(),
-                'url' => "/admin/ordem-servicos/{$os->id}/edit",
-                'backgroundColor' => '#0ea5e9',
+                'end' => $fim,
+                'backgroundColor' => '#f59e0b', // Laranja (OS)
+                'borderColor' => '#d97706',
+                'url' => '/admin/ordem-servicos/' . $os->id . '/edit',
             ];
         }
 
         return $events;
     }
-
-    public function getFormSchema(): array
-    {
-        return AgendaResource::form(
-            \Filament\Forms\Form::make()
-        )->getSchema();
-    }
-
-    public function onEventClick($event): void
-    {
-        $this->redirect(AgendaResource::getUrl('edit', ['record' => $event['id']]));
-    }
-
-    public function onEventDrop(array $event, array $oldEvent, array $relatedEvents, array $delta, ?array $oldResource, ?array $newResource): bool
-    {
-        $agenda = Agenda::find($event['id']);
-
-        if ($agenda) {
-            $agenda->update([
-                'data_hora_inicio' => $event['start'],
-                'data_hora_fim' => $event['end'] ?? $event['start'],
-            ]);
-
-            return true;
-        }
-
-        return false;
-    }
-
+    
+    // Opcional: Configurar cabeçalho do calendário
     public function config(): array
     {
         return [
-            'locale' => 'pt-br',
             'headerToolbar' => [
                 'left' => 'prev,next today',
                 'center' => 'title',
-                'right' => 'dayGridMonth,timeGridWeek,timeGridDay',
+                'right' => 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
             ],
-            'buttonText' => [
-                'today' => 'Hoje',
-                'month' => 'Mês',
-                'week' => 'Semana',
-                'day' => 'Dia',
-            ],
-            'firstDay' => 0, // Domingo
-            'timeZone' => 'America/Sao_Paulo',
-            'editable' => true,
-            'droppable' => true,
-            'eventStartEditable' => true,
-            'eventDurationEditable' => true,
-            'dayMaxEvents' => true,
-            'navLinks' => true,
-            'selectable' => true,
-            'selectMirror' => true,
+            'initialView' => 'timeGridWeek',
             'nowIndicator' => true,
-            'slotMinTime' => '07:00:00',
-            'slotMaxTime' => '20:00:00',
-            'height' => 'auto',
         ];
     }
 }

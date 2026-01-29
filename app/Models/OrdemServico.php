@@ -36,6 +36,23 @@ class OrdemServico extends Model
         'valor_total' => 'decimal:2',
     ];
 
+    // CONFIGURAÇÃO DA BUSCA GLOBAL
+    public static $globallySearchableAttributes = ['numero_os', 'descricao'];
+
+    public function getGlobalSearchResultTitle(): string
+    {
+        return "OS: {$this->numero_os}";
+    }
+
+    // Mostra o status e valor na busca
+    public function getGlobalSearchResultDetails(): array
+    {
+        return [
+            'Status' => ucfirst($this->status),
+            'Valor' => 'R$ ' . number_format($this->valor_total, 2, ',', '.'),
+        ];
+    }
+
     // Relacionamentos
     public function cadastro(): BelongsTo
     {
