@@ -24,6 +24,12 @@ class FinanceiroResource extends Resource
     // Não registrar no menu de navegação (oculto)
     protected static bool $shouldRegisterNavigation = false;
 
+    // Bloqueia acesso direto via URL
+    public static function canAccess(): bool
+    {
+        return false;
+    }
+
     protected static ?string $navigationLabel = 'Financeiro';
 
     protected static ?string $modelLabel = 'Registro Financeiro';
