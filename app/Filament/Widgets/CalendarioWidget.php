@@ -10,12 +10,16 @@ class CalendarioWidget extends FullCalendarWidget
 {
     public function fetchEvents(array $fetchInfo): array
     {
-        return Agenda::query()
-            ->where('data_hora_inicio', '>=', $fetchInfo['start'])
+        $events = [];
+
+        // Agendas avulsas
+        $agendas = Agenda::where('data_hora_inicio', '>=', $fetchInfo['start'])
             ->where('data_hora_inicio', '<=', $fetchInfo['end'])
-            ->get()
-            ->map(fn (Agenda $agenda) => [
-                'id' => $agenda->id,
+            ->get();
+
+        foreach ($agendas as $agenda) {
+            $events[] = [
+                'id' => 'ag-' . $agenda->id,
                 'title' => $agenda->titulo,
                 'start' => $agenda->data_hora_inicio->toIso8601String(),
                 'end' => $agenda->data_hora_fim->toIso8601String(),
@@ -30,8 +34,26 @@ class CalendarioWidget extends FullCalendarWidget
                     'cliente' => $agenda->cliente?->nome,
                     'local' => $agenda->local,
                 ],
-            ])
-            ->toArray();
+            ];
+        }
+
+        // Ordens de Serviço agendadas
+        $oss = \App\Models\OrdemServico::where('data_inicio', '>=', $fetchInfo['start'])
+            ->where('data_inicio', '<=', $fetchInfo['end'])
+            ->get();
+
+        foreach ($oss as $os) {
+            $events[] = [
+                'id' => 'os-' . $os->id,
+                'title' => "OS #{$os->id} - " . ($os->cadastro->nome ?? 'Cliente'),
+                'start' => $os->data_inicio,
+                'end' => \Carbon\Carbon::parse($os->data_inicio)->addHours(2)->toIso8601String(),
+                'url' => "/admin/ordem-servicos/{$os->id}/edit",
+                'backgroundColor' => '#0ea5e9',
+            ];
+        }
+
+        return $events;
     }
 
     public function getFormSchema(): array
