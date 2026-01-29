@@ -21,10 +21,16 @@ class StofgardSystem
             // 1. Atualiza Status
             $orcamento->update(['status' => 'aprovado']);
 
+            // 1.1 Gerar Número da OS Sequencial
+            $ano = date('Y');
+            $ultimo = OrdemServico::whereYear('created_at', $ano)->max('id') ?? 0;
+            $numeroOS = "OS-{$ano}." . str_pad($ultimo + 1, 4, '0', STR_PAD_LEFT);
+
             // 2. Cria Ordem de Serviço
             $os = OrdemServico::create([
                 'cadastro_id' => $orcamento->cadastro_id,
                 'orcamento_id' => $orcamento->id,
+                'numero_os' => $numeroOS, // <--- A CORREÇÃO ESTÁ AQUI
                 'status' => 'pendente',
                 'data_inicio' => now(),
                 'descricao' => "OS gerada a partir do Orçamento #{$orcamento->numero}",
@@ -34,8 +40,8 @@ class StofgardSystem
             // Copia itens do orçamento para a OS
             foreach ($orcamento->itens as $item) {
                 $os->itens()->create([
-                    'produto_id' => null,
-                    'servico' => $item->item_nome,
+                    'produto_id' => null, // Ajustar se tiver produto real
+                    'servico' => $item->item_nome, // Assumindo que a coluna na OS_ITENS é 'servico' ou 'descricao'
                     'quantidade' => $item->quantidade,
                     'valor_unitario' => $item->valor_unitario,
                     'subtotal' => $item->subtotal,
@@ -46,12 +52,12 @@ class StofgardSystem
             Financeiro::create([
                 'cadastro_id' => $orcamento->cadastro_id,
                 'descricao' => "Recebimento OS #{$os->id} (Orç. {$orcamento->numero})",
-                'tipo' => 'entrada',
+                'tipo' => 'receita',
                 'valor' => $orcamento->valor_total,
                 'data_vencimento' => $orcamento->data_validade,
                 'status' => 'pendente',
                 'forma_pagamento' => 'pix',
-                'categoria' => 'servico',
+                'categoria_id' => 1,
             ]);
 
             return $os;
