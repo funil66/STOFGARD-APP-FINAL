@@ -39,6 +39,7 @@ class Orcamento extends Model
         'comissao_loja',
         'pdf_incluir_pix',        // Controle do botão
         'pix_chave_selecionada',  // Chave escolhida (Crucial)
+        'aplicar_desconto_pix',
     ];
 
     protected $casts = [
@@ -48,6 +49,7 @@ class Orcamento extends Model
         'comissao_vendedor' => 'decimal:2',
         'comissao_loja' => 'decimal:2',
         'pdf_incluir_pix' => 'boolean',
+        'aplicar_desconto_pix' => 'boolean',
     ];
 
     // --- FUNÇÃO QUE FALTAVA (CORREÇÃO DO ERRO) ---
