@@ -13,10 +13,12 @@ class PixPayload
         $beneficiario = self::tratarTexto($beneficiario, 25);
         $cidade = self::tratarTexto($cidade, 15);
         $txtId = preg_replace('/[^a-zA-Z0-9]/', '', $txtId);
+        if (empty($txtId)) $txtId = '***';
+        $txtId = substr($txtId, 0, 25);
         $valorStr = number_format((float)$valor, 2, '.', '');
 
         $payload = "000201";
-        $payload .= "010212";
+        $payload .= "010211";
         
         // Merchant Account Information (26)
         $merchantAccount = "0014br.gov.bcb.pix";
@@ -137,10 +139,10 @@ class PixPayload
 
     private static function tratarTexto($texto, $limit)
     {
-        $texto = preg_replace(array("/(á|à|ã|â|ä)/","/(Á|À|Ã|Â|Ä)/","/(é|è|ê|ë)/","/(É|È|Ê|Ë)/","/(í|ì|î|ï)/","/(Í|Ì|Î|Ï)/","/(ó|ò|õ|ô|ö)/","/(Ó|Ò|Õ|Ô|Ö)/","/(ú|ù|û|ü)/","/(Ú|Ù|Û|Ü)/","/(ñ)/","/(Ñ)/"),explode(" ","a A e E i I o O u U n N"), $texto);
+        // Remove acentos brutamente para evitar erro de encoding no QR Code
+        $texto = @iconv('UTF-8', 'ASCII//TRANSLIT', $texto);
         $texto = preg_replace('/[^a-zA-Z0-9 ]/', '', $texto);
-        $texto = substr($texto, 0, $limit);
-        return strtoupper(trim($texto));
+        return strtoupper(substr(trim($texto), 0, $limit));
     }
 
     private static function limparChave($chave)
