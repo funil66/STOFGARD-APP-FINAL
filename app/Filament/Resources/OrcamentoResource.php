@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -62,6 +63,10 @@ return $form
                 Forms\Components\Toggle::make('pdf_incluir_pix')
                     ->label('Gerar QR Code PIX')
                     ->default(true),
+                Toggle::make('aplicar_desconto_pix')
+                    ->label('Aplicar Desconto à Vista (PIX)?')
+                    ->default(true)
+                    ->columnSpanFull(),
                 Forms\Components\Select::make('pix_chave_selecionada')
     ->label('Selecionar Chave PIX')
     ->options(function () {
