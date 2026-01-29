@@ -43,10 +43,18 @@ class OrcamentoPdfController extends Controller
             }
         }
 
-        // 3. Cálculos
+        // --- CÁLCULOS COM A NOVA REGRA ---
         $total = $orcamento->itens->sum('subtotal');
         $percDesconto = (float) ($config['financeiro_desconto_avista'] ?? 10);
-        $totalAvista = $total * (1 - ($percDesconto / 100));
+        
+        // Verifica se o usuário ativou o desconto no cadastro
+        $aplicaDesconto = $orcamento->aplicar_desconto_pix ?? true; 
+
+        if ($aplicaDesconto) {
+            $totalAvista = $total * (1 - ($percDesconto / 100));
+        } else {
+            $totalAvista = $total; // Se desligado, à vista paga o preço cheio
+        }
         
         // 4. PIX
         $pixData = [
@@ -55,7 +63,7 @@ class OrcamentoPdfController extends Controller
             'payload' => null,
             'chave_visual' => null,
             'beneficiario' => $config['empresa_nome'] ?? 'Stofgard',
-            'txid' => 'ORC' . $orcamento->numero
+            'txid' => 'ORC' . str_replace('.', '', $orcamento->numero)
         ];
 
         $chavePix = $orcamento->pix_chave_selecionada;
@@ -93,7 +101,8 @@ class OrcamentoPdfController extends Controller
             'percDesconto' => $percDesconto,
             'regras' => $config['financeiro_parcelamento'] ?? [],
             'pix' => $pixData,
-            'dataHoraGeracao' => $dataEmissao->format('d/m/Y H:i:s')
+            'dataHoraGeracao' => $dataEmissao->format('d/m/Y H:i:s'),
+            'aplicaDesconto' => $aplicaDesconto // Variavel nova para a view
         ])->render();
 
         // 7. Puppeteer
