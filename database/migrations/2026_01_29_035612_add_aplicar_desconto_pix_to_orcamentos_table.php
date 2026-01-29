@@ -12,14 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orcamentos', function (Blueprint $table) {
-            $table->boolean('aplicar_desconto_pix')->default(true)->after('valor_total');
+            // Adiciona somente se não existir (idempotente)
+            if (! Schema::hasColumn('orcamentos', 'aplicar_desconto_pix')) {
+                $table->boolean('aplicar_desconto_pix')->default(true)->after('valor_total');
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('orcamentos', function (Blueprint $table) {
-            $table->dropColumn('aplicar_desconto_pix');
+            if (Schema::hasColumn('orcamentos', 'aplicar_desconto_pix')) {
+                $table->dropColumn('aplicar_desconto_pix');
+            }
         });
     }
 };
