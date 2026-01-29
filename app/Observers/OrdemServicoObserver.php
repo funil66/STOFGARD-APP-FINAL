@@ -71,4 +71,22 @@ class OrdemServicoObserver
             }
         }
     }
+
+    public function updated(OrdemServico $os)
+    {
+        if ($os->isDirty('status') && $os->status === 'concluido') {
+            foreach ($os->itens as $item) {
+                if ($item->produto_id) {
+                    \App\Models\Estoque::create([
+                        'produto_id' => $item->produto_id,
+                        'tipo' => 'saida',
+                        'quantidade' => $item->quantidade,
+                        'motivo' => "Uso na OS #{$os->id}",
+                        'data_movimento' => now(),
+                    ]);
+                }
+            }
+        }
+    }
 }
+
