@@ -350,6 +350,18 @@ class FinanceiroResource extends Resource
                                 ->send();
                         }
                     })
+
+                Action::make('confirmar_pix')
+                    ->label('Confirmar Pagamento')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->status === 'pendente' && $record->tipo === 'entrada')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->update(['status' => 'pago', 'data_pagamento' => now()]);
+
+                        Notification::make()->title('Pagamento Confirmado no Caixa!')->success()->send();
+                    })
                     ->requiresConfirmation()
                     ->modalHeading('Gerar PIX')
                     ->modalDescription('Deseja gerar um QR Code PIX para este pagamento?')
