@@ -21,6 +21,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\RepeatableEntry;
+use App\Services\StofgardSystem;
 
 class OrcamentoResource extends Resource
 {
@@ -410,31 +411,15 @@ return $form
 
                 // 2. Gerar OS (Aprovar e criar Ordem de Serviço)
                 Tables\Actions\Action::make('gerar_os')
-                    ->label('Gerar OS')
-                    ->icon('heroicon-o-wrench-screwdriver')
-                    ->color('warning')
+                    ->label('Aprovar & Gerar OS')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
                     ->requiresConfirmation()
-                    ->modalHeading('Aprovar e Gerar Ordem de Serviço')
-                    ->modalDescription('Isso aprovará o orçamento e criará uma nova OS. Deseja continuar?')
-                    ->visible(fn (Orcamento $record) => $record->status !== 'aprovado' && ! $record->ordemServico)
-                    ->action(function (Orcamento $record) {
-                        // 1. Aprova o Orçamento
-                        $record->update(['status' => 'aprovado']);
-
-                        // 2. Cria a OS
-                        \App\Models\OrdemServico::create([
-                            'numero_os' => \App\Models\OrdemServico::gerarNumeroOS(),
-                            'orcamento_id' => $record->id,
-                            'cadastro_id' => $record->cadastro_id,
-                            'vendedor_id' => $record->vendedor_id,
-                            'loja_id' => $record->loja_id,
-                            'valor_total' => $record->valor_total,
-                            'status' => 'pendente',
-                            'observacoes' => $record->observacoes,
-                        ]);
-
+                    ->visible(fn (Orcamento $record) => in_array($record->status, ['rascunho', 'enviado']))
+                    ->action(function (Orcamento $record, \App\Services\StofgardSystem $service) {
+                        $service->aprovarOrcamento($record);
                         \Filament\Notifications\Notification::make()
-                            ->title('Ordem de Serviço Gerada com Sucesso!')
+                            ->title('Orçamento Aprovado! OS e Financeiro gerados.')
                             ->success()
                             ->send();
                     }),
