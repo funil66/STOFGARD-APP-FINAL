@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Orcamento;
-use App\Models\Setting; // Ou Configuracao, dependendo de onde vc salva
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use App\Services\Pix\PixMasterService; // Importa o novo serviço
+use App\Services\Pix\PixMasterService;
 
 class OrcamentoPdfController extends Controller
 {
@@ -21,61 +21,55 @@ class OrcamentoPdfController extends Controller
 
     public function gerarPdf(Orcamento $orcamento)
     {
-        // 1. Carregar dados vitais
-        $orcamento->load(['cliente', 'itens']);
+        $orcamento->load(['cliente', 'itens', 'vendedor', 'loja']);
 
-        // 2. Carregar Configurações (Centralizar aqui)
-        // ATENÇÃO: Verifique se você usa o Model 'Setting' ou 'Configuracao' no Filament
-        $config = Setting::all()->pluck('value', 'key')->toArray(); 
-        
-        // Decodificar JSONs comuns
-        foreach (['financeiro_pix_keys', 'financeiro_parcelamento'] as $key) {
-            if (isset($config[$key]) && is_string($config[$key])) {
-                $decoded = json_decode($config[$key], true);
-                $config[$key] = ($decoded) ? $decoded : [];
+        // 1. Configurações
+        $config = Setting::all()->pluck('value', 'key')->toArray();
+        foreach (['financeiro_pix_keys', 'financeiro_parcelamento'] as $k) {
+            if (isset($config[$k]) && is_string($config[$k])) {
+                $config[$k] = json_decode($config[$k], true) ?? [];
             }
         }
 
-        // 3. Cálculos Financeiros
+        // 2. Cálculos
         $total = $orcamento->itens->sum('subtotal');
         $percDesconto = (float) ($config['financeiro_desconto_avista'] ?? 10);
         $totalAvista = $total * (1 - ($percDesconto / 100));
         
-        // 4. Integração PIX (O Coração da mudança)
-        $dadosPix = [
+        // 3. PIX
+        $pixData = [
             'ativo' => false,
             'img' => null,
-            'payload' => null,
+            'payload' => null, // O Copia e Cola
             'chave_visual' => null,
-            'beneficiario' => $config['empresa_nome'] ?? 'Stofgard'
+            'beneficiario' => $config['empresa_nome'] ?? 'Stofgard',
+            'txid' => 'ORC' . $orcamento->id // Identificador ÚNICO
         ];
 
-        // Tenta pegar a chave do orçamento OU a padrão do sistema
         $chavePix = $orcamento->pix_chave_selecionada;
-        
         if (empty($chavePix) && !empty($config['financeiro_pix_keys'])) {
-            // Pega a primeira chave cadastrada se não tiver específica
             $primeira = reset($config['financeiro_pix_keys']);
             $chavePix = $primeira['chave'] ?? null;
         }
 
         if (!empty($chavePix) && ($orcamento->pdf_incluir_pix ?? true)) {
-            // CHAMA O SERVIÇO NOVO
-            $resultado = $this->pixService->gerarQrCode(
+            // Gera o QR Code com TxID ÚNICO
+            $resultado = $this->pixService->gerarPix(
                 $chavePix,
-                $dadosPix['beneficiario'],
-                'Ribeirao Preto', // Ideal vir do config['empresa_cidade']
-                'ORC' . $orcamento->numero,
+                $pixData['beneficiario'],
+                'Ribeirao Preto',
+                $pixData['txid'], // Isso torna o QR Code único para este orçamento
                 $totalAvista
             );
 
-            $dadosPix['ativo'] = true;
-            $dadosPix['img'] = $resultado['qr_code_img'];
-            $dadosPix['payload'] = $resultado['payload_pix'];
-            $dadosPix['chave_visual'] = $chavePix; // Mostra a original para o cliente ler
+            $pixData['ativo'] = true;
+            $pixData['img'] = $resultado['imagem'];
+            $pixData['payload'] = $resultado['payload']; // Essa é a "Chave Aleatória" da transação
+            $pixData['chave_visual'] = $chavePix;
+            $pixData['beneficiario'] = $resultado['beneficiario_real'];
         }
 
-        // 5. Renderiza HTML Limpo
+        // 4. View
         $html = view('pdf.orcamento_oficial', [
             'orcamento' => $orcamento,
             'config' => $config,
@@ -83,10 +77,10 @@ class OrcamentoPdfController extends Controller
             'totalAvista' => $totalAvista,
             'percDesconto' => $percDesconto,
             'regras' => $config['financeiro_parcelamento'] ?? [],
-            'pix' => $dadosPix // Passamos tudo dentro de um array organizado
+            'pix' => $pixData
         ])->render();
 
-        // 6. Geração do Arquivo (Puppeteer)
+        // 5. Puppeteer
         $tempId = $orcamento->id . '_' . time();
         $htmlPath = storage_path("app/public/temp_{$tempId}.html");
         $pdfPath = storage_path("app/public/temp_{$tempId}.pdf");
@@ -95,8 +89,6 @@ class OrcamentoPdfController extends Controller
         file_put_contents($htmlPath, $html);
 
         $scriptPath = base_path('scripts/generate-pdf.js');
-        
-        // Executa Node
         $process = Process::run(['node', $scriptPath, $htmlPath, $pdfPath]);
 
         if ($process->failed()) {

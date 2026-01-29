@@ -69,10 +69,28 @@ class PixMasterService
             Log::error("Erro ao gerar imagem PIX: " . $e->getMessage());
         }
 
-        return [
+        $result = [
             'payload_pix' => $payload,
             'qr_code_img' => $base64,
-            'chave_real' => $chaveTratada
+            'chave_real' => $chaveTratada,
+            'beneficiario_real' => $beneficiario
+        ];
+
+        return $result;
+    }
+
+    /**
+     * Compatibilidade: gerarPix() conforme especificação antiga -> mapeia chaves
+     */
+    public function gerarPix(string $chave, string $beneficiario, string $cidade, string $identificador, float $valor): array
+    {
+        $res = $this->gerarQrCode($chave, $beneficiario, $cidade, $identificador, $valor);
+
+        return [
+            'payload' => $res['payload_pix'],
+            'imagem' => $res['qr_code_img'],
+            'chave_real' => $res['chave_real'],
+            'beneficiario_real' => $res['beneficiario_real'] ?? $beneficiario,
         ];
     }
 
