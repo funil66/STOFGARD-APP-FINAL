@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use App\Services\Pix\PixMasterService;
+use Carbon\Carbon;
 
 class OrcamentoPdfController extends Controller
 {
@@ -31,19 +32,30 @@ class OrcamentoPdfController extends Controller
             }
         }
 
-        // 2. Cálculos
+        // 2. Tratamento da Logo (Base64 para garantir que apareça)
+        $logoBase64 = null;
+        if (!empty($config['empresa_logo'])) {
+            $path = public_path('storage/' . $config['empresa_logo']);
+            if (File::exists($path)) {
+                $type = pathinfo($path, PATHINFO_EXTENSION);
+                $data = File::get($path);
+                $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        }
+
+        // 3. Cálculos
         $total = $orcamento->itens->sum('subtotal');
         $percDesconto = (float) ($config['financeiro_desconto_avista'] ?? 10);
         $totalAvista = $total * (1 - ($percDesconto / 100));
         
-        // 3. PIX
+        // 4. PIX
         $pixData = [
             'ativo' => false,
             'img' => null,
-            'payload' => null, // O Copia e Cola
+            'payload' => null,
             'chave_visual' => null,
             'beneficiario' => $config['empresa_nome'] ?? 'Stofgard',
-            'txid' => 'ORC' . $orcamento->id // Identificador ÚNICO
+            'txid' => 'ORC' . $orcamento->numero
         ];
 
         $chavePix = $orcamento->pix_chave_selecionada;
@@ -53,34 +65,38 @@ class OrcamentoPdfController extends Controller
         }
 
         if (!empty($chavePix) && ($orcamento->pdf_incluir_pix ?? true)) {
-            // Gera o QR Code com TxID ÚNICO
             $resultado = $this->pixService->gerarPix(
                 $chavePix,
                 $pixData['beneficiario'],
                 'Ribeirao Preto',
-                $pixData['txid'], // Isso torna o QR Code único para este orçamento
+                $pixData['txid'],
                 $totalAvista
             );
 
             $pixData['ativo'] = true;
             $pixData['img'] = $resultado['imagem'];
-            $pixData['payload'] = $resultado['payload']; // Essa é a "Chave Aleatória" da transação
+            $pixData['payload'] = $resultado['payload']; 
             $pixData['chave_visual'] = $chavePix;
             $pixData['beneficiario'] = $resultado['beneficiario_real'];
         }
 
-        // 4. View
-        $html = view('pdf.orcamento_oficial', [
+        // 5. Datas Formatadas
+        $dataEmissao = Carbon::now()->setTimezone('America/Sao_Paulo');
+        
+        // 6. RENDERIZA A NOVA VIEW V2 (Para evitar cache da antiga)
+        $html = view('pdf.orcamento_v2', [ // <--- MUDANÇA AQUI
             'orcamento' => $orcamento,
             'config' => $config,
+            'logoBase64' => $logoBase64, // Passando a logo processada
             'total' => $total,
             'totalAvista' => $totalAvista,
             'percDesconto' => $percDesconto,
             'regras' => $config['financeiro_parcelamento'] ?? [],
-            'pix' => $pixData
+            'pix' => $pixData,
+            'dataHoraGeracao' => $dataEmissao->format('d/m/Y H:i:s')
         ])->render();
 
-        // 5. Puppeteer
+        // 7. Puppeteer
         $tempId = $orcamento->id . '_' . time();
         $htmlPath = storage_path("app/public/temp_{$tempId}.html");
         $pdfPath = storage_path("app/public/temp_{$tempId}.pdf");
