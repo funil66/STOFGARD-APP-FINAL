@@ -5,107 +5,110 @@
     <title>Orçamento {{ $orcamento->numero }}</title>
     <style>
         @page { margin: 0; }
-        body { font-family: 'Arial', sans-serif; margin: 0; padding: 40px 50px 70px 50px; font-size: 10px; color: #1e293b; line-height: 1.3; }
+        body { font-family: 'Arial', sans-serif; margin: 0; padding: 40px 50px 60px 50px; font-size: 10px; color: #1e293b; line-height: 1.3; }
         
         .w-full { width: 100%; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .font-bold { font-weight: bold; }
+        .text-slate { color: #64748b; }
         
         /* HEADER */
-        .header-table { margin-bottom: 25px; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px; }
-        .logo-img { max-height: 80px; display: block; }
+        .header-table { margin-bottom: 20px; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px; }
+        .logo-img { max-height: 75px; display: block; }
         .orc-number { font-size: 18px; color: #0f172a; font-weight: 800; }
         
-        /* CARDS E SEÇÕES */
+        /* SEÇÕES */
         .section-bar {
             background-color: #f1f5f9;
             color: #0f172a;
             font-weight: 800;
-            font-size: 10px;
-            padding: 6px 10px;
+            font-size: 9px;
+            padding: 5px 10px;
             border-left: 4px solid #0ea5e9;
-            margin: 20px 0 10px 0;
+            margin: 15px 0 10px 0;
             text-transform: uppercase;
         }
         
-        /* TABELA ITENS */
+        /* ITENS */
         .items-table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
-        .items-table th { background: #f8fafc; text-align: left; padding: 6px; font-size: 9px; color: #475569; border-bottom: 1px solid #e2e8f0; }
-        .items-table td { padding: 8px 6px; border-bottom: 1px solid #f1f5f9; font-size: 10px; }
-        .group-header { color: #0284c7; font-weight: bold; font-size: 10px; margin-top: 10px; display: block; }
+        .items-table th { background: #f8fafc; text-align: left; padding: 5px; font-size: 8px; color: #475569; border-bottom: 1px solid #e2e8f0; }
+        .items-table td { padding: 6px 5px; border-bottom: 1px solid #f1f5f9; font-size: 9px; }
+        .group-header { color: #0284c7; font-weight: bold; font-size: 9px; margin-top: 8px; display: block; }
 
-        /* --- DASHBOARD FINANCEIRO --- */
-        .totals-card {
-            background-color: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        /* --- LAYOUT FINANCEIRO NOVO --- */
+        .finance-layout { width: 100%; border-collapse: separate; border-spacing: 15px 0; margin-left: -15px; margin-top: 10px; }
+        .col-left { width: 65%; vertical-align: top; }
+        .col-right { width: 35%; vertical-align: top; }
+
+        /* Esquerda: Totais e Cartão */
+        .totals-box {
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
         }
+        .row-total { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px; }
+        .lbl-blue { font-size: 10px; font-weight: bold; color: #0369a1; }
+        .val-blue { font-size: 14px; font-weight: 900; color: #0284c7; }
         
-        /* LINHA AZUL (TOTAL REAL) */
-        .row-total-full { border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 8px; }
-        .lbl-blue { font-size: 11px; font-weight: bold; color: #0369a1; }
-        .val-blue { font-size: 16px; font-weight: 900; color: #0284c7; float: right; }
-        
-        /* LINHA VERDE (A VISTA) */
-        .row-total-pix { margin-top: 5px; }
+        .row-promo { display: flex; justify-content: space-between; align-items: flex-end; background-color: #f0fdf4; padding: 5px; border-radius: 4px; }
         .lbl-green { font-size: 10px; font-weight: bold; color: #15803d; }
-        .val-green { font-size: 14px; font-weight: 800; color: #16a34a; float: right; }
-        .badge-off { background:#dcfce7; color:#166534; padding:2px 5px; border-radius:3px; font-size:8px; margin-left:5px; }
+        .val-green { font-size: 14px; font-weight: 800; color: #16a34a; }
+        
+        .cards-list { margin-top: 10px; }
+        .card-title { font-size: 9px; font-weight: bold; color: #334155; margin-bottom: 5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 2px; }
+        .inst-row { font-size: 9px; color: #475569; display: flex; justify-content: space-between; padding: 2px 0; }
 
-        /* GRID DE PAGAMENTO (CARTÃO vs PIX) */
-        .pay-grid { width: 100%; border-spacing: 10px 0; border-collapse: separate; margin-left: -10px; }
-        .pay-col { 
-            width: 50%; 
-            background: #fff; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 6px; 
-            vertical-align: top; 
-            overflow: hidden;
+        /* Direita: PIX Compacto */
+        .pix-card {
+            background-color: #fff;
+            border: 1px solid #16a34a;
+            border-radius: 6px;
+            padding: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .pay-header { 
-            background: #f8fafc; 
-            padding: 6px; 
-            font-size: 9px; 
-            font-weight: bold; 
-            color: #475569; 
-            text-align: center; 
-            border-bottom: 1px solid #e2e8f0; 
-            text-transform: uppercase;
+        .pix-title { 
+            color: #16a34a; font-weight: 800; font-size: 10px; text-align: center; 
+            text-transform: uppercase; border-bottom: 1px dashed #bbf7d0; padding-bottom: 4px; margin-bottom: 8px;
         }
         
-        /* PIX ESPECIFICO */
-        .pix-content { padding: 10px; text-align: center; }
-        .qr-img { width: 95px; height: 95px; margin-bottom: 8px; }
+        .pix-inner-table { width: 100%; margin-bottom: 8px; }
+        .qr-cell { width: 75px; vertical-align: middle; }
+        .qr-img { width: 75px; height: 75px; display: block; border: 2px solid #f0fdf4; border-radius: 4px; }
+        
+        .info-cell { vertical-align: middle; padding-left: 8px; }
+        .pix-label { font-size: 7px; color: #64748b; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 1px; }
+        .pix-val { font-size: 8px; color: #0f172a; font-weight: bold; display: block; margin-bottom: 4px; word-wrap: break-word; }
+
+        .payload-label { font-size: 7px; font-weight: bold; color: #16a34a; margin-bottom: 2px; }
         .payload-box {
             background: #f1f5f9;
-            border: 1px dashed #94a3b8;
-            padding: 5px;
-            font-family: monospace;
-            font-size: 7px;
+            border: 1px dashed #cbd5e1;
+            padding: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 6px; /* Fonte pequena para caber */
             color: #334155;
-            word-break: break-all !important; /* OBRIGATÓRIO */
+            word-break: break-all !important;
             border-radius: 3px;
-            text-align: left;
-            margin-bottom: 5px;
+            line-height: 1.1;
+            text-align: justify;
         }
 
-        /* FOOTER */
+        /* FOOTER ONE-LINER */
         .footer {
             position: fixed; bottom: 0; left: 0; right: 0;
-            text-align: center; font-size: 8px; color: #94a3b8;
-            border-top: 1px solid #e2e8f0; padding-top: 10px; background: #fff; line-height: 1.4;
+            text-align: center; font-size: 7px; color: #94a3b8;
+            border-top: 1px solid #e2e8f0; padding: 8px 30px; background: #fff;
+            white-space: nowrap; overflow: hidden;
         }
     </style>
 </head>
 <body>
 
     <div class="footer">
-        <strong style="color:#f97316">Validade: 7 dias a partir da emissão.</strong> Este documento não representa contrato firmado.<br>
-        Após aprovação, será gerada Ordem de Serviço. Emissão: {{ $dataHoraGeracao }} (Brasília)
+        <strong style="color:#f97316">Validade: 7 dias.</strong> Este documento não é contrato. Após aprovação, gera-se OS. 
+        <span style="color:#cbd5e1; margin: 0 5px;">•</span> 
+        Emissão: {{ $dataHoraGeracao }} (Brasília)
     </div>
 
     <table class="header-table w-full">
@@ -116,7 +119,7 @@
                 @else
                     <h2 style="color:#0ea5e9; margin:0;">{{ $config['empresa_nome'] ?? 'STOFGARD' }}</h2>
                 @endif
-                <div style="color:#64748b; font-size:9px; margin-top:5px;">
+                <div class="text-slate" style="font-size:9px; margin-top:5px;">
                     CNPJ: {{ $config['empresa_cnpj'] ?? '' }}<br>
                     {{ $config['empresa_telefone'] ?? '' }}
                 </div>
@@ -129,7 +132,7 @@
         </tr>
     </table>
 
-    <div class="section-bar">CLIENTE</div>
+    <div class="section-bar">DADOS DO CLIENTE</div>
     <table class="w-full">
         <tr>
             <td width="60%"><strong>Nome:</strong> {{ $orcamento->cliente->nome }}</td>
@@ -137,7 +140,7 @@
         </tr>
         <tr>
             <td><strong>Email:</strong> {{ $orcamento->cliente->email }}</td>
-            <td><strong>Local:</strong> {{ $orcamento->cliente->cidade }}/{{ $orcamento->cliente->estado }}</td>
+            <td><strong>Cidade:</strong> {{ $orcamento->cliente->cidade }}/{{ $orcamento->cliente->estado }}</td>
         </tr>
     </table>
 
@@ -162,71 +165,67 @@
         @endif
     @endforeach
 
-    <div class="section-bar">RESUMO FINANCEIRO</div>
-
-    <div class="totals-card">
-        <div class="row-total-full">
-            <span class="lbl-blue">VALOR TOTAL</span>
-            <span class="val-blue">R$ {{ number_format($total, 2, ',', '.') }}</span>
-            <div style="clear:both"></div>
-        </div>
-        
-        <div class="row-total-pix">
-            <span class="lbl-green">
-                À VISTA (PIX/DINHEIRO) 
-                <span class="badge-off">{{ $percDesconto }}% OFF</span>
-            </span>
-            <span class="val-green">R$ {{ number_format($totalAvista, 2, ',', '.') }}</span>
-            <div style="clear:both"></div>
-            <div style="font-size:8px; color:#64748b; margin-top:3px;">
-                *Desconto por liberalidade para pagamento imediato.
-            </div>
-        </div>
-    </div>
-
-    <table class="pay-grid">
+    <div class="section-bar">RESUMO & PAGAMENTO</div>
+    
+    <table class="finance-layout">
         <tr>
-            <td class="pay-col">
-                <div class="pay-header">CARTÃO DE CRÉDITO</div>
-                <div style="padding:10px;">
+            <td class="col-left">
+                <div class="totals-box">
+                    <div class="row-total">
+                        <span class="lbl-blue">VALOR TOTAL DOS SERVIÇOS</span>
+                        <span class="val-blue">R$ {{ number_format($total, 2, ',', '.') }}</span>
+                    </div>
+                    <div class="row-promo">
+                        <span class="lbl-green">À VISTA (PIX/DINHEIRO) - {{ $percDesconto }}% OFF</span>
+                        <span class="val-green">R$ {{ number_format($totalAvista, 2, ',', '.') }}</span>
+                    </div>
+                </div>
+
+                <div class="cards-list">
+                    <div class="card-title">CONDIÇÕES NO CARTÃO DE CRÉDITO</div>
                     @if(count($regras) > 0)
                         @foreach($regras as $r)
-                        <div style="font-size:9px; border-bottom:1px dashed #f1f5f9; padding:4px 0; display:flex; justify-content:space-between;">
+                        <div class="inst-row">
                             <span><strong>{{ $r['parcelas'] }}x</strong> R$ {{ number_format(($total * (1 + ($r['taxa']/100))) / $r['parcelas'], 2, ',', '.') }}</span>
-                            <span style="color:#94a3b8;">Total: {{ number_format($total * (1 + ($r['taxa']/100)), 2, ',', '.') }}</span>
+                            <span>Total: {{ number_format($total * (1 + ($r['taxa']/100)), 2, ',', '.') }}</span>
                         </div>
                         @endforeach
                     @else
-                        <div class="text-center" style="color:#ccc; padding:10px;">Consulte parcelamento.</div>
+                        <div class="text-center" style="color:#ccc; font-size:9px;">Consulte parcelamento.</div>
                     @endif
                 </div>
             </td>
 
-            <td class="pay-col">
-                <div class="pay-header" style="background:#f0fdf4; color:#166534;">PAGAMENTO PIX</div>
-                <div class="pix-content">
-                    @if($pix['ativo'])
-                        @if($pix['img'])
-                            <img src="{{ $pix['img'] }}" class="qr-img">
-                        @else
-                            <div style="color:#ccc; padding:20px;">QR Indisponível</div>
-                        @endif
+            <td class="col-right">
+                @if($pix['ativo'])
+                <div class="pix-card">
+                    <div class="pix-title">PAGUE COM PIX</div>
+                    
+                    <table class="pix-inner-table">
+                        <tr>
+                            <td class="qr-cell">
+                                @if($pix['img'])
+                                    <img src="{{ $pix['img'] }}" class="qr-img">
+                                @else
+                                    <div style="width:75px; height:75px; background:#f1f5f9; color:#ccc; font-size:8px; line-height:75px; text-align:center;">Sem QR</div>
+                                @endif
+                            </td>
+                            <td class="info-cell">
+                                <span class="pix-label">Chave Usada:</span>
+                                <span class="pix-val">{{ $pix['chave_visual'] }}</span>
+                                
+                                <span class="pix-label" style="margin-top:3px;">Beneficiário:</span>
+                                <span class="pix-val">{{ substr($pix['beneficiario'], 0, 15) }}</span>
+                            </td>
+                        </tr>
+                    </table>
 
-                        <div style="text-align:left; font-size:8px; font-weight:bold; color:#334155; margin-bottom:2px;">
-                            COPIA E COLA:
-                        </div>
-                        <div class="payload-box">
-                            {{ $pix['payload'] ?? 'Erro no payload' }}
-                        </div>
-                        
-                        <div style="font-size:8px; color:#64748b; text-align:left;">
-                            <strong>Fav:</strong> {{ substr($pix['beneficiario'], 0, 18) }}<br>
-                            <strong>Ref:</strong> {{ $pix['txid'] }}
-                        </div>
-                    @else
-                        <div style="padding:20px; color:#ccc;">Opção desativada.</div>
-                    @endif
+                    <div class="payload-label">COPIA E COLA:</div>
+                    <div class="payload-box">
+                        {{ $pix['payload'] ?? 'Erro na geração da chave.' }}
+                    </div>
                 </div>
+                @endif
             </td>
         </tr>
     </table>
