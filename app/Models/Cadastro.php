@@ -11,6 +11,19 @@ class Cadastro extends Model
 {
     use SoftDeletes;
 
+    // Global search config for Filament
+    public static $globallySearchableAttributes = ['nome', 'email', 'telefone', 'documento'];
+
+    public function getGlobalSearchResultTitle(): string
+    {
+        return "Cliente: {$this->nome}";
+    }
+
+    public function getGlobalSearchResultUrl(): string
+    {
+        return route('filament.resources.cadastros.edit', $this);
+    }
+
     protected $fillable = [
         'nome',
         'tipo', // cliente, loja, vendedor, arquiteto

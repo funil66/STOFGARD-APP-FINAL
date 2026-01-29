@@ -12,6 +12,18 @@ class Orcamento extends Model
 {
     use SoftDeletes;
 
+    public static $globallySearchableAttributes = ['numero', 'cadastro.nome'];
+
+    public function getGlobalSearchResultTitle(): string
+    {
+        return "Orçamento #{$this->numero}";
+    }
+
+    public function getGlobalSearchResultUrl(): string
+    {
+        return route('filament.resources.orcamentos.edit', $this);
+    }
+
     protected $fillable = [
         'numero', 
         'cadastro_id', 
