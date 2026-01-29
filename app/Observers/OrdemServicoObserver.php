@@ -18,17 +18,22 @@ class OrdemServicoObserver
         Agenda::create([
             'titulo' => 'Serviço - ' . ($os->cliente->nome ?? 'Cliente'),
             'descricao' => "Ordem de Serviço {$os->numero_os}",
-            'cliente_id' => $os->cliente_id ?? null, // Fallback para compatibilidade
+            'cliente_id' => $os->cliente_id ?? null,
             'cadastro_id' => $os->cadastro_id,
             'ordem_servico_id' => $os->id,
-            'tipo' => 'servico',
+            
+            // --- CORREÇÃO AQUI ---
+            // Dependendo da sua migration, o campo pode se chamar 'tipo' ou 'tipo_servico'
+            // Vou enviar os dois para garantir (o model filtra o que não existe se estiver no fillable)
+            'tipo' => 'servico', 
+            'tipo_servico' => 'servico', 
+            
             'data_hora_inicio' => $os->data_inicio ?? now(),
             'data_hora_fim' => $os->data_inicio ? \Carbon\Carbon::parse($os->data_inicio)->addHours(2) : now()->addHours(2),
             'status' => 'agendado',
             'local' => $os->cliente->endereco ?? 'Endereço não informado',
             'endereco_completo' => $os->cliente->endereco_completo ?? null,
-            // AQUI ESTÁ A CORREÇÃO:
-            'criado_por' => Auth::id() ?? 1, // Se não tiver user logado (CLI), usa o Admin (1)
+            'criado_por' => Auth::id() ?? 1,
         ]);
     }
 
