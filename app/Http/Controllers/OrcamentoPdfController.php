@@ -44,54 +44,47 @@ class OrcamentoPdfController extends Controller
         }
 
         $pixKeyForPayload = $pixKey;
-        if (!empty($pixKey)) {
-            $isEVP = preg_match('/[a-zA-Z]/', $pixKey) && strpos($pixKey, '@') === false;
-            $isEmail = strpos($pixKey, '@') !== false;
 
-            if (!$isEVP && !$isEmail) {
+        if (!empty($pixKey)) {
+            // 1. Detecta EVP (Aleatória): Letras, Números e Hífens
+            $isEVP = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $pixKey);
+            
+            // 2. Detecta Email
+            $isEmail = filter_var($pixKey, FILTER_VALIDATE_EMAIL);
+
+            if ($isEVP || $isEmail) {
+                // Se for EVP ou Email, NÃO MEXE. Manda como está.
+                $pixKeyForPayload = $pixKey;
+            } else {
+                // Assume que é numérico (Telefone, CPF, CNPJ)
                 $onlyNums = preg_replace('/[^0-9]/', '', $pixKey);
-                $isPhone = (strlen($onlyNums) == 10 || strlen($onlyNums) == 11);
-                if ($isPhone && !str_starts_with($pixKey, '+55')) {
+                
+                // Se tiver 10 ou 11 dígitos, tratamos como CELULAR
+                if (strlen($onlyNums) == 10 || strlen($onlyNums) == 11) {
+                    // Regra de Ouro: Telefone PRECISA do +55
                     $pixKeyForPayload = '+55' . $onlyNums;
                 } else {
+                    // CPF ou CNPJ (apenas números)
                     $pixKeyForPayload = $onlyNums;
                 }
             }
         }
 
-        // --- GERAÇÃO E AUTOVERIFICAÇÃO ---
+        // D. Gera o QR Code e as Strings para View
         $qrCodeBase64 = null;
         $shouldShowPix = ($orcamento->pdf_incluir_pix ?? true) && !empty($pixKey);
-        
-        // Dados para exibição no PDF (Inicialmente vazios, serão preenchidos pelo scan)
-        $pixDadosLidos = [
-            'beneficiario' => $config['empresa_nome'] ?? 'Stofgard',
-            'chave' => $pixKey,
-            'valor' => $totalAvista
-        ];
+        $beneficiario = $config['empresa_nome'] ?? 'Stofgard';
 
         if ($shouldShowPix && class_exists(PixPayload::class)) {
             try {
-                // 1. GERA
                 $payload = PixPayload::gerar(
-                    (string)$pixKeyForPayload, 
-                    $pixDadosLidos['beneficiario'], 
-                    'Ribeirao Preto', 
-                    'ORC' . $orcamento->id, 
+                    (string)$pixKeyForPayload,
+                    $beneficiario,
+                    'Ribeirao Preto',
+                    $orcamento->numero,
                     (float)$totalAvista
                 );
 
-                // 2. AUTOVERIFICAÇÃO (Lê o payload gerado)
-                $dadosVerificados = PixPayload::lerPayload($payload);
-
-                if ($dadosVerificados['valido']) {
-                    // Atualiza os dados de exibição com o que foi lido REALMENTE do código
-                    $pixDadosLidos['beneficiario'] = $dadosVerificados['beneficiario'];
-                    $pixDadosLidos['chave'] = $dadosVerificados['chave']; // A chave real formatada
-                    // $pixDadosLidos['valor'] = $dadosVerificados['valor'];
-                }
-
-                // 3. GERA IMAGEM
                 if (class_exists(QrCode::class)) {
                     $pngData = QrCode::format('png')
                         ->size(300)
@@ -113,9 +106,9 @@ class OrcamentoPdfController extends Controller
             'percDesconto' => $percDesconto,
             'regras' => $regrasParcelamento,
             
-            // Passamos os dados VERIFICADOS
-            'pixKey' => $pixDadosLidos['chave'], 
-            'pixBeneficiario' => $pixDadosLidos['beneficiario'],
+            // Passamos os dados (sanitizados)
+            'pixKey' => $pixKeyForPayload,
+            'pixBeneficiario' => $config['empresa_nome'] ?? 'Stofgard',
             
             'qrCodeImg' => $qrCodeBase64,
             'shouldShowPix' => $shouldShowPix,
