@@ -93,11 +93,16 @@ class Orcamento extends Model
     // --- GERAÇÃO DE NÚMERO ---
     protected static function booted()
     {
-        static::creating(function ($orcamento) {
-            if (empty($orcamento->numero)) {
-                $orcamento->numero = self::gerarNumeroOrcamento();
-                $orcamento->numero_orcamento = $orcamento->numero;
+        static::creating(function ($model) {
+            if (empty($model->numero)) {
+                $model->numero = date('Y') . '.' . str_pad(static::max('id') + 1, 4, '0', STR_PAD_LEFT);
             }
+
+            $model->comissao_vendedor = $model->comissao_vendedor ?? 0;
+            $model->comissao_loja = $model->comissao_loja ?? 0;
+
+            $model->pdf_incluir_pix = $model->pdf_incluir_pix ?? true;
+            $model->aplicar_desconto_pix = $model->aplicar_desconto_pix ?? true;
         });
     }
 
@@ -119,4 +124,3 @@ class Orcamento extends Model
     }
 }
 
-    

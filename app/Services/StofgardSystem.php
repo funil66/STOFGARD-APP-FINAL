@@ -9,55 +9,63 @@ use App\Models\Estoque;
 use App\Models\Agenda;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
+use App\Models\Categoria;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class StofgardSystem
 {
     /**
-     * Transforma Orçamento em OS e Gera Financeiro Pendente
+     * Aprova um orçamento, gerando OS e previsão financeira de forma atômica.
+     * Iron Code Refactoring: Remoção de magic numbers e race conditions.
      */
-    public function aprovarOrcamento(Orcamento $orcamento)
+    public function aprovarOrcamento(Orcamento $orcamento): OrdemServico
     {
+        // 1. Validação prévia para evitar duplicidade lógica
+        if ($orcamento->status === 'aprovado') {
+            throw new \Exception('Este orçamento já foi aprovado anteriormente.');
+        }
+
         return DB::transaction(function () use ($orcamento) {
-            // 1. Atualiza Status
-            $orcamento->update(['status' => 'aprovado']);
-
-            // 1.1 Gerar Número da OS Sequencial
-            $ano = date('Y');
-            $ultimo = OrdemServico::whereYear('created_at', $ano)->max('id') ?? 0;
-            $numeroOS = "OS-{$ano}." . str_pad($ultimo + 1, 4, '0', STR_PAD_LEFT);
-
-            // 2. Cria Ordem de Serviço
-            $os = OrdemServico::create([
-                'cadastro_id' => $orcamento->cadastro_id,
-                'orcamento_id' => $orcamento->id,
-                'numero_os' => $numeroOS, // <--- A CORREÇÃO ESTÁ AQUI
-                'status' => 'pendente',
-                'data_inicio' => now(),
-                'descricao' => "OS gerada a partir do Orçamento #{$orcamento->numero}",
-                'valor_total' => $orcamento->valor_total,
-            ]);
-
-            // Copia itens do orçamento para a OS
-            foreach ($orcamento->itens as $item) {
-                $os->itens()->create([
-                    'produto_id' => null, // Ajustar se tiver produto real
-                    'servico' => $item->item_nome, // Assumindo que a coluna na OS_ITENS é 'servico' ou 'descricao'
-                    'quantidade' => $item->quantidade,
-                    'valor_unitario' => $item->valor_unitario,
-                    'subtotal' => $item->subtotal,
-                ]);
+            // A. Busca dinâmica da Categoria (Fim do Magic Number "1")
+            // Se não encontrar "venda-servico", busca a primeira de receita ou cria uma fallback
+            $categoriaVenda = Categoria::where('slug', 'venda-servico')->first();
+            
+            if (! $categoriaVenda) {
+                // Tenta achar pelo ID 1 apenas como último recurso de compatibilidade, 
+                // mas o ideal é ter o slug correto no banco.
+                $categoriaVenda = Categoria::find(1) ?? Categoria::firstOrCreate(
+                    ['slug' => 'venda-padrao'],
+                    ['nome' => 'Venda de Serviço', 'tipo' => 'receita', 'ativa' => true]
+                );
             }
 
-            // 3. Gera Financeiro (A Receber)
+            // B. Criação da OS (Sem calcular ID manualmente para evitar colisão)
+            $os = OrdemServico::create([
+                'orcamento_id'  => $orcamento->id,
+                'cliente_id'    => $orcamento->cliente_id,
+                'status'        => 'aberta', // Ideal: Usar Enum OrdemServicoStatus::ABERTA
+                'data_abertura' => now(),
+                'descricao'     => "Gerado a partir do Orçamento #{$orcamento->id}",
+                'valor_total'   => $orcamento->valor_total,
+                // Adicione aqui outros campos obrigatórios da sua tabela OS
+            ]);
+
+            // C. Criação do Financeiro (Receita Prevista)
             Financeiro::create([
-                'cadastro_id' => $orcamento->cadastro_id,
-                'descricao' => "Recebimento OS #{$os->id} (Orç. {$orcamento->numero})",
-                'tipo' => 'receita',
-                'valor' => $orcamento->valor_total,
-                'data_vencimento' => $orcamento->data_validade,
-                'status' => 'pendente',
-                'forma_pagamento' => 'pix',
-                'categoria_id' => 1,
+                'descricao'       => "Receita ref. OS #{$os->id} - {$orcamento->cliente->nome}",
+                'categoria_id'    => $categoriaVenda->id, 
+                'ordem_servico_id'=> $os->id,
+                'cliente_id'      => $orcamento->cliente_id,
+                'valor'           => $orcamento->valor_total,
+                'data_vencimento' => now()->addDays(30), // Pode virar configuração no banco: 'dias_padrao_vencimento'
+                'status'          => 'pendente',
+                'tipo'            => 'receita',
+            ]);
+
+            // D. Atualiza o Orçamento
+            $orcamento->update([
+                'status' => 'aprovado',
+                'aprovado_em' => now(),
             ]);
 
             return $os;
@@ -109,5 +117,32 @@ class StofgardSystem
                 }
             }
         });
+    }
+
+    /**
+     * Renderiza o PDF do orçamento.
+     *
+     * @param Orcamento $orcamento
+     * @return \Barryvdh\DomPDF\PDF
+     */
+    private function renderPdf(Orcamento $orcamento)
+    {
+        // Garante diretório temporário
+        $tempPath = storage_path('app/temp');
+        if (!file_exists($tempPath)) {
+            mkdir($tempPath, 0755, true);
+        }
+
+        return Pdf::view('pdf.orcamento', ['orcamento' => $orcamento])
+            ->format('a4')
+            ->name("Orcamento-{$orcamento->id}.pdf")
+            ->withBrowsershot(function ($browsershot) {
+                $browsershot->noSandbox()
+                            ->setNodeBinary('/usr/bin/node') // Caminho padrão no Sail/Alpine
+                            ->setNpmBinary('/usr/bin/npm')
+                            ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
+                            ->timeout(60); // Aumenta timeout para 60s
+            })
+            ->inline(); 
     }
 }

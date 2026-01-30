@@ -21,7 +21,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\RepeatableEntry;
-use App\Services\StofgardSystem;
+use App\Services\OrdemServicoService;
 
 class OrcamentoResource extends Resource
 {
@@ -416,7 +416,7 @@ return $form
                     ->color('success')
                     ->requiresConfirmation()
                     ->visible(fn (Orcamento $record) => in_array($record->status, ['rascunho', 'enviado']))
-                    ->action(function (Orcamento $record, \App\Services\StofgardSystem $service) {
+                    ->action(function (Orcamento $record, OrdemServicoService $service) {
                         $service->aprovarOrcamento($record);
                         \Filament\Notifications\Notification::make()
                             ->title('Orçamento Aprovado! OS e Financeiro gerados.')

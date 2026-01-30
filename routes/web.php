@@ -184,6 +184,11 @@ Route::get('/download/{disk}/{encodedPath}', [\App\Http\Controllers\FileDownload
     ->where(['encodedPath' => '.*'])
     ->name('file.download');
 
+// Rota pública assinada para o cliente baixar o PDF
+Route::get('/orcamento/{orcamento}/publico', [OrcamentoPdfController::class, 'stream'])
+    ->name('orcamento.public_stream')
+    ->middleware('signed');
+
 // Relatórios financeiros (autenticado)
 Route::middleware(['auth'])->group(function () {
     Route::get('/financeiro/grafico/categoria', [\App\Http\Controllers\RelatorioFinanceiroController::class, 'graficoPorCategoria'])

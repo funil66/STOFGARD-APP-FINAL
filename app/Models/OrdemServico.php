@@ -28,6 +28,7 @@ class OrdemServico extends Model
         'assinatura_cliente_path',
         'agenda_id',
         'percentual_comissao',
+        'tipo_servico',
     ];
 
     protected $casts = [
@@ -59,9 +60,26 @@ class OrdemServico extends Model
         return $this->belongsTo(Cadastro::class);
     }
 
-    public function orcamento(): BelongsTo
+    /**
+     * Relacionamento com o cliente.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function cliente()
     {
-        return $this->belongsTo(Orcamento::class);
+        // Se você unificou, aponta para Cadastro. Se não, aponta para Cliente.
+        // Dado que unificamos:
+        return $this->belongsTo(Cadastro::class, 'cliente_id');
+    }
+
+    /**
+     * Relacionamento com o parceiro.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function parceiro()
+    {
+        return $this->belongsTo(Cadastro::class, 'parceiro_id');
     }
 
     public function itens(): HasMany
@@ -73,10 +91,62 @@ class OrdemServico extends Model
     {
         return $this->belongsTo(Agenda::class);
     }
-    
-    // Fallback para compatibilidade se o código antigo chamar 'cliente'
-    public function cliente()
+
+    protected static function booted()
     {
-        return $this->belongsTo(Cadastro::class, 'cadastro_id');
+        static::creating(function ($model) {
+            // Gera número se não existir
+            if (empty($model->numero_os)) {
+                $model->numero_os = self::gerarNumeroOS();
+            }
+            
+            // Define tipo de serviço padrão se não existir
+            if (empty($model->tipo_servico)) {
+                $model->tipo_servico = 'servico'; 
+            }
+
+            // CORREÇÃO: Define descrição padrão se não existir
+            if (empty($model->descricao_servico)) {
+                // Tenta usar a descrição genérica ou pega do orçamento
+                $model->descricao_servico = $model->descricao ?? 'Serviço conforme orçamento';
+            }
+
+            // CORREÇÃO: Define data de abertura como HOJE/AGORA
+            if (empty($model->data_abertura)) {
+                $model->data_abertura = now();
+            }
+
+            // CORREÇÃO: Define o usuário criador
+            if (empty($model->criado_por)) {
+                $model->criado_por = auth()->id() ?? 1; // Fallback para ID 1 se for job/cli
+            }
+        });
+    }
+
+    /**
+     * Gera um número sequencial único para a Ordem de Serviço.
+     *
+     * @return string
+     */
+    public static function gerarNumeroOS(): string
+    {
+        $ano = date('Y');
+        // ATENÇÃO: Mudou de 'numero' para 'numero_os'
+        $ultimaOS = self::whereYear('created_at', $ano)
+                        ->orderBy('id', 'desc')
+                        ->first();
+
+        if (!$ultimaOS) {
+            return "{$ano}.0001";
+        }
+
+        $partes = explode('.', $ultimaOS->numero_os); // <--- Aqui também
+        
+        if (count($partes) < 2) {
+             return "{$ano}.0001";
+        }
+
+        $sequencia = intval($partes[1]) + 1;
+        return $ano . '.' . str_pad($sequencia, 4, '0', STR_PAD_LEFT);
     }
 }

@@ -3,27 +3,25 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
+use App\Filament\Widgets\DashboardShortcutsWidget;
 
 class Dashboard extends BaseDashboard
 {
-    // OBRIGATÓRIO: Força 1 coluna para ocupar a tela toda
+    // Garante que o layout ocupe a tela toda (bom para o seu Monitor Ultrawide)
     public function getColumns(): int | string | array
     {
-        return 1;
+        return 'full'; 
     }
 
-    // OBRIGATÓRIO: força o conteúdo a ocupar toda largura disponível
-    public function getMaxContentWidth(): \Filament\Support\Enums\MaxWidth | string | null
+    /**
+     * Define EXPLICITAMENTE quais widgets aparecem aqui.
+     * Removemos todo o lixo, mantendo apenas o nosso Híbrido.
+     */
+    public function getWidgets(): array
     {
-        return 'full'; // OBRIGA A OCUPAR A TELA TODA
+        return [
+            DashboardShortcutsWidget::class,
+        ];
     }
-
-public function getWidgets(): array
-{
-    return [
-        \App\Filament\Widgets\WeatherWidget::class,
-        \App\Filament\Widgets\DashboardShortcutsWidget::class,
-    ];
-}
 }
 

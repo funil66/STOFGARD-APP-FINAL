@@ -8,10 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 class TabelaPrecosSeeder extends Seeder {
     public function run(): void {
-        // Limpa tabela antes de popular (desabilita temporariamente FK checks)
-        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        // Limpa tabela antes de popular (sem FK checks para SQLite)
         TabelaPreco::truncate();
-        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
         $itens = [
             // --- SOFÁS RETRÁTEIS ---

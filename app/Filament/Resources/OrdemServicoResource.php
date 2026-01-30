@@ -34,9 +34,22 @@ class OrdemServicoResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informações da OS')
+                Section::make('Informações do Cliente')
                     ->schema([
-                        Forms\Components\TextInput::make('numero_os')
+                        Select::make('cadastro_id')
+                            ->label('Cliente')
+                            ->relationship('cliente', 'nome')
+                            ->searchable()
+                            ->required()
+                            ->helperText('Selecione o cliente para esta OS.')
+                            ->createOptionForm([
+                                // Campos para criar cliente rápido
+                            ]),
+                    ])->columns(2),
+
+                Section::make('Detalhes do Serviço')
+                    ->schema([
+                        TextInput::make('numero_os')
                             ->label('Número da OS')
                             ->default(fn () => OrdemServico::gerarNumeroOS())
                             ->disabled()
@@ -44,33 +57,13 @@ class OrdemServicoResource extends Resource
                             ->required()
                             ->columnSpan(1),
 
-                        Forms\Components\Select::make('cadastro_id')
-                            ->label('Cadastro (Cliente, Loja ou Vendedor)')
-                            ->options(function () {
-                                $clientes = \App\Models\Cliente::all()->mapWithKeys(fn($c) => [
-                                    'cliente_' . $c->id => '🧑 Cliente: ' . $c->nome
-                                ]);
-                                $parceiros = \App\Models\Parceiro::all()->mapWithKeys(fn($p) => [
-                                    'parceiro_' . $p->id => ($p->tipo === 'loja' ? '🏪 Loja: ' : '🧑‍💼 Vendedor: ') . $p->nome
-                                ]);
-                                return $clientes->union($parceiros)->toArray();
-                            })
-                            ->searchable()
-                            ->required()
-                            ->helperText('Selecione um cliente, loja ou vendedor para esta OS.')
-                            ->columnSpan(2),
-
-                        Forms\Components\DatePicker::make('data_abertura')
+                        DatePicker::make('data_abertura')
                             ->label('Data de Abertura')
                             ->default(now())
                             ->required()
                             ->columnSpan(1),
-                    ])
-                    ->columns(4),
 
-                Forms\Components\Section::make('Serviço')
-                    ->schema([
-                        Forms\Components\Select::make('tipo_servico')
+                        Select::make('tipo_servico')
                             ->label('Tipo de Serviço')
                             ->options([
                                 'Higienização de Estofados' => 'Higienização de Estofados',
@@ -85,329 +78,19 @@ class OrdemServicoResource extends Resource
                             ->searchable()
                             ->live()
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                // Definir dias de garantia automaticamente
                                 if (str_contains(strtolower($state), 'impermeabilização')) {
-                                    $set('dias_garantia', 365); // 1 ano
+                                    $set('dias_garantia', 365);
                                 } else {
-                                    $set('dias_garantia', 90); // 90 dias
+                                    $set('dias_garantia', 90);
                                 }
 
-                                // Recalcular data fim garantia se já tem data de conclusão
                                 $dataConclusao = $get('data_conclusao');
                                 if ($dataConclusao) {
                                     $diasGarantia = $get('dias_garantia');
-                                    $set('data_fim_garantia', \Carbon\Carbon::parse($dataConclusao)->addDays($diasGarantia));
+                                    // Recalcular data fim garantia
                                 }
-                            })
-                            ->columnSpan(2),
-
-                        Forms\Components\Select::make('status')
-                            ->options([
-                                'aberta' => 'Aberta',
-                                'em_andamento' => 'Em Andamento',
-                                'aguardando_pecas' => 'Aguardando Peças',
-                                'concluida' => 'Concluída',
-                                'cancelada' => 'Cancelada',
-                            ])
-                            ->default('aberta')
-                            ->required()
-                            ->native(false)
-                            ->columnSpan(1),
-
-                        Forms\Components\DatePicker::make('data_prevista')
-                            ->label('Previsão de Conclusão')
-                            ->columnSpan(1),
-
-                        Forms\Components\Textarea::make('descricao_servico')
-                            ->label('Descrição do Serviço')
-                            ->required()
-                            ->rows(4)
-                            ->placeholder('Descreva detalhadamente o serviço a ser realizado...')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(4)
-                    ->collapsible(),
-
-                Forms\Components\Section::make('Parceiro')
-                    ->schema([
-                        Forms\Components\Select::make('parceiro_id')
-                            ->label('Loja/Vendedor Parceiro')
-                            ->relationship('parceiro', 'nome')
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                if ($state) {
-                                    $parceiro = \App\Models\Parceiro::find($state);
-                                    if ($parceiro) {
-                                        $set('percentual_comissao_os', $parceiro->percentual_comissao);
-
-                                        // Recalcular comissão
-                                        $valorTotal = floatval($get('valor_total') ?? 0);
-                                        $percentual = floatval($parceiro->percentual_comissao ?? 30);
-                                        $comissao = ($valorTotal * $percentual) / 100;
-                                        $set('comissao_parceiro', $comissao);
-                                    }
-                                }
-                            })
-                            ->createOptionForm([
-                                Forms\Components\Select::make('tipo')
-                                    ->options([
-                                        'loja' => 'Loja',
-                                        'vendedor' => 'Vendedor',
-                                    ])
-                                    ->required()
-                                    ->native(false),
-                                Forms\Components\TextInput::make('nome')
-                                    ->required()
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('celular')
-                                    ->tel()
-                                    ->mask('(99) 99999-9999'),
-                                Forms\Components\TextInput::make('percentual_comissao')
-                                    ->label('% Comissão')
-                                    ->numeric()
-                                    ->default(30)
-                                    ->suffix('%'),
-                                Forms\Components\Hidden::make('registrado_por')
-                                    ->default(fn () => strtoupper(substr(auth()->user()->name ?? 'ST', 0, 2))),
-                            ])
-                            ->columnSpan(2),
-
-                        Forms\Components\TextInput::make('numero_pedido_parceiro')
-                            ->label('Nº Pedido do Parceiro')
-                            ->maxLength(255)
-                            ->placeholder('Ex: PED2026001')
-                            ->columnSpan(1),
-
-                        Forms\Components\TextInput::make('percentual_comissao_os')
-                            ->label('% Comissão')
-                            ->numeric()
-                            ->default(30)
-                            ->suffix('%')
-                            ->suffixIcon('heroicon-m-pencil')
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $valorTotal = floatval($get('valor_total') ?? 0);
-                                $percentual = floatval($state ?? 30);
-                                $comissao = ($valorTotal * $percentual) / 100;
-                                $set('comissao_parceiro', $comissao);
-                            })
-                            ->columnSpan(1),
-                    ])
-                    ->columns(4)
-                    ->collapsible()
-                    ->collapsed(),
-
-                Forms\Components\Section::make('Valores')
-                    ->schema([
-                        Forms\Components\TextInput::make('valor_servico')
-                            ->label('Valor do Serviço')
-                            ->numeric()
-                            ->prefix('R$')
-                            ->default(0)
-                            ->required()
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $valorServico = floatval($state ?? 0);
-                                $valorProdutos = floatval($get('valor_produtos') ?? 0);
-                                $valorDesconto = floatval($get('valor_desconto') ?? 0);
-                                $valorTotal = ($valorServico + $valorProdutos) - $valorDesconto;
-                                $set('valor_total', $valorTotal);
-
-                                // Recalcular comissão
-                                $percentual = floatval($get('percentual_comissao_os') ?? 30);
-                                $comissao = ($valorTotal * $percentual) / 100;
-                                $set('comissao_parceiro', $comissao);
-                            })
-                            ->columnSpan(1),
-
-                        Forms\Components\TextInput::make('valor_produtos')
-                            ->label('Valor dos Produtos')
-                            ->numeric()
-                            ->prefix('R$')
-                            ->default(0)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $valorServico = floatval($get('valor_servico') ?? 0);
-                                $valorProdutos = floatval($state ?? 0);
-                                $valorDesconto = floatval($get('valor_desconto') ?? 0);
-                                $valorTotal = ($valorServico + $valorProdutos) - $valorDesconto;
-                                $set('valor_total', $valorTotal);
-
-                                // Recalcular comissão
-                                $percentual = floatval($get('percentual_comissao_os') ?? 30);
-                                $comissao = ($valorTotal * $percentual) / 100;
-                                $set('comissao_parceiro', $comissao);
-                            })
-                            ->columnSpan(1),
-
-                        Forms\Components\TextInput::make('valor_desconto')
-                            ->label('Desconto')
-                            ->numeric()
-                            ->prefix('R$')
-                            ->default(0)
-                            ->live(onBlur: true)
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $valorServico = floatval($get('valor_servico') ?? 0);
-                                $valorProdutos = floatval($get('valor_produtos') ?? 0);
-                                $valorDesconto = floatval($state ?? 0);
-                                $valorTotal = ($valorServico + $valorProdutos) - $valorDesconto;
-                                $set('valor_total', $valorTotal);
-
-                                // Recalcular comissão
-                                $percentual = floatval($get('percentual_comissao_os') ?? 30);
-                                $comissao = ($valorTotal * $percentual) / 100;
-                                $set('comissao_parceiro', $comissao);
-                            })
-                            ->columnSpan(1),
-
-                        Forms\Components\TextInput::make('valor_total')
-                            ->label('Valor Total')
-                            ->numeric()
-                            ->prefix('R$')
-                            ->default(0)
-                            ->disabled()
-                            ->dehydrated()
-                            ->columnSpan(1),
-
-                        Forms\Components\TextInput::make('comissao_parceiro')
-                            ->label('Comissão (Calculada)')
-                            ->numeric()
-                            ->prefix('R$')
-                            ->default(0)
-                            ->disabled()
-                            ->dehydrated()
-                            ->helperText('Calculada automaticamente com base no % de comissão')
-                            ->columnSpan(1),
-
-                        Forms\Components\Placeholder::make('comissao_info')
-                            ->label('')
-                            ->content('')
-                            ->columnSpan(1)
-                            ->hidden(),
-
-                        Forms\Components\Select::make('forma_pagamento')
-                            ->label('Forma de Pagamento')
-                            ->options([
-                                'dinheiro' => '💵 Dinheiro',
-                                'pix' => '🔲 PIX',
-                                'cartao_credito' => '💳 Cartão de Crédito',
-                                'cartao_debito' => '💳 Cartão de Débito',
-                                'boleto' => '📄 Boleto',
-                                'transferencia' => '🏦 Transferência',
-                            ])
-                            ->native(false)
-                            ->columnSpan(2),
-
-                        Forms\Components\Toggle::make('pagamento_realizado')
-                            ->label('Pagamento Realizado')
-                            ->default(false)
-                            ->columnSpan(2),
-                    ])
-                    ->columns(4)
-                    ->collapsible(),
-
-                Forms\Components\Section::make('Garantia')
-                    ->schema([
-                        Forms\Components\TextInput::make('dias_garantia')
-                            ->label('Dias de Garantia')
-                            ->numeric()
-                            ->default(90)
-                            ->suffix('dias')
-                            ->required()
-                            ->disabled()
-                            ->dehydrated()
-                            ->helperText('Definido automaticamente pelo tipo de serviço: 365 dias para impermeabilização, 90 dias para higienização')
-                            ->columnSpan(2),
-
-                        Forms\Components\DatePicker::make('data_conclusao')
-                            ->label('Data de Conclusão')
-                            ->live()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                if ($state) {
-                                    $diasGarantia = $get('dias_garantia') ?? 90;
-                                    $set('data_fim_garantia', \Carbon\Carbon::parse($state)->addDays($diasGarantia));
-                                } else {
-                                    $set('data_fim_garantia', null);
-                                }
-                            })
-                            ->columnSpan(1),
-
-                        Forms\Components\DatePicker::make('data_fim_garantia')
-                            ->label('Fim da Garantia')
-                            ->disabled()
-                            ->dehydrated()
-                            ->columnSpan(1),
-                    ])
-                    ->columns(4)
-                    ->collapsible()
-                    ->collapsed(),
-
-                Forms\Components\Section::make('Fotos')
-                    ->schema([
-                        Forms\Components\FileUpload::make('fotos_antes')
-                            ->label('Fotos Antes do Serviço')
-                            ->image()
-                            ->multiple()
-                            ->maxFiles(10)
-                            ->disk('public')
-                            ->directory('ordens-servico/fotos-antes')
-                            ->visibility('public')
-                            ->imagePreviewHeight('180')
-                            ->panelLayout('grid')
-                            ->imageEditor()
-                            ->imageEditorAspectRatios([
-                                '16:9',
-                                '4:3',
-                                '1:1',
-                            ])
-                            ->downloadable()
-                            ->openable()
-                            ->previewable()
-                            ->columnSpan(2),
-
-                        Forms\Components\FileUpload::make('fotos_depois')
-                            ->label('Fotos Depois do Serviço')
-                            ->image()
-                            ->multiple()
-                            ->maxFiles(10)
-                            ->disk('public')
-                            ->directory('ordens-servico/fotos-depois')
-                            ->visibility('public')
-                            ->imagePreviewHeight('180')
-                            ->panelLayout('grid')
-                            ->imageEditor()
-                            ->imageEditorAspectRatios([
-                                '16:9',
-                                '4:3',
-                                '1:1',
-                            ])
-                            ->downloadable()
-                            ->openable()
-                            ->previewable()
-                            ->columnSpan(2),
-                    ])
-                    ->columns(4)
-                    ->collapsible()
-                    ->collapsed(),
-
-                Forms\Components\Section::make('Observações')
-                    ->schema([
-                        Forms\Components\Textarea::make('observacoes')
-                            ->label('Observações para o Cliente')
-                            ->rows(3)
-                            ->placeholder('Informações visíveis ao cliente...')
-                            ->columnSpanFull(),
-
-                        Forms\Components\Textarea::make('observacoes_internas')
-                            ->label('Observações Internas')
-                            ->rows(3)
-                            ->placeholder('Anotações internas da equipe...')
-                            ->columnSpanFull(),
-                    ])
-                    ->collapsible()
-                    ->collapsed(),
+                            }),
+                    ])->columns(2),
             ]);
     }
 

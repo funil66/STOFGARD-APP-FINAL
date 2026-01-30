@@ -18,6 +18,11 @@ return new class extends Migration {
                 $table->text('observacoes')->nullable();
                 $table->timestamps();
                 $table->softDeletes();
+
+                $table->unsignedBigInteger('vendedor_id')->nullable()->index();
+                $table->unsignedBigInteger('loja_id')->nullable()->index();
+                $table->decimal('comissao_vendedor', 10, 2)->nullable()->default(0);
+                $table->decimal('comissao_loja', 10, 2)->nullable()->default(0);
             });
         }
 

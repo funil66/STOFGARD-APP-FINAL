@@ -3,39 +3,59 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up(): void
     {
-        if (! Schema::hasTable('cadastros')) {
-            Schema::create('cadastros', function (Blueprint $table) {
-                $table->id();
-                $table->string('nome')->index();
-                $table->string('tipo')->default('cliente')->index(); // cliente, loja, vendedor, arquiteto
-                $table->foreignId('parent_id')->nullable()->constrained('cadastros')->nullOnDelete();
-                $table->string('documento')->nullable();
-                $table->string('rg_ie')->nullable();
-                $table->string('email')->nullable();
-                $table->string('telefone')->nullable();
-                $table->string('telefone_fixo')->nullable();
-                $table->string('cep')->nullable();
-                $table->string('logradouro')->nullable();
-                $table->string('numero')->nullable();
-                $table->string('bairro')->nullable();
-                $table->string('cidade')->nullable();
-                $table->string('estado')->nullable();
-                $table->text('complemento')->nullable();
-                $table->timestamps();
-                $table->softDeletes();
-            });
-        }
+        Schema::dropIfExists('cadastros');
+        DB::statement("DROP VIEW IF EXISTS cadastros");
+
+        Schema::create('cadastros', function (Blueprint $table) {
+            $table->id();
+            
+            // Relacionamento Hierárquico (Pai/Filho)
+            $table->unsignedBigInteger('parent_id')->nullable()->index();
+            $table->unsignedBigInteger('loja_id')->nullable()->index(); // Mantendo por compatibilidade
+            
+            $table->string('nome');
+            $table->string('nome_fantasia')->nullable();
+            
+            // Documentos
+            $table->string('documento')->nullable()->unique();
+            $table->string('rg_ie')->nullable();
+            
+            // Contato
+            $table->string('email')->nullable();
+            $table->string('telefone')->nullable();
+            $table->string('celular')->nullable();
+            
+            // Endereço
+            $table->string('cep')->nullable();
+            $table->string('logradouro')->nullable();
+            $table->string('numero')->nullable();
+            $table->string('complemento')->nullable();
+            $table->string('bairro')->nullable();
+            $table->string('cidade')->nullable();
+            $table->string('estado')->nullable();
+            
+            // Tipo e Status (Adicionado 'vendedor' e 'loja')
+            $table->enum('tipo', ['cliente', 'parceiro', 'fornecedor', 'loja', 'vendedor'])->default('cliente')->index();
+            $table->boolean('ativo')->default(true);
+            $table->text('observacoes')->nullable();
+            
+            // Financeiro / Comissões
+            $table->decimal('comissao_fixa', 10, 2)->nullable();
+            $table->decimal('comissao_percentual', 5, 2)->nullable(); // Campo novo detectado no erro
+            
+            $table->timestamps();
+            $table->softDeletes();
+        });
     }
 
     public function down(): void
     {
-        if (Schema::hasTable('cadastros')) {
-            Schema::dropIfExists('cadastros');
-        }
+        Schema::dropIfExists('cadastros');
     }
 };

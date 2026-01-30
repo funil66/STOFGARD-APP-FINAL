@@ -52,8 +52,6 @@ class AdminPanelProvider extends PanelProvider
                 // Widgets Padrão (Removidos para limpeza total)
                 // Widgets\\AccountWidget::class,
                 // Widgets\\FilamentInfoWidget::class,
-                // APENAS OS PERMITIDOS:
-                \App\Filament\Widgets\DashboardWeatherWidget::class,
                 \App\Filament\Widgets\DashboardShortcutsWidget::class,
             ])
             ->plugins([

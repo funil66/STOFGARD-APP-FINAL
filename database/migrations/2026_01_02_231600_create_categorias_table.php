@@ -11,23 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (! Schema::hasTable('categorias')) {
-            Schema::create('categorias', function (Blueprint $table) {
-                $table->id();
-                $table->string('tipo'); // 'financeiro', 'produto', 'servico', etc
-                $table->string('nome');
-                $table->string('slug')->unique();
-                $table->string('cor')->nullable(); // cor para gráficos
-                $table->string('icone')->nullable(); // emoji ou classe ícone
-                $table->text('descricao')->nullable();
-                $table->boolean('ativo')->default(true);
-                $table->integer('ordem')->default(0);
-                $table->timestamps();
-                $table->softDeletes();
+        Schema::dropIfExists('categorias'); // Limpa se existir
 
-                $table->index(['tipo', 'ativo']);
-            });
-        }
+        Schema::create('categorias', function (Blueprint $table) {
+            $table->id();
+            $table->string('nome');
+            $table->string('slug')->unique()->index(); // AQUI ESTÁ O SEGREDO
+            $table->string('tipo')->default('receita'); // receita ou despesa
+            $table->boolean('sistema')->default(false); // Se true, usuário não pode deletar
+            $table->timestamps();
+            $table->softDeletes();
+        });
     }
 
     /**

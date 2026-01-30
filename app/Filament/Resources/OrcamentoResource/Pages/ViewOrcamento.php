@@ -238,6 +238,35 @@ class ViewOrcamento extends ViewRecord
                 }),
 
             Actions\DeleteAction::make(),
+            \Filament\Actions\Action::make('whatsapp')
+                ->label('Enviar WhatsApp')
+                ->icon('heroicon-o-chat-bubble-left-right')
+                ->color('success')
+                ->url(fn (Orcamento $record) => $this->getWhatsappUrl($record))
+                ->openUrlInNewTab(),
         ];
+    }
+
+    // Método auxiliar para gerar o Link Mágico
+    protected function getWhatsappUrl(Orcamento $record): string
+    {
+        // 1. Gera o Link Público Assinado (válido por 7 dias, por exemplo)
+        $pdfUrl = \Illuminate\Support\Facades\URL::signedRoute(
+            'orcamento.public_stream', 
+            ['orcamento' => $record->id],
+            now()->addDays(7)
+        );
+
+        // 2. Formata o telefone (remove caracteres não numéricos)
+        $phone = preg_replace('/[^0-9]/', '', $record->cliente->telefone ?? '');
+        
+        // 3. Monta a mensagem
+        $text = urlencode("Olá {$record->cliente->nome}, aqui está o seu orçamento #{$record->id} da Stofgard.\n\nClique para visualizar: {$pdfUrl}");
+
+        // 4. Retorna link do WhatsApp API
+        // Se não tiver telefone, abre apenas a janela para escolher o contato
+        return $phone 
+            ? "https://wa.me/55{$phone}?text={$text}"
+            : "https://wa.me/?text={$text}";
     }
 }

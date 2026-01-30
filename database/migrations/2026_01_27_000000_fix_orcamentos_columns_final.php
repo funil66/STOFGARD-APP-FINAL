@@ -11,19 +11,33 @@ return new class extends Migration
         Schema::table('orcamentos', function (Blueprint $table) {
             // 1. Remove a coluna antiga que está quebrando o insert
             if (Schema::hasColumn('orcamentos', 'cliente_id')) {
-                // Tenta dropar chave estrangeira se existir, ignorando erro se não existir
                 try {
+                    // Remove the index explicitly if it exists
+                    if (Schema::hasIndex('orcamentos', 'orcamentos_cliente_id_index')) {
+                        $table->dropIndex('orcamentos_cliente_id_index');
+                    }
+
+                    // Tenta dropar chave estrangeira se existir
                     $table->dropForeign(['cliente_id']);
                 } catch (\Throwable $e) {
-                    // ignore
+                    \Log::warning('Failed to drop foreign key or index for cliente_id: ' . $e->getMessage());
                 }
 
-                $table->dropColumn('cliente_id');
+                try {
+                    // Tenta dropar a coluna se existir
+                    $table->dropColumn('cliente_id');
+                } catch (\Throwable $e) {
+                    \Log::warning('Failed to drop column cliente_id: ' . $e->getMessage());
+                }
             }
 
             // 2. Garante que status cabe a palavra "rascunho" e "aprovado"
             if (Schema::hasColumn('orcamentos', 'status')) {
-                $table->string('status', 50)->change();
+                try {
+                    $table->string('status', 50)->change();
+                } catch (\Throwable $e) {
+                    \Log::warning('Failed to change status column: ' . $e->getMessage());
+                }
             }
         });
     }

@@ -83,6 +83,20 @@ class CategoriasSeeder extends Seeder
             ]);
         }
 
+        // Categorias com slug predefinido
+        $categorias = [
+            ['nome' => 'Venda de Serviço', 'slug' => 'venda-servico', 'tipo' => 'receita', 'sistema' => true],
+            ['nome' => 'Venda de Produto', 'slug' => 'venda-produto', 'tipo' => 'receita', 'sistema' => true],
+            ['nome' => 'Despesas Gerais',  'slug' => 'despesas-gerais', 'tipo' => 'despesa', 'sistema' => true],
+        ];
+
+        foreach ($categorias as $cat) {
+            Categoria::updateOrCreate(
+                ['slug' => $cat['slug']], // Busca pelo slug
+                $cat // Atualiza ou Cria
+            );
+        }
+
         $this->command->info('✅ Categorias criadas com sucesso!');
         $this->command->info('📊 Receitas: '.count($categoriasReceita).' categorias');
         $this->command->info('📊 Despesas: '.count($categoriasDespesa).' categorias');

@@ -17,10 +17,10 @@ return new class extends Migration {
         // 2. Garante campos no orçamento
         Schema::table('orcamentos', function (Blueprint $table) {
             if (! Schema::hasColumn('orcamentos', 'comissao_vendedor')) {
-                $table->decimal('comissao_vendedor', 10, 2)->default(0); // Valor em R$
+                $table->decimal('comissao_vendedor', 10, 2)->nullable()->default(0); // Valor em R$
             }
             if (! Schema::hasColumn('orcamentos', 'comissao_loja')) {
-                $table->decimal('comissao_loja', 10, 2)->default(0); // Valor em R$
+                $table->decimal('comissao_loja', 10, 2)->nullable()->default(0); // Valor em R$
             }
             if (! Schema::hasColumn('orcamentos', 'pdf_incluir_pix')) {
                 $table->boolean('pdf_incluir_pix')->default(true);
