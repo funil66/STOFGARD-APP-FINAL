@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use App\Filament\Resources\ConfiguracaoResource\RelationManagers\TabelaPrecosRelationManager;
 
 use Filament\Forms\Get;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 
 class ConfiguracaoResource extends Resource
 {
@@ -40,7 +41,14 @@ class ConfiguracaoResource extends Resource
                         Forms\Components\Tabs\Tab::make('🏢 Identidade Visual')
                             ->schema([
                                 Forms\Components\FileUpload::make('empresa_logo')
-                                    ->image()->avatar()->directory('logos'),
+                                    ->label('Logo da Empresa')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->disk('public')
+                                    ->directory('logos')
+                                    ->visibility('public')
+                                    ->helperText('Upload da logo que aparecerá no cabeçalho do PDF'),
+
                                 Forms\Components\TextInput::make('empresa_nome')->required(),
                                 Forms\Components\TextInput::make('empresa_cnpj')->mask('99.999.999/9999-99'),
                                 Forms\Components\ColorPicker::make('cores_pdf.primaria')
@@ -97,7 +105,7 @@ class ConfiguracaoResource extends Resource
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 

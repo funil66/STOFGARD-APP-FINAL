@@ -52,7 +52,9 @@ class AdminPanelProvider extends PanelProvider
                 // Widgets Padrão (Removidos para limpeza total)
                 // Widgets\\AccountWidget::class,
                 // Widgets\\FilamentInfoWidget::class,
-                \App\Filament\Widgets\DashboardShortcutsWidget::class,
+                \App\Filament\Widgets\DashboardShortcutsWidget::class, // Atalhos + Clima + Saudação
+                // \App\Filament\Widgets\AgendaCalendarWidget::class, // Removido
+                // \App\Filament\Widgets\WeatherWidget::class, // Removido (já tem no Shortcuts)
             ])
             ->plugins([
                 FilamentFullCalendarPlugin::make(),
@@ -73,7 +75,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(
                 PanelsRenderHook::HEAD_START,
-                fn (): string => '
+                fn(): string => '
                     <meta name="theme-color" content="#d97706">
                     <meta name="apple-mobile-web-app-capable" content="yes">
                     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -84,7 +86,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn (): string => (function () {
+                fn(): string => (function () {
                     try {
                         return Blade::render("@vite(['resources/css/filament/admin/theme.css','resources/js/app.js'])");
                     } catch (\Throwable $e) {
@@ -95,7 +97,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 'panels::body.start',
-                fn (): string => '<style>
+                fn(): string => '<style>
                     @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
                     
                     /* Fundo cinza claro em toda aplicação */
@@ -126,14 +128,14 @@ class AdminPanelProvider extends PanelProvider
                     .group {
                         transition: all 0.2s ease-in-out;
                     }
-                </style>'.(str_contains(request()->getPathInfo(), '/admin/login') && file_exists(public_path('downloads/stofgard.apk')) ? '<div style="text-align:center;margin:12px 0"><a href="'.url('/downloads/stofgard.apk').'?v='.filemtime(public_path('downloads/stofgard.apk')).'" class="inline-block px-6 py-2 bg-[#d97706] text-white rounded-md font-medium" download>📲 Baixar APK Stofgard (Android)</a><p style="margin-top:6px;color:#6b7280;font-size:0.85rem">Instale manualmente no Android. Habilite "Fontes desconhecidas" se necessário.</p></div>' : '')
+                </style>' . (str_contains(request()->getPathInfo(), '/admin/login') && file_exists(public_path('downloads/stofgard.apk')) ? '<div style="text-align:center;margin:12px 0"><a href="' . url('/downloads/stofgard.apk') . '?v=' . filemtime(public_path('downloads/stofgard.apk')) . '" class="inline-block px-6 py-2 bg-[#d97706] text-white rounded-md font-medium" download>📲 Baixar APK Stofgard (Android)</a><p style="margin-top:6px;color:#6b7280;font-size:0.85rem">Instale manualmente no Android. Habilite "Fontes desconhecidas" se necessário.</p></div>' : '')
             )
             ->renderHook(
                 'panels::page.start',
-                fn (): string => view('filament.components.header')->render().(str_contains(request()->getPathInfo(), '/admin/login') && file_exists(public_path('downloads/stofgard.apk')) ? '<div style="text-align:center;margin:12px 0"><a href="'.url('/downloads/stofgard.apk').'?v='.filemtime(public_path('downloads/stofgard.apk')).'" class="inline-block px-6 py-2 bg-[#d97706] text-white rounded-md font-medium" download>📲 Baixar APK Stofgard (Android)</a><p style="margin-top:6px;color:#6b7280;font-size:0.85rem">Instale manualmente no Android. Habilite "Fontes desconhecidas" se necessário.</p></div>' : '') .
-                    (app()->environment('local') && str_contains(request()->getPathInfo(), '/admin/login')
-                        ? '<noscript><div style="border:2px solid #f59e0b;padding:12px;border-radius:8px;background:#fff3d7;color:#000;margin:12px 0">JavaScript está desativado. Se o login falhar, use este formulário simples:<form method="post" action="/admin/login" style="display:flex;gap:8px;flex-wrap:wrap"><input type="hidden" name="_token" value="' . csrf_token() . '"><input name="email" type="email" placeholder="E-mail" required style="padding:6px"><input name="password" type="password" placeholder="Senha" required style="padding:6px"><button type="submit" style="padding:6px 10px;background:#d97706;color:#fff;border:none;border-radius:6px">Entrar</button></form></div></noscript><div id="debug-livewire" style="position:fixed;right:12px;bottom:12px;background:#111;color:#fff;padding:8px 12px;border-radius:6px;font-size:12px;z-index:9999;opacity:0.95">JS: <span id="dbg-js">?</span> | Livewire: <span id="dbg-lw">?</span> | token: <span id="dbg-token" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">?</span></div>\n                            <script>document.addEventListener("DOMContentLoaded",function(){try{document.getElementById("dbg-js").textContent="OK"}catch(e){};setTimeout(function(){var lw = (typeof window.Livewire !== "undefined");var tokenMeta = document.querySelector("meta[name=csrf-token]")?.getAttribute("content") || null;document.getElementById("dbg-lw").textContent = lw ? "yes" : "no";document.getElementById("dbg-token").textContent = tokenMeta || "none";},2500);});</script>'
-                        : '')
+                fn(): string => view('filament.components.header')->render() . (str_contains(request()->getPathInfo(), '/admin/login') && file_exists(public_path('downloads/stofgard.apk')) ? '<div style="text-align:center;margin:12px 0"><a href="' . url('/downloads/stofgard.apk') . '?v=' . filemtime(public_path('downloads/stofgard.apk')) . '" class="inline-block px-6 py-2 bg-[#d97706] text-white rounded-md font-medium" download>📲 Baixar APK Stofgard (Android)</a><p style="margin-top:6px;color:#6b7280;font-size:0.85rem">Instale manualmente no Android. Habilite "Fontes desconhecidas" se necessário.</p></div>' : '') .
+                (app()->environment('local') && str_contains(request()->getPathInfo(), '/admin/login')
+                    ? '<noscript><div style="border:2px solid #f59e0b;padding:12px;border-radius:8px;background:#fff3d7;color:#000;margin:12px 0">JavaScript está desativado. Se o login falhar, use este formulário simples:<form method="post" action="/admin/login" style="display:flex;gap:8px;flex-wrap:wrap"><input type="hidden" name="_token" value="' . csrf_token() . '"><input name="email" type="email" placeholder="E-mail" required style="padding:6px"><input name="password" type="password" placeholder="Senha" required style="padding:6px"><button type="submit" style="padding:6px 10px;background:#d97706;color:#fff;border:none;border-radius:6px">Entrar</button></form></div></noscript><div id="debug-livewire" style="position:fixed;right:12px;bottom:12px;background:#111;color:#fff;padding:8px 12px;border-radius:6px;font-size:12px;z-index:9999;opacity:0.95">JS: <span id="dbg-js">?</span> | Livewire: <span id="dbg-lw">?</span> | token: <span id="dbg-token" style="max-width:200px;display:inline-block;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;">?</span></div>\n                            <script>document.addEventListener("DOMContentLoaded",function(){try{document.getElementById("dbg-js").textContent="OK"}catch(e){};setTimeout(function(){var lw = (typeof window.Livewire !== "undefined");var tokenMeta = document.querySelector("meta[name=csrf-token]")?.getAttribute("content") || null;document.getElementById("dbg-lw").textContent = lw ? "yes" : "no";document.getElementById("dbg-token").textContent = tokenMeta || "none";},2500);});</script>'
+                    : '')
             );
     }
 }

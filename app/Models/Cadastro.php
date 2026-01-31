@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\HasArquivos;
+use Spatie\MediaLibrary\HasMedia;
 
-class Cadastro extends Model
+class Cadastro extends Model implements HasMedia
 {
-    use SoftDeletes;
+    use SoftDeletes, HasArquivos;
 
     // CONFIGURAÇÃO DA BUSCA GLOBAL
     public static $globallySearchableAttributes = ['nome', 'email', 'telefone', 'cpf_cnpj'];
@@ -77,4 +79,92 @@ class Cadastro extends Model
     {
         return $this->hasMany(OrdemServico::class, 'cadastro_id');
     }
-} 
+
+    public function arquivos(): HasMany
+    {
+        return $this->hasMany(Arquivo::class, 'cadastro_id');
+    }
+
+    // Relacionamento: Cadastro tem muitos registros Financeiros
+    public function financeiros(): HasMany
+    {
+        return $this->hasMany(Financeiro::class, 'cadastro_id');
+    }
+
+    // Relacionamento: Cadastro tem muitos Agendamentos
+    public function agendas(): HasMany
+    {
+        return $this->hasMany(Agenda::class, 'cadastro_id');
+    }
+
+    // ===== ACCESSORS DE RESUMO FINANCEIRO =====
+
+    /**
+     * Total de receitas (entradas pagas)
+     */
+    public function getTotalReceitasAttribute(): float
+    {
+        return (float) $this->financeiros()
+            ->where('tipo', 'entrada')
+            ->where('status', 'pago')
+            ->sum('valor');
+    }
+
+    /**
+     * Total de despesas/saídas pagas
+     */
+    public function getTotalDespesasAttribute(): float
+    {
+        return (float) $this->financeiros()
+            ->where('tipo', 'saida')
+            ->where('status', 'pago')
+            ->sum('valor');
+    }
+
+    /**
+     * Saldo (receitas - despesas)
+     */
+    public function getSaldoAttribute(): float
+    {
+        return $this->total_receitas - $this->total_despesas;
+    }
+
+    /**
+     * Total pendente a receber
+     */
+    public function getPendentesReceberAttribute(): float
+    {
+        return (float) $this->financeiros()
+            ->where('tipo', 'entrada')
+            ->where('status', 'pendente')
+            ->sum('valor');
+    }
+
+    /**
+     * Total pendente a pagar
+     */
+    public function getPendentesPagarAttribute(): float
+    {
+        return (float) $this->financeiros()
+            ->where('tipo', 'saida')
+            ->where('status', 'pendente')
+            ->sum('valor');
+    }
+
+    /**
+     * Quantidade de orçamentos aprovados
+     */
+    public function getOrcamentosAprovadosCountAttribute(): int
+    {
+        return $this->orcamentos()->where('status', 'aprovado')->count();
+    }
+
+    /**
+     * Quantidade de OS concluídas
+     */
+    public function getOsConcluidasCountAttribute(): int
+    {
+        return $this->ordensServico()->whereIn('status', ['concluida', 'finalizada'])->count();
+    }
+}
+

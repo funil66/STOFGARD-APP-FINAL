@@ -92,13 +92,13 @@ class GarantiaResource extends Resource
                             ->label('Data de Uso')
                             ->native(false)
                             ->displayFormat('d/m/Y')
-                            ->visible(fn ($get) => in_array($get('status'), ['utilizada']))
+                            ->visible(fn($get) => in_array($get('status'), ['utilizada']))
                             ->columnSpan(1),
 
                         Forms\Components\Textarea::make('motivo_uso')
                             ->label('Motivo do Uso da Garantia')
                             ->rows(3)
-                            ->visible(fn ($get) => in_array($get('status'), ['utilizada']))
+                            ->visible(fn($get) => in_array($get('status'), ['utilizada']))
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -123,12 +123,12 @@ class GarantiaResource extends Resource
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'higienizacao' => 'info',
                         'impermeabilizacao' => 'warning',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'higienizacao' => '🧼 Higienização',
                         'impermeabilizacao' => '💧 Impermeabilização',
                         default => $state,
@@ -144,17 +144,17 @@ class GarantiaResource extends Resource
                     ->date('d/m/Y')
                     ->sortable()
                     ->badge()
-                    ->color(fn ($record): string => $record->esta_vencida ? 'danger' : 'success')
+                    ->color(fn($record): string => $record->esta_vencida ? 'danger' : 'success')
                     ->description(function ($record): string {
                         $dias = $record->dias_restantes;
                         if ($dias < 0) {
-                            return 'Vencida há '.abs($dias).' dias';
+                            return 'Vencida há ' . abs($dias) . ' dias';
                         }
                         if ($dias === 0) {
                             return 'Vence hoje';
                         }
 
-                        return 'Restam '.$dias.' dias';
+                        return 'Restam ' . $dias . ' dias';
                     }),
 
                 Tables\Columns\TextColumn::make('dias_garantia')
@@ -166,14 +166,14 @@ class GarantiaResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'ativa' => 'success',
                         'vencida' => 'danger',
                         'utilizada' => 'warning',
                         'cancelada' => 'gray',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'ativa' => '✅ Ativa',
                         'vencida' => '❌ Vencida',
                         'utilizada' => '⚠️ Utilizada',
@@ -213,7 +213,7 @@ class GarantiaResource extends Resource
 
                 Tables\Filters\Filter::make('proximas_vencer')
                     ->label('Próximas a vencer (30 dias)')
-                    ->query(fn (Builder $query): Builder => $query->proximasVencer(30)),
+                    ->query(fn(Builder $query): Builder => $query->proximasVencer(30)),
 
                 Tables\Filters\TrashedFilter::make(),
             ])
@@ -222,7 +222,7 @@ class GarantiaResource extends Resource
                     ->label('Usar Garantia')
                     ->icon('heroicon-o-wrench-screwdriver')
                     ->color('warning')
-                    ->visible(fn ($record): bool => $record->status === 'ativa')
+                    ->visible(fn($record): bool => $record->status === 'ativa')
                     ->form([
                         Forms\Components\DatePicker::make('usado_em')
                             ->label('Data de Uso')
@@ -245,9 +245,21 @@ class GarantiaResource extends Resource
                         ]);
                     }),
 
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
+                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
+                Tables\Actions\Action::make('share')
+                    ->label('')
+                    ->tooltip('Compartilhar')
+                    ->icon('heroicon-o-share')
+                    ->color('success')
+                    ->action(function (Garantia $record) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Link Copiado!')
+                            ->body(url("/admin/garantias/{$record->id}"))
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -24,83 +24,90 @@ class ViewOrcamento extends ViewRecord
     {
         return [
             Actions\EditAction::make()
-                ->visible(fn ($record): bool => $record->status !== 'convertido'),
+                ->visible(fn($record): bool => $record->status !== 'convertido'),
+
 
             Actions\Action::make('aprovar')
                 ->label('Aprovar e Gerar OS')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->requiresConfirmation()
+                ->slideOver()
+                ->modalWidth('3xl')
                 ->modalHeading('Aprovar Orçamento e Gerar OS')
-                ->modalDescription('Ao aprovar, será criada a Ordem de Serviço, o agendamento e o lançamento financeiro. Por favor, confirme a data do serviço.')
-                ->modalSubmitActionLabel('Sim, Aprovar')
-                ->visible(fn ($record): bool => $record->status === 'pendente')
+                ->modalDescription('Configure a data e horário do serviço. Após aprovação, será criada a Ordem de Serviço, o agendamento e o lançamento financeiro.')
+                ->modalSubmitActionLabel('✓ Aprovar e Criar Registros')
+                ->visible(fn($record): bool => $record->status === 'pendente')
                 ->form([
-                    Forms\Components\DatePicker::make('data_servico')
-                        ->label('Data do Serviço')
-                        ->required()
-                        ->native(false)
-                        ->displayFormat('d/m/Y')
-                        ->default(now()->addDays(3))
-                        ->helperText('Data prevista para execução do serviço'),
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            Forms\Components\DatePicker::make('data_servico')
+                                ->label('📅 Data do Serviço (Opcional)')
+                                ->nullable()
+                                ->native(false)
+                                ->displayFormat('d/m/Y')
+                                ->helperText('Deixe em branco se ainda não houver data definida')
+                                ->columnSpan(2),
 
-                    Forms\Components\TimePicker::make('hora_inicio')
-                        ->label('Hora de Início')
-                        ->required()
-                        ->default('09:00')
-                        ->native(false),
+                            Forms\Components\TimePicker::make('hora_inicio')
+                                ->label('🕐 Hora de Início')
+                                ->default('09:00')
+                                ->native(false)
+                                ->columnSpan(1)
+                                ->visible(fn(\Filament\Forms\Get $get) => filled($get('data_servico'))),
 
-                    Forms\Components\TimePicker::make('hora_fim')
-                        ->label('Hora de Término (estimada)')
+                            Forms\Components\TimePicker::make('hora_fim')
+                                ->label('🕐 Hora de Término (estimada)')
+                                ->default('17:00')
+                                ->native(false)
+                                ->columnSpan(1)
+                                ->visible(fn(\Filament\Forms\Get $get) => filled($get('data_servico'))),
+                        ]),
+
+                    Forms\Components\Textarea::make('local_servico')
+                        ->label('📍 Local do Serviço')
                         ->required()
-                        ->default('17:00')
-                        ->native(false),
+                        ->rows(2)
+                        ->default(function ($record) {
+                            $cadastro = $record->cliente;
+                            return trim(implode(', ', array_filter([
+                                $cadastro?->logradouro,
+                                $cadastro && ($cadastro->numero ?? false) ? "nº {$cadastro->numero}" : null,
+                                $cadastro?->complemento,
+                                $cadastro?->bairro,
+                                $cadastro?->cidade,
+                                $cadastro?->estado,
+                                $cadastro?->cep ? "CEP: {$cadastro->cep}" : null,
+                            ])));
+                        })
+                        ->helperText('Endereço completo onde o serviço será realizado (pode ser editado)'),
 
                     Forms\Components\Textarea::make('observacoes_os')
-                        ->label('Observações para a OS')
+                        ->label('📝 Observações para a OS')
                         ->rows(3)
                         ->placeholder('Observações adicionais para a Ordem de Serviço...'),
                 ])
                 ->action(function ($record, array $data): void {
                     DB::transaction(function () use ($record, $data) {
                         // 1. Criar Ordem de Serviço
-                        $cadastro = $record->cadastro;
-                        $enderecoCompleto = trim(implode(', ', array_filter([
-                            $cadastro?->logradouro,
-                            $cadastro && ($cadastro->numero ?? false) ? "nº {$cadastro->numero}" : null,
-                            $cadastro?->complemento,
-                            $cadastro?->bairro,
-                            $cadastro?->cidade,
-                            $cadastro?->estado,
-                            $cadastro?->cep ? "CEP: {$cadastro->cep}" : null,
-                        ])));
+                        $cadastro = $record->cliente; // Uses cliente() relationship -> Cadastro
+                        // Use the edited location from form instead of auto-generating
+                        $enderecoCompleto = $data['local_servico'] ?? 'Endereço não informado';
 
                         $osData = [
                             'numero_os' => OrdemServico::gerarNumeroOS(),
                             'orcamento_id' => $record->id,
-                            'tipo_servico' => $record->tipo_servico,
-                            'descricao_servico' => $record->descricao_servico ?? 'Conforme orçamento '.$record->numero_orcamento,
+                            'cadastro_id' => $record->cadastro_id, // Unified Cadastro
+                            'loja_id' => $record->loja_id,
+                            'vendedor_id' => $record->vendedor_id,
+                            'tipo_servico' => $record->tipo_servico ?? 'servico',
+                            'descricao_servico' => $record->descricao_servico ?? 'Conforme orçamento ' . $record->numero,
                             'data_abertura' => now(),
-                            'data_prevista' => $data['data_servico'],
+                            'data_prevista' => $data['data_servico'] ?? null,
                             'status' => 'pendente',
                             'valor_total' => $record->valor_total,
-                            'forma_pagamento' => $record->forma_pagamento,
                             'observacoes' => $data['observacoes_os'] ?? $record->observacoes,
-                            'criado_por' => auth()->user()->name,
+                            'criado_por' => auth()->user()->name ?? auth()->id(),
                         ];
-
-                        // Vincular cadastro unificado e compatibilidade legada
-                        if ($record->cadastro_id) {
-                            $osData['cadastro_id'] = $record->cadastro_id;
-                            if (str_starts_with($record->cadastro_id, 'cliente_')) {
-                                $osData['cliente_id'] = (int) str_replace('cliente_', '', $record->cadastro_id);
-                            }
-                            if (str_starts_with($record->cadastro_id, 'parceiro_')) {
-                                $osData['parceiro_id'] = (int) str_replace('parceiro_', '', $record->cadastro_id);
-                            }
-                        } else {
-                            $osData['cliente_id'] = $record->cliente_id;
-                        }
 
                         $os = OrdemServico::create($osData);
 
@@ -108,77 +115,75 @@ class ViewOrcamento extends ViewRecord
                         foreach ($record->itens as $item) {
                             OrdemServicoItem::create([
                                 'ordem_servico_id' => $os->id,
-                                'descricao' => $item->descricao_item,
+                                'descricao' => $item->item_nome ?? $item->descricao_item ?? 'Serviço',
                                 'quantidade' => $item->quantidade,
-                                'unidade_medida' => $item->unidade_medida,
+                                'unidade_medida' => $item->unidade ?? $item->unidade_medida ?? 'un',
                                 'valor_unitario' => $item->valor_unitario,
                                 'subtotal' => $item->subtotal,
                             ]);
                         }
 
-                        // 2. Criar registro na Agenda
-                        $dataServico = \Carbon\Carbon::parse($data['data_servico']);
-                        $horaInicio = \Carbon\Carbon::parse($data['hora_inicio']);
-                        $horaFim = \Carbon\Carbon::parse($data['hora_fim']);
+                        // 2. Criar registro na Agenda (APENAS SE TIVER DATA)
+                        if (!empty($data['data_servico'])) {
+                            $dataServico = \Carbon\Carbon::parse($data['data_servico']);
+                            $horaInicio = \Carbon\Carbon::parse($data['hora_inicio'] ?? '09:00');
+                            $horaFim = \Carbon\Carbon::parse($data['hora_fim'] ?? '17:00');
 
-                        $agenda = Agenda::create([
-                            'titulo' => sprintf(
-                                '%s - %s',
-                                match ($record->tipo_servico) {
-                                    'higienizacao' => '🧼 Higienização',
-                                    'impermeabilizacao' => '💧 Impermeabilização',
-                                    'higienizacao_impermeabilizacao' => '🧼💧 Hig + Imper',
-                                    default => 'Serviço',
+                            $agenda = Agenda::create([
+                                'titulo' => sprintf(
+                                    '%s - %s',
+                                    match ($record->tipo_servico ?? 'servico') {
+                                        'higienizacao' => '🧼 Higienização',
+                                        'impermeabilizacao' => '💧 Impermeabilização',
+                                        'higienizacao_impermeabilizacao' => '🧼💧 Hig + Imper',
+                                        default => 'Serviço',
+                                    },
+                                    $cadastro?->nome ?? 'Cliente'
+                                ),
+                                'descricao' => $record->descricao_servico ?? ('Conforme orçamento ' . $record->numero),
+                                'cadastro_id' => $record->cadastro_id,
+                                'ordem_servico_id' => $os->id,
+                                'orcamento_id' => $record->id,
+                                'tipo' => 'servico',
+                                'data_hora_inicio' => $dataServico->copy()->setTimeFromTimeString($horaInicio->format('H:i:s')),
+                                'data_hora_fim' => $dataServico->copy()->setTimeFromTimeString($horaFim->format('H:i:s')),
+                                'status' => 'agendado',
+                                'local' => $enderecoCompleto ?: 'Endereço não informado',
+                                'endereco_completo' => $enderecoCompleto,
+                                'observacoes' => $data['observacoes_os'] ?? ('Agendado automaticamente - ' . $record->numero),
+                                'cor' => match ($record->tipo_servico ?? 'servico') {
+                                    'higienizacao' => '#3b82f6',
+                                    'impermeabilizacao' => '#f59e0b',
+                                    'higienizacao_impermeabilizacao' => '#10b981',
+                                    default => '#6b7280',
                                 },
-                                $cadastro?->nome
-                            ),
-                            'descricao' => $record->descricao_servico ?? ('Conforme orçamento '.$record->numero_orcamento),
-                            'cliente_id' => $os->cliente_id ?? null,
-                            'cadastro_id' => $record->cadastro_id ?? ($os->cadastro_id ?? ($os->cliente_id ? 'cliente_' . $os->cliente_id : null)),
-                            'ordem_servico_id' => $os->id,
-                            'orcamento_id' => $record->id,
-                            'tipo' => 'servico',
-                            'data_hora_inicio' => $dataServico->setTimeFromTimeString($horaInicio->format('H:i:s')),
-                            'data_hora_fim' => $dataServico->copy()->setTimeFromTimeString($horaFim->format('H:i:s')),
-                            'status' => 'agendado',
-                            'local' => $enderecoCompleto ?: 'Endereço não informado',
-                            'endereco_completo' => $enderecoCompleto,
-                            'observacoes' => $data['observacoes_os'] ?? ('Agendado automaticamente - '.$record->numero_orcamento),
-                            'cor' => match ($record->tipo_servico) {
-                                'higienizacao' => '#3b82f6',
-                                'impermeabilizacao' => '#f59e0b',
-                                'higienizacao_impermeabilizacao' => '#10b981',
-                                default => '#6b7280',
-                            },
-                            'criado_por' => auth()->user()->name,
-                        ]);
+                                'criado_por' => auth()->id(),
+                            ]);
+                        }
 
-                        // Atualizar OS com o ID da agenda
-                        $os->update(['agenda_id' => $agenda->id]);
-
-                        // 3. Criar lançamento no Financeiro (a receber)
-                        TransacaoFinanceira::create([
-                            'tipo' => 'receita',
+                        // 3. Criar lançamento no Financeiro (Conta a Receber) - USANDO MODEL CORRETO
+                        \App\Models\Financeiro::create([
+                            'tipo' => 'entrada',
                             'categoria' => 'servico',
                             'descricao' => sprintf(
                                 'Serviço - OS %s - Cliente: %s',
                                 $os->numero_os,
-                                $cadastro?->nome
+                                $cadastro?->nome ?? 'Cliente'
                             ),
                             'valor' => $record->valor_total,
-                            'data_transacao' => $data['data_servico'],
-                            'data_vencimento' => $data['data_servico'],
+                            // Se não tem data serviço, usa hoje como base
+                            'data' => $data['data_servico'] ?? now(),
+                            'data_vencimento' => $data['data_servico'] ?? now()->addDays(30),
                             'status' => 'pendente',
-                            'metodo_pagamento' => $record->forma_pagamento,
-                            'cadastro_id' => $record->cadastro_id ?? null,
-                            'cliente_id' => $os->cliente_id ?? null,
-                            'parceiro_id' => $os->parceiro_id ?? null,
+                            'forma_pagamento' => $record->forma_pagamento ?? null,
+                            'cadastro_id' => $record->cadastro_id,
+                            'ordem_servico_id' => $os->id,
+                            'orcamento_id' => $record->id,
                         ]);
 
                         // 4. Atualizar orçamento com link para OS
                         $record->update([
-                            'ordem_servico_id' => $os->id,
-                            'status' => 'convertido',
+                            'status' => 'aprovado',
                         ]);
                     });
 
@@ -198,7 +203,7 @@ class ViewOrcamento extends ViewRecord
                 ->form([
                     Forms\Components\Toggle::make('include_pix')
                         ->label('Incluir QR Code PIX')
-                        ->default(fn ($record) => (bool) ($record->pdf_incluir_pix ?? true)),
+                        ->default(fn($record) => (bool) ($record->pdf_incluir_pix ?? true)),
 
                     Forms\Components\Toggle::make('persist')
                         ->label('Salvar preferência (persistir)')
@@ -232,7 +237,7 @@ class ViewOrcamento extends ViewRecord
                         Notification::make()
                             ->danger()
                             ->title('Erro')
-                            ->body('Erro ao processar resposta: '.$e->getMessage())
+                            ->body('Erro ao processar resposta: ' . $e->getMessage())
                             ->send();
                     }
                 }),
@@ -242,7 +247,7 @@ class ViewOrcamento extends ViewRecord
                 ->label('Enviar WhatsApp')
                 ->icon('heroicon-o-chat-bubble-left-right')
                 ->color('success')
-                ->url(fn (Orcamento $record) => $this->getWhatsappUrl($record))
+                ->url(fn(Orcamento $record) => $this->getWhatsappUrl($record))
                 ->openUrlInNewTab(),
         ];
     }
@@ -252,20 +257,20 @@ class ViewOrcamento extends ViewRecord
     {
         // 1. Gera o Link Público Assinado (válido por 7 dias, por exemplo)
         $pdfUrl = \Illuminate\Support\Facades\URL::signedRoute(
-            'orcamento.public_stream', 
+            'orcamento.public_stream',
             ['orcamento' => $record->id],
             now()->addDays(7)
         );
 
         // 2. Formata o telefone (remove caracteres não numéricos)
         $phone = preg_replace('/[^0-9]/', '', $record->cliente->telefone ?? '');
-        
+
         // 3. Monta a mensagem
         $text = urlencode("Olá {$record->cliente->nome}, aqui está o seu orçamento #{$record->id} da Stofgard.\n\nClique para visualizar: {$pdfUrl}");
 
         // 4. Retorna link do WhatsApp API
         // Se não tiver telefone, abre apenas a janela para escolher o contato
-        return $phone 
+        return $phone
             ? "https://wa.me/55{$phone}?text={$text}"
             : "https://wa.me/?text={$text}";
     }

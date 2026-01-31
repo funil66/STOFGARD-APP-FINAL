@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\HasMedia;
+use App\Traits\HasArquivos;
 
-class Financeiro extends Model
+class Financeiro extends Model implements HasMedia
 {
+    use HasArquivos;
 
     /**
      * Retorna o cadastro relacionado (Cliente, Loja ou Vendedor)
@@ -17,11 +20,11 @@ class Financeiro extends Model
             return null;
         }
         if (str_starts_with($this->cadastro_id, 'cliente_')) {
-            $id = (int)str_replace('cliente_', '', $this->cadastro_id);
+            $id = (int) str_replace('cliente_', '', $this->cadastro_id);
             return Cliente::find($id);
         }
         if (str_starts_with($this->cadastro_id, 'parceiro_')) {
-            $id = (int)str_replace('parceiro_', '', $this->cadastro_id);
+            $id = (int) str_replace('parceiro_', '', $this->cadastro_id);
             return Parceiro::find($id);
         }
         return null;
@@ -39,6 +42,7 @@ class Financeiro extends Model
         'descricao',
         'observacoes',
         'categoria',
+        'categoria_id', // Novo campo
         'valor',
         'valor_pago',
         'desconto',
@@ -94,6 +98,11 @@ class Financeiro extends Model
         return $this->belongsTo(OrdemServico::class);
     }
 
+    public function categoria(): BelongsTo
+    {
+        return $this->belongsTo(Categoria::class, 'categoria_id');
+    }
+
     // Accessors
     public function getValorTotalAttribute(): float
     {
@@ -102,12 +111,12 @@ class Financeiro extends Model
 
     public function getPixAtivoAttribute(): bool
     {
-        return ! empty($this->pix_txid) && $this->pix_status !== 'expirado' && $this->pix_status !== 'cancelado';
+        return !empty($this->pix_txid) && $this->pix_status !== 'expirado' && $this->pix_status !== 'cancelado';
     }
 
     public function getEstaVencidoAttribute(): bool
     {
-        if (! $this->data_vencimento || $this->status === 'pago') {
+        if (!$this->data_vencimento || $this->status === 'pago') {
             return false;
         }
 
@@ -141,7 +150,7 @@ class Financeiro extends Model
             // ignore
         }
 
-        if (! $value) {
+        if (!$value) {
             return;
         }
 

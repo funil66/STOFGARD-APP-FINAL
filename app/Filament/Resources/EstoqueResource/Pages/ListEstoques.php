@@ -13,7 +13,22 @@ class ListEstoques extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->label('Novo Item')
+                ->icon('heroicon-o-plus'),
         ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\ProdutoResource\Widgets\EstoqueVisualWidget::class,
+            // ConsumoEstoqueChart temporariamente removido - precisa de registro Livewire
+        ];
+    }
+
+    public function getHeaderWidgetsColumns(): int|array
+    {
+        return 1;
     }
 }

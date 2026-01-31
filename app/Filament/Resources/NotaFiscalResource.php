@@ -115,7 +115,8 @@ class NotaFiscalResource extends Resource
                                     ->prefix('R$')
                                     ->default(0)
                                     ->live()
-                                    ->afterStateUpdated(fn ($state, Forms\Set $set, Forms\Get $get) => self::calcularValorTotal($set, $get)
+                                    ->afterStateUpdated(
+                                        fn($state, Forms\Set $set, Forms\Get $get) => self::calcularValorTotal($set, $get)
                                     ),
 
                                 Forms\Components\TextInput::make('valor_servicos')
@@ -124,7 +125,8 @@ class NotaFiscalResource extends Resource
                                     ->prefix('R$')
                                     ->default(0)
                                     ->live()
-                                    ->afterStateUpdated(fn ($state, Forms\Set $set, Forms\Get $get) => self::calcularValorTotal($set, $get)
+                                    ->afterStateUpdated(
+                                        fn($state, Forms\Set $set, Forms\Get $get) => self::calcularValorTotal($set, $get)
                                     ),
 
                                 Forms\Components\TextInput::make('valor_desconto')
@@ -133,7 +135,8 @@ class NotaFiscalResource extends Resource
                                     ->prefix('R$')
                                     ->default(0)
                                     ->live()
-                                    ->afterStateUpdated(fn ($state, Forms\Set $set, Forms\Get $get) => self::calcularValorTotal($set, $get)
+                                    ->afterStateUpdated(
+                                        fn($state, Forms\Set $set, Forms\Get $get) => self::calcularValorTotal($set, $get)
                                     ),
 
                                 Forms\Components\TextInput::make('valor_total')
@@ -201,7 +204,7 @@ class NotaFiscalResource extends Resource
                             ->label('Motivo do Cancelamento')
                             ->rows(3),
                     ])
-                    ->visible(fn (Forms\Get $get) => $get('status') === 'cancelada'),
+                    ->visible(fn(Forms\Get $get) => $get('status') === 'cancelada'),
             ]);
     }
 
@@ -225,7 +228,7 @@ class NotaFiscalResource extends Resource
                         Infolists\Components\TextEntry::make('numero_nf')->label('Número')->weight('bold'),
                         Infolists\Components\TextEntry::make('serie')->label('Série'),
                         Infolists\Components\TextEntry::make('data_emissao')->label('Data Emissão')->dateTime('d/m/Y'),
-                        Infolists\Components\TextEntry::make('cadastro.nome')->label('Cadastro')->url(fn ($record) => $record->cadastro ? url('/admin/clientes/' . $record->cadastro->id) : null),
+                        Infolists\Components\TextEntry::make('cadastro.nome')->label('Cadastro')->url(fn($record) => $record->cadastro ? url('/admin/clientes/' . $record->cadastro->id) : null),
                     ])
                     ->columns(2),
 
@@ -285,7 +288,7 @@ class NotaFiscalResource extends Resource
                 Tables\Columns\TextColumn::make('tipo')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'entrada' => 'info',
                         'saida' => 'warning',
                     }),
@@ -309,7 +312,7 @@ class NotaFiscalResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'rascunho' => 'gray',
                         'emitida' => 'success',
                         'cancelada' => 'danger',
@@ -356,14 +359,26 @@ class NotaFiscalResource extends Resource
                     ])
                     ->query(function ($query, array $data) {
                         return $query
-                            ->when($data['emitida_de'], fn ($q, $date) => $q->whereDate('data_emissao', '>=', $date))
-                            ->when($data['emitida_ate'], fn ($q, $date) => $q->whereDate('data_emissao', '<=', $date));
+                            ->when($data['emitida_de'], fn($q, $date) => $q->whereDate('data_emissao', '>=', $date))
+                            ->when($data['emitida_ate'], fn($q, $date) => $q->whereDate('data_emissao', '<=', $date));
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
+                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
+                Tables\Actions\Action::make('share')
+                    ->label('')
+                    ->tooltip('Compartilhar')
+                    ->icon('heroicon-o-share')
+                    ->color('success')
+                    ->action(function (NotaFiscal $record) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Link Copiado!')
+                            ->body(url("/admin/nota-fiscals/{$record->id}"))
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -1,96 +1,227 @@
 <?php
 
 namespace App\Filament\Resources;
-use Filament\Infolists\Components\ImageEntry;
-use Saade\FilamentAutograph\Forms\Components\SignaturePad;
 
 use App\Filament\Resources\OrdemServicoResource\Pages;
 use App\Models\OrdemServico;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\Group;
+use Illuminate\Database\Eloquent\Builder;
 
 class OrdemServicoResource extends Resource
 {
     protected static ?string $model = OrdemServico::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationLabel = 'Ordens de Serviço';
-
     protected static ?string $modelLabel = 'Ordem de Serviço';
-
-    protected static ?string $pluralModelLabel = 'Ordens de Serviço';
-
     protected static ?string $navigationGroup = 'Operacional';
-
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Section::make('Informações do Cliente')
-                    ->schema([
-                        Select::make('cadastro_id')
-                            ->label('Cliente')
-                            ->relationship('cliente', 'nome')
-                            ->searchable()
-                            ->required()
-                            ->helperText('Selecione o cliente para esta OS.')
-                            ->createOptionForm([
-                                // Campos para criar cliente rápido
-                            ]),
-                    ])->columns(2),
-
-                Section::make('Detalhes do Serviço')
+                Section::make('Identificação e Origem')
+                    ->description('Defina o cliente tomador e a origem comercial da venda.')
                     ->schema([
                         TextInput::make('numero_os')
-                            ->label('Número da OS')
-                            ->default(fn () => OrdemServico::gerarNumeroOS())
+                            ->label('Nº OS (Prévia)')
+                            ->default(fn() => OrdemServico::gerarNumeroOS())
                             ->disabled()
-                            ->dehydrated()
-                            ->required()
+                            ->dehydrated(false) // Don't include in form data - will be generated server-side
+                            ->helperText('O número final será gerado automaticamente ao salvar')
+                            ->required(false) // Not required since it won't be submitted
                             ->columnSpan(1),
 
-                        DatePicker::make('data_abertura')
-                            ->label('Data de Abertura')
-                            ->default(now())
-                            ->required()
-                            ->columnSpan(1),
-
-                        Select::make('tipo_servico')
-                            ->label('Tipo de Serviço')
-                            ->options([
-                                'Higienização de Estofados' => 'Higienização de Estofados',
-                                'Impermeabilização' => 'Impermeabilização',
-                                'Higienização + Impermeabilização' => 'Higienização + Impermeabilização',
-                                'Limpeza de Carpetes' => 'Limpeza de Carpetes',
-                                'Limpeza de Colchões' => 'Limpeza de Colchões',
-                                'Hidratação de Couro' => 'Hidratação de Couro',
-                                'Outros' => 'Outros',
-                            ])
-                            ->required()
+                        Select::make('cadastro_id')
+                            ->label('Cliente Final')
+                            ->relationship('cliente', 'nome', fn(Builder $query) => $query->where('tipo', 'cliente'))
                             ->searchable()
-                            ->live()
-                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                if (str_contains(strtolower($state), 'impermeabilização')) {
-                                    $set('dias_garantia', 365);
-                                } else {
-                                    $set('dias_garantia', 90);
-                                }
+                            ->preload()
+                            ->required()
+                            ->columnSpan(3)
+                            ->createOptionForm([
+                                TextInput::make('nome')->required(),
+                                TextInput::make('celular')->mask('(99) 99999-9999'),
+                                Select::make('tipo')->options(['cliente' => 'Cliente'])->default('cliente')->hidden(),
+                            ]),
 
-                                $dataConclusao = $get('data_conclusao');
-                                if ($dataConclusao) {
-                                    $diasGarantia = $get('dias_garantia');
-                                    // Recalcular data fim garantia
-                                }
-                            }),
-                    ])->columns(2),
+                        Select::make('loja_id')
+                            ->label('Loja / Parceiro Indicador')
+                            ->options(\App\Models\Cadastro::where('tipo', 'loja')->pluck('nome', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->helperText('Quem realizou ou indicou a venda?')
+                            ->columnSpan(2),
+
+                        Select::make('vendedor_id')
+                            ->label('Vendedor Responsável')
+                            ->options(\App\Models\Cadastro::where('tipo', 'vendedor')->pluck('nome', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->default(fn() => \App\Models\Cadastro::where('tipo', 'vendedor')->where('email', auth()->user()->email)->first()?->id)
+                            ->columnSpan(2),
+                    ])->columns(4),
+
+                Tabs::make('Detalhes da Operação')
+                    ->tabs([
+                        Tab::make('Serviços e Valores')
+                            ->icon('heroicon-o-wrench')
+                            ->schema([
+                                Group::make()->schema([
+                                    Select::make('tipo_servico')
+                                        ->label('Serviço Principal')
+                                        ->options([
+                                            'higienizacao' => 'Higienização',
+                                            'impermeabilizacao' => 'Impermeabilização',
+                                            'combo' => 'Combo (Higi + Imper)',
+                                        ])
+                                        ->required()
+                                        ->live()
+                                        ->afterStateUpdated(function ($state, callable $set) {
+                                            if ($state === 'higienizacao') {
+                                                $set('descricao_servico', "HIGIENIZAÇÃO\nBiossanitização Profunda: Extração de alta pressão para eliminação de biofilmes, ácaros e bactérias, garantindo assepsia total das fibras e neutralização de odores.");
+                                                $set('dias_garantia', 7);
+                                            } elseif ($state === 'impermeabilizacao') {
+                                                $set('descricao_servico', "IMPERMEABILIZAÇÃO\nEscudo hidrofóbico invisível que repele líquidos e óleos, preservando a cor e textura original do tecido. Proteção contra manchas e facilitação da limpeza.");
+                                                $set('dias_garantia', 365);
+                                            }
+                                        }),
+
+                                    Select::make('status')
+                                        ->options([
+                                            'aberta' => 'Aberta',
+                                            'agendada' => 'Agendada',
+                                            'concluida' => 'Concluída',
+                                            'cancelada' => 'Cancelada',
+                                        ])
+                                        ->default('aberta')
+                                        ->required(),
+                                ])->columns(2),
+
+                                Textarea::make('descricao_servico')
+                                    ->label('Descrição Técnica (Texto do Orçamento)')
+                                    ->rows(4)
+                                    ->columnSpanFull(),
+
+                                Repeater::make('itens')
+                                    ->relationship('itens')
+                                    ->label('Itens do Serviço (Sofá, Cadeira, etc)')
+                                    ->schema([
+                                        Select::make('descricao')
+                                            ->label('Item / Serviço')
+                                            ->options(fn() => \App\Models\TabelaPreco::where('ativo', true)->pluck('nome_item', 'nome_item'))
+                                            ->searchable()
+                                            ->required()
+                                            ->live()
+                                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                                $item = \App\Models\TabelaPreco::where('nome_item', $state)->first();
+                                                if ($item) {
+                                                    $set('unidade_medida', $item->unidade_medida);
+                                                    // Define preço padrão se houver (Preço Base ou Higienização como padrão)
+                                                    $set('valor_unitario', $item->preco_vista);
+                                                }
+                                                // Recalcula linha
+                                                $qtd = (float) $get('quantidade') ?: 1;
+                                                $unit = (float) $get('valor_unitario') ?: 0;
+                                                $set('subtotal', $qtd * $unit);
+
+                                                self::recalcularTotal($set, $get);
+                                            })
+                                            ->columnSpan(4),
+
+                                        TextInput::make('quantidade')
+                                            ->numeric()
+                                            ->default(1)
+                                            ->label('Qtd')
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
+                                                $set('subtotal', (float) $get('quantidade') * (float) $get('valor_unitario'));
+                                                self::recalcularTotal($set, $get);
+                                            })
+                                            ->columnSpan(1),
+
+                                        TextInput::make('valor_unitario')
+                                            ->numeric()
+                                            ->prefix('R$')
+                                            ->label('Unit.')
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
+                                                $set('subtotal', (float) $get('quantidade') * (float) $get('valor_unitario'));
+                                                self::recalcularTotal($set, $get);
+                                            })
+                                            ->columnSpan(1),
+
+                                        TextInput::make('subtotal')
+                                            ->numeric()
+                                            ->prefix('R$')
+                                            ->label('Total')
+                                            ->disabled()
+                                            ->dehydrated()
+                                            ->columnSpan(1),
+
+                                        Forms\Components\Hidden::make('unidade_medida'),
+                                    ])
+                                    ->columns(7)
+                                    ->live()
+                                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get)),
+
+                                TextInput::make('valor_total')
+                                    ->label('TOTAL GERAL')
+                                    ->numeric()
+                                    ->prefix('R$')
+                                    ->readOnly()
+                                    ->extraInputAttributes(['class' => 'text-xl font-bold']),
+                            ]),
+
+                        Tab::make('Datas e Prazos')
+                            ->icon('heroicon-o-calendar')
+                            ->schema([
+                                DatePicker::make('data_abertura')->label('Data Venda')->default(now())->required(),
+                                DatePicker::make('data_prevista')->label('Data Agendada'),
+                                DatePicker::make('data_conclusao')->label('Conclusão'),
+                                TextInput::make('dias_garantia')->label('Garantia (Dias)')->numeric(),
+                            ])->columns(4),
+
+                        Tab::make('Evidências')
+                            ->icon('heroicon-o-camera')
+                            ->schema([
+                                SpatieMediaLibraryFileUpload::make('fotos_antes')->label('Antes')->multiple()->disk('public')->directory('os-fotos'),
+                                SpatieMediaLibraryFileUpload::make('fotos_depois')->label('Depois')->multiple()->disk('public')->directory('os-fotos'),
+                            ]),
+                    ])->columnSpanFull(),
+                Section::make('Central de Arquivos')
+                    ->description('Envie fotos, documentos e comprovantes (Máx: 20MB).')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        SpatieMediaLibraryFileUpload::make('arquivos')
+                            ->label('Arquivos e Mídia')
+                            ->collection('arquivos')
+                            ->multiple()
+                            ->disk('public')
+                            ->maxSize(20480)
+                            ->downloadable()
+                            ->openable()
+                            ->previewable()
+                            ->reorderable()
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 
@@ -99,590 +230,182 @@ class OrdemServicoResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('numero_os')
-                    ->label('Nº OS')
+                    ->label('OS')
                     ->searchable()
-                    ->sortable()
                     ->weight('bold')
-                    ->copyable()
-                    ->copyMessage('Número copiado'),
+                    ->sortable(),
 
-                Tables\Columns\TextColumn::make('cadastro.nome')
-                    ->label('Cadastro')
+                Tables\Columns\TextColumn::make('cliente.nome')
+                    ->label('Cliente')
                     ->searchable()
-                    ->sortable()
-                    ->limit(30),
+                    ->sortable(),
 
-                Tables\Columns\ImageColumn::make('assinatura_cliente_path')
-                    ->label('Assinatura')
-                    ->disk('public')
-                    ->height(40),
+                Tables\Columns\TextColumn::make('loja.nome')
+                    ->label('Loja')
+                    ->badge()
+                    ->color('warning')
+                    ->sortable(),
 
-                Tables\Columns\TextColumn::make('tipo_servico')
-                    ->label('Serviço')
-                    ->searchable()
-                    ->limit(25)
-                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
-                        $state = $column->getState();
-                        if (strlen($state) > 25) {
-                            return $state;
-                        }
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'aberta' => 'info',
+                        'agendada' => 'warning',
+                        'concluida' => 'success',
+                        'cancelada' => 'danger',
+                        default => 'gray',
+                    })
+                    ->sortable(),
 
-                        return null;
-                    }),
-
-                Tables\Columns\BadgeColumn::make('status')
-                    ->label('Status')
-                    ->colors([
-                        'info' => 'aberta',
-                        'warning' => 'em_andamento',
-                        'danger' => 'aguardando_pecas',
-                        'success' => 'concluida',
-                        'gray' => 'cancelada',
-                    ])
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'aberta' => 'Aberta',
-                        'em_andamento' => 'Em Andamento',
-                        'aguardando_pecas' => 'Aguardando Peças',
-                        'concluida' => 'Concluída',
-                        'cancelada' => 'Cancelada',
-                        default => $state,
-                    }),
+                Tables\Columns\TextColumn::make('status_garantia')
+                    ->label('Garantia')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'ativa' => 'success',   // Verde
+                        'vencida' => 'danger',  // Vermelho
+                        'pendente' => 'warning', // Amarelo
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn(OrdemServico $record, string $state): string => match ($state) {
+                        'ativa' => '✅ Até ' . ($record->data_fim_garantia?->format('d/m/Y') ?? ''),
+                        'vencida' => '🔴 Venceu em ' . ($record->data_fim_garantia?->format('d/m/Y') ?? ''),
+                        'pendente' => '🕒 Aguardando Conclusão',
+                        default => '-',
+                    })
+                    ->visible(fn(OrdemServico $record) => $record->dias_garantia > 0),
 
                 Tables\Columns\TextColumn::make('valor_total')
-                    ->label('Valor')
                     ->money('BRL')
+                    ->label('Total')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('data_abertura')
-                    ->label('Abertura')
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Criado em')
                     ->date('d/m/Y')
                     ->sortable(),
-
-                Tables\Columns\IconColumn::make('pagamento_realizado')
-                    ->label('Pago')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
-
-                Tables\Columns\TextColumn::make('parceiro.nome')
-                    ->label('Parceiro')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
                     ->options([
                         'aberta' => 'Aberta',
-                        'em_andamento' => 'Em Andamento',
-                        'aguardando_pecas' => 'Aguardando Peças',
+                        'agendada' => 'Agendada',
                         'concluida' => 'Concluída',
                         'cancelada' => 'Cancelada',
-                    ])
-                    ->multiple(),
+                    ]),
 
-                Tables\Filters\SelectFilter::make('cadastro_id')
-                    ->label('Cadastro')
-                    ->options(function () {
-                        $clientes = \App\Models\Cliente::all()->mapWithKeys(fn($c) => [
-                            'cliente_' . $c->id => '🧑 Cliente: ' . $c->nome
-                        ]);
-                        $parceiros = \App\Models\Parceiro::all()->mapWithKeys(fn($p) => [
-                            'parceiro_' . $p->id => ($p->tipo === 'loja' ? '🏪 Loja: ' : '🧑‍💼 Vendedor: ') . $p->nome
-                        ]);
-                        return $clientes->union($parceiros)->toArray();
-                    })
-                    ->searchable()
-                    ->preload(),
+                Tables\Filters\SelectFilter::make('loja_id')
+                    ->label('Loja')
+                    ->relationship('loja', 'nome'),
 
-                Tables\Filters\Filter::make('data_abertura')
+                Tables\Filters\Filter::make('created_at')
                     ->form([
-                        Forms\Components\DatePicker::make('abertura_de')
-                            ->label('Abertura de'),
-                        Forms\Components\DatePicker::make('abertura_ate')
-                            ->label('Abertura até'),
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Criado de'),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Criado até'),
                     ])
-                    ->query(function ($query, array $data) {
+                    ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['abertura_de'], fn ($q, $date) => $q->whereDate('data_abertura', '>=', $date))
-                            ->when($data['abertura_ate'], fn ($q, $date) => $q->whereDate('data_abertura', '<=', $date));
+                            ->when(
+                                $data['created_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
                     }),
-
-                Tables\Filters\TernaryFilter::make('pagamento_realizado')
-                    ->label('Pagamento')
-                    ->placeholder('Todos')
-                    ->trueLabel('Pagos')
-                    ->falseLabel('Pendentes'),
             ])
             ->actions([
-                Tables\Actions\Action::make('concluir_e_assinar')
-                    ->label('Concluir e Assinar (Plugin)')
-                    ->icon('heroicon-o-pencil-square')
-                    ->color('success')
-                    ->modalHeading('Assinatura Digital')
-                    ->modalWidth('md')
-                    ->form([
-                        SignaturePad::make('assinatura')
-                            ->label('Assine abaixo')
-                            ->required()
-                            ->clearable()
-                            ->filename(fn ($record) => 'OS-' . $record->numero_os),
-                    ])
-                    ->action(function (array $data, OrdemServico $record) {
-                        $assinaturaData = $data['assinatura'];
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
 
-                        if (!$assinaturaData) {
-                            \Filament\Notifications\Notification::make()->title('Erro')->body('Assinatura vazia.')->danger()->send();
-                            return;
-                        }
-
-                        // Tratamento do Base64
-                        if (is_string($assinaturaData)) {
-                            if (strpos($assinaturaData, ',') !== false) {
-                                $assinaturaData = explode(',', $assinaturaData)[1];
-                            }
-
-                            $image_base64 = base64_decode($assinaturaData);
-                            $path = 'assinaturas/assinatura_os_' . $record->numero_os . '_' . time() . '.png';
-
-                            \Illuminate\Support\Facades\Storage::disk('public')->put($path, $image_base64);
-
-                            $record->update([
-                                'status' => 'concluida',
-                                'assinatura_cliente_path' => $path,
-                                'data_conclusao' => now(),
-                            ]);
-                        }
-
-                        \Filament\Notifications\Notification::make()->title('Sucesso!')->body('Assinado e Concluído.')->success()->send();
-                    })
-                    ->visible(fn (OrdemServico $record) => $record->status !== 'concluida'),
-                Tables\Actions\Action::make('concluir_servico')
+                Tables\Actions\Action::make('concluir')
                     ->label('Concluir')
-                    ->icon('heroicon-o-check-badge')
+                    ->icon('heroicon-o-check-circle')
                     ->color('success')
+                    ->visible(fn(OrdemServico $record) => $record->status !== 'concluida')
                     ->requiresConfirmation()
-                    ->modalHeading('Concluir Serviço')
-                    ->modalDescription('Ao concluir, será criado automaticamente um registro de garantia para este serviço.')
-                    ->modalSubmitActionLabel('Sim, Concluir')
-                    ->visible(fn ($record): bool => in_array($record->status, ['pendente', 'em_andamento']))
-                    ->form([
-                        Forms\Components\DatePicker::make('data_conclusao')
-                            ->label('Data de Conclusão')
-                            ->required()
-                            ->native(false)
-                            ->displayFormat('d/m/Y')
-                            ->default(now())
-                            ->maxDate(now()),
-
-                        Forms\Components\FileUpload::make('fotos_resultado')
-                            ->label('Fotos do Resultado')
-                            ->image()
-                            ->multiple()
-                            ->maxFiles(10)
-                            ->directory('ordens-servico/fotos-depois')
-                            ->imagePreviewHeight(180)
-                            ->panelLayout('grid')
-                            ->helperText('Fotos do serviço concluído'),
-
-                        Forms\Components\Textarea::make('observacoes_conclusao')
-                            ->label('Observações da Conclusão')
-                            ->rows(3)
-                            ->placeholder('Detalhes sobre a execução do serviço, produtos utilizados, etc...'),
-                    ])
-                    ->action(function ($record, array $data): void {
-                        \DB::transaction(function () use ($record, $data) {
-                            // 1. Atualizar OS
-                            $record->update([
-                                'status' => 'concluida',
-                                'data_conclusao' => $data['data_conclusao'],
-                                'fotos_depois' => $data['fotos_resultado'] ?? null,
-                                'observacoes' => ($record->observacoes ?? '')."\n\n".($data['observacoes_conclusao'] ?? ''),
-                            ]);
-
-                            // 2. Criar Garantia automaticamente
-                            \App\Models\Garantia::create([
-                                'ordem_servico_id' => $record->id,
-                                'tipo_servico' => $record->tipo_servico,
-                                'data_inicio' => $data['data_conclusao'],
-                                'status' => 'ativa',
-                                'observacoes' => 'Garantia criada automaticamente na conclusão da OS '.$record->numero_os,
-                            ]);
-
-                            // 3. Atualizar evento na agenda
-                            if ($record->agendas()->exists()) {
-                                $record->agendas()->update([
-                                    'status' => 'concluida',
-                                ]);
-                            }
-                        });
-                    })
-                    ->successNotificationTitle('Serviço concluído!')
-                    ->successNotification(function () {
-                        return \Filament\Notifications\Notification::make()
+                    ->action(function (OrdemServico $record) {
+                        $record->update(['status' => 'concluida']);
+                        \Filament\Notifications\Notification::make()
                             ->success()
-                            ->title('Serviço Concluído!')
-                            ->body('A garantia foi criada automaticamente.')
+                            ->title('OS Concluída!')
                             ->send();
                     }),
 
-                Tables\Actions\Action::make('alterar_status')
-                    ->label('Status')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('warning')
-                    ->form([
-                        Forms\Components\Select::make('status')
-                            ->label('Novo Status')
-                            ->options([
-                                'aberta' => 'Aberta',
-                                'em_andamento' => 'Em Andamento',
-                                'aguardando_pecas' => 'Aguardando Peças',
-                                'concluida' => 'Concluída',
-                                'cancelada' => 'Cancelada',
-                            ])
-                            ->default(fn ($record) => $record->status)
-                            ->required()
-                            ->native(false),
-                    ])
-                    ->action(function ($record, array $data) {
-                        $updates = [
-                            'status' => $data['status'],
-                            'atualizado_por' => strtoupper(substr(auth()->user()->name, 0, 2)),
-                        ];
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn(OrdemServico $record) => route('os.pdf', $record))
+                    ->openUrlInNewTab(),
 
-                        // Se mudou para concluída, preencher data de conclusão e calcular garantia
-                        if ($data['status'] === 'concluida' && empty($record->data_conclusao)) {
-                            $updates['data_conclusao'] = now();
-                            if ($record->dias_garantia) {
-                                $updates['data_fim_garantia'] = now()->addDays($record->dias_garantia);
-                            }
-                        }
+                Tables\Actions\Action::make('share')
+                    ->label('')
+                    ->tooltip('Compartilhar')
+                    ->icon('heroicon-o-share')
+                    ->color('success')
+                    ->action(function (OrdemServico $record) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Link Copiado!')
+                            ->body(url("/admin/ordem-servicos/{$record->id}"))
+                            ->success()
+                            ->send();
+                    }),
 
-                        // Se mudou de concluída para outro status, limpar datas de conclusão e garantia
-                        if ($data['status'] !== 'concluida' && $record->status === 'concluida') {
-                            $updates['data_conclusao'] = null;
-                            $updates['data_fim_garantia'] = null;
-                        }
-
-                        $record->update($updates);
-                    })
-                    ->successNotificationTitle('Status alterado com sucesso!'),
-
-                Tables\Actions\Action::make('alterar_pagamento')
-                    ->label('Pagamento')
-                    ->icon('heroicon-o-banknotes')
-                    ->color(fn ($record) => $record->pagamento_realizado ? 'success' : 'danger')
-                    ->requiresConfirmation()
-                    ->modalHeading(fn ($record) => $record->pagamento_realizado ? 'Marcar como NÃO pago?' : 'Marcar como pago?')
-                    ->modalDescription(fn ($record) => $record->pagamento_realizado
-                        ? 'O pagamento será marcado como pendente.'
-                        : 'O pagamento será marcado como realizado.')
-                    ->action(function ($record) {
-                        $novo = ! $record->pagamento_realizado;
-
-                        $record->update([
-                            'pagamento_realizado' => $novo,
-                            'atualizado_por' => strtoupper(substr(auth()->user()->name, 0, 2)),
-                        ]);
-
-                        // Sincronizar com o Financeiro, se existir lançamento vinculado
-                        $transacao = \App\Models\TransacaoFinanceira::where('ordem_servico_id', $record->id)->first();
-                        if ($transacao) {
-                            if ($novo) {
-                                $transacao->marcarComoPago(null, $record->forma_pagamento);
-                            } else {
-                                $transacao->update(['status' => 'pendente', 'data_pagamento' => null]);
-                            }
-                        }
-                    })
-                    ->successNotificationTitle('Status de pagamento alterado!'),
-
-                Tables\Actions\ViewAction::make()
-                    ->icon('heroicon-o-eye'),
-                Tables\Actions\EditAction::make()
-                    ->icon('heroicon-o-pencil'),
-                \App\Filament\Actions\DownloadFileAction::make('assinatura_cliente_path', 'public')->label('Download'),
-                Tables\Actions\DeleteAction::make()
-                    ->icon('heroicon-o-trash'),
+                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('marcar_agendada')
+                        ->label('Marcar como Agendada')
+                        ->icon('heroicon-o-calendar')
+                        ->color('warning')
+                        ->action(fn($records) => $records->each->update(['status' => 'agendada'])),
+
+                    Tables\Actions\BulkAction::make('marcar_concluida')
+                        ->label('Marcar como Concluída')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn($records) => $records->each->update(['status' => 'concluida'])),
+
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->defaultSort('created_at', 'desc');
-    }
-
-    public static function infolist(Infolist $infolist): Infolist
-    {
-        return $infolist
-            ->schema([
-                Infolists\Components\Section::make('Informações da OS')
-                    ->schema([
-                        Infolists\Components\TextEntry::make('numero_os')
-                            ->label('Número da OS')
-                            ->weight('bold')
-                            ->size('lg')
-                            ->copyable(),
-
-                        Infolists\Components\TextEntry::make('cliente.nome')
-                            ->label('Cliente')
-                            ->url(fn ($record) => $record->cliente ? url('/admin/cadastros') : null)
-                            ->color('primary'),
-
-                        Infolists\Components\TextEntry::make('status')
-                            ->badge()
-                            ->color(fn (string $state): string => match ($state) {
-                                'aberta' => 'info',
-                                'em_andamento' => 'warning',
-                                'aguardando_pecas' => 'danger',
-                                'concluida' => 'success',
-                                'cancelada' => 'gray',
-                                default => 'gray',
-                            })
-                            ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'aberta' => 'Aberta',
-                                'em_andamento' => 'Em Andamento',
-                                'aguardando_pecas' => 'Aguardando Peças',
-                                'concluida' => 'Concluída',
-                                'cancelada' => 'Cancelada',
-                                default => $state,
-                            }),
-
-                        Infolists\Components\TextEntry::make('data_abertura')
-                            ->label('Data de Abertura')
-                            ->date('d/m/Y'),
-                    ])
-                    ->columns(4),
-
-                Infolists\Components\Section::make('Serviço')
-                    ->schema([
-                        Infolists\Components\TextEntry::make('tipo_servico')
-                            ->label('Tipo de Serviço'),
-
-                        Infolists\Components\TextEntry::make('descricao_servico')
-                            ->label('Descrição')
-                            ->columnSpanFull(),
-
-                        Infolists\Components\TextEntry::make('data_prevista')
-                            ->label('Previsão de Conclusão')
-                            ->date('d/m/Y')
-                            ->placeholder('Não definida'),
-
-                        Infolists\Components\TextEntry::make('data_conclusao')
-                            ->label('Data de Conclusão')
-                            ->date('d/m/Y')
-                            ->placeholder('Em andamento'),
-                    ])
-                    ->columns(2)
-                    ->collapsible(),
-
-                Infolists\Components\Section::make('Valores')
-                    ->schema([
-                        Infolists\Components\TextEntry::make('valor_servico')
-                            ->label('Serviço')
-                            ->money('BRL'),
-
-                        Infolists\Components\TextEntry::make('valor_produtos')
-                            ->label('Produtos')
-                            ->money('BRL'),
-
-                        Infolists\Components\TextEntry::make('valor_desconto')
-                            ->label('Desconto')
-                            ->money('BRL'),
-
-                        Infolists\Components\TextEntry::make('valor_total')
-                            ->label('Total')
-                            ->money('BRL')
-                            ->weight('bold')
-                            ->size('lg'),
-
-                        Infolists\Components\TextEntry::make('forma_pagamento')
-                            ->label('Forma de Pagamento')
-                            ->formatStateUsing(fn (?string $state): string => match ($state) {
-                                'dinheiro' => '💵 Dinheiro',
-                                'pix' => '🔲 PIX',
-                                'cartao_credito' => '💳 Cartão de Crédito',
-                                'cartao_debito' => '💳 Cartão de Débito',
-                                'boleto' => '📄 Boleto',
-                                'transferencia' => '🏦 Transferência',
-                                default => 'Não informado',
-                            }),
-
-                        Infolists\Components\IconEntry::make('pagamento_realizado')
-                            ->label('Pagamento')
-                            ->boolean()
-                            ->trueIcon('heroicon-o-check-circle')
-                            ->falseIcon('heroicon-o-x-circle')
-                            ->trueColor('success')
-                            ->falseColor('danger'),
-                    ])
-                    ->columns(3)
-                    ->collapsible(),
-
-                Infolists\Components\Section::make('Parceiro')
-                    ->schema([
-                        Infolists\Components\TextEntry::make('parceiro.nome')
-                            ->label('Nome')
-                            ->placeholder('Sem parceiro'),
-
-                        Infolists\Components\TextEntry::make('numero_pedido_parceiro')
-                            ->label('Nº Pedido')
-                            ->placeholder('Não informado'),
-
-                        Infolists\Components\TextEntry::make('comissao_parceiro')
-                            ->label('Comissão')
-                            ->money('BRL'),
-                    ])
-                    ->columns(3)
-                    ->collapsible()
-                    ->collapsed(),
-
-                Infolists\Components\Section::make('Garantia')
-                    ->schema([
-                        Infolists\Components\ViewEntry::make('status_garantia')
-                            ->label('Status da Garantia')
-                            ->view('filament.infolists.garantia-status')
-                            ->columnSpanFull(),
-
-                        Infolists\Components\TextEntry::make('dias_garantia')
-                            ->label('Período Padrão')
-                            ->suffix(' dias')
-                            ->badge()
-                            ->color('info'),
-
-                        Infolists\Components\TextEntry::make('data_conclusao')
-                            ->label('Início (Conclusão)')
-                            ->date('d/m/Y')
-                            ->placeholder('Aguardando conclusão'),
-
-                        Infolists\Components\TextEntry::make('data_fim_garantia')
-                            ->label('Válida até')
-                            ->date('d/m/Y')
-                            ->placeholder('Aguardando conclusão'),
-                    ])
-                    ->columns(3)
-                    ->collapsible()
-                    ->collapsed(false),
-
-                Infolists\Components\Section::make('Fotos do Serviço')
-                    ->schema([
-                        Infolists\Components\ImageEntry::make('fotos_antes')
-                            ->label('Antes')
-                            ->disk('public')
-                            ->visibility('public')
-                            ->limit(10)
-                            ->height(250)
-                            ->openUrlInNewTab()
-                            ->columnSpan(1),
-
-                        Infolists\Components\ImageEntry::make('fotos_depois')
-                            ->label('Depois')
-                            ->disk('public')
-                            ->visibility('public')
-                            ->limit(10)
-                            ->height(250)
-                            ->openUrlInNewTab()
-                            ->columnSpan(1),
-
-                        Infolists\Components\TextEntry::make('fotos_actions')
-                            ->label('Ações de arquivos')
-                            ->html()
-                            ->getStateUsing(function ($record) {
-                                $entries = [];
-
-                                foreach (['fotos_antes', 'fotos_depois'] as $attr) {
-                                    foreach (data_get($record, $attr) ?? [] as $path) {
-                                        $name = basename($path);
-
-                                        $downloadUrl = route('admin.files.download', [
-                                            'model' => base64_encode(get_class($record)),
-                                            'record' => $record->getKey(),
-                                            'path' => base64_encode($path),
-                                        ]);
-
-                                        $deleteUrl = \Illuminate\Support\Facades\URL::signedRoute('admin.files.delete', [
-                                            'model' => base64_encode(get_class($record)),
-                                            'record' => $record->getKey(),
-                                            'path' => base64_encode($path),
-                                        ], now()->addHour());
-
-                                        $entries[] = "<div class='py-1'><strong>{$attr}:</strong> <a href='{$downloadUrl}' target='_blank' class='text-sm text-blue-600 underline'>{$name}</a> · <a href='{$downloadUrl}?download=1' class='text-sm'>Baixar</a> · <a href='{$deleteUrl}' class='text-sm text-red-600 ml-2' onclick=\"return confirm('Excluir arquivo?')\">Excluir</a></div>";
-                                    }
-                                }
-
-                                return implode('', $entries);
-                            })
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2)
-                    ->collapsible()
-                    ->collapsed(),
-
-                Infolists\Components\Section::make('Assinatura do Cliente')
-                    ->schema([
-                        Infolists\Components\ImageEntry::make('assinatura_cliente_path')
-                            ->label('Assinatura do Cliente')
-                            ->disk('public')
-                            ->extraImgAttributes([
-                                'class' => 'rounded-lg border border-gray-200 p-2',
-                                'style' => 'max-height: 200px; width: auto;',
-                            ])
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(1)
-                    ->collapsible()
-                    ->collapsed(),
-
-                Infolists\Components\Section::make('Observações')
-                    ->schema([
-                        Infolists\Components\TextEntry::make('observacoes')
-                            ->label('Para o Cliente')
-                            ->placeholder('Nenhuma observação')
-                            ->columnSpanFull(),
-
-                        Infolists\Components\TextEntry::make('observacoes_internas')
-                            ->label('Internas')
-                            ->placeholder('Nenhuma observação interna')
-                            ->columnSpanFull(),
-                    ])
-                    ->collapsible()
-                    ->collapsed(),
-
-                Infolists\Components\Section::make('Informações do Sistema')
-                    ->schema([
-                        Infolists\Components\TextEntry::make('criado_por')
-                            ->label('Criado por'),
-
-                        Infolists\Components\TextEntry::make('created_at')
-                            ->label('Criado em')
-                            ->dateTime('d/m/Y H:i'),
-
-                        Infolists\Components\TextEntry::make('updated_at')
-                            ->label('Atualizado em')
-                            ->dateTime('d/m/Y H:i'),
-                    ])
-                    ->columns(3)
-                    ->collapsible()
-                    ->collapsed(),
             ]);
     }
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
-
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListOrdemServicos::route('/'),
             'create' => Pages\CreateOrdemServico::route('/create'),
-            'view' => Pages\ViewOrdemServico::route('/{record}'),
             'edit' => Pages\EditOrdemServico::route('/{record}/edit'),
+            'view' => Pages\ViewOrdemServico::route('/{record}'),
         ];
+    }
+
+    public static function recalcularTotal(Forms\Set $set, Forms\Get $get): void
+    {
+        // Soma os subtotais do Repeater
+        $itens = $get('itens');
+        $total = 0;
+
+        if (is_array($itens)) {
+            foreach ($itens as $item) {
+                $subtotal = isset($item['subtotal']) ? (float) $item['subtotal'] : 0;
+                $total += $subtotal;
+            }
+        }
+
+        $set('valor_total', $total);
     }
 }

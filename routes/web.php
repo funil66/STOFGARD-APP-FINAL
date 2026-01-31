@@ -22,6 +22,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/orcamento/{orcamento}/pdf', [OrcamentoPdfController::class, 'gerarPdf'])
         ->name('orcamento.pdf');
 
+    // Rota para visualizar PDF da OS
+    Route::get('/os/{record}/pdf', [\App\Http\Controllers\OrdemServicoPdfController::class, 'gerarPdf'])
+        ->name('os.pdf');
+
+    // Rota para visualizar PDF da Agenda
+    Route::get('/agenda/{agenda}/pdf', [\App\Http\Controllers\AgendaPdfController::class, 'gerarPdf'])
+        ->name('agenda.pdf');
+
     // Rota para visualizar Ficha Cadastral (PDF)
     Route::get('/cadastro/{cadastro}/pdf', [CadastroPdfController::class, 'gerarPdf'])
         ->name('cadastro.pdf');
@@ -52,6 +60,7 @@ Route::post('/webhook/pix', [PixWebhookController::class, 'handle'])
 Route::get('/webhook/pix/status', [PixWebhookController::class, 'status'])
     ->name('webhook.pix.status');
 
+/*
 if (app()->environment('local')) {
     // Debug route: retorna JSON com clientes e itens (temporária)
     Route::get('/debug/orcamento-data', function () {
@@ -154,10 +163,10 @@ if (app()->environment('local')) {
         ]);
     });
 }
-
+*/
 // Local-only debug: phpinfo() for troubleshooting which php.ini is loaded
 Route::get('/debug/phpinfo', function () {
-    if (! app()->environment('local')) {
+    if (!app()->environment('local')) {
         abort(404);
     }
 

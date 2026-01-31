@@ -6,23 +6,43 @@ use Illuminate\Database\Eloquent\Model;
 
 class Estoque extends Model
 {
-    protected $table = 'estoques'; // Garante que use a tabela certa
+    protected $table = 'estoques';
 
     protected $fillable = [
-        'produto_id',
-        'tipo', // entrada, saida
+        'item',
         'quantidade',
-        'motivo',
-        'criado_por',
-        'data_movimento'
+        'unidade',
+        'minimo_alerta',
+        'tipo',
+        'observacoes',
     ];
 
     protected $casts = [
-        'data_movimento' => 'datetime',
+        'quantidade' => 'decimal:2',
+        'minimo_alerta' => 'decimal:2',
     ];
 
-    public function produto(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    // Verifica se está abaixo do mínimo
+    public function isAbaixoDoMinimo(): bool
     {
-        return $this->belongsTo(Produto::class);
+        return $this->quantidade <= $this->minimo_alerta;
     }
-} 
+
+    // Calcula quantos galões (20L cada)
+    public function getGaloesAttribute(): int
+    {
+        return (int) floor($this->quantidade / 20);
+    }
+
+    // Cor baseada no nível
+    public function getCorAttribute(): string
+    {
+        if ($this->quantidade <= $this->minimo_alerta) {
+            return 'danger';
+        }
+        if ($this->quantidade <= $this->minimo_alerta * 3) {
+            return 'warning';
+        }
+        return 'success';
+    }
+}

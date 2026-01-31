@@ -3,17 +3,20 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Traits\HasRoles;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use App\Traits\HasArquivos;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasMedia
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles, HasArquivos;
 
     /**
      * The attributes that are mass assignable.
@@ -24,6 +27,7 @@ class User extends Authenticatable implements FilamentUser
         'name',
         'email',
         'password',
+        'is_admin',
     ];
 
     /**
@@ -46,33 +50,12 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
-    }
-
-    /**
-     * Get the notifications for the user.
-     */
-    public function notifications()
-    {
-        return $this->hasMany(Notification::class);
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
-        if (! auth()->check() && ! $this->exists) {
-            return false;
-        }
-
-        // Allow seeded main admin or any user with is_admin = true
-        $allowed = ($this->email === 'allisson@stofgard.com.br') || ($this->is_admin == true);
-        Log::channel('single')->info('canAccessPanel check', [
-            'user_id' => $this->id ?? null,
-            'email' => $this->email ?? null,
-            'is_admin' => $this->is_admin ?? null,
-            'panel_id' => (method_exists($panel, 'getId') ? $panel->getId() : null),
-            'allowed' => $allowed,
-        ]);
-
-        return $allowed;
+        return true;
     }
 }

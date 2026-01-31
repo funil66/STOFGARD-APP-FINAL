@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Filament\Models\Contracts\FilamentUser;
+use Spatie\MediaLibrary\HasMedia;
+use App\Traits\HasArquivos;
 
-class Agenda extends Model
+class Agenda extends Model implements HasMedia
 {
-    use SoftDeletes;
+    use HasArquivos;
 
     protected $table = 'agendas';
 
@@ -42,7 +44,7 @@ class Agenda extends Model
     // Unified Cadastro Accessor
     public function getCadastroAttribute()
     {
-        if (! $this->cadastro_id) {
+        if (!$this->cadastro_id) {
             return null;
         }
 
@@ -62,7 +64,7 @@ class Agenda extends Model
     public function getCadastroUrlAttribute(): ?string
     {
         $cad = $this->cadastro;
-        if (! $cad) {
+        if (!$cad) {
             return null;
         }
 
@@ -80,11 +82,11 @@ class Agenda extends Model
     public function getEnderecoMapsAttribute(): ?string
     {
         $end = $this->endereco_completo ?: $this->local;
-        if (! $end) {
+        if (!$end) {
             return null;
         }
 
-        return 'https://www.google.com/maps/search/?api=1&query='.urlencode($end);
+        return 'https://www.google.com/maps/search/?api=1&query=' . urlencode($end);
     }
 
     protected $casts = [

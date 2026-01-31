@@ -1,120 +1,531 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orçamento #{{ $orcamento->numero }}</title>
+    <title>Orçamento {{ $orcamento->numero ?? $orcamento->numero_orcamento }}</title>
     <style>
-        body { font-family: 'Helvetica', sans-serif; color: #1e293b; padding: 0; margin: 0; font-size: 14px; }
-        .container { width: 100%; padding: 40px; box-sizing: border-box; }
-        
-        /* Header */
-        .header { display: flex; justify-content: space-between; border-bottom: 3px solid #eab308; padding-bottom: 20px; margin-bottom: 30px; }
-        .logo h1 { margin: 0; color: #eab308; text-transform: uppercase; font-size: 28px; letter-spacing: 2px; }
-        .info { text-align: right; font-size: 12px; color: #64748b; }
-        
-        /* Client Info */
-        .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 30px; }
-        .box-title { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: bold; margin-bottom: 8px; }
-        .client-name { font-size: 18px; font-weight: bold; color: #0f172a; margin-bottom: 4px; }
-        
-        /* Table */
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        th { background: #eab308; color: white; text-align: left; padding: 12px; font-size: 12px; text-transform: uppercase; }
-        td { padding: 15px 12px; border-bottom: 1px solid #e2e8f0; }
-        .desc { font-size: 12px; color: #64748b; margin-top: 4px; }
-        .val { font-family: monospace; font-size: 14px; }
-        
-        /* Totals */
-        .totals { width: 40%; margin-left: auto; }
-        .row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; }
-        .total-final { font-size: 20px; font-weight: bold; color: #0f172a; border-top: 2px solid #e2e8f0; padding-top: 10px; margin-top: 10px; }
-        
-        /* Pix Area */
-        .pix-area { margin-top: 40px; background: #fffbeb; border: 2px dashed #eab308; border-radius: 12px; padding: 20px; display: flex; align-items: center; }
-        .pix-qr { width: 120px; height: 120px; background: white; padding: 5px; margin-right: 20px; }
-        .pix-info h3 { margin: 0 0 5px 0; color: #b45309; }
-        .copy-paste { background: white; padding: 10px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 10px; word-break: break-all; border-radius: 4px; color: #64748b; }
-        
-        .footer { text-align: center; margin-top: 50px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            margin: 12mm;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', Arial, sans-serif;
+            font-size: 10px;
+            color: #1f2937;
+            line-height: 1.4;
+        }
+
+        /* HEADER */
+        .header {
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .header-left {
+            max-width: 55%;
+        }
+
+        .logo-img {
+            max-width: 200px;
+            max-height: 70px;
+            margin-bottom: 8px;
+        }
+
+        .company-info {
+            font-size: 8.5px;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .header-right {
+            background: #2563eb;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-align: right;
+            min-width: 170px;
+        }
+
+        .numero-orcamento {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .datas {
+            font-size: 8px;
+            line-height: 1.7;
+        }
+
+        /* SECTIONS */
+        .section-header {
+            background: #2563eb;
+            color: white;
+            padding: 7px 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 14px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        /* CLIENT */
+        .client-box {
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .client-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .client-name {
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .client-detail {
+            font-size: 9px;
+            color: #6b7280;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        table thead {
+            background: #f3f4f6;
+        }
+
+        table thead th {
+            padding: 8px 6px;
+            text-align: left;
+            font-size: 9px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #d1d5db;
+        }
+
+        table thead th:nth-child(3),
+        table thead th:nth-child(4),
+        table thead th:nth-child(5) {
+            text-align: right;
+        }
+
+        table tbody td {
+            padding: 8px 6px;
+            font-size: 9px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+
+        table tbody td:nth-child(3),
+        table tbody td:nth-child(4),
+        table tbody td:nth-child(5) {
+            text-align: right;
+        }
+
+        .item-category {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 7px;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .cat-higienizacao {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .cat-impermeabilizacao {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .cat-outro {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .item-description {
+            color: #6b7280;
+            font-size: 8px;
+            line-height: 1.3;
+        }
+
+        /* VALUES SECTION - 2 COLUMNS */
+        .valores-section {
+            margin-top: 16px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .valores-left {
+            flex: 1;
+        }
+
+        .valores-right {
+            width: 220px;
+        }
+
+        .valores-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .valor-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 10px;
+        }
+
+        .valor-row.desconto {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .valor-row.desconto-prestador {
+            color: #ea580c;
+            font-weight: 600;
+        }
+
+        .valor-row-separator {
+            border-top: 2px solid #2563eb;
+            margin: 8px 0;
+        }
+
+        .valor-total-box {
+            background: #eff6ff;
+            border: 2px solid #2563eb;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .valor-total-label {
+            font-size: 11px;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .valor-total-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        /* PIX BOX */
+        .pix-box {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .pix-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #065f46;
+            margin-bottom: 8px;
+        }
+
+        .pix-qrcode img {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #10b981;
+            border-radius: 4px;
+            background: white;
+            padding: 3px;
+        }
+
+        .pix-valor {
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #065f46;
+        }
+
+        .pix-desconto {
+            font-size: 9px;
+            color: #059669;
+        }
+
+        .pix-chave {
+            margin-top: 8px;
+            font-size: 7px;
+            color: #374151;
+        }
+
+        .pix-code {
+            background: white;
+            border: 1px solid #10b981;
+            border-radius: 4px;
+            padding: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 6px;
+            word-break: break-all;
+            color: #111;
+            line-height: 1.4;
+            margin-top: 5px;
+        }
+
+        /* FOOTER */
+        .footer {
+            margin-top: 16px;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .footer-warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-size: 8px;
+            color: #dc2626;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .footer-legal {
+            font-size: 7px;
+            color: #9ca3af;
+            text-align: center;
+            line-height: 1.5;
+        }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo"><h1>STOFGARD</h1></div>
-            <div class="info">
-                Orçamento #{{ $orcamento->numero }}<br>
-                Data: {{ $orcamento->created_at->format('d/m/Y') }}<br>
-                Validade: {{ \Carbon\Carbon::parse($orcamento->data_validade)->format('d/m/Y') }}
-            </div>
-        </div>
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            @php
+                $logoPath = null;
+                if (isset($config->empresa_logo) && $config->empresa_logo) {
+                    $logoPath = $config->empresa_logo;
+                    if (!file_exists($logoPath)) {
+                        $logoPath = storage_path('app/public/' . $config->empresa_logo);
+                    }
+                } else {
+                    $manualPath = storage_path('app/public/logos/logo-stofgard.png');
+                    if (file_exists($manualPath)) {
+                        $logoPath = $manualPath;
+                    }
+                }
+            @endphp
 
-        <div class="box">
-            <div class="box-title">Dados do Cliente</div>
-            <div class="client-name">{{ $orcamento->cliente->nome ?? 'Cliente' }}</div>
-            <div>{{ $orcamento->cliente->telefone ?? '' }}</div>
-            <div>{{ $orcamento->cliente->email ?? '' }}</div>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th width="50%">Descrição</th>
-                    <th width="10%" style="text-align: center">Qtd</th>
-                    <th width="20%" style="text-align: right">Unitário</th>
-                    <th width="20%" style="text-align: right">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($orcamento->itens as $item)
-                <tr>
-                    <td>
-                        <strong>{{ $item->produto->nome ?? 'Serviço' }}</strong>
-                        <div class="desc">{{ $item->descricao }}</div>
-                    </td>
-                    <td style="text-align: center">{{ $item->quantidade }}</td>
-                    <td style="text-align: right" class="val">R$ {{ number_format($item->valor_unitario, 2, ',', '.') }}</td>
-                    <td style="text-align: right" class="val"><strong>R$ {{ number_format($item->valor_total, 2, ',', '.') }}</strong></td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        <div class="totals">
-            <div class="row">
-                <span>Subtotal</span>
-                <span>R$ {{ number_format($orcamento->valor_subtotal, 2, ',', '.') }}</span>
-            </div>
-            @if($orcamento->valor_desconto > 0)
-            <div class="row" style="color: #ef4444">
-                <span>Desconto</span>
-                <span>- R$ {{ number_format($orcamento->valor_desconto, 2, ',', '.') }}</span>
-            </div>
+            @if($logoPath && file_exists($logoPath))
+                <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo"
+                    class="logo-img">
+            @else
+                <div style="font-size: 16px; font-weight: bold; color: #2563eb; margin-bottom: 8px;">
+                    STOFGARD
+                </div>
+                <div style="font-size: 10px; color: #6b7280;">Higienização e Impermeabilização</div>
             @endif
-            <div class="row total-final">
-                <span>TOTAL</span>
-                <span>R$ {{ number_format($orcamento->valor_total, 2, ',', '.') }}</span>
+
+            <div class="company-info">
+                <div><strong>CNPJ:</strong> {{ $config->empresa_cnpj ?? '00.000.000/0001-00' }}</div>
+                <div><strong>Telefone:</strong> {{ $config->empresa_telefone ?? '(16) 99999-9999' }}</div>
+                <div><strong>E-mail:</strong> {{ $config->empresa_email ?? 'contato@stofgard.com.br' }}</div>
             </div>
         </div>
-
-        @if($orcamento->pix_qrcode_base64 && $orcamento->pix_copia_cola)
-        <div class="pix-area">
-            <img src="data:image/png;base64, {{ $orcamento->pix_qrcode_base64 }}" class="pix-qr">
-            
-            <div class="pix-info">
-                <h3>Pague com PIX agora</h3>
-                <p style="margin: 0 0 10px 0; font-size: 12px;">Use o aplicativo do seu banco para ler o QR Code ou copie o código abaixo.</p>
-                <div class="copy-paste">
-                    {{ $orcamento->pix_copia_cola }}
+        <div class="header-right">
+            <div class="numero-orcamento">{{ $orcamento->numero ?? $orcamento->numero_orcamento }}</div>
+            <div class="datas">
+                <div><strong>Data de Emissão:</strong><br>
+                    {{ $orcamento->data_orcamento ? \Carbon\Carbon::parse($orcamento->data_orcamento)->format('d/m/Y H:i') : $orcamento->created_at->format('d/m/Y H:i') }}
+                </div>
+                <div style="margin-top: 4px;"><strong>Válido até:</strong><br>
+                    {{ $orcamento->data_validade ? \Carbon\Carbon::parse($orcamento->data_validade)->format('d/m/Y') : ($orcamento->created_at ?? now())->addDays(15)->format('d/m/Y') }}
                 </div>
             </div>
         </div>
-        @endif
+    </div>
 
-        <div class="footer">
-            Stofgard Impermeabilizações • Todos os direitos reservados
+    <!-- DADOS DO CLIENTE -->
+    <div class="section-header">DADOS DO CLIENTE</div>
+    <div class="client-box">
+        <div class="client-row">
+            <span class="client-name">Cliente:
+                {{ strtoupper($orcamento->cliente->nome ?? 'Cliente Não Informado') }}</span>
+        </div>
+        <div class="client-row">
+            <span class="client-detail">Telefone:
+                {{ $orcamento->cliente->telefone ?? $orcamento->cliente->celular ?? '(--) -----' }}</span>
+            <span class="client-detail">E-mail: {{ $orcamento->cliente->email ?? 'Não informado' }}</span>
+        </div>
+    </div>
+
+    <!-- ITENS DO ORÇAMENTO -->
+    <div class="section-header">ITENS DO ORÇAMENTO</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 45%;">Item</th>
+                <th style="width: 10%;">Un</th>
+                <th style="width: 10%;">Qtd</th>
+                <th style="width: 17%;">Valor Unit.</th>
+                <th style="width: 18%;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if($orcamento->itens && count($orcamento->itens) > 0)
+                @foreach($orcamento->itens as $item)
+                    @php
+                        $categoria = strtolower($item->categoria ?? 'outro');
+                        $catClass = match (true) {
+                            str_contains($categoria, 'higien') => 'cat-higienizacao',
+                            str_contains($categoria, 'imper') => 'cat-impermeabilizacao',
+                            default => 'cat-outro'
+                        };
+                    @endphp
+                    <tr>
+                        <td>
+                            <span class="item-category {{ $catClass }}">
+                                {{ strtoupper($item->categoria ?? 'SERVIÇO') }}
+                            </span>
+                            <div class="item-description">{{ $item->descricao }}</div>
+                        </td>
+                        <td>{{ strtoupper($item->unidade_medida ?? 'UN') }}</td>
+                        <td>{{ number_format($item->quantidade, 0) }}</td>
+                        <td><strong>R$ {{ number_format($item->valor_unitario, 2, ',', '.') }}</strong></td>
+                        <td><strong>R$ {{ number_format($item->subtotal, 2, ',', '.') }}</strong></td>
+                    </tr>
+                @endforeach
+            @else
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 20px; color: #9ca3af;">
+                        Nenhum item cadastrado
+                    </td>
+                </tr>
+            @endif
+        </tbody>
+    </table>
+
+    <!-- VALORES (2 COLUNAS) -->
+    <div class="valores-section">
+        <!-- COLUNA ESQUERDA: VALORES -->
+        <div class="valores-left">
+            <div class="section-header" style="margin-top: 0;">VALORES</div>
+            <div class="valores-box">
+                <div class="valor-row">
+                    <span>Subtotal:</span>
+                    <span><strong>R$ {{ number_format($orcamento->valor_total, 2, ',', '.') }}</strong></span>
+                </div>
+
+                @php
+                    $valorFinal = $orcamento->valor_total;
+                    $descontoPix = 0;
+                    $descontoPrestador = $orcamento->desconto_prestador ?? 0;
+
+                    // Desconto PIX
+                    if ($orcamento->aplicar_desconto_pix && $config && isset($config->percentual_desconto_pix) && $config->percentual_desconto_pix > 0) {
+                        $percentual = $config->percentual_desconto_pix;
+                        $descontoPix = ($orcamento->valor_total * $percentual) / 100;
+                        $valorFinal -= $descontoPix;
+                    }
+
+                    // Desconto do Prestador
+                    if ($descontoPrestador > 0) {
+                        $valorFinal -= $descontoPrestador;
+                    }
+
+                    // Usa valor editado se existir
+                    if ($orcamento->valor_final_editado) {
+                        $valorFinal = $orcamento->valor_final_editado;
+                    }
+                @endphp
+
+                @if($descontoPix > 0)
+                    <div class="valor-row desconto">
+                        <span>Desconto PIX ({{ $config->percentual_desconto_pix ?? 0 }}%):</span>
+                        <span>- R$ {{ number_format($descontoPix, 2, ',', '.') }}</span>
+                    </div>
+                @endif
+
+                @if($descontoPrestador > 0)
+                    <div class="valor-row desconto-prestador">
+                        <span>Desconto Prestador:</span>
+                        <span>- R$ {{ number_format($descontoPrestador, 2, ',', '.') }}</span>
+                    </div>
+                @endif
+
+                <div class="valor-row">
+                    <span>Forma de Pagamento:</span>
+                    <span><strong>{{ strtoupper($orcamento->forma_pagamento ?? 'PIX') }}</strong></span>
+                </div>
+            </div>
+
+            <div class="valor-total-box">
+                <div class="valor-total-label">VALOR TOTAL:</div>
+                <div class="valor-total-value">R$ {{ number_format($valorFinal, 2, ',', '.') }}</div>
+            </div>
+        </div>
+
+        <!-- COLUNA DIREITA: PIX -->
+        <div class="valores-right">
+            @if($orcamento->pdf_incluir_pix && $orcamento->pix_qrcode_base64)
+                <div class="pix-box">
+                    <div class="pix-title">💚 PAGAMENTO VIA PIX</div>
+                    <div class="pix-qrcode">
+                        <img src="{{ $orcamento->pix_qrcode_base64 }}" alt="QR Code PIX">
+                    </div>
+                    <div class="pix-valor">R$ {{ number_format($valorFinal, 2, ',', '.') }}</div>
+                    @if($descontoPix > 0)
+                        <div class="pix-desconto">DESCONTO DE {{ $config->percentual_desconto_pix }}%</div>
+                    @endif
+                    @if($config->pix_chave ?? false)
+                        <div class="pix-chave">
+                            <strong>CHAVE PIX:</strong> {{ $config->pix_tipo_chave ?? 'TELEFONE' }}:
+                            {{ $config->pix_chave ?? '' }}
+                        </div>
+                    @endif
+                    @if($orcamento->pix_copia_cola)
+                        <div class="pix-code">{{ $orcamento->pix_copia_cola }}</div>
+                    @endif
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <div class="footer-warning">
+            ⚠️ Validade: Orçamento e QR Code PIX válidos por 7 dias a partir da emissão.
+        </div>
+        <div class="footer-legal">
+            Este documento não representa um contrato firmado. Após a aprovação do orçamento, será gerada uma Ordem de
+            Serviço oficial.<br>
+            Documento gerado em {{ now()->format('d/m/Y H:i:s') }}
         </div>
     </div>
 </body>
+
 </html>

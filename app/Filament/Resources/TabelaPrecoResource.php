@@ -114,11 +114,11 @@ class TabelaPrecoResource extends Resource
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'higienizacao' => 'info',
                         'impermeabilizacao' => 'warning',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'higienizacao' => 'HIGI',
                         'impermeabilizacao' => 'IMPER',
                         default => $state,
@@ -141,7 +141,7 @@ class TabelaPrecoResource extends Resource
                 Tables\Columns\TextColumn::make('unidade_medida')
                     ->label('Unidade')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'unidade' => 'UN',
                         'm2' => 'M²',
                         default => $state,
@@ -204,8 +204,21 @@ class TabelaPrecoResource extends Resource
                     ->label('Excluídos'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
+                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
+                Tables\Actions\Action::make('share')
+                    ->label('')
+                    ->tooltip('Compartilhar')
+                    ->icon('heroicon-o-share')
+                    ->color('success')
+                    ->action(function (TabelaPreco $record) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Link Copiado!')
+                            ->body(url("/admin/tabela-precos/{$record->id}"))
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
@@ -245,13 +258,12 @@ class TabelaPrecoResource extends Resource
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
-        // Admin principal ou qualquer usuário por enquanto (remover depois)
+        // Apenas Admin ou usuário específico
         return $user->email === 'allisson@stofgard.com.br'
-            || $user->is_admin === true
-            || true; // Temporário para testes - REMOVER EM PRODUÇÃO
+            || $user->is_admin === true;
     }
 }

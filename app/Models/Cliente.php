@@ -7,12 +7,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasArquivos;
-use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\HasMedia;
 
 class Cliente extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
-    use HasFactory, SoftDeletes, HasArquivos, InteractsWithMedia, \OwenIt\Auditing\Auditable;
+    use HasFactory, SoftDeletes, HasArquivos, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'uuid',

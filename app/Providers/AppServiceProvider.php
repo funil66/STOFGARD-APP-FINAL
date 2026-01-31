@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Ensure global helper functions are loaded for environments where composer
         // 'files' autoload may not be available (for example in some test runners).
-        if (! function_exists('admin_resource_route')) {
+        if (!function_exists('admin_resource_route')) {
             require_once app_path('helpers.php');
         }
 
@@ -45,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
         Agenda::observe(AgendaObserver::class);
         Orcamento::observe(OrcamentoObserver::class);
         \App\Models\OrdemServico::observe(\App\Observers\OrdemServicoObserver::class);
+        \App\Models\ListaDesejo::observe(\App\Observers\ListaDesejoObserver::class);
 
 
         // No early redirect middleware registered for /admin/login; allow the
@@ -53,5 +54,8 @@ class AppServiceProvider extends ServiceProvider
         // Register policy for cadastro models (cliente and parceiro)
         Gate::policy(Cliente::class, CadastroPolicy::class);
         Gate::policy(Parceiro::class, CadastroPolicy::class);
+
+        // Register Agenda Calendar Widget manually for Livewire (since it's not in AdminPanelProvider widgets list)
+        \Livewire\Livewire::component('app.filament.widgets.agenda-calendar-widget', \App\Filament\Widgets\AgendaCalendarWidget::class);
     }
 }

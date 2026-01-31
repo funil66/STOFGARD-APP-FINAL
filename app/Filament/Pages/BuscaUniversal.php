@@ -3,7 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Agenda;
-use App\Models\Cliente;
+use App\Models\Cadastro;
 use App\Models\Financeiro;
 use App\Models\Orcamento;
 use App\Models\OrdemServico;
@@ -11,6 +11,7 @@ use App\Models\Produto;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -36,6 +37,10 @@ class BuscaUniversal extends Page implements HasForms
 
     public ?string $tipoFiltro = 'todos';
 
+    public ?string $statusFiltro = '';
+
+    public ?string $ordenacao = 'recente';
+
     public ?string $dataInicio = null;
 
     public ?string $dataFim = null;
@@ -55,54 +60,91 @@ class BuscaUniversal extends Page implements HasForms
     {
         return $form
             ->schema([
-                TextInput::make('termo')
-                    ->label('O que você está procurando?')
-                    ->placeholder('Digite ID, nome, CPF, telefone, endereço...')
-                    ->suffixIcon('heroicon-o-magnifying-glass')
-                    ->autofocus()
-                    ->columnSpanFull(),
+                Grid::make(4)
+                    ->schema([
+                        TextInput::make('termo')
+                            ->label('🔍 O que você está procurando?')
+                            ->placeholder('Digite ID, nome, CPF, telefone, endereço...')
+                            ->suffixIcon('heroicon-o-magnifying-glass')
+                            ->autofocus()
+                            ->columnSpan(4)
+                            ->live(debounce: 500)
+                            ->afterStateUpdated(fn() => $this->buscar()),
 
-                Select::make('tipoFiltro')
-                    ->label('Buscar em')
-                    ->options([
-                        'todos' => '🌐 Todos os módulos',
-                        'clientes' => '👤 Clientes',
-                        'orcamentos' => '📋 Orçamentos',
-                        'ordem_servicos' => '🛠️ Ordens de Serviço',
-                        'financeiro' => '💰 Financeiro',
-                        'agenda' => '📅 Agenda',
-                        'produtos' => '📦 Produtos/Almoxarifado',
-                    ])
-                    ->default('todos')
-                    ->native(false),
+                        Select::make('tipoFiltro')
+                            ->label('📁 Módulo')
+                            ->options([
+                                'todos' => '🌐 Todos',
+                                'cadastros' => '👥 Cadastros',
+                                'orcamentos' => '📋 Orçamentos',
+                                'ordem_servicos' => '🛠️ Ordens de Serviço',
+                                'financeiro' => '💰 Financeiro',
+                                'agenda' => '📅 Agenda',
+                                'produtos' => '📦 Produtos',
+                            ])
+                            ->default('todos')
+                            ->native(false)
+                            ->live()
+                            ->afterStateUpdated(fn() => $this->buscar()),
 
-                DatePicker::make('dataInicio')
-                    ->label('Data Início')
-                    ->native(false)
-                    ->displayFormat('d/m/Y'),
+                        Select::make('statusFiltro')
+                            ->label('📊 Status')
+                            ->options([
+                                '' => 'Todos',
+                                'pendente' => '⏳ Pendente',
+                                'aprovado' => '✅ Aprovado',
+                                'concluido' => '✔️ Concluído',
+                                'cancelado' => '❌ Cancelado',
+                                'pago' => '💵 Pago',
+                                'aberta' => '🔓 Aberta',
+                                'agendado' => '📅 Agendado',
+                            ])
+                            ->native(false)
+                            ->live()
+                            ->afterStateUpdated(fn() => $this->buscar()),
 
-                DatePicker::make('dataFim')
-                    ->label('Data Fim')
-                    ->native(false)
-                    ->displayFormat('d/m/Y'),
-            ])
-            ->columns(3);
+                        Select::make('ordenacao')
+                            ->label('📶 Ordenar por')
+                            ->options([
+                                'recente' => '🕐 Mais recente',
+                                'antigo' => '📅 Mais antigo',
+                                'nome' => '🔤 Nome A-Z',
+                                'valor_desc' => '💰 Maior valor',
+                                'valor_asc' => '💵 Menor valor',
+                            ])
+                            ->default('recente')
+                            ->native(false)
+                            ->live()
+                            ->afterStateUpdated(fn() => $this->buscar()),
+
+                        DatePicker::make('dataInicio')
+                            ->label('📆 De')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->columnSpan(2),
+
+                        DatePicker::make('dataFim')
+                            ->label('📆 Até')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->columnSpan(2),
+                    ]),
+            ]);
     }
 
     public function buscar(): void
     {
-        if (empty($this->termo) && empty($this->dataInicio) && empty($this->dataFim)) {
+        if (empty($this->termo) && empty($this->dataInicio) && empty($this->dataFim) && empty($this->statusFiltro)) {
             $this->resultados = collect();
             $this->totalResultados = 0;
-
             return;
         }
 
         $this->resultados = collect();
 
         // Buscar em cada módulo conforme filtro
-        if ($this->tipoFiltro === 'todos' || $this->tipoFiltro === 'clientes') {
-            $this->buscarClientes();
+        if ($this->tipoFiltro === 'todos' || $this->tipoFiltro === 'cadastros') {
+            $this->buscarCadastros();
         }
 
         if ($this->tipoFiltro === 'todos' || $this->tipoFiltro === 'orcamentos') {
@@ -125,183 +167,211 @@ class BuscaUniversal extends Page implements HasForms
             $this->buscarProdutos();
         }
 
+        // Aplicar ordenação
+        $this->resultados = $this->aplicarOrdenacao($this->resultados);
+
         $this->totalResultados = $this->resultados->count();
     }
 
-    private function buscarClientes(): void
+    private function aplicarOrdenacao(Collection $resultados): Collection
     {
-        // Buscar clientes
-        $queryClientes = Cliente::query();
+        return match ($this->ordenacao) {
+            'antigo' => $resultados->sortBy('data_raw'),
+            'nome' => $resultados->sortBy('titulo'),
+            'valor_desc' => $resultados->sortByDesc('valor_raw'),
+            'valor_asc' => $resultados->sortBy('valor_raw'),
+            default => $resultados->sortByDesc('data_raw'),
+        };
+    }
+
+    private function buscarCadastros(): void
+    {
+        $query = Cadastro::query();
+
         if ($this->termo) {
-            $queryClientes->where(function ($q) {
+            $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('nome', 'like', $termo)
                     ->orWhere('cpf_cnpj', 'like', $termo)
                     ->orWhere('telefone', 'like', $termo)
                     ->orWhere('email', 'like', $termo)
-                    ->orWhere('endereco', 'like', $termo)
+                    ->orWhere('logradouro', 'like', $termo)
                     ->orWhere('bairro', 'like', $termo)
                     ->orWhere('cidade', 'like', $termo);
             });
         }
+
         if ($this->dataInicio) {
-            $queryClientes->where('created_at', '>=', $this->dataInicio);
+            $query->where('created_at', '>=', $this->dataInicio);
         }
         if ($this->dataFim) {
-            $queryClientes->where('created_at', '<=', $this->dataFim);
+            $query->where('created_at', '<=', $this->dataFim);
         }
-        $clientes = $queryClientes->limit(50)->get();
-        foreach ($clientes as $cliente) {
+
+        $cadastros = $query->limit(30)->get();
+
+        foreach ($cadastros as $cadastro) {
+            $tipoIcon = match ($cadastro->tipo) {
+                'cliente' => '👤',
+                'loja' => '🏬',
+                'vendedor' => '🧑‍💼',
+                default => '📋',
+            };
+            $tipoLabel = match ($cadastro->tipo) {
+                'cliente' => 'Cliente',
+                'loja' => 'Loja',
+                'vendedor' => 'Vendedor',
+                default => 'Cadastro',
+            };
+
             $this->resultados->push([
-                'tipo' => 'cliente',
-                'tipo_label' => '👤 Cliente',
-                'tipo_color' => 'info',
-                'id' => 'cliente_' . $cliente->id,
-                'titulo' => $cliente->nome,
+                'tipo' => 'cadastro',
+                'tipo_icon' => $tipoIcon,
+                'tipo_label' => "{$tipoIcon} {$tipoLabel}",
+                'tipo_color' => match ($cadastro->tipo) {
+                    'cliente' => 'info',
+                    'loja' => 'primary',
+                    'vendedor' => 'warning',
+                    default => 'gray',
+                },
+                'id' => $cadastro->id,
+                'titulo' => $cadastro->nome,
                 'subtitulo' => $this->formatarSubtitulo([
-                    $cliente->telefone,
-                    $cliente->cpf_cnpj,
-                    $cliente->cidade,
+                    $cadastro->telefone,
+                    $cadastro->cpf_cnpj,
+                    $cadastro->cidade,
                 ]),
-                'descricao' => $cliente->endereco,
-                'data' => $cliente->created_at?->format('d/m/Y'),
-                'url' => url('/cadastros/'.($cliente->uuid ?? $cliente->id)),
-            ]);
-        }
-        // Buscar parceiros (loja/vendedor)
-        $queryParceiros = \App\Models\Parceiro::query();
-        if ($this->termo) {
-            $queryParceiros->where(function ($q) {
-                $termo = "%{$this->termo}%";
-                $q->where('nome', 'like', $termo)
-                    ->orWhere('cnpj_cpf', 'like', $termo)
-                    ->orWhere('telefone', 'like', $termo)
-                    ->orWhere('email', 'like', $termo)
-                    ->orWhere('bairro', 'like', $termo)
-                    ->orWhere('cidade', 'like', $termo);
-            });
-        }
-        if ($this->dataInicio) {
-            $queryParceiros->where('created_at', '>=', $this->dataInicio);
-        }
-        if ($this->dataFim) {
-            $queryParceiros->where('created_at', '<=', $this->dataFim);
-        }
-        $parceiros = $queryParceiros->limit(50)->get();
-        foreach ($parceiros as $parceiro) {
-            $tipo = $parceiro->tipo === 'loja' ? 'Loja' : 'Vendedor';
-            $this->resultados->push([
-                'tipo' => $parceiro->tipo,
-                'tipo_label' => $tipo === 'Loja' ? '🏬 Loja' : '🧑‍💼 Vendedor',
-                'tipo_color' => $tipo === 'Loja' ? 'primary' : 'secondary',
-                'id' => 'parceiro_' . $parceiro->id,
-                'titulo' => $parceiro->nome,
-                'subtitulo' => $this->formatarSubtitulo([
-                    $parceiro->telefone,
-                    $parceiro->cnpj_cpf,
-                    $parceiro->cidade,
-                ]),
-                'descricao' => $parceiro->endereco_completo,
-                'data' => $parceiro->created_at?->format('d/m/Y'),
-                'url' => url('/cadastros/'.($parceiro->uuid ?? $parceiro->id)),
+                'descricao' => trim(implode(', ', array_filter([
+                    $cadastro->logradouro,
+                    $cadastro->bairro,
+                ]))),
+                'status' => $cadastro->ativo ? 'Ativo' : 'Inativo',
+                'status_color' => $cadastro->ativo ? 'success' : 'gray',
+                'data' => $cadastro->created_at?->format('d/m/Y'),
+                'data_raw' => $cadastro->created_at,
+                'valor_raw' => 0,
+                'view_url' => route('filament.admin.resources.cadastros.edit', ['record' => $cadastro->id]),
+                'edit_url' => route('filament.admin.resources.cadastros.edit', ['record' => $cadastro->id]),
             ]);
         }
     }
 
     private function buscarOrcamentos(): void
     {
-        $query = Orcamento::with(['cliente', 'parceiro']);
+        $query = Orcamento::with('cliente');
 
         if ($this->termo) {
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
-                $q->where('id', 'like', $termo)
+                $q->where('numero', 'like', $termo)
+                    ->orWhere('descricao_servico', 'like', $termo)
                     ->orWhere('observacoes', 'like', $termo)
                     ->orWhereHas('cliente', function ($clienteQuery) use ($termo) {
                         $clienteQuery->where('nome', 'like', $termo);
-                    })
-                    ->orWhereHas('parceiro', function ($parceiroQuery) use ($termo) {
-                        $parceiroQuery->where('nome', 'like', $termo);
                     });
             });
         }
 
+        if ($this->statusFiltro) {
+            $query->where('status', $this->statusFiltro);
+        }
+
         if ($this->dataInicio) {
-            $query->where('data', '>=', $this->dataInicio);
+            $query->where('created_at', '>=', $this->dataInicio);
         }
-
         if ($this->dataFim) {
-            $query->where('data', '<=', $this->dataFim);
+            $query->where('created_at', '<=', $this->dataFim);
         }
 
-        $orcamentos = $query->limit(50)->get();
+        $orcamentos = $query->limit(30)->get();
 
         foreach ($orcamentos as $orcamento) {
-            $nomeCadastro = $orcamento->cadastro?->nome ?? 'Sem cadastro';
+            $statusColor = match ($orcamento->status) {
+                'aprovado' => 'success',
+                'rejeitado', 'cancelado' => 'danger',
+                'enviado' => 'warning',
+                default => 'gray',
+            };
 
             $this->resultados->push([
                 'tipo' => 'orcamento',
+                'tipo_icon' => '📋',
                 'tipo_label' => '📋 Orçamento',
                 'tipo_color' => 'warning',
                 'id' => $orcamento->id,
-                'titulo' => "Orçamento #{$orcamento->id}",
+                'titulo' => "Orçamento #{$orcamento->numero}",
                 'subtitulo' => $this->formatarSubtitulo([
-                    $nomeCadastro,
-                    'R$ '.number_format($orcamento->valor_total, 2, ',', '.'),
-                    ucfirst($orcamento->status ?? 'pendente'),
+                    $orcamento->cliente?->nome ?? 'Sem cliente',
+                    'R$ ' . number_format($orcamento->valor_total ?? 0, 2, ',', '.'),
                 ]),
-                'descricao' => $orcamento->observacoes,
-                'data' => $orcamento->data?->format('d/m/Y'),
-                'url' => admin_resource_route('filament.admin.resources.orcamentos.edit', '/admin/orcamentos/{id}/edit', ['record' => $orcamento->id]),
+                'descricao' => $orcamento->descricao_servico,
+                'status' => ucfirst($orcamento->status ?? 'pendente'),
+                'status_color' => $statusColor,
+                'data' => $orcamento->created_at?->format('d/m/Y'),
+                'data_raw' => $orcamento->created_at,
+                'valor_raw' => $orcamento->valor_total ?? 0,
+                'view_url' => route('filament.admin.resources.orcamentos.edit', ['record' => $orcamento->id]),
+                'edit_url' => route('filament.admin.resources.orcamentos.edit', ['record' => $orcamento->id]),
             ]);
         }
     }
 
     private function buscarOrdemServicos(): void
     {
-        $query = OrdemServico::with('orcamento');
+        $query = OrdemServico::with('cliente');
 
         if ($this->termo) {
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
-                $q->where('id', 'like', $termo)
+                $q->where('numero_os', 'like', $termo)
+                    ->orWhere('descricao_servico', 'like', $termo)
                     ->orWhere('observacoes', 'like', $termo)
-                    ->orWhereHas('orcamento', function ($orcQuery) use ($termo) {
-                        $orcQuery->whereHas('cliente', function ($clienteQuery) use ($termo) {
-                            $clienteQuery->where('nome', 'like', $termo);
-                        })->orWhereHas('parceiro', function ($parceiroQuery) use ($termo) {
-                            $parceiroQuery->where('nome', 'like', $termo);
-                        });
+                    ->orWhereHas('cliente', function ($clienteQuery) use ($termo) {
+                        $clienteQuery->where('nome', 'like', $termo);
                     });
             });
         }
 
+        if ($this->statusFiltro) {
+            $query->where('status', $this->statusFiltro);
+        }
+
         if ($this->dataInicio) {
-            $query->where('data_inicio', '>=', $this->dataInicio);
+            $query->where('created_at', '>=', $this->dataInicio);
         }
-
         if ($this->dataFim) {
-            $query->where('data_conclusao', '<=', $this->dataFim);
+            $query->where('created_at', '<=', $this->dataFim);
         }
 
-        $ordemServicos = $query->limit(50)->get();
+        $ordemServicos = $query->limit(30)->get();
 
         foreach ($ordemServicos as $os) {
-            $cliente = $os->orcamento->cadastro ?? null;
+            $statusColor = match ($os->status) {
+                'concluida', 'finalizada' => 'success',
+                'cancelada' => 'danger',
+                'em_andamento' => 'warning',
+                default => 'info',
+            };
 
             $this->resultados->push([
                 'tipo' => 'ordem_servico',
+                'tipo_icon' => '🛠️',
                 'tipo_label' => '🛠️ Ordem de Serviço',
                 'tipo_color' => 'success',
                 'id' => $os->id,
-                'titulo' => "OS #{$os->id}",
+                'titulo' => "OS #{$os->numero_os}",
                 'subtitulo' => $this->formatarSubtitulo([
-                    $cliente?->nome ?? 'Sem cliente',
-                    ucfirst($os->status ?? 'pendente'),
+                    $os->cliente?->nome ?? 'Sem cliente',
+                    'R$ ' . number_format($os->valor_total ?? 0, 2, ',', '.'),
                 ]),
-                'descricao' => $os->observacoes,
-                'data' => $os->data_inicio?->format('d/m/Y'),
-                'url' => admin_resource_route('filament.admin.resources.ordem-servicos.edit', '/admin/ordem-servicos/{id}/edit', ['record' => $os->id]),
+                'descricao' => $os->descricao_servico,
+                'status' => ucfirst(str_replace('_', ' ', $os->status ?? 'pendente')),
+                'status_color' => $statusColor,
+                'data' => $os->created_at?->format('d/m/Y'),
+                'data_raw' => $os->created_at,
+                'valor_raw' => $os->valor_total ?? 0,
+                'view_url' => route('filament.admin.resources.ordem-servicos.view', ['record' => $os->id]),
+                'edit_url' => route('filament.admin.resources.ordem-servicos.edit', ['record' => $os->id]),
             ]);
         }
     }
@@ -309,6 +379,7 @@ class BuscaUniversal extends Page implements HasForms
     private function buscarFinanceiro(): void
     {
         $query = Financeiro::query();
+
         if ($this->termo) {
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
@@ -316,30 +387,48 @@ class BuscaUniversal extends Page implements HasForms
                     ->orWhere('categoria', 'like', $termo);
             });
         }
+
+        if ($this->statusFiltro) {
+            $query->where('status', $this->statusFiltro);
+        }
+
         if ($this->dataInicio) {
             $query->where('data', '>=', $this->dataInicio);
         }
         if ($this->dataFim) {
             $query->where('data', '<=', $this->dataFim);
         }
-        $financeiros = $query->limit(50)->get();
+
+        $financeiros = $query->limit(30)->get();
+
         foreach ($financeiros as $financeiro) {
             $icone = $financeiro->tipo === 'entrada' ? '💵' : '💸';
-            $nomeCadastro = $financeiro->cadastro->nome ?? ($financeiro->cliente->nome ?? 'N/A');
+            $statusColor = match ($financeiro->status) {
+                'pago' => 'success',
+                'cancelado' => 'danger',
+                'vencido' => 'danger',
+                default => 'warning',
+            };
+
             $this->resultados->push([
                 'tipo' => 'financeiro',
-                'tipo_label' => "💰 Financeiro {$icone}",
+                'tipo_icon' => $icone,
+                'tipo_label' => "💰 {$icone} " . ucfirst($financeiro->tipo),
                 'tipo_color' => $financeiro->tipo === 'entrada' ? 'success' : 'danger',
                 'id' => $financeiro->id,
                 'titulo' => $financeiro->descricao,
                 'subtitulo' => $this->formatarSubtitulo([
-                    $nomeCadastro,
-                    'R$ '.number_format($financeiro->valor, 2, ',', '.'),
-                    ucfirst($financeiro->status ?? 'pendente'),
+                    'R$ ' . number_format($financeiro->valor ?? 0, 2, ',', '.'),
+                    $financeiro->categoria,
                 ]),
-                'descricao' => $financeiro->categoria,
+                'descricao' => $financeiro->observacoes,
+                'status' => ucfirst($financeiro->status ?? 'pendente'),
+                'status_color' => $statusColor,
                 'data' => $financeiro->data?->format('d/m/Y'),
-                'url' => admin_resource_route('filament.admin.resources.financeiros.edit', '/admin/financeiros/{id}/edit', ['record' => $financeiro->id]),
+                'data_raw' => $financeiro->data,
+                'valor_raw' => $financeiro->valor ?? 0,
+                'view_url' => route('filament.admin.resources.financeiros.edit', ['record' => $financeiro->id]),
+                'edit_url' => route('filament.admin.resources.financeiros.edit', ['record' => $financeiro->id]),
             ]);
         }
     }
@@ -357,19 +446,30 @@ class BuscaUniversal extends Page implements HasForms
             });
         }
 
+        if ($this->statusFiltro) {
+            $query->where('status', $this->statusFiltro);
+        }
+
         if ($this->dataInicio) {
             $query->where('data_hora_inicio', '>=', $this->dataInicio);
         }
-
         if ($this->dataFim) {
             $query->where('data_hora_fim', '<=', $this->dataFim);
         }
 
-        $agendas = $query->limit(50)->get();
+        $agendas = $query->limit(30)->get();
 
         foreach ($agendas as $agenda) {
+            $statusColor = match ($agenda->status) {
+                'concluido' => 'success',
+                'cancelado' => 'danger',
+                'em_andamento' => 'warning',
+                default => 'info',
+            };
+
             $this->resultados->push([
                 'tipo' => 'agenda',
+                'tipo_icon' => '📅',
                 'tipo_label' => '📅 Agenda',
                 'tipo_color' => 'primary',
                 'id' => $agenda->id,
@@ -379,8 +479,13 @@ class BuscaUniversal extends Page implements HasForms
                     $agenda->local,
                 ]),
                 'descricao' => $agenda->descricao,
+                'status' => ucfirst(str_replace('_', ' ', $agenda->status ?? 'agendado')),
+                'status_color' => $statusColor,
                 'data' => $agenda->data_hora_inicio?->format('d/m/Y'),
-                'url' => admin_resource_route('filament.admin.resources.agendas.edit', '/admin/agendas/{id}/edit', ['record' => $agenda->id]),
+                'data_raw' => $agenda->data_hora_inicio,
+                'valor_raw' => 0,
+                'view_url' => route('filament.admin.resources.agendas.view', ['record' => $agenda->id]),
+                'edit_url' => route('filament.admin.resources.agendas.edit', ['record' => $agenda->id]),
             ]);
         }
     }
@@ -399,11 +504,15 @@ class BuscaUniversal extends Page implements HasForms
             });
         }
 
-        $produtos = $query->limit(50)->get();
+        $produtos = $query->limit(30)->get();
 
         foreach ($produtos as $produto) {
+            $estoqueStatus = ($produto->quantidade_estoque ?? 0) > 0 ? 'Em estoque' : 'Sem estoque';
+            $estoqueColor = ($produto->quantidade_estoque ?? 0) > 0 ? 'success' : 'danger';
+
             $this->resultados->push([
                 'tipo' => 'produto',
+                'tipo_icon' => '📦',
                 'tipo_label' => '📦 Produto',
                 'tipo_color' => 'gray',
                 'id' => $produto->id,
@@ -413,8 +522,13 @@ class BuscaUniversal extends Page implements HasForms
                     "Estoque: {$produto->quantidade_estoque}",
                 ]),
                 'descricao' => $produto->descricao,
+                'status' => $estoqueStatus,
+                'status_color' => $estoqueColor,
                 'data' => $produto->created_at?->format('d/m/Y'),
-                'url' => admin_resource_route('filament.admin.resources.produtos.edit', '/admin/produtos/{id}/edit', ['record' => $produto->id]),
+                'data_raw' => $produto->created_at,
+                'valor_raw' => $produto->preco_venda ?? 0,
+                'view_url' => route('filament.admin.resources.produtos.edit', ['record' => $produto->id]),
+                'edit_url' => route('filament.admin.resources.produtos.edit', ['record' => $produto->id]),
             ]);
         }
     }
@@ -422,13 +536,13 @@ class BuscaUniversal extends Page implements HasForms
     private function formatarSubtitulo(array $partes): string
     {
         return collect($partes)
-            ->filter(fn ($parte) => ! empty($parte))
+            ->filter(fn($parte) => !empty($parte))
             ->implode(' • ');
     }
 
     public function limpar(): void
     {
-        $this->reset(['termo', 'tipoFiltro', 'dataInicio', 'dataFim']);
+        $this->reset(['termo', 'tipoFiltro', 'statusFiltro', 'ordenacao', 'dataInicio', 'dataFim']);
         $this->resultados = collect();
         $this->totalResultados = 0;
     }

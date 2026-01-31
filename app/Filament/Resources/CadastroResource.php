@@ -19,6 +19,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Support\RawJs;
 use Illuminate\Support\Facades\Http;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 
 class CadastroResource extends Resource
 {
@@ -27,41 +28,257 @@ class CadastroResource extends Resource
     protected static ?string $label = 'Cadastro';
     protected static ?string $pluralLabel = 'Cadastros';
 
-    // --- INFOLIST (VISUALIZAÇÃO PREMIUM) ---
+    // --- INFOLIST PREMIUM (CLIENTE 360) ---
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
             ->schema([
-                Section::make('Identificação')
-                    ->columns(4)
+                // ===== CABEÇALHO DO CADASTRO =====
+                Section::make()
                     ->schema([
-                        TextEntry::make('nome')->weight('bold')->columnSpan(2),
-                        TextEntry::make('tipo')
-                            ->badge()
-                            ->color(fn (string $state): string => match ($state) {
-                                'cliente' => 'info',
-                                'loja' => 'success',
-                                'vendedor' => 'warning',
-                                default => 'gray',
-                            }),
-                        TextEntry::make('documento')->label('CPF / CNPJ')->icon('heroicon-m-identification'),
+                        Grid::make(4)->schema([
+                            TextEntry::make('nome')
+                                ->label('Nome / Razão Social')
+                                ->weight('bold')
+                                ->columnSpan(2)
+                                ->size(TextEntry\TextEntrySize::Large),
+                            TextEntry::make('tipo')
+                                ->badge()
+                                ->color(fn(string $state): string => match ($state) {
+                                    'cliente' => 'info',
+                                    'loja' => 'success',
+                                    'vendedor' => 'warning',
+                                    'arquiteto' => 'primary',
+                                    default => 'gray',
+                                }),
+                            TextEntry::make('documento')
+                                ->label('Documento')
+                                ->icon('heroicon-m-identification')
+                                ->copyable(),
+                        ]),
+                        Grid::make(4)->schema([
+                            TextEntry::make('telefone')
+                                ->label('WhatsApp')
+                                ->icon('heroicon-m-chat-bubble-left-right')
+                                ->url(fn($state) => 'https://wa.me/55' . preg_replace('/\D/', '', $state), true),
+                            TextEntry::make('email')
+                                ->label('E-mail')
+                                ->icon('heroicon-m-envelope')
+                                ->copyable(),
+                            TextEntry::make('cidade')
+                                ->label('Localização')
+                                ->formatStateUsing(fn($record) => "{$record->cidade}/{$record->estado}"),
+                            TextEntry::make('created_at')
+                                ->label('Cliente desde')
+                                ->date('d/m/Y'),
+                        ]),
                     ]),
-                Section::make('Contato')
-                    ->columns(3)
+
+                // ===== RESUMO FINANCEIRO (CARDS) =====
+                Section::make('💰 Resumo Financeiro')
                     ->schema([
-                        TextEntry::make('telefone')->label('WhatsApp')->icon('heroicon-m-chat-bubble-left-right'),
-                        TextEntry::make('email')->label('E-mail')->icon('heroicon-m-envelope'),
-                        TextEntry::make('telefone_fixo')->label('Fixo'),
-                    ]),
-                Section::make('Endereço')
-                    ->columns(3)
-                    ->schema([
-                        TextEntry::make('logradouro')->label('Rua')->columnSpan(2),
-                        TextEntry::make('numero')->label('Nº'),
-                        TextEntry::make('bairro'),
-                        TextEntry::make('cidade'),
-                        TextEntry::make('estado')->label('UF'),
-                    ]),
+                        Grid::make(5)->schema([
+                            TextEntry::make('total_receitas')
+                                ->label('💵 Total Recebido')
+                                ->money('BRL')
+                                ->color('success')
+                                ->weight('bold')
+                                ->size(TextEntry\TextEntrySize::Large),
+                            TextEntry::make('pendentes_receber')
+                                ->label('⏳ A Receber')
+                                ->money('BRL')
+                                ->color('warning')
+                                ->weight('bold'),
+                            TextEntry::make('orcamentos_aprovados_count')
+                                ->label('📋 Orç. Aprovados')
+                                ->color('primary')
+                                ->weight('bold'),
+                            TextEntry::make('os_concluidas_count')
+                                ->label('🛠️ OS Concluídas')
+                                ->color('success')
+                                ->weight('bold'),
+                            TextEntry::make('saldo')
+                                ->label('📊 Saldo')
+                                ->money('BRL')
+                                ->color(fn($state) => $state >= 0 ? 'success' : 'danger')
+                                ->weight('bold'),
+                        ]),
+                    ])
+                    ->collapsible(),
+
+                // ===== ABAS DE HISTÓRICO =====
+                Infolists\Components\Tabs::make('Histórico Completo')
+                    ->tabs([
+                        // ABA 1: ORÇAMENTOS
+                        Infolists\Components\Tabs\Tab::make('📋 Orçamentos')
+                            ->badge(fn($record) => $record->orcamentos()->count())
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('orcamentos')
+                                    ->label('')
+                                    ->schema([
+                                        Grid::make(6)->schema([
+                                            TextEntry::make('numero')->label('Nº')->weight('bold'),
+                                            TextEntry::make('status')
+                                                ->badge()
+                                                ->color(fn($state) => match ($state) {
+                                                    'aprovado' => 'success',
+                                                    'cancelado', 'rejeitado' => 'danger',
+                                                    'enviado' => 'warning',
+                                                    default => 'gray',
+                                                }),
+                                            TextEntry::make('descricao_servico')->label('Serviço')->limit(30),
+                                            TextEntry::make('created_at')->label('Data')->date('d/m/Y'),
+                                            TextEntry::make('valor_total')->label('Valor')->money('BRL')->color('success')->weight('bold'),
+                                            TextEntry::make('id')
+                                                ->label('')
+                                                ->formatStateUsing(fn() => 'Ver PDF')
+                                                ->url(fn($record) => route('orcamento.pdf', $record), true)
+                                                ->icon('heroicon-o-document-arrow-down')
+                                                ->color('primary'),
+                                        ]),
+                                    ])
+                                    ->grid(1)
+                                    ->hidden(fn($record) => $record->orcamentos()->count() === 0),
+                                Infolists\Components\Placeholder::make('empty_orcamentos')
+                                    ->label('')
+                                    ->content('Nenhum orçamento encontrado.')
+                                    ->visible(fn($record) => $record->orcamentos()->count() === 0),
+                            ]),
+
+                        // ABA 2: ORDENS DE SERVIÇO
+                        Infolists\Components\Tabs\Tab::make('🛠️ Ordens de Serviço')
+                            ->badge(fn($record) => $record->ordensServico()->count())
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('ordensServico')
+                                    ->label('')
+                                    ->schema([
+                                        Grid::make(6)->schema([
+                                            TextEntry::make('numero_os')->label('OS')->weight('bold'),
+                                            TextEntry::make('tipo_servico')->label('Tipo'),
+                                            TextEntry::make('status')
+                                                ->badge()
+                                                ->color(fn($state) => match ($state) {
+                                                    'concluida', 'finalizada' => 'success',
+                                                    'cancelada' => 'danger',
+                                                    'em_andamento' => 'warning',
+                                                    default => 'info',
+                                                }),
+                                            TextEntry::make('data_prevista')->label('Agendado')->date('d/m/Y'),
+                                            TextEntry::make('valor_total')->label('Total')->money('BRL'),
+                                            TextEntry::make('id')
+                                                ->label('')
+                                                ->formatStateUsing(fn() => 'Ver PDF')
+                                                ->url(fn($record) => route('ordem-servico.pdf', $record), true)
+                                                ->icon('heroicon-o-document-arrow-down')
+                                                ->color('primary'),
+                                        ]),
+                                    ])
+                                    ->grid(1)
+                                    ->hidden(fn($record) => $record->ordensServico()->count() === 0),
+                                Infolists\Components\Placeholder::make('empty_os')
+                                    ->label('')
+                                    ->content('Nenhuma ordem de serviço encontrada.')
+                                    ->visible(fn($record) => $record->ordensServico()->count() === 0),
+                            ]),
+
+                        // ABA 3: FINANCEIRO
+                        Infolists\Components\Tabs\Tab::make('💰 Financeiro')
+                            ->badge(fn($record) => $record->financeiros()->count())
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('financeiros')
+                                    ->label('')
+                                    ->schema([
+                                        Grid::make(6)->schema([
+                                            TextEntry::make('tipo')
+                                                ->badge()
+                                                ->color(fn($state) => $state === 'entrada' ? 'success' : 'danger')
+                                                ->formatStateUsing(fn($state) => $state === 'entrada' ? '💵 Entrada' : '💸 Saída'),
+                                            TextEntry::make('descricao')->label('Descrição')->limit(40),
+                                            TextEntry::make('status')
+                                                ->badge()
+                                                ->color(fn($state) => match ($state) {
+                                                    'pago' => 'success',
+                                                    'cancelado' => 'danger',
+                                                    default => 'warning',
+                                                }),
+                                            TextEntry::make('data')->label('Data')->date('d/m/Y'),
+                                            TextEntry::make('data_vencimento')->label('Vencimento')->date('d/m/Y'),
+                                            TextEntry::make('valor')->label('Valor')->money('BRL')->weight('bold'),
+                                        ]),
+                                    ])
+                                    ->grid(1)
+                                    ->hidden(fn($record) => $record->financeiros()->count() === 0),
+                                Infolists\Components\Placeholder::make('empty_financeiro')
+                                    ->label('')
+                                    ->content('Nenhum lançamento financeiro encontrado.')
+                                    ->visible(fn($record) => $record->financeiros()->count() === 0),
+                            ]),
+
+                        // ABA 4: AGENDA
+                        Infolists\Components\Tabs\Tab::make('📅 Agenda')
+                            ->badge(fn($record) => $record->agendas()->count())
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('agendas')
+                                    ->label('')
+                                    ->schema([
+                                        Grid::make(5)->schema([
+                                            TextEntry::make('titulo')->label('Evento')->weight('bold'),
+                                            TextEntry::make('status')
+                                                ->badge()
+                                                ->color(fn($state) => match ($state) {
+                                                    'concluido' => 'success',
+                                                    'cancelado' => 'danger',
+                                                    'em_andamento' => 'warning',
+                                                    default => 'info',
+                                                }),
+                                            TextEntry::make('data_hora_inicio')->label('Data/Hora')->dateTime('d/m/Y H:i'),
+                                            TextEntry::make('local')->label('Local'),
+                                            TextEntry::make('descricao')->label('Descrição')->limit(50),
+                                        ]),
+                                    ])
+                                    ->grid(1)
+                                    ->hidden(fn($record) => $record->agendas()->count() === 0),
+                                Infolists\Components\Placeholder::make('empty_agenda')
+                                    ->label('')
+                                    ->content('Nenhum agendamento encontrado.')
+                                    ->visible(fn($record) => $record->agendas()->count() === 0),
+                            ]),
+
+                        // ABA 5: VENDEDORES (apenas para Lojas)
+                        Infolists\Components\Tabs\Tab::make('🧑‍💼 Vendedores')
+                            ->badge(fn($record) => $record->vendedores()->count())
+                            ->visible(fn($record) => $record->tipo === 'loja')
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('vendedores')
+                                    ->label('')
+                                    ->schema([
+                                        Grid::make(4)->schema([
+                                            TextEntry::make('nome')->label('Vendedor')->weight('bold'),
+                                            TextEntry::make('telefone')->label('Telefone'),
+                                            TextEntry::make('email')->label('E-mail'),
+                                            TextEntry::make('comissao_percentual')
+                                                ->label('Comissão')
+                                                ->suffix('%'),
+                                        ]),
+                                    ])
+                                    ->grid(1)
+                                    ->hidden(fn($record) => $record->vendedores()->count() === 0),
+                                Infolists\Components\Placeholder::make('empty_vendedores')
+                                    ->label('')
+                                    ->content('Nenhum vendedor vinculado a esta loja.')
+                                    ->visible(fn($record) => $record->vendedores()->count() === 0),
+                            ]),
+
+                        // ABA 6: ARQUIVOS
+                        Infolists\Components\Tabs\Tab::make('📁 Arquivos')
+                            ->schema([
+                                Infolists\Components\ImageEntry::make('arquivos')
+                                    ->label('Galeria de Documentos')
+                                    ->collection('arquivos')
+                                    ->size(100)
+                                    ->extraImgAttributes(['class' => 'rounded-lg shadow-md']),
+                            ]),
+                    ])->columnSpanFull(),
             ]);
     }
 
@@ -87,8 +304,8 @@ class CadastroResource extends Resource
                         ->live(),
                     Forms\Components\Select::make('parent_id')
                         ->label('Loja Vinculada')
-                        ->relationship('loja', 'nome', fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('tipo', 'loja'))
-                        ->visible(fn (Forms\Get $get) => $get('tipo') === 'vendedor')
+                        ->relationship('loja', 'nome', fn(\Illuminate\Database\Eloquent\Builder $query) => $query->where('tipo', 'loja'))
+                        ->visible(fn(Forms\Get $get) => $get('tipo') === 'vendedor')
                         ->searchable(),
                     // CAMPO DE COMISSÃO
                     Forms\Components\TextInput::make('comissao_percentual')
@@ -96,7 +313,7 @@ class CadastroResource extends Resource
                         ->numeric()
                         ->suffix('%')
                         ->default(0)
-                        ->visible(fn (Forms\Get $get) => in_array($get('tipo'), ['vendedor', 'loja', 'arquiteto']))
+                        ->visible(fn(Forms\Get $get) => in_array($get('tipo'), ['vendedor', 'loja', 'arquiteto']))
                         ->helperText('Porcentagem que será aplicada automaticamente nos orçamentos.'),
                 ])->columns(3),
             Forms\Components\Section::make('Dados Principais')
@@ -132,6 +349,23 @@ class CadastroResource extends Resource
                     Forms\Components\TextInput::make('estado')->maxLength(2)->required(),
                     Forms\Components\TextInput::make('complemento'),
                 ])->columns(4),
+            Forms\Components\Section::make('Central de Arquivos')
+                ->description('Envie fotos, documentos e comprovantes (Máx: 20MB).')
+                ->collapsible()
+                ->collapsed()
+                ->schema([
+                    Forms\Components\SpatieMediaLibraryFileUpload::make('arquivos')
+                        ->label('Anexos (Até 20MB)')
+                        ->collection('arquivos')
+                        ->multiple()
+                        ->disk('public')
+                        ->maxSize(20480)
+                        ->downloadable()
+                        ->openable()
+                        ->previewable()
+                        ->reorderable()
+                        ->columnSpanFull(),
+                ]),
         ];
     }
 
@@ -142,7 +376,7 @@ class CadastroResource extends Resource
                 Tables\Columns\TextColumn::make('nome')->searchable()->sortable()->weight('bold'),
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'cliente' => 'info',
                         'loja' => 'success',
                         'vendedor' => 'warning',
@@ -158,13 +392,26 @@ class CadastroResource extends Resource
                     ->icon('heroicon-o-document-text')
                     ->color('success')
                     ->button()
-                    ->url(fn (Cadastro $record) => route('cadastro.pdf', $record))
+                    ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
                     ->openUrlInNewTab(),
                 // 2. VISUALIZAR (Olho)
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Ver Detalhes'),
                 // 3. EDITAR (Lápis)
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                // 4. EXCLUIR (Lixeira)
+                // 4. COMPARTILHAR
+                Tables\Actions\Action::make('share')
+                    ->label('')
+                    ->tooltip('Compartilhar')
+                    ->icon('heroicon-o-share')
+                    ->color('success')
+                    ->action(function (Cadastro $record) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Link Copiado!')
+                            ->body(url("/admin/cadastros/{$record->id}"))
+                            ->success()
+                            ->send();
+                    }),
+                // 5. EXCLUIR (Lixeira)
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
@@ -180,6 +427,7 @@ class CadastroResource extends Resource
         return [
             'index' => Pages\ListCadastros::route('/'),
             'create' => Pages\CreateCadastro::route('/create'),
+            'view' => Pages\ViewCadastro::route('/{record}'),
             'edit' => Pages\EditCadastro::route('/{record}/edit'),
         ];
     }

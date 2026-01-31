@@ -7,35 +7,74 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use App\Traits\HasArquivos;
 
-class OrdemServico extends Model
+class OrdemServico extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasArquivos;
 
     // --- CORREÇÃO DO ERRO DE FK ---
     // Define explicitamente o nome da tabela no banco
-    protected $table = 'ordens_servico'; 
+    protected $table = 'ordens_servico';
 
     protected $fillable = [
         'cadastro_id',
         'orcamento_id',
         'numero_os',
         'status',
-        'valor_total',
-        'data_inicio',
-        'data_fim',
-        'descricao',
-        'assinatura_cliente_path',
-        'agenda_id',
-        'percentual_comissao',
         'tipo_servico',
+        'descricao_servico',
+        'data_abertura',
+        'data_prevista',
+        'data_conclusao',
+        'valor_total',
+        'desconto',
+        'criado_por',
+        'dias_garantia',
+        'loja_id',
+        'vendedor_id',
+        'origem',
     ];
 
     protected $casts = [
-        'data_inicio' => 'datetime',
-        'data_fim' => 'datetime',
+        'data_abertura' => 'datetime',
+        'data_prevista' => 'datetime',
+        'data_conclusao' => 'datetime', // Mantém datetime para precisão
         'valor_total' => 'decimal:2',
     ];
+
+    // --- GARANTIA ---
+
+    // Retorna a data final da garantia (se houver conclusão e dias > 0)
+    public function getDataFimGarantiaAttribute()
+    {
+        if (!$this->data_conclusao || !$this->dias_garantia) {
+            return null;
+        }
+        // Garante que é Carbon
+        return \Carbon\Carbon::parse($this->data_conclusao)->addDays($this->dias_garantia);
+    }
+
+    // Retorna o status da garantia: 'ativa', 'vencida', 'nenhuma', 'pendente' (se não concluiu)
+    public function getStatusGarantiaAttribute(): string
+    {
+        if (!$this->dias_garantia) {
+            return 'nenhuma';
+        }
+
+        if (!$this->data_conclusao) {
+            return 'pendente'; // Ainda não concluiu o serviço
+        }
+
+        $fim = $this->data_fim_garantia;
+
+        if (now()->startOfDay()->lte($fim)) {
+            return 'ativa';
+        }
+
+        return 'vencida';
+    }
 
     // CONFIGURAÇÃO DA BUSCA GLOBAL
     public static $globallySearchableAttributes = ['numero_os', 'descricao'];
@@ -54,32 +93,24 @@ class OrdemServico extends Model
         ];
     }
 
-    // Relacionamentos
-    public function cadastro(): BelongsTo
+    // Relacionamento PRINCIPAL com o cliente (Unificado)
+    public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cadastro::class);
+        return $this->belongsTo(Cadastro::class, 'cadastro_id');
     }
 
-    /**
-     * Relacionamento com o cliente.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function cliente()
+    // Alias para manter compatibilidade, se necessário
+    public function cadastro(): BelongsTo
     {
-        // Se você unificou, aponta para Cadastro. Se não, aponta para Cliente.
-        // Dado que unificamos:
-        return $this->belongsTo(Cadastro::class, 'cliente_id');
+        return $this->cliente();
     }
 
     /**
      * Relacionamento com o parceiro.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function parceiro()
     {
-        return $this->belongsTo(Cadastro::class, 'parceiro_id');
+        return $this->belongsTo(Cadastro::class, 'parceiro_id'); // Legacy?
     }
 
     public function itens(): HasMany
@@ -92,17 +123,26 @@ class OrdemServico extends Model
         return $this->belongsTo(Agenda::class);
     }
 
+    public function loja(): BelongsTo
+    {
+        return $this->belongsTo(Cadastro::class, 'loja_id');
+    }
+
+    public function vendedor(): BelongsTo
+    {
+        return $this->belongsTo(Cadastro::class, 'vendedor_id');
+    }
+
     protected static function booted()
     {
         static::creating(function ($model) {
-            // Gera número se não existir
-            if (empty($model->numero_os)) {
-                $model->numero_os = self::gerarNumeroOS();
-            }
-            
+            // ALWAYS generate a new numero_os to prevent stale values from forms
+            // This ensures the number is fresh even if the form had a pre-generated value
+            $model->numero_os = self::gerarNumeroOS();
+
             // Define tipo de serviço padrão se não existir
             if (empty($model->tipo_servico)) {
-                $model->tipo_servico = 'servico'; 
+                $model->tipo_servico = 'servico';
             }
 
             // CORREÇÃO: Define descrição padrão se não existir
@@ -130,23 +170,31 @@ class OrdemServico extends Model
      */
     public static function gerarNumeroOS(): string
     {
-        $ano = date('Y');
-        // ATENÇÃO: Mudou de 'numero' para 'numero_os'
-        $ultimaOS = self::whereYear('created_at', $ano)
-                        ->orderBy('id', 'desc')
-                        ->first();
+        // Wrap in transaction for atomicity
+        return \DB::transaction(function () {
+            $ano = date('Y');
 
-        if (!$ultimaOS) {
-            return "{$ano}.0001";
-        }
+            // Get all OS numbers for this year and find the max sequence
+            // We need to parse them because numero_os is a string field
+            // Include soft-deleted records to avoid reusing numbers
+            $osNumeros = self::withTrashed()
+                ->where('numero_os', 'LIKE', "{$ano}.%")
+                ->pluck('numero_os')
+                ->map(function ($numero) {
+                    $partes = explode('.', $numero);
+                    return count($partes) >= 2 ? intval($partes[1]) : 0;
+                })
+                ->filter()
+                ->toArray();
 
-        $partes = explode('.', $ultimaOS->numero_os); // <--- Aqui também
-        
-        if (count($partes) < 2) {
-             return "{$ano}.0001";
-        }
+            if (empty($osNumeros)) {
+                return "{$ano}.0001";
+            }
 
-        $sequencia = intval($partes[1]) + 1;
-        return $ano . '.' . str_pad($sequencia, 4, '0', STR_PAD_LEFT);
+            $maxSequencia = max($osNumeros);
+            $novaSequencia = $maxSequencia + 1;
+
+            return $ano . '.' . str_pad($novaSequencia, 4, '0', STR_PAD_LEFT);
+        });
     }
 }

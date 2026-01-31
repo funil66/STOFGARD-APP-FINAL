@@ -34,20 +34,23 @@ class OrcamentoPdfController extends Controller
         // Garante que o diretório de arquivos temporários exista e tenha permissão
         // Isso resolve erros comuns do Browsershot em Docker
         $tempPath = storage_path('app/temp');
-        if (!file_exists($tempPath)) {
+        if (!is_dir($tempPath)) {
             mkdir($tempPath, 0755, true);
         }
 
-        return Pdf::view('pdf.orcamento', ['orcamento' => $orcamento])
+        return Pdf::view('pdf.orcamento', [
+            'orcamento' => $orcamento,
+            'config' => \App\Models\Configuracao::first()
+        ])
             ->format('a4')
             ->name("Orcamento-{$orcamento->id}.pdf")
             ->withBrowsershot(function ($browsershot) {
                 $browsershot->noSandbox()
-                            ->setChromePath('/usr/bin/google-chrome') // Caminho do Chrome instalado
-                            ->setNodeBinary('/usr/bin/node')
-                            ->setNpmBinary('/usr/bin/npm')
-                            ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
-                            ->timeout(60);
+                    ->setChromePath(config('services.browsershot.chrome_path', '/usr/bin/google-chrome'))
+                    ->setNodeBinary(config('services.browsershot.node_path', '/usr/bin/node'))
+                    ->setNpmBinary(config('services.browsershot.npm_path', '/usr/bin/npm'))
+                    ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
+                    ->timeout(60);
             })
             ->inline(); // Mostra no navegador em vez de forçar download
     }

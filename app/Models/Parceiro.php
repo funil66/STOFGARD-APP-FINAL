@@ -7,8 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\HasArquivos;
+use Spatie\MediaLibrary\HasMedia;
 
-class Parceiro extends Model
+class Parceiro extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, HasArquivos;
 
@@ -120,5 +121,10 @@ class Parceiro extends Model
         $endereco = urlencode($this->endereco_completo);
 
         return "https://www.google.com/maps/search/?api=1&query={$endereco}";
+    }
+
+    public function getMediaCollectionName(): string
+    {
+        return 'parceiros';
     }
 }

@@ -26,40 +26,46 @@ class StofgardSystem
         }
 
         return DB::transaction(function () use ($orcamento) {
-            // A. Busca dinâmica da Categoria (Fim do Magic Number "1")
-            // Se não encontrar "venda-servico", busca a primeira de receita ou cria uma fallback
-            $categoriaVenda = Categoria::where('slug', 'venda-servico')->first();
-            
-            if (! $categoriaVenda) {
-                // Tenta achar pelo ID 1 apenas como último recurso de compatibilidade, 
-                // mas o ideal é ter o slug correto no banco.
-                $categoriaVenda = Categoria::find(1) ?? Categoria::firstOrCreate(
-                    ['slug' => 'venda-padrao'],
-                    ['nome' => 'Venda de Serviço', 'tipo' => 'receita', 'ativa' => true]
-                );
-            }
-
-            // B. Criação da OS (Sem calcular ID manualmente para evitar colisão)
+            // A. Criação da OS (Usando cadastro_id unificado)
             $os = OrdemServico::create([
-                'orcamento_id'  => $orcamento->id,
-                'cliente_id'    => $orcamento->cliente_id,
-                'status'        => 'aberta', // Ideal: Usar Enum OrdemServicoStatus::ABERTA
+                'orcamento_id' => $orcamento->id,
+                'cadastro_id' => $orcamento->cadastro_id,
+                'loja_id' => $orcamento->loja_id,
+                'vendedor_id' => $orcamento->vendedor_id,
+                'status' => 'aberta',
                 'data_abertura' => now(),
-                'descricao'     => "Gerado a partir do Orçamento #{$orcamento->id}",
-                'valor_total'   => $orcamento->valor_total,
-                // Adicione aqui outros campos obrigatórios da sua tabela OS
+                'tipo_servico' => $orcamento->tipo_servico ?? 'servico',
+                'descricao_servico' => "Gerado a partir do Orçamento #{$orcamento->numero}",
+                'valor_total' => $orcamento->valor_total,
+                'criado_por' => auth()->id() ?? 1,
             ]);
 
-            // C. Criação do Financeiro (Receita Prevista)
+            // B. Criação do Financeiro (Receita Prevista) - Usando Financeiro model com cadastro_id
             Financeiro::create([
-                'descricao'       => "Receita ref. OS #{$os->id} - {$orcamento->cliente->nome}",
-                'categoria_id'    => $categoriaVenda->id, 
-                'ordem_servico_id'=> $os->id,
-                'cliente_id'      => $orcamento->cliente_id,
-                'valor'           => $orcamento->valor_total,
-                'data_vencimento' => now()->addDays(30), // Pode virar configuração no banco: 'dias_padrao_vencimento'
-                'status'          => 'pendente',
-                'tipo'            => 'receita',
+                'descricao' => "Receita ref. OS #{$os->numero_os} - " . ($orcamento->cliente->nome ?? 'Cliente'),
+                'ordem_servico_id' => $os->id,
+                'orcamento_id' => $orcamento->id,
+                'cadastro_id' => $orcamento->cadastro_id,
+                'valor' => $orcamento->valor_total,
+                'data_vencimento' => now()->addDays(30),
+                'status' => 'pendente',
+                'tipo' => 'entrada',
+                'categoria' => 'servico',
+            ]);
+
+            // C. Cria Agenda (Serviço Agendado)
+            Agenda::create([
+                'titulo' => "Serviço - " . ($orcamento->cliente->nome ?? 'Cliente'),
+                'descricao' => "OS #{$os->numero_os} via Orçamento #{$orcamento->numero}",
+                'cadastro_id' => $orcamento->cadastro_id,
+                'ordem_servico_id' => $os->id,
+                'orcamento_id' => $orcamento->id,
+                'tipo' => 'servico',
+                'data_hora_inicio' => now()->addDays(1)->setHour(9),
+                'data_hora_fim' => now()->addDays(1)->setHour(11),
+                'status' => 'agendado',
+                'local' => $orcamento->cliente->endereco ?? 'A definir',
+                'criado_por' => auth()->id() ?? 1,
             ]);
 
             // D. Atualiza o Orçamento
@@ -77,7 +83,8 @@ class StofgardSystem
      */
     public function confirmarPagamento(Financeiro $lancamento)
     {
-        if ($lancamento->status === 'pago') return;
+        if ($lancamento->status === 'pago')
+            return;
 
         DB::transaction(function () use ($lancamento) {
             // 1. Baixa Financeira
@@ -138,11 +145,11 @@ class StofgardSystem
             ->name("Orcamento-{$orcamento->id}.pdf")
             ->withBrowsershot(function ($browsershot) {
                 $browsershot->noSandbox()
-                            ->setNodeBinary('/usr/bin/node') // Caminho padrão no Sail/Alpine
-                            ->setNpmBinary('/usr/bin/npm')
-                            ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
-                            ->timeout(60); // Aumenta timeout para 60s
+                    ->setNodeBinary('/usr/bin/node') // Caminho padrão no Sail/Alpine
+                    ->setNpmBinary('/usr/bin/npm')
+                    ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
+                    ->timeout(60); // Aumenta timeout para 60s
             })
-            ->inline(); 
+            ->inline();
     }
 }

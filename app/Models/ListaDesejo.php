@@ -39,6 +39,7 @@ class ListaDesejo extends Model
         'valor_total_estimado' => 'decimal:2',
         'data_aprovacao' => 'date',
         'data_compra' => 'date',
+        'data_prevista_compra' => 'date',
     ];
 
     // Relacionamentos

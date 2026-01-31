@@ -14,7 +14,7 @@ class OrdemServicoService
 
     // Injeção de Dependência automática do Laravel
     public function __construct(
-        FinanceiroService $financeiroService, 
+        FinanceiroService $financeiroService,
         EstoqueService $estoqueService
     ) {
         $this->financeiroService = $financeiroService;
@@ -33,14 +33,7 @@ class OrdemServicoService
 
         return DB::transaction(function () use ($orcamento) {
             // 1. Cria a OS
-            $os = OrdemServico::create([
-                'orcamento_id'  => $orcamento->id,
-                'cliente_id'    => $orcamento->cliente_id,
-                'status'        => 'aberta',
-                'data_abertura' => now(),
-                'descricao'     => "Gerado a partir do Orçamento #{$orcamento->id}",
-                'valor_total'   => $orcamento->valor_total,
-            ]);
+            $os = $this->criarAPartirDeOrcamento($orcamento);
 
             // 2. Aciona o Financeiro (Gera Contas a Receber)
             $this->financeiroService->gerarPreviaReceita($os);
@@ -48,11 +41,92 @@ class OrdemServicoService
             // 3. Aciona o Estoque (Baixa produtos se houver)
             $this->estoqueService->baixarItensDeOrcamento($orcamento);
 
-            // 4. Atualiza o Orçamento original
+            // 4. Cria Agenda (Agendamento do Serviço)
+            $this->criarAgendaParaOS($os, $orcamento);
+
+            // 5. Atualiza o Orçamento original
             $orcamento->update([
                 'status' => 'aprovado',
                 'aprovado_em' => now(),
             ]);
+
+            return $os;
+        });
+    }
+
+    /**
+     * Cria uma entrada na Agenda vinculada à OS.
+     */
+    protected function criarAgendaParaOS(OrdemServico $os, Orcamento $orcamento): \App\Models\Agenda
+    {
+        $cliente = $os->cliente;
+        $endereco = $cliente->endereco_completo ?? $cliente->endereco ?? null;
+
+        return \App\Models\Agenda::create([
+            'titulo' => "Serviço - " . ($cliente->nome ?? 'Cliente'),
+            'descricao' => "OS #{$os->numero_os} gerada via Orçamento #{$orcamento->numero}",
+            'cadastro_id' => $os->cadastro_id,
+            'ordem_servico_id' => $os->id,
+            'orcamento_id' => $orcamento->id,
+            'tipo' => 'servico',
+            'data_hora_inicio' => $orcamento->data_prevista ?? now()->addDays(1)->setHour(9),
+            'data_hora_fim' => $orcamento->data_prevista
+                ? $orcamento->data_prevista->copy()->addHours(2)
+                : now()->addDays(1)->setHour(11),
+            'status' => 'agendado',
+            'local' => $endereco ?? 'A definir',
+            'endereco_completo' => $endereco,
+            'criado_por' => auth()->id() ?? 1,
+        ]);
+    }
+
+
+    /**
+     * Cria uma Ordem de Serviço a partir de um Orçamento.
+     */
+    public function criarAPartirDeOrcamento(Orcamento $orcamento)
+    {
+        return DB::transaction(function () use ($orcamento) {
+            // BLINDAGEM: Verifica se os IDs do orçamento ainda existem no banco atual
+            // Se não existirem, define como NULL para evitar o erro de Foreign Key
+            // UNIFICADO: Agora tudo é Cadastro
+            $lojaId = \App\Models\Cadastro::find($orcamento->loja_id)?->id;
+            $vendedorId = \App\Models\Cadastro::find($orcamento->vendedor_id)?->id;
+
+            $os = OrdemServico::create([
+                'orcamento_id' => $orcamento->id,
+                'cadastro_id' => $orcamento->cadastro_id,
+                'loja_id' => $lojaId,      // ID Validado
+                'vendedor_id' => $vendedorId,  // ID Validado
+                'origem' => 'orcamento',
+                'status' => 'aberta',
+                'valor_total' => $orcamento->valor_total,
+                'data_abertura' => now(),
+                'tipo_servico' => 'servico',
+                'descricao_servico' => "Serviço aprovado via Orçamento #{$orcamento->numero}",
+                'criado_por' => auth()->id() ?? 1,
+            ]);
+
+            // Copia Itens (Lógica mantida)
+            if ($orcamento->itens()->exists()) {
+                foreach ($orcamento->itens as $item) {
+                    $os->itens()->create([
+                        'descricao' => $item->item_nome ?? 'Serviço Diverso',
+                        'quantidade' => $item->quantidade,
+                        'unidade_medida' => $item->unidade ?? 'unidade',
+                        'valor_unitario' => $item->valor_unitario,
+                        'subtotal' => $item->subtotal ?? ($item->quantidade * $item->valor_unitario),
+                        'observacoes' => $item->servico_tipo ?? null,
+                    ]);
+                }
+            }
+
+            // COPY MEDIA: Copia fotos do Orçamento para a OS
+            // Isso garante que as evidências visuais acompanhem o processo
+            $orcamento->getMedia('arquivos')->each(function ($mediaItem) use ($os) {
+                // copy() duplica o arquivo físico e cria registro na nova model
+                $mediaItem->copy($os, 'arquivos', 'public');
+            });
 
             return $os;
         });

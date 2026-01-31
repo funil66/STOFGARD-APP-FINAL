@@ -126,7 +126,12 @@ class PixMasterService
     private function limparTexto($texto, $limite)
     {
         // Remove acentos e caracteres especiais, converte para MAIUSCULAS
-        $texto = @iconv('UTF-8', 'ASCII//TRANSLIT', $texto);
+        $textoConvertido = iconv('UTF-8', 'ASCII//TRANSLIT', $texto);
+        
+        if ($textoConvertido !== false) {
+            $texto = $textoConvertido;
+        }
+        
         $texto = preg_replace('/[^a-zA-Z0-9 ]/', '', $texto);
         return strtoupper(substr(trim($texto), 0, $limite));
     }

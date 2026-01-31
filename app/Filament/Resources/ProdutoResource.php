@@ -15,7 +15,11 @@ class ProdutoResource extends Resource
 {
     protected static ?string $model = Produto::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-archive-box';
+    protected static ?string $navigationIcon = 'heroicon-o-beaker';
+    protected static ?string $navigationLabel = 'Produtos (Legado)';
+    protected static ?string $navigationGroup = '📦 Almoxarifado';
+    protected static ?int $navigationSort = 99;
+    protected static bool $shouldRegisterNavigation = false; // Oculto - usar EstoqueResource
 
     public static function form(Forms\Form $form): Forms\Form
     {
@@ -32,14 +36,35 @@ class ProdutoResource extends Resource
             TextColumn::make('id')->label('#')->sortable(),
             TextColumn::make('nome')->searchable()->sortable(),
             TextColumn::make('preco_venda')->money('BRL')->sortable(),
-        ])->defaultSort('id', 'desc');
+        ])
+            ->defaultSort('id', 'desc')
+            ->actions([
+                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
+                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
+                Tables\Actions\Action::make('share')
+                    ->label('')
+                    ->tooltip('Compartilhar')
+                    ->icon('heroicon-o-share')
+                    ->color('success')
+                    ->action(function (Produto $record) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Link Copiado!')
+                            ->body(url("/admin/produtos/{$record->id}"))
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
 
     public static function getRelations(): array
     {
-        return [
-            MovimentacoesRelationManager::class,
-        ];
+        return [];
     }
 
     public static function getPages(): array

@@ -1,28 +1,49 @@
-<x-filament::widget class="w-full col-span-full">
-    <div class="relative w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 shadow-lg text-white p-8 overflow-hidden">
-        {{-- Gradiente de Fundo --}}
-        <div class='absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-500'></div>
-        
-        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 w-full">
-            <div class='text-center md:text-left'>
-                <h1 class="text-3xl font-bold mb-1">
-                    @php $h = date('H'); $s = $h<12?'Bom dia':($h<18?'Boa tarde':'Boa noite'); @endphp
-                    {{ $s }}, {{ auth()->user()->name ?? 'Allisson' }}!
-                </h1>
-                <p class='mt-1 text-blue-100 opacity-90'>
-                    Hoje é {{ date('l, d \d\e F \d\e Y') }}
-                </p>
+<x-filament::widget>
+    <x-filament::card>
+        <div
+            class="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl text-white shadow-lg">
+            <div class="flex items-center gap-6">
+                <!-- Saudação -->
+                <div class="border-r border-white/20 pr-6 mr-2">
+                    <h1 class="text-2xl font-bold">{{ $greeting }}, {{ explode(' ', $userName)[0] }}!</h1>
+                    <p class="text-sm opacity-90">Bom trabalho hoje 🚀</p>
+                </div>
+
+                <!-- Clima -->
+                <div class="flex items-center gap-4">
+                    <div class="text-5xl animate-pulse">
+                        {{ $icon ?? '⛅' }}
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold">{{ $temp ?? '--' }}°C</h2>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium opacity-90">{{ $condition ?? 'Carregando...' }}</span>
+                            <span class="text-xs opacity-75 flex items-center gap-1">
+                                <x-heroicon-o-map-pin class="w-3 h-3" />
+                                {{ $city }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        <div class='hidden md:block'>
-            <p class="text-2xl font-black italic tracking-widest opacity-80">DEUS SEJA LOUVADO</p>
-        </div>
-        <div class='flex items-center gap-4 bg-white/10 px-6 py-3 rounded-lg backdrop-blur-sm'>
-            <div class='text-right'>
-                <div class='text-4xl font-bold'>28°C</div>
-                <div class='text-sm text-blue-50'>Ribeirão Preto</div>
+
+            <div class="hidden sm:flex flex-col gap-2 text-right">
+                <div class="flex items-center justify-end gap-2">
+                    <span class="text-sm opacity-80">Umidade</span>
+                    <span class="font-bold flex items-center gap-1">
+                        💧 {{ $humidity ?? '--' }}%
+                    </span>
+                </div>
+                <div class="flex items-center justify-end gap-2">
+                    <span class="text-sm opacity-80">Vento</span>
+                    <span class="font-bold flex items-center gap-1">
+                        🌬️ {{ $wind ?? '--' }} km/h
+                    </span>
+                </div>
+                <div class="text-xs opacity-60 mt-2">
+                    Atualizado agorinha
+                </div>
             </div>
-            <x-heroicon-s-sun class='w-12 h-12 text-yellow-300' />
         </div>
-    </div>
-</div>
+    </x-filament::card>
 </x-filament::widget>

@@ -7,9 +7,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\MediaLibrary\HasMedia;
+use App\Traits\HasArquivos;
 
-class Orcamento extends Model
+class Orcamento extends Model implements HasMedia
 {
+    use HasArquivos;
     use SoftDeletes;
 
     public static $globallySearchableAttributes = ['numero', 'cadastro.nome'];
@@ -25,14 +28,16 @@ class Orcamento extends Model
     }
 
     protected $fillable = [
-        'numero', 
-        'cadastro_id', 
-        'vendedor_id', 
-        'loja_id',     
-        'data_orcamento', 
-        'data_validade', 
-        'status', 
-        'valor_total', 
+        'numero',
+        'cadastro_id',
+        'vendedor_id',
+        'loja_id',
+        'data_orcamento',
+        'data_validade',
+        'status',
+        'valor_total',
+        'valor_final_editado',    // Valor final após edição
+        'desconto_prestador',     // Diferença (valor_total - valor_editado)
         'observacoes',
         'numero_orcamento',
         'comissao_vendedor',
@@ -46,6 +51,8 @@ class Orcamento extends Model
         'data_orcamento' => 'date',
         'data_validade' => 'date',
         'valor_total' => 'decimal:2',
+        'valor_final_editado' => 'decimal:2',
+        'desconto_prestador' => 'decimal:2',
         'comissao_vendedor' => 'decimal:2',
         'comissao_loja' => 'decimal:2',
         'pdf_incluir_pix' => 'boolean',
@@ -58,7 +65,7 @@ class Orcamento extends Model
         // Recalcula a soma dos itens vinculados
         $total = $this->itens()->sum('subtotal');
         $this->valor_total = $total;
-        
+
         // Salva sem disparar eventos novamente para evitar loop infinito
         $this->saveQuietly();
     }
@@ -84,7 +91,7 @@ class Orcamento extends Model
     {
         return $this->hasMany(\App\Models\OrcamentoItem::class, 'orcamento_id');
     }
-    
+
     public function ordemServico(): HasOne
     {
         return $this->hasOne(\App\Models\OrdemServico::class);
@@ -110,7 +117,7 @@ class Orcamento extends Model
     {
         $ano = date('Y');
         $ultimo = self::withTrashed()->whereYear('created_at', $ano)->latest('id')->first();
-        
+
         $sequencia = 1;
         if ($ultimo && preg_match('/\.(\d+)$/', $ultimo->numero, $matches)) {
             $sequencia = intval($matches[1]) + 1;
@@ -118,7 +125,8 @@ class Orcamento extends Model
         do {
             $numero = $ano . '.' . str_pad($sequencia, 4, '0', STR_PAD_LEFT);
             $existe = self::withTrashed()->where('numero', $numero)->exists();
-            if ($existe) $sequencia++;
+            if ($existe)
+                $sequencia++;
         } while ($existe);
         return $numero;
     }
