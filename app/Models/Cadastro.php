@@ -6,12 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasArquivos;
 use Spatie\MediaLibrary\HasMedia;
 
 class Cadastro extends Model implements HasMedia
 {
-    use SoftDeletes, HasArquivos;
+    use HasFactory, SoftDeletes, HasArquivos;
 
     // CONFIGURAÇÃO DA BUSCA GLOBAL
     public static $globallySearchableAttributes = ['nome', 'email', 'telefone', 'cpf_cnpj'];

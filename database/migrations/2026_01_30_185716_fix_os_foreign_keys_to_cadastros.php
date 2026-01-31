@@ -10,34 +10,49 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('ordens_servico', function (Blueprint $table) {
-            // Tenta remover chaves antigas se existirem
-            try {
+        // Primeiro, remove colunas antigas se existirem
+        if (Schema::hasColumn('ordens_servico', 'loja_id')) {
+            Schema::table('ordens_servico', function (Blueprint $table) {
                 $table->dropForeign(['loja_id']);
                 $table->dropColumn('loja_id');
-            } catch (\Exception $e) {
-            }
+            });
+        }
 
-            try {
+        if (Schema::hasColumn('ordens_servico', 'vendedor_id')) {
+            Schema::table('ordens_servico', function (Blueprint $table) {
                 $table->dropForeign(['vendedor_id']);
                 $table->dropColumn('vendedor_id');
-            } catch (\Exception $e) {
-            }
-        });
+            });
+        }
 
-        Schema::table('ordens_servico', function (Blueprint $table) {
-            // Recria apontando para CADASTROS (Tabela Unificada)
-            $table->foreignId('loja_id')->nullable()->constrained('cadastros')->nullOnDelete();
-            $table->foreignId('vendedor_id')->nullable()->constrained('cadastros')->nullOnDelete();
-        });
+        // Depois, recria apontando para CADASTROS (Tabela Unificada)
+        if (!Schema::hasColumn('ordens_servico', 'loja_id')) {
+            Schema::table('ordens_servico', function (Blueprint $table) {
+                $table->foreignId('loja_id')->nullable()->constrained('cadastros')->nullOnDelete();
+            });
+        }
+
+        if (!Schema::hasColumn('ordens_servico', 'vendedor_id')) {
+            Schema::table('ordens_servico', function (Blueprint $table) {
+                $table->foreignId('vendedor_id')->nullable()->constrained('cadastros')->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('ordens_servico', function (Blueprint $table) {
-            $table->dropForeign(['loja_id']);
-            $table->dropForeign(['vendedor_id']);
-            $table->dropColumn(['loja_id', 'vendedor_id']);
-        });
+        if (Schema::hasColumn('ordens_servico', 'loja_id')) {
+            Schema::table('ordens_servico', function (Blueprint $table) {
+                $table->dropForeign(['loja_id']);
+                $table->dropColumn('loja_id');
+            });
+        }
+
+        if (Schema::hasColumn('ordens_servico', 'vendedor_id')) {
+            Schema::table('ordens_servico', function (Blueprint $table) {
+                $table->dropForeign(['vendedor_id']);
+                $table->dropColumn('vendedor_id');
+            });
+        }
     }
 };
