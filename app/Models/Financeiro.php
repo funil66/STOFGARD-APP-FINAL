@@ -64,6 +64,7 @@ class Financeiro extends Model implements HasMedia
         'pix_data_pagamento',
         'pix_valor_pago',
         'link_pagamento_hash',
+        'extra_attributes',
     ];
 
     protected $casts = [
@@ -80,6 +81,7 @@ class Financeiro extends Model implements HasMedia
         'pix_valor_pago' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'extra_attributes' => 'array',
     ];
 
     // Relacionamentos
@@ -120,7 +122,7 @@ class Financeiro extends Model implements HasMedia
             return false;
         }
 
-        return $this->data_vencimento->isPast();
+        return \Carbon\Carbon::parse($this->data_vencimento)->isPast();
     }
 
     // Mutators

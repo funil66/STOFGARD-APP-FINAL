@@ -86,7 +86,7 @@ class OrdemServicoResource extends Resource
                                 Group::make()->schema([
                                     Select::make('tipo_servico')
                                         ->label('Serviço Principal')
-                                        ->options(\App\Enums\ServiceType::class)
+                                        ->options(\App\Services\ServiceTypeManager::getOptions())
                                         ->required()
                                         ->live()
                                         ->afterStateUpdated(function ($state, callable $set) {
@@ -265,12 +265,9 @@ class OrdemServicoResource extends Resource
                 Tables\Columns\TextColumn::make('status_garantia')
                     ->label('Garantia')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'ativa' => 'success',   // Verde
-                        'vencida' => 'danger',  // Vermelho
-                        'pendente' => 'warning', // Amarelo
-                        default => 'gray',
-                    })
+                    ->color(fn(string $state): string => \App\Services\ServiceTypeManager::getColor($state))
+                    ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
+                    ->sortable()
                     ->formatStateUsing(fn(?OrdemServico $record, string $state): string => match ($state) {
                         'ativa' => '✅ Até ' . ($record->data_fim_garantia?->format('d/m/Y') ?? ''),
                         'vencida' => '🔴 Venceu em ' . ($record->data_fim_garantia?->format('d/m/Y') ?? ''),

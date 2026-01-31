@@ -33,7 +33,7 @@ class Configuracoes extends Page implements HasForms
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
         // chaves que são Arrays/Repeaters e precisam ser decodificadas do JSON
-        $jsonFields = ['catalogo_servicos_v2', 'financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento'];
+        $jsonFields = ['catalogo_servicos_v2', 'financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento', 'system_service_types'];
         foreach ($jsonFields as $key) {
             if (isset($settings[$key]) && is_string($settings[$key])) {
                 $decoded = json_decode($settings[$key], true);
@@ -47,6 +47,12 @@ class Configuracoes extends Page implements HasForms
         if (empty($settings['catalogo_servicos_v2'])) {
             $settings['catalogo_servicos_v2'] = $this->getCatalogoMassivo();
         }
+
+        // AUTO-SEED: Tipos de Serviço (Carga inicial baseada no Enum)
+        if (empty($settings['system_service_types'])) {
+            $settings['system_service_types'] = \App\Services\ServiceTypeManager::getAll()->values()->toArray();
+        }
+
         $this->form->fill($settings);
     }
     public function form(Form $form): Form
@@ -183,6 +189,46 @@ class Configuracoes extends Page implements HasForms
                                             )
                                             ->defaultItems(0)
                                             ->addActionLabel('Adicionar Email'),
+                                    ]),
+                                Section::make('Tipos de Serviço (Personalização de Nicho)')
+                                    ->description('Personalize os nomes e cores dos serviços para seu nicho (Ex: "Higienização" -> "Manutenção"). ATENÇÃO: Os identificadores (slugs) são fixos para manter a lógica do sistema.')
+                                    ->schema([
+                                        Repeater::make('system_service_types')
+                                            ->label('Tipos de Serviço')
+                                            ->schema([
+                                                TextInput::make('slug')
+                                                    ->label('Identificador Interno')
+                                                    ->disabled()
+                                                    ->dehydrated()
+                                                    ->required()
+                                                    ->columnSpan(1),
+                                                TextInput::make('label')
+                                                    ->label('Nome Exibido (Label)')
+                                                    ->required()
+                                                    ->columnSpan(2),
+                                                Select::make('color')
+                                                    ->label('Cor')
+                                                    ->options([
+                                                        'primary' => 'Primary',
+                                                        'secondary' => 'Secondary',
+                                                        'success' => 'Success',
+                                                        'warning' => 'Warning',
+                                                        'danger' => 'Danger',
+                                                        'gray' => 'Gray',
+                                                        'info' => 'Info',
+                                                    ])
+                                                    ->required()
+                                                    ->columnSpan(1),
+                                                TextInput::make('icon')
+                                                    ->label('Ícone (Heroicon)')
+                                                    ->placeholder('heroicon-o-sparkles')
+                                                    ->columnSpan(2),
+                                            ])
+                                            ->columns(6)
+                                            ->addable(false) // Não permitir adicionar novos tipos arbitrariamente, apenas editar os existentes para não quebrar lógica
+                                            ->deletable(false)
+                                            ->reorderable(true)
+                                            ->itemLabel(fn(array $state): ?string => $state['label'] ?? null),
                                     ]),
                             ]),
 

@@ -39,6 +39,7 @@ class Agenda extends Model implements HasMedia
         'observacoes',
         'criado_por',
         'atualizado_por',
+        'extra_attributes',
     ];
 
     // Unified Cadastro Accessor
@@ -95,6 +96,7 @@ class Agenda extends Model implements HasMedia
         'dia_inteiro' => 'boolean',
         'lembrete_enviado' => 'boolean',
         'minutos_antes_lembrete' => 'integer',
+        'extra_attributes' => 'array',
     ];
 
     // Relacionamentos

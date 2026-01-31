@@ -39,7 +39,7 @@ class TabelaPrecoResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('tipo_servico')
                             ->label('Tipo de Serviço')
-                            ->options(\App\Enums\ServiceType::class)
+                            ->options(\App\Services\ServiceTypeManager::getOptions())
                             ->required()
                             ->live()
                             ->columnSpan(1),
@@ -114,8 +114,8 @@ class TabelaPrecoResource extends Resource
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn(string $state): string => \App\Enums\ServiceType::tryFrom($state)?->getColor() ?? 'gray')
-                    ->formatStateUsing(fn(string $state): string => \App\Enums\ServiceType::tryFrom($state)?->getShortLabel() ?? $state)
+                    ->color(fn(string $state): string => \App\Services\ServiceTypeManager::getColor($state))
+                    ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
                     ->sortable()
                     ->searchable(),
 
@@ -166,7 +166,7 @@ class TabelaPrecoResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('tipo_servico')
                     ->label('Tipo de Serviço')
-                    ->options(\App\Enums\ServiceType::class),
+                    ->options(\App\Services\ServiceTypeManager::getOptions()),
 
                 Tables\Filters\SelectFilter::make('categoria')
                     ->label('Categoria')

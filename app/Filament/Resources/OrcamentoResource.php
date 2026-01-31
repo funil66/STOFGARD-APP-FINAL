@@ -205,7 +205,7 @@ class OrcamentoResource extends Resource
 
                                 Forms\Components\Select::make('servico_tipo')
                                     ->label('Tipo de Serviço')
-                                    ->options(\App\Enums\ServiceType::class)
+                                    ->options(\App\Services\ServiceTypeManager::getOptions())
                                     ->required()
                                     ->default('higienizacao')
                                     ->live()
@@ -435,6 +435,12 @@ class OrcamentoResource extends Resource
                     ->color('primary')
                     ->copyable(), // Permite copiar o número com 1 clique
 
+                Tables\Columns\TextColumn::make('servico_tipo')
+                    ->label('Tipo')
+                    ->badge()
+                    ->color(fn(string $state): string => \App\Services\ServiceTypeManager::getColor($state))
+                    ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('cliente.nome')
                     ->label('Cliente')
                     ->searchable()
@@ -568,6 +574,7 @@ class OrcamentoResource extends Resource
                                 'status' => 'pendente',
                                 'valor_total' => $record->valor_total,
                                 'observacoes' => $data['observacoes_os'] ?? $record->observacoes,
+                                'extra_attributes' => $record->extra_attributes, // COPY DYNAMIC ATTRIBUTES
                                 'criado_por' => auth()->user()->name ?? auth()->id(),
                             ];
 
@@ -594,12 +601,7 @@ class OrcamentoResource extends Resource
                                 \App\Models\Agenda::create([
                                     'titulo' => sprintf(
                                         '%s - %s',
-                                        match ($record->tipo_servico ?? 'servico') {
-                                            'higienizacao' => '🧼 Higienização',
-                                            'impermeabilizacao' => '💧 Impermeabilização',
-                                            'higienizacao_impermeabilizacao' => '🧼💧 Hig + Imper',
-                                            default => 'Serviço',
-                                        },
+                                        \App\Services\ServiceTypeManager::getLabel($record->tipo_servico ?? 'servico'),
                                         $cadastro?->nome ?? 'Cliente'
                                     ),
                                     'descricao' => $record->descricao_servico ?? ('Conforme orçamento ' . $record->numero),
@@ -613,12 +615,8 @@ class OrcamentoResource extends Resource
                                     'local' => $enderecoCompleto ?: 'Endereço não informado',
                                     'endereco_completo' => $enderecoCompleto,
                                     'observacoes' => $data['observacoes_os'] ?? ('Agendado automaticamente - ' . $record->numero),
-                                    'cor' => match ($record->tipo_servico ?? 'servico') {
-                                        'higienizacao' => '#3b82f6',
-                                        'impermeabilizacao' => '#f59e0b',
-                                        'higienizacao_impermeabilizacao' => '#10b981',
-                                        default => '#6b7280',
-                                    },
+                                    'extra_attributes' => $record->extra_attributes, // COPY DYNAMIC ATTRIBUTES
+                                    'cor' => \App\Services\ServiceTypeManager::getColor($record->tipo_servico ?? 'servico'),
                                     'criado_por' => auth()->id(),
                                 ]);
                             }
@@ -640,6 +638,7 @@ class OrcamentoResource extends Resource
                                 'cadastro_id' => $record->cadastro_id,
                                 'ordem_servico_id' => $os->id,
                                 'orcamento_id' => $record->id,
+                                'extra_attributes' => $record->extra_attributes, // COPY DYNAMIC ATTRIBUTES
                             ]);
 
                             // 4. Atualizar orçamento com link para OS
