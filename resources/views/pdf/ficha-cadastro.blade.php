@@ -1,25 +1,99 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>FICHA CADASTRAL - {{ $record->nome }}</title>
     <style>
-        body { font-family: sans-serif; font-size: 12px; color: #334155; margin: 0; }
-        .header { background-color: #1e293b; color: white; padding: 20px; display: flex; align-items: center; justify-content: space-between; }
-        .logo { font-size: 24px; font-weight: bold; text-transform: uppercase; }
-        .title { font-size: 18px; opacity: 0.9; }
-        .section-title { background-color: #f1f5f9; color: #1e293b; padding: 8px; font-weight: bold; margin-top: 20px; border-left: 4px solid #2563EB; font-size: 14px; }
-        .row { display: table; width: 100%; margin-top: 10px; }
-        .col { display: table-cell; padding: 5px; }
-        .label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: bold; }
-        .value { font-size: 13px; font-weight: 500; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; }
-        .meta { font-size: 11px; color: #9ca3af; }
+        body {
+            font-family: sans-serif;
+            font-size: 12px;
+            color: #334155;
+            margin: 0;
+        }
+
+        .header {
+            background-color: #1e293b;
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .title {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .section-title {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            padding: 8px;
+            font-weight: bold;
+            margin-top: 20px;
+            border-left: 4px solid #2563EB;
+            font-size: 14px;
+        }
+
+        .row {
+            display: table;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .col {
+            display: table-cell;
+            padding: 5px;
+        }
+
+        .label {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .value {
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 2px;
+        }
+
+        .meta {
+            font-size: 11px;
+            color: #9ca3af;
+        }
     </style>
 </head>
+
 <body>
-    <div class="header" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 20px 40px; display:flex; align-items:center; justify-content:space-between">
+    <div class="header"
+        style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 20px 40px; display:flex; align-items:center; justify-content:space-between">
         <div class="logo-container">
-            <img src="{{ public_path('images/logo_stofgard.png') }}" alt="STOFGARD" class="logo-img" style="max-height:70px" />
+            @php
+                $logoPath = null;
+                if (settings()->logo()) {
+                    $logoPath = storage_path('app/public/' . str_replace('/storage/', '', settings()->logo()));
+                } else {
+                    $testPath = public_path('images/logo.png');
+                    if (file_exists($testPath))
+                        $logoPath = $testPath;
+                }
+                $nomeSistema = settings('nome_sistema', 'Empresa');
+            @endphp
+            @if($logoPath && file_exists($logoPath))
+                <img src="{{ $logoPath }}" alt="{{ $nomeSistema }}" class="logo-img" style="max-height:70px" />
+            @else
+                <div style="font-size:24px;font-weight:700">{{ $nomeSistema }}</div>
+            @endif
         </div>
         <div class="doc-title">
             <div class="h1-title">FICHA CADASTRAL</div>
@@ -85,7 +159,7 @@
         </div>
     </div>
 
-    @if(in_array($record->tipo, ['loja','parceiro','arquiteto','vendedor']))
+    @if(in_array($record->tipo, ['loja', 'parceiro', 'arquiteto', 'vendedor']))
         <div class="section-title">4. FINANCEIRO</div>
         <div class="row">
             <div class="col" style="width: 30%">
@@ -100,7 +174,9 @@
     @endif
 
     <div style="margin-top: 40px; text-align: center; color: #94a3b8; font-size: 10px;">
-        <div style="border-top: 1px solid #e2e8f0; width: 60%; margin: 0 auto; padding-top: 6px;">Assinatura / Responsável</div>
+        <div style="border-top: 1px solid #e2e8f0; width: 60%; margin: 0 auto; padding-top: 6px;">Assinatura /
+            Responsável</div>
     </div>
 </body>
+
 </html>

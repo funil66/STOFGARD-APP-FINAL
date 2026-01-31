@@ -22,6 +22,8 @@ class TabelaPreco extends Model
         'ativo',
         'observacoes',
         'configuracao_id',
+        'descricao_tecnica',
+        'dias_garantia',
     ];
 
     protected $casts = [
@@ -30,6 +32,7 @@ class TabelaPreco extends Model
         'preco_vista' => 'decimal:2',
         'preco_prazo' => 'decimal:2',
         'ativo' => 'boolean',
+        'dias_garantia' => 'integer',
     ];
 
     // Relacionamentos

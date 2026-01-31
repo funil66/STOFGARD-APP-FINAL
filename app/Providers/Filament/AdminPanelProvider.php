@@ -34,7 +34,13 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight('3rem')
             ->favicon(asset('images/logo.png'))
             ->sidebarCollapsibleOnDesktop(false)
-            ->navigationItems([])
+            ->navigationItems([
+                \Filament\Navigation\NavigationItem::make('Site p/ Clientes')
+                    ->url('/solicitar-orcamento', shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-globe-alt')
+                    ->group('Comercial')
+                    ->sort(99),
+            ])
             ->colors([
                 'primary' => Color::hex('#2563eb'), // Azul royal do logo Stofgard
                 'secondary' => Color::hex('#06b6d4'), // Azul ciano do logo

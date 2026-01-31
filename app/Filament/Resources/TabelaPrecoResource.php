@@ -24,7 +24,10 @@ class TabelaPrecoResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Tabela de Preços';
 
-    protected static ?string $navigationGroup = 'Configurações';
+    // Submódulo de Configurações
+    protected static ?string $slug = 'configuracoes/tabela-precos';
+
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 100;
 
@@ -254,16 +257,11 @@ class TabelaPrecoResource extends Resource
             ]);
     }
 
-    // Restrição de acesso - pode ser ajustada depois
+    /**
+     * Restrição de acesso: apenas administradores
+     */
     public static function canAccess(): bool
     {
-        $user = auth()->user();
-        if (!$user) {
-            return false;
-        }
-
-        // Apenas Admin ou usuário específico
-        return $user->email === 'allisson@stofgard.com.br'
-            || $user->is_admin === true;
+        return settings()->isAdmin(auth()->user());
     }
 }

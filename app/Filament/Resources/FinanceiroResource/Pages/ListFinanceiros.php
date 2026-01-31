@@ -16,6 +16,24 @@ class ListFinanceiros extends ListRecords
             Actions\CreateAction::make()
                 ->label('Nova Transação')
                 ->icon('heroicon-o-plus'),
+
+            Actions\Action::make('categorias')
+                ->label('Categorias')
+                ->icon('heroicon-o-tag')
+                ->color('gray')
+                ->url(url('/admin/financeiros/categorias')),
+
+            Actions\Action::make('transacoes')
+                ->label('Transações')
+                ->icon('heroicon-o-currency-dollar')
+                ->color('gray')
+                ->url(url('/admin/financeiros/transacoes')),
+
+            Actions\Action::make('notas_fiscais')
+                ->label('Notas Fiscais')
+                ->icon('heroicon-o-document-currency-dollar')
+                ->color('gray')
+                ->url(url('/admin/financeiros/notas-fiscais')),
         ];
     }
 

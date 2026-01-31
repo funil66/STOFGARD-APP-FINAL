@@ -101,14 +101,11 @@ class ConfiguracaoResource extends Resource
         ];
     }
 
-    // Restrição de acesso: apenas admin (`is_admin`) ou usuário principal `allisson@stofgard.com.br`
+    /**
+     * Restrição de acesso: apenas administradores
+     */
     public static function canAccess(): bool
     {
-        $user = auth()->user();
-        if (!$user) {
-            return false;
-        }
-
-        return ($user->is_admin === true) || ($user->email === 'allisson@stofgard.com.br');
+        return settings()->isAdmin(auth()->user());
     }
 }

@@ -23,6 +23,12 @@ class NotaFiscalResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Notas Fiscais';
 
+    // Submódulo do Financeiro
+    protected static ?string $slug = 'financeiros/notas-fiscais';
+
+    // Ocultar da navegação principal
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 8;
 
     public static function form(Form $form): Form

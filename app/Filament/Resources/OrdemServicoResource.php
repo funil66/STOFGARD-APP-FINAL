@@ -94,12 +94,14 @@ class OrdemServicoResource extends Resource
                                         ->required()
                                         ->live()
                                         ->afterStateUpdated(function ($state, callable $set) {
-                                            if ($state === 'higienizacao') {
-                                                $set('descricao_servico', "HIGIENIZAÇÃO\nBiossanitização Profunda: Extração de alta pressão para eliminação de biofilmes, ácaros e bactérias, garantindo assepsia total das fibras e neutralização de odores.");
-                                                $set('dias_garantia', 7);
-                                            } elseif ($state === 'impermeabilizacao') {
-                                                $set('descricao_servico', "IMPERMEABILIZAÇÃO\nEscudo hidrofóbico invisível que repele líquidos e óleos, preservando a cor e textura original do tecido. Proteção contra manchas e facilitação da limpeza.");
-                                                $set('dias_garantia', 365);
+                                            // Busca dados dinamicamente da tabela de preços
+                                            $servico = \App\Models\TabelaPreco::where('tipo_servico', $state)
+                                                ->whereNotNull('descricao_tecnica')
+                                                ->first();
+
+                                            if ($servico) {
+                                                $set('descricao_servico', $servico->descricao_tecnica);
+                                                $set('dias_garantia', $servico->dias_garantia);
                                             }
                                         }),
 
@@ -266,13 +268,13 @@ class OrdemServicoResource extends Resource
                         'pendente' => 'warning', // Amarelo
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(OrdemServico $record, string $state): string => match ($state) {
+                    ->formatStateUsing(fn(?OrdemServico $record, string $state): string => match ($state) {
                         'ativa' => '✅ Até ' . ($record->data_fim_garantia?->format('d/m/Y') ?? ''),
                         'vencida' => '🔴 Venceu em ' . ($record->data_fim_garantia?->format('d/m/Y') ?? ''),
                         'pendente' => '🕒 Aguardando Conclusão',
                         default => '-',
                     })
-                    ->visible(fn(OrdemServico $record) => $record->dias_garantia > 0),
+                    ->visible(fn(?OrdemServico $record) => $record && $record->dias_garantia > 0),
 
                 Tables\Columns\TextColumn::make('valor_total')
                     ->money('BRL')
@@ -322,11 +324,69 @@ class OrdemServicoResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
 
+                Tables\Actions\Action::make('receber')
+                    ->label('Receber')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->color('success')
+                    ->visible(fn(OrdemServico $record) => $record->status !== 'cancelada' && ($record->financeiro?->status !== 'pago'))
+                    ->form([
+                        Forms\Components\DatePicker::make('data_pagamento')
+                            ->label('Data do Pagamento')
+                            ->default(now())
+                            ->required(),
+                        Forms\Components\TextInput::make('valor_pago')
+                            ->label('Valor Recebido (R$)')
+                            ->default(fn(OrdemServico $record) => $record->valor_total)
+                            ->numeric()
+                            ->itemType('currency')
+                            ->required(),
+                        Forms\Components\Select::make('forma_pagamento')
+                            ->label('Forma de Pagamento')
+                            ->options([
+                                'pix' => 'PIX',
+                                'dinheiro' => 'Dinheiro',
+                                'cartao_credito' => 'Cartão de Crédito',
+                                'cartao_debito' => 'Cartão de Débito',
+                                'boleto' => 'Boleto',
+                            ])
+                            ->required(),
+                    ])
+                    ->action(function (OrdemServico $record, array $data) {
+                        $financeiro = $record->financeiro;
+
+                        // Se não existir financeiro, cria um (Safety Net)
+                        if (!$financeiro) {
+                            $financeiro = \App\Models\Financeiro::create([
+                                'cadastro_id' => $record->cliente_id ?? null, // Usa cliente_id se cadastro_id for nulo
+                                'ordem_servico_id' => $record->id,
+                                'tipo' => 'entrada',
+                                'descricao' => "Recebimento OS #{$record->numero_os}",
+                                'valor' => $record->valor_total,
+                                'data_vencimento' => $record->data_conclusao ?? now(),
+                                'status' => 'pendente',
+                            ]);
+                        }
+
+                        // Atualiza o Financeiro
+                        $financeiro->update([
+                            'status' => 'pago',
+                            'valor_pago' => $data['valor_pago'],
+                            'data_pagamento' => $data['data_pagamento'],
+                            'forma_pagamento' => $data['forma_pagamento'],
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Pagamento Registrado!')
+                            ->body("O financeiro foi atualizado com sucesso.")
+                            ->success()
+                            ->send();
+                    }),
+
                 Tables\Actions\Action::make('concluir')
                     ->label('Concluir')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn(OrdemServico $record) => $record->status !== 'concluida')
+                    ->visible(fn(?OrdemServico $record) => $record && $record->status !== 'concluida')
                     ->requiresConfirmation()
                     ->action(function (OrdemServico $record) {
                         $record->update(['status' => 'concluida']);
@@ -341,7 +401,7 @@ class OrdemServicoResource extends Resource
                     ->tooltip('Baixar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('info')
-                    ->url(fn(OrdemServico $record) => route('os.pdf', $record))
+                    ->url(fn(?OrdemServico $record) => $record ? route('os.pdf', $record) : null)
                     ->openUrlInNewTab(),
 
                 Tables\Actions\Action::make('share')

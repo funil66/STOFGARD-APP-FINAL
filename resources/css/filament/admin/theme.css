@@ -1,21 +1,43 @@
-/* Central theme file for Filament admin: use for all color/layout variables (REGRA GERAL) */
+/* =====================================================
+   STOFGARD 2026 - Filament Admin Theme
+   Central theme file for all color/layout variables
+   ===================================================== */
+
+/* Import responsive utilities */
+@import '../../responsive.css';
+
 :root {
-  --brand-primary: #2563eb; /* Stofgard royal blue */
-  --brand-secondary: #06b6d4; /* ciano */
+  --brand-primary: #2563eb;
+  /* Stofgard royal blue */
+  --brand-secondary: #06b6d4;
+  /* ciano */
   --brand-gray: #64748b;
   --brand-warning: #d97706;
 }
 
 /* Example utility classes to keep visuals consistent */
-.text-brand-primary { color: var(--brand-primary) !important; }
-.bg-brand-primary { background-color: var(--brand-primary) !important; }
-.border-brand-primary { border-color: var(--brand-primary) !important; }
+.text-brand-primary {
+  color: var(--brand-primary) !important;
+}
+
+.bg-brand-primary {
+  background-color: var(--brand-primary) !important;
+}
+
+.border-brand-primary {
+  border-color: var(--brand-primary) !important;
+}
 
 /* Header tweaks consistent with header view */
-.fi-logo { height: 3rem; }
+.fi-logo {
+  height: 3rem;
+}
 
 /* Dashboard shortcuts card adjustments to match design */
-.fw-shortcut-card { border-radius: 20px; box-shadow: 0 4px 16px rgba(16,24,40,0.04); }
+.fw-shortcut-card {
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.04);
+}
 
 /* Ensure primary color utilities are available to blade components */
 .btn-primary {
@@ -23,4 +45,99 @@
   color: #fff;
   border-radius: 0.5rem;
   padding: 0.5rem 0.75rem;
+}
+
+/* ========================================
+   DARK MODE FIXES - Global Search & UI
+   ======================================== */
+
+/* Global Search Results - Improved visibility */
+.dark .fi-global-search-result-title,
+.dark .fi-global-search-result-details,
+.dark .fi-global-search-result-details-label,
+.dark .fi-global-search-result-details-value {
+  color: rgb(229, 231, 235) !important;
+  /* gray-200 */
+}
+
+/* Ensure subtitles and secondary text are visible */
+.dark .fi-global-search-result-details dd,
+.dark .text-sm.text-gray-500,
+.dark .text-gray-600,
+.dark .text-gray-700 {
+  color: rgb(156, 163, 175) !important;
+  /* gray-400 - better contrast */
+}
+
+/* Fix for muted/secondary text in dark mode */
+.dark .text-gray-500 {
+  color: rgb(156, 163, 175) !important;
+  /* gray-400 */
+}
+
+/* Buttons and actions visibility */
+.dark button,
+.dark a.fi-link,
+.dark .fi-btn {
+  color: rgb(229, 231, 235) !important;
+}
+
+/* Badges and labels in search results */
+.dark .fi-badge,
+.dark .fi-badge-label {
+  color: rgb(229, 231, 235) !important;
+}
+
+/* Table cells and content */
+.dark td,
+.dark th,
+.dark .fi-ta-text {
+  color: rgb(229, 231, 235) !important;
+}
+
+/* Form labels and inputs */
+.dark label,
+.dark .fi-fo-field-wrp-label {
+  color: rgb(229, 231, 235) !important;
+}
+
+/* Placeholder text */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgb(107, 114, 128) !important;
+  /* gray-500 */
+}
+
+/* Cards and panels */
+.dark .fi-section-header-heading,
+.dark .fi-section-description {
+  color: rgb(229, 231, 235) !important;
+}
+
+/* Ensure all text in dark mode has minimum contrast */
+.dark {
+  --tw-prose-body: rgb(229, 231, 235);
+  --tw-prose-headings: rgb(243, 244, 246);
+  --tw-prose-links: rgb(96, 165, 250);
+  --tw-prose-bold: rgb(243, 244, 246);
+  --tw-prose-counters: rgb(156, 163, 175);
+  --tw-prose-bullets: rgb(75, 85, 99);
+}
+
+/* Specific fix for search result details (address, dates, etc) */
+.dark .fi-global-search-result-details-item,
+.dark [class*="text-"] {
+  color: rgb(209, 213, 219) !important;
+  /* gray-300 */
+}
+
+/* Make sure links are visible and distinguishable */
+.dark a:not(.fi-btn) {
+  color: rgb(96, 165, 250) !important;
+  /* blue-400 */
+}
+
+.dark a:not(.fi-btn):hover {
+  color: rgb(147, 197, 253) !important;
+  /* blue-300 */
 }

@@ -32,7 +32,7 @@
                 </x-filament::badge>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div class="responsive-grid-cards">
                 @foreach($resultados as $resultado)
                         <div
                             class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow duration-300">
@@ -94,7 +94,8 @@
                             </div>
 
                             {{-- Ações --}}
-                            <div class="px-4 pb-4 flex gap-2 justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
+                            <div
+                                class="px-3 md:px-4 pb-3 md:pb-4 flex flex-col sm:flex-row gap-2 justify-end border-t border-gray-100 dark:border-gray-700 pt-2 md:pt-3">
                                 <a href="{{ $resultado['view_url'] }}"
                                     class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
                                     <x-heroicon-o-eye class="w-4 h-4" />
@@ -140,7 +141,7 @@
                     </p>
 
                     {{-- Cards de Dicas --}}
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-2xl mx-auto text-left">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-4 max-w-2xl mx-auto text-left">
                         <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
                             <div class="text-2xl mb-2">👤</div>
                             <h4 class="font-semibold text-indigo-900 dark:text-indigo-100 text-sm">Cadastros</h4>

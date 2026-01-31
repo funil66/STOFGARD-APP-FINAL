@@ -13,6 +13,19 @@ class ListEstoques extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('check_stock')
+                ->label('Verificar Níveis')
+                ->icon('heroicon-o-scale')
+                ->color('info')
+                ->action(function () {
+                    \Illuminate\Support\Facades\Artisan::call('estoque:alert-low');
+
+                    \Filament\Notifications\Notification::make()
+                        ->title('Verificação Concluída')
+                        ->body('Alertas de estoque baixo foram enviados se necessário.')
+                        ->success()
+                        ->send();
+                }),
             Actions\CreateAction::make()
                 ->label('Novo Item')
                 ->icon('heroicon-o-plus'),

@@ -226,19 +226,21 @@
                     if (isset($config->empresa_logo) && $config->empresa_logo) {
                         $logoPath = storage_path('app/public/' . $config->empresa_logo);
                     }
+                    $nomeSistema = settings('nome_sistema', $config->empresa_nome ?? 'Empresa');
                 @endphp
 
                 @if($logoPath && file_exists($logoPath))
                     <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo"
                         class="logo-img">
                 @else
-                    <h1>STOFGARD</h1>
+                    <h1>{{ $nomeSistema }}</h1>
                     <h2>ORDEM DE SERVIÇO</h2>
                 @endif
 
                 <div class="company-info">
-                    <div><strong>CNPJ:</strong> {{ $config->empresa_cnpj ?? '00.000.000/0001-00' }}</div>
-                    <div><strong>Telefone:</strong> {{ $config->empresa_telefone ?? '(16) 99999-9999' }}</div>
+                    <div><strong>CNPJ:</strong> {{ $config->empresa_cnpj ?? settings('empresa_cnpj', '') }}</div>
+                    <div><strong>Telefone:</strong> {{ $config->empresa_telefone ?? settings('empresa_telefone', '') }}
+                    </div>
                 </div>
             </div>
             <div class="header-right">
@@ -258,7 +260,8 @@
         <div class="client-phone">TELEFONE: {{ $record->cliente->telefone ?? '(--) -----' }}</div>
     </div>
     <div style="font-size: 9px; margin-top: 5px;">ENDEREÇO:
-        {{ $record->endereco ?? $record->cliente->endereco ?? 'Endereço não informado' }}</div>
+        {{ $record->endereco ?? $record->cliente->endereco ?? 'Endereço não informado' }}
+    </div>
 
     <!-- ITENS DA OS -->
     <div class="section-header">ITENS DO SERVIÇO</div>

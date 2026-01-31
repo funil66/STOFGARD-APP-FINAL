@@ -19,7 +19,11 @@ class ListaDesejoResource extends Resource
     protected static ?string $navigationLabel = 'Lista de Desejos';
     protected static ?string $modelLabel = 'Item Desejado';
     protected static ?string $pluralModelLabel = 'Lista de Desejos';
-    protected static ?string $navigationGroup = '📦 Almoxarifado';
+
+    // Submódulo do Almoxarifado
+    protected static ?string $slug = 'almoxarifado/lista-desejos';
+
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form

@@ -28,6 +28,8 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'email',
         'password',
         'is_admin',
+        'is_cliente',
+        'cadastro_id',
     ];
 
     /**
@@ -51,11 +53,25 @@ class User extends Authenticatable implements FilamentUser, HasMedia
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_cliente' => 'boolean',
         ];
+    }
+
+    public function cadastro(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Cadastro::class);
     }
 
     public function canAccessPanel(Panel $panel): bool
     {
+        if ($panel->getId() === 'admin') {
+            return !$this->is_cliente;
+        }
+
+        if ($panel->getId() === 'cliente') {
+            return $this->is_cliente;
+        }
+
         return true;
     }
 }

@@ -27,7 +27,10 @@ class AppServiceProvider extends ServiceProvider
             require_once app_path('helpers.php');
         }
 
-        // Register application services here.
+        // Register SettingsHelper as singleton
+        $this->app->singleton(\App\Helpers\SettingsHelper::class, function ($app) {
+            return new \App\Helpers\SettingsHelper();
+        });
     }
 
     /**

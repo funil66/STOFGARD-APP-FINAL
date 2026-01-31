@@ -733,7 +733,37 @@ class OrcamentoResource extends Resource
                             ->send();
                     }),
 
-                // 5. EXCLUIR (Ícone Vermelho)
+                // 6. WHATSAPP ACTIONS (NOVO)
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('wa_ola')
+                        ->label('👋 Olá Inicial')
+                        ->icon('heroicon-o-chat-bubble-left-right')
+                        ->url(fn(Orcamento $record) => app(\App\Services\WhatsAppService::class)->getWelcomeLink($record->cliente))
+                        ->openUrlInNewTab(),
+
+                    Tables\Actions\Action::make('wa_proposta')
+                        ->label('📄 Enviar Proposta')
+                        ->icon('heroicon-o-document-text')
+                        ->url(fn(Orcamento $record) => app(\App\Services\WhatsAppService::class)->getProposalLink($record))
+                        ->openUrlInNewTab(),
+
+                    Tables\Actions\Action::make('wa_cobrar')
+                        ->label('🤔 Cobrar Resposta')
+                        ->icon('heroicon-o-clock')
+                        ->url(fn(Orcamento $record) => app(\App\Services\WhatsAppService::class)->getFollowUpLink($record))
+                        ->openUrlInNewTab(),
+
+                    Tables\Actions\Action::make('wa_pix')
+                        ->label('💸 Enviar PIX')
+                        ->icon('heroicon-o-banknotes')
+                        ->url(fn(Orcamento $record) => app(\App\Services\WhatsAppService::class)->getPaymentLink($record))
+                        ->openUrlInNewTab(),
+                ])
+                    ->label('WhatsApp')
+                    ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                    ->color('success'),
+
+                // 7. EXCLUIR (Ícone Vermelho)
                 Tables\Actions\DeleteAction::make()
                     ->label('')
                     ->tooltip('Excluir'),

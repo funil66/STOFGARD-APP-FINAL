@@ -16,10 +16,14 @@ class EquipamentoResource extends Resource
     protected static ?string $model = Equipamento::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
-    protected static ?string $navigationLabel = 'Inventário';
+    protected static ?string $navigationLabel = 'Equipamentos';
     protected static ?string $modelLabel = 'Equipamento';
     protected static ?string $pluralModelLabel = 'Equipamentos';
-    protected static ?string $navigationGroup = '📦 Almoxarifado';
+
+    // Submódulo do Almoxarifado
+    protected static ?string $slug = 'almoxarifado/equipamentos';
+
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form

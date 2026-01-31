@@ -6,7 +6,7 @@
         </form>
 
         <!-- Botões de Exportação -->
-        <div class="flex gap-3">
+        <div class="responsive-btn-group">
             <x-filament::button wire:click="exportarPDF" icon="heroicon-o-document-arrow-down" color="danger">
                 Exportar PDF
             </x-filament::button>
@@ -17,7 +17,7 @@
 
         <!-- Relatório de Serviços -->
         @if($this->form->getState()['relatorio'] === 'servicos' && !empty($dadosRelatorio))
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="responsive-grid-stats">
                 <!-- Cards de Resumo -->
                 <x-filament::section>
                     <div class="text-center">
@@ -41,7 +41,7 @@
                 </x-filament::section>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 <x-filament::section>
                     <div class="text-center">
                         <div class="text-3xl font-bold text-green-600">
@@ -68,7 +68,7 @@
                         Últimos Serviços
                     </x-slot>
 
-                    <div class="overflow-x-auto">
+                    <div class="responsive-table-container">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-800">
                                 <tr>
@@ -83,14 +83,15 @@
                                 @foreach($dadosRelatorio['servicos'] as $servico)
                                     <tr>
                                         <td class="px-4 py-3">{{ $servico->created_at->format('d/m/Y') }}</td>
-                                        <td class="px-4 py-3">{{ $servico->cadastro?->nome ?? $servico->cliente->nome ?? 'N/A' }}</td>
+                                        <td class="px-4 py-3">{{ $servico->cadastro?->nome ?? $servico->cliente->nome ?? 'N/A' }}
+                                        </td>
                                         <td class="px-4 py-3">{{ $servico->tipo }}</td>
                                         <td class="px-4 py-3">
                                             <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full
-                                                @if($servico->status === 'concluido') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
-                                                @elseif($servico->status === 'cancelado') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
-                                                @else bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
-                                                @endif">
+                                                            @if($servico->status === 'concluido') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                                            @elseif($servico->status === 'cancelado') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                                            @else bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                                            @endif">
                                                 {{ ucfirst($servico->status) }}
                                             </span>
                                         </td>
@@ -108,7 +109,7 @@
 
         <!-- Relatório Financeiro -->
         @if($this->form->getState()['relatorio'] === 'financeiro' && !empty($dadosRelatorio))
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="responsive-grid-stats">
                 <x-filament::section>
                     <div class="text-center">
                         <div class="text-4xl font-bold text-green-600">
@@ -135,7 +136,8 @@
 
                 <x-filament::section>
                     <div class="text-center">
-                        <div class="text-4xl font-bold {{ $dadosRelatorio['saldo'] >= 0 ? 'text-blue-600' : 'text-red-600' }}">
+                        <div
+                            class="text-4xl font-bold {{ $dadosRelatorio['saldo'] >= 0 ? 'text-blue-600' : 'text-red-600' }}">
                             R$ {{ number_format($dadosRelatorio['saldo'], 2, ',', '.') }}
                         </div>
                         <div class="text-sm text-gray-600 mt-2">Saldo</div>
@@ -150,7 +152,7 @@
                         Transações Recentes
                     </x-slot>
 
-                    <div class="overflow-x-auto">
+                    <div class="responsive-table-container">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-800">
                                 <tr>
@@ -165,23 +167,29 @@
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @foreach($dadosRelatorio['transacoes'] as $transacao)
                                     <tr>
-                                        <td class="px-4 py-3">{{ \Carbon\Carbon::parse($transacao->data_vencimento)->format('d/m/Y') }}</td>
-                                        <td class="px-4 py-3">{{ $transacao->cadastro?->nome ?? ($transacao->cliente->nome ?? 'N/A') }}</td>
+                                        <td class="px-4 py-3">
+                                            {{ \Carbon\Carbon::parse($transacao->data_vencimento)->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3">
+                                            {{ $transacao->cadastro?->nome ?? ($transacao->cliente->nome ?? 'N/A') }}</td>
                                         <td class="px-4 py-3">{{ $transacao->descricao }}</td>
                                         <td class="px-4 py-3">
-                                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full
-                                                {{ $transacao->tipo === 'receita' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }}">
+                                            <span
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full
+                                                            {{ $transacao->tipo === 'receita' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }}">
                                                 {{ ucfirst($transacao->tipo) }}
                                             </span>
                                         </td>
                                         <td class="px-4 py-3">
-                                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full
-                                                {{ $transacao->status === 'pago' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' }}">
+                                            <span
+                                                class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full
+                                                            {{ $transacao->status === 'pago' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' }}">
                                                 {{ ucfirst($transacao->status) }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-right font-medium {{ $transacao->tipo === 'receita' ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ $transacao->tipo === 'receita' ? '+' : '-' }} R$ {{ number_format($transacao->valor, 2, ',', '.') }}
+                                        <td
+                                            class="px-4 py-3 text-right font-medium {{ $transacao->tipo === 'receita' ? 'text-green-600' : 'text-red-600' }}">
+                                            {{ $transacao->tipo === 'receita' ? '+' : '-' }} R$
+                                            {{ number_format($transacao->valor, 2, ',', '.') }}
                                         </td>
                                     </tr>
                                 @endforeach
@@ -194,7 +202,7 @@
 
         <!-- Relatório de Clientes -->
         @if($this->form->getState()['relatorio'] === 'clientes' && !empty($dadosRelatorio))
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="responsive-grid-stats">
                 <x-filament::section>
                     <div class="text-center">
                         <div class="text-4xl font-bold text-primary-600">{{ $dadosRelatorio['total'] }}</div>
@@ -231,7 +239,7 @@
                         Top 10 Clientes (Por Quantidade de Serviços)
                     </x-slot>
 
-                    <div class="overflow-x-auto">
+                    <div class="responsive-table-container">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-800">
                                 <tr>
@@ -248,7 +256,8 @@
                                         <td class="px-4 py-3">{{ $cliente['nome'] ?? 'N/A' }}</td>
                                         <td class="px-4 py-3">{{ $cliente['telefone'] ?? 'N/A' }}</td>
                                         <td class="px-4 py-3 text-center">
-                                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
+                                            <span
+                                                class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">
                                                 {{ $cliente['total_servicos'] ?? 0 }}
                                             </span>
                                         </td>

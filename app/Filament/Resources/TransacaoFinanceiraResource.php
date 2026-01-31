@@ -13,11 +13,17 @@ class TransacaoFinanceiraResource extends Resource
 {
     protected static ?string $model = TransacaoFinanceira::class;
 
-    // Configura para aparecer no menu como "Financeiro"
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
-    protected static ?string $navigationLabel = 'Financeiro';
+    protected static ?string $navigationLabel = 'Transações';
     protected static ?string $modelLabel = 'Transação';
-    protected static ?string $pluralModelLabel = 'Financeiro';
+    protected static ?string $pluralModelLabel = 'Transações Financeiras';
+
+    // Submódulo do Financeiro
+    protected static ?string $slug = 'financeiros/transacoes';
+
+    // Ocultar da navegação principal
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 3;
     public static function form(Form $form): Form
     {

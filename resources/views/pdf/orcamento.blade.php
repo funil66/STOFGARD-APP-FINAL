@@ -333,11 +333,13 @@
                         $logoPath = storage_path('app/public/' . $config->empresa_logo);
                     }
                 } else {
-                    $manualPath = storage_path('app/public/logos/logo-stofgard.png');
+                    // Tenta buscar logo padrão do storage
+                    $manualPath = storage_path('app/public/logos/logo.png');
                     if (file_exists($manualPath)) {
                         $logoPath = $manualPath;
                     }
                 }
+                $nomeSistema = settings('nome_sistema', $config->empresa_nome ?? 'Empresa');
             @endphp
 
             @if($logoPath && file_exists($logoPath))
@@ -345,15 +347,17 @@
                     class="logo-img">
             @else
                 <div style="font-size: 16px; font-weight: bold; color: #2563eb; margin-bottom: 8px;">
-                    STOFGARD
+                    {{ $nomeSistema }}
                 </div>
-                <div style="font-size: 10px; color: #6b7280;">Higienização e Impermeabilização</div>
+                <div style="font-size: 10px; color: #6b7280;">{{ settings('empresa_slogan', 'Serviços Profissionais') }}
+                </div>
             @endif
 
             <div class="company-info">
-                <div><strong>CNPJ:</strong> {{ $config->empresa_cnpj ?? '00.000.000/0001-00' }}</div>
-                <div><strong>Telefone:</strong> {{ $config->empresa_telefone ?? '(16) 99999-9999' }}</div>
-                <div><strong>E-mail:</strong> {{ $config->empresa_email ?? 'contato@stofgard.com.br' }}</div>
+                <div><strong>CNPJ:</strong> {{ $config->empresa_cnpj ?? settings('empresa_cnpj', '') }}</div>
+                <div><strong>Telefone:</strong> {{ $config->empresa_telefone ?? settings('empresa_telefone', '') }}
+                </div>
+                <div><strong>E-mail:</strong> {{ $config->empresa_email ?? settings('empresa_email', '') }}</div>
             </div>
         </div>
         <div class="header-right">

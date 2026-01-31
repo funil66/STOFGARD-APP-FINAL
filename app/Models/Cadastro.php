@@ -166,5 +166,46 @@ class Cadastro extends Model implements HasMedia
     {
         return $this->ordensServico()->whereIn('status', ['concluida', 'finalizada'])->count();
     }
-}
 
+    // ===== QUERY SCOPES POR TIPO =====
+
+    /**
+     * Escopo: Apenas Clientes
+     */
+    public function scopeClientes($query)
+    {
+        return $query->where('tipo', 'cliente');
+    }
+
+    /**
+     * Escopo: Apenas Lojas
+     */
+    public function scopeLojas($query)
+    {
+        return $query->where('tipo', 'loja');
+    }
+
+    /**
+     * Escopo: Apenas Vendedores
+     */
+    public function scopeVendedores($query)
+    {
+        return $query->where('tipo', 'vendedor');
+    }
+
+    /**
+     * Escopo: Apenas Arquitetos
+     */
+    public function scopeArquitetos($query)
+    {
+        return $query->where('tipo', 'arquiteto');
+    }
+
+    /**
+     * Escopo: Todos os parceiros (Lojas, Vendedores, Arquitetos)
+     */
+    public function scopeParceiros($query)
+    {
+        return $query->whereIn('tipo', ['loja', 'vendedor', 'arquiteto']);
+    }
+}

@@ -21,6 +21,12 @@ class ListAgendas extends ListRecords
                 ->color('info')
                 ->url(fn() => AgendaResource::getUrl('index')),
 
+            Actions\Action::make('tarefas')
+                ->label('Tarefas')
+                ->icon('heroicon-o-clipboard-document-check')
+                ->color('gray')
+                ->url(url('/admin/agendas/tarefas')),
+
             Actions\CreateAction::make()
                 ->icon('heroicon-o-plus'),
         ];

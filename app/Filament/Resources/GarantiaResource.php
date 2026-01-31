@@ -23,7 +23,10 @@ class GarantiaResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Garantias';
 
-    protected static ?string $navigationGroup = 'Configurações';
+    // Submódulo de Configurações
+    protected static ?string $slug = 'configuracoes/garantias';
+
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 6;
 

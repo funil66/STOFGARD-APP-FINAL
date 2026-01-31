@@ -1,4 +1,10 @@
-/* Stofgard Manager - Custom Styles */
+/* =====================================================
+   Stofgard Manager - Custom Styles
+   ===================================================== */
+
+/* =========================
+   DASHBOARD STYLES
+   ========================= */
 
 /* Dashboard sem sidebar */
 body[data-page="dashboard"] .fi-sidebar {
@@ -9,6 +15,10 @@ body[data-page="dashboard"] .fi-main {
     margin-left: 0 !important;
 }
 
+/* =========================
+   CARD ANIMATIONS
+   ========================= */
+
 /* Melhorias nos cards dos módulos */
 .group:hover .transition-colors {
     transition: all 0.3s ease-in-out;
@@ -16,9 +26,12 @@ body[data-page="dashboard"] .fi-main {
 
 /* Animação suave para os ícones */
 @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateY(0px);
     }
+
     50% {
         transform: translateY(-10px);
     }
@@ -28,54 +41,86 @@ body[data-page="dashboard"] .fi-main {
     animation: float 2s ease-in-out infinite;
 }
 
-/* Responsividade aprimorada para tablets */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .grid-cols-2 {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    }
-}
+/* =========================
+   WEATHER WIDGET ANIMATION
+   ========================= */
 
-/* Estilo para o widget do clima */
 #weather-icon {
     animation: pulse 3s ease-in-out infinite;
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.1);
     }
 }
 
-/* Mobile improvements */
-@media (max-width: 640px) {
-    body {
-        padding: 10px;
-        font-size: 13px;
+/* =========================
+   TABLET BREAKPOINT (768px - 1024px)
+   ========================= */
+@media (min-width: 768px) and (max-width: 1024px) {
+
+    /* Ajustar grids para tablets */
+    .grid-cols-2 {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     }
 
+    /* Sidebar colapsável em tablet */
+    .fi-sidebar {
+        width: 80px !important;
+    }
+
+    .fi-sidebar:hover {
+        width: 280px !important;
+    }
+}
+
+/* =========================
+   MOBILE BREAKPOINT (< 640px)
+   ========================= */
+@media (max-width: 640px) {
+
+    /* Body adjustments */
+    body {
+        padding: 8px;
+        font-size: 14px;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    /* Header responsivo */
     .header {
         display: block;
         border-bottom: 2px solid #1E6DD8;
     }
 
-    .header-left, .header-right {
+    .header-left,
+    .header-right {
         display: block;
         width: 100%;
         text-align: left;
     }
 
     .logo {
-        max-width: 140px;
+        max-width: 120px;
     }
 
     .orcamento-box {
-        margin-top: 12px;
+        margin-top: 10px;
     }
 
-    table, thead, tbody, th, td, tr {
+    /* Tabelas responsivas */
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
         display: block;
         width: 100%;
     }
@@ -87,16 +132,121 @@ body[data-page="dashboard"] .fi-main {
     td {
         border: none;
         padding: 6px 0;
+        position: relative;
+        padding-left: 40%;
     }
 
+    td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 35%;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    /* Totals section */
     .totals-section {
         width: 100% !important;
         float: none !important;
     }
 
+    /* Pagamento container */
     .pagamento-container table td {
         display: block;
         width: 100%;
         text-align: left !important;
+    }
+
+    /* Touch-friendly inputs */
+    input,
+    select,
+    textarea,
+    button {
+        min-height: 44px;
+        font-size: 16px !important;
+        /* Previne zoom no iOS */
+    }
+
+    /* Melhor espaçamento para touch */
+    .fi-btn {
+        min-height: 44px;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Cards menores em mobile */
+    .fi-section {
+        margin-bottom: 0.75rem;
+    }
+
+    .fi-section-content {
+        padding: 0.75rem !important;
+    }
+}
+
+/* =========================
+   SMALL MOBILE (< 375px)
+   ========================= */
+@media (max-width: 375px) {
+    body {
+        font-size: 13px;
+    }
+
+    .dashboard-banner-phrase h1 {
+        font-size: 1rem !important;
+        letter-spacing: 0.05em !important;
+    }
+
+    .responsive-grid-modules {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.5rem !important;
+    }
+
+    .responsive-module-card {
+        min-height: 100px !important;
+        padding: 0.75rem !important;
+    }
+}
+
+/* =========================
+   DARK MODE SUPPORT
+   ========================= */
+@media (prefers-color-scheme: dark) {
+    .header {
+        border-bottom-color: #3b82f6;
+    }
+
+    td::before {
+        color: #9ca3af;
+    }
+}
+
+/* Dark class support */
+.dark .header {
+    border-bottom-color: #3b82f6;
+}
+
+.dark td::before {
+    color: #9ca3af;
+}
+
+/* =========================
+   PRINT STYLES
+   ========================= */
+@media print {
+
+    .no-print,
+    .fi-sidebar,
+    button {
+        display: none !important;
+    }
+
+    body {
+        padding: 0;
+        font-size: 11pt;
+    }
+
+    .header {
+        page-break-after: avoid;
     }
 }

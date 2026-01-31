@@ -60,22 +60,72 @@ class Configuracoes extends Page implements HasForms
                             ->icon('heroicon-m-finger-print')
                             ->schema([
                                 Section::make('Marca')
+                                    ->description('Defina a identidade visual do sistema')
                                     ->schema([
+                                        TextInput::make('nome_sistema')
+                                            ->label('Nome do Sistema')
+                                            ->placeholder('Ex: Minha Empresa')
+                                            ->helperText('Aparece no header e PDFs')
+                                            ->required()
+                                            ->columnSpan(1),
+                                        TextInput::make('empresa_nome')
+                                            ->label('Nome Fantasia')
+                                            ->required()
+                                            ->columnSpan(1),
                                         FileUpload::make('empresa_logo')
-                                            ->label('Logo Oficial')
+                                            ->label('Logo Principal')
                                             ->directory('logos')
-                                            ->image()->imageEditor()->preserveFilenames()->columnSpanFull(),
-                                        TextInput::make('empresa_nome')->label('Nome Fantasia')->required(),
-                                        TextInput::make('empresa_cnpj')->label('CNPJ/CPF')->mask('99.999.999/9999-99'),
+                                            ->disk('public')
+                                            ->visibility('public')
+                                            ->image()
+                                            ->imageEditor()
+                                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/svg+xml'])
+                                            ->maxSize(2048)
+                                            ->helperText('Formato recomendado: PNG transparente, máx 2MB')
+                                            ->columnSpanFull(),
+                                        TextInput::make('empresa_cnpj')
+                                            ->label('CNPJ/CPF')
+                                            ->mask('99.999.999/9999-99'),
                                     ])->columns(2),
                                 Section::make('Contato')
                                     ->schema([
-                                        TextInput::make('empresa_telefone')->mask('(99) 99999-9999'),
-                                        TextInput::make('empresa_email'),
-                                        Textarea::make('empresa_endereco')->rows(2)->columnSpanFull(),
+                                        TextInput::make('empresa_telefone')
+                                            ->label('Telefone')
+                                            ->mask('(99) 99999-9999'),
+                                        TextInput::make('empresa_email')
+                                            ->label('E-mail')
+                                            ->email(),
+                                        Textarea::make('empresa_endereco')
+                                            ->label('Endereço Completo')
+                                            ->rows(2)
+                                            ->columnSpanFull(),
                                     ])->columns(2),
                             ]),
-                        // 2. CATÁLOGO INTELIGENTE
+
+                        // 2. DASHBOARD
+                        Tabs\Tab::make('Dashboard')
+                            ->icon('heroicon-m-home')
+                            ->schema([
+                                Section::make('Personalização do Dashboard')
+                                    ->description('Customize a aparência da tela inicial')
+                                    ->schema([
+                                        TextInput::make('dashboard_frase')
+                                            ->label('Frase Central')
+                                            ->placeholder('Ex: Bem-vindo ao Sistema')
+                                            ->helperText('Aparece no banner do dashboard')
+                                            ->columnSpanFull(),
+                                        Toggle::make('dashboard_mostrar_clima')
+                                            ->label('Mostrar Widget de Clima')
+                                            ->default(true),
+                                        TextInput::make('url_clima')
+                                            ->label('URL do Widget de Clima')
+                                            ->placeholder('https://wttr.in/SuaCidade?0&Q&T&lang=pt')
+                                            ->helperText('Use wttr.in ou weatherwidget.io')
+                                            ->columnSpanFull(),
+                                    ]),
+                            ]),
+
+                        // 3. CATÁLOGO INTELIGENTE
                         Tabs\Tab::make('Catálogo de Itens')
                             ->icon('heroicon-m-tag')
                             ->schema([
@@ -89,7 +139,6 @@ class Configuracoes extends Page implements HasForms
                                                     ->label('Item')
                                                     ->required()
                                                     ->columnSpan(3),
-
                                                 Select::make('unidade')
                                                     ->options(['un' => 'Unidade', 'm2' => 'm²', 'ml' => 'Metro Linear'])
                                                     ->default('un')
@@ -109,24 +158,35 @@ class Configuracoes extends Page implements HasForms
                                     ]),
                             ]),
 
-                        // 3. SISTEMA
+                        // 4. SISTEMA
                         Tabs\Tab::make('Sistema')
                             ->icon('heroicon-m-cog')
                             ->schema([
-                                Toggle::make('sistema_debug')->label('Modo Debug'),
-                                TextInput::make('url_clima')
-                                    ->label('URL do Widget de Clima (Recomendado: https://weatherwidget.io/)')
-                                    ->placeholder('Insira a URL do widget aqui')
-                                    ->columnSpanFull(),
-                                TextInput::make('url_clima')
-                                    ->label('URL do Widget de Clima')
-                                    ->placeholder('https://weatherwidget.io/...')
-                                    ->columnSpanFull(),
-                                TextInput::make('url_clima')
-                                    ->label('URL do Widget de Clima (wttr.in/Cidade)')
-                                    ->placeholder('https://wttr.in/Ribeirao+Preto?0&Q&T&lang=pt')
-                                    ->columnSpanFull(),
+                                Section::make('Configurações Gerais')
+                                    ->schema([
+                                        Toggle::make('sistema_debug')
+                                            ->label('Modo Debug'),
+                                        TextInput::make('sistema_timezone')
+                                            ->label('Timezone')
+                                            ->placeholder('America/Sao_Paulo')
+                                            ->default('America/Sao_Paulo'),
+                                    ]),
+                                Section::make('Administradores')
+                                    ->description('Emails com acesso total ao sistema (além de is_admin)')
+                                    ->schema([
+                                        Repeater::make('admin_emails')
+                                            ->label('Emails de Administradores')
+                                            ->simple(
+                                                TextInput::make('email')
+                                                    ->email()
+                                                    ->required()
+                                            )
+                                            ->defaultItems(0)
+                                            ->addActionLabel('Adicionar Email'),
+                                    ]),
                             ]),
+
+                        // 5. FINANCEIRO
                         Tabs\Tab::make('Financeiro')
                             ->icon('heroicon-m-banknotes')
                             ->schema([
@@ -139,7 +199,6 @@ class Configuracoes extends Page implements HasForms
                                                 TextInput::make('titular')->label('Titular'),
                                             ])->columns(2),
                                     ]),
-
                                 Section::make('Regras de Pagamento')
                                     ->schema([
                                         TextInput::make('financeiro_desconto_avista')
@@ -169,19 +228,31 @@ class Configuracoes extends Page implements HasForms
                     ])->columnSpanFull(),
             ])->statePath('data');
     }
+
     public function save(): void
     {
         $state = $this->form->getState();
+
         foreach ($state as $key => $value) {
-            // CORREÇÃO CRÍTICA: Se for array, converte para JSON antes de salvar
+            // Se for array, converte para JSON antes de salvar
             if (is_array($value)) {
                 $value = json_encode($value, JSON_UNESCAPED_UNICODE);
             }
             Setting::set($key, $value);
         }
 
-        Notification::make()->title('Dados Salvos com Sucesso!')->success()->send();
+        // Limpar cache de configurações
+        settings()->clearCache();
+
+        Notification::make()
+            ->title('Configurações salvas com sucesso!')
+            ->success()
+            ->send();
+
+        // Redirecionar para dashboard após salvar
+        $this->redirect(route('filament.admin.pages.dashboard'));
     }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -192,6 +263,7 @@ class Configuracoes extends Page implements HasForms
                 ->action(function () {
                     Artisan::call('view:clear');
                     Artisan::call('filament:optimize-clear');
+                    settings()->clearCache();
                     Notification::make()->title('Sistema Limpo!')->success()->send();
                 })->requiresConfirmation(),
         ];

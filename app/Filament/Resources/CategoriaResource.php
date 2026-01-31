@@ -22,7 +22,11 @@ class CategoriaResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Categorias';
 
-    protected static ?string $navigationGroup = 'Configurações';
+    // Submódulo do Financeiro
+    protected static ?string $slug = 'financeiros/categorias';
+
+    // Ocultar da navegação principal
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 10;
 

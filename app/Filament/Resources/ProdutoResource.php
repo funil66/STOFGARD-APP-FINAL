@@ -16,10 +16,13 @@ class ProdutoResource extends Resource
     protected static ?string $model = Produto::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-beaker';
-    protected static ?string $navigationLabel = 'Produtos (Legado)';
-    protected static ?string $navigationGroup = '📦 Almoxarifado';
+    protected static ?string $navigationLabel = 'Produtos';
+
+    // Submódulo do Almoxarifado
+    protected static ?string $slug = 'almoxarifado/produtos';
+
     protected static ?int $navigationSort = 99;
-    protected static bool $shouldRegisterNavigation = false; // Oculto - usar EstoqueResource
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function form(Forms\Form $form): Forms\Form
     {

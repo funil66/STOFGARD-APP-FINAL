@@ -3,30 +3,40 @@
 namespace App\Policies;
 
 use App\Models\User;
-use App\Models\Cliente;
-use App\Models\Parceiro;
 
 class CadastroPolicy
 {
+    /**
+     * Verifica se usuário pode visualizar registros
+     */
     public function view(User $user, $model): bool
     {
-        // Viewing public pages handled elsewhere; for admin UI require admin
-        return ($user->is_admin == true) || ($user->email === 'allisson@stofgard.com.br');
+        return settings()->isAdmin($user);
     }
 
+    /**
+     * Verifica se usuário pode atualizar registros
+     */
     public function update(User $user, $model): bool
     {
-        return ($user->is_admin == true) || ($user->email === 'allisson@stofgard.com.br');
+        return settings()->isAdmin($user);
     }
 
+    /**
+     * Verifica se usuário pode deletar registros
+     */
     public function delete(User $user, $model): bool
     {
-        return ($user->is_admin == true) || ($user->email === 'allisson@stofgard.com.br');
+        return settings()->isAdmin($user);
     }
 
+    /**
+     * Verifica se usuário pode baixar arquivos
+     */
     public function download(User $user, $model): bool
     {
-        // downloads require authentication (not necessarily admin)
+        // Downloads requerem apenas autenticação
         return $user !== null;
     }
 }
+

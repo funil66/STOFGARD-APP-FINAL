@@ -118,6 +118,11 @@ class OrdemServico extends Model implements HasMedia
         return $this->hasMany(OrdemServicoItem::class);
     }
 
+    public function financeiro(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Financeiro::class, 'ordem_servico_id');
+    }
+
     public function agenda(): BelongsTo
     {
         return $this->belongsTo(Agenda::class);

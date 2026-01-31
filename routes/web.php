@@ -11,6 +11,57 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// --- ROTA PÚBLICA DE CAPTAÇÃO DE LEADS ---
+Route::get('/solicitar-orcamento', function () {
+    return view('landing.solicitar-orcamento');
+})->name('solicitar.orcamento');
+
+Route::post('/solicitar-orcamento', function (\Illuminate\Http\Request $request) {
+    // 1. Validação Simples
+    $dados = $request->validate([
+        'nome' => 'required|string|max:255',
+        'celular' => 'required|string|max:20',
+        'servico' => 'required|string',
+        'cidade' => 'required|string',
+    ]);
+
+    // 2. Busca ou Cria Cliente (Pelo Celular)
+    // Limpa caracteres do celular para busca
+    $celularLimpo = preg_replace('/\D/', '', $dados['celular']);
+
+    // Tenta achar cliente existente (busca flexível)
+    $cliente = \App\Models\Cadastro::where('celular', 'LIKE', "%{$celularLimpo}%")
+        ->orWhere('celular', $dados['celular'])
+        ->first();
+
+    if (!$cliente) {
+        $cliente = \App\Models\Cadastro::create([
+            'nome' => $dados['nome'],
+            'celular' => $dados['celular'],
+            'cidade' => $dados['cidade'], // Campo simples ou observação
+            'tipo' => 'cliente',
+            // Campos obrigatórios podem precisar de default
+            'email' => 'lead.' . time() . '@temp.com', // Placeholder se email for unique/required
+        ]);
+    }
+
+    // 3. Cria Orçamento na etapa "Novo Lead" do Funil
+    $orcamento = \App\Models\Orcamento::create([
+        'cadastro_id' => $cliente->id,
+        'data_orcamento' => now(),
+        'data_validade' => now()->addDays(7),
+        'status' => 'rascunho', // Status técnico
+        'etapa_funil' => 'novo', // Status do Kanban
+        'tipo_servico' => $dados['servico'],
+        'criado_por' => 'Sistema (Lead Page)',
+        'valor_total' => 0.00, // Inicializa com 0.00
+        'observacoes' => "Solicitação via Site.\nCidade: {$dados['cidade']}\nInteresse: {$dados['servico']}",
+    ]);
+
+    // 4. Retorno visual
+    return back()->with('success', 'Sua solicitação foi enviada! Em breve entraremos em contato.');
+})->name('solicitar.orcamento.post');
+
 // Rotas de autenticação do Google Calendar
 Route::middleware(['auth'])->group(function () {
     Route::get('/google/auth', [GoogleCalendarController::class, 'redirectToGoogle'])
@@ -60,129 +111,7 @@ Route::post('/webhook/pix', [PixWebhookController::class, 'handle'])
 Route::get('/webhook/pix/status', [PixWebhookController::class, 'status'])
     ->name('webhook.pix.status');
 
-/*
-if (app()->environment('local')) {
-    // Debug route: retorna JSON com clientes e itens (temporária)
-    Route::get('/debug/orcamento-data', function () {
-        $clientes = App\Filament\Resources\OrcamentoResource::getClientesOptions();
-        $higi = App\Filament\Resources\OrcamentoResource::getItensHigienizacaoOptions();
-        $imper = App\Filament\Resources\OrcamentoResource::getItensImpermeabilizacaoOptions();
 
-        return response()->json([
-            'clientes_count' => count($clientes),
-            'clientes' => $clientes,
-            'itens_higienizacao_count' => count($higi),
-            'itens_higienizacao' => $higi,
-            'itens_impermeabilizacao_count' => count($imper),
-            'itens_impermeabilizacao' => $imper,
-        ]);
-    });
-
-    // Debug: forçar geração de QR para um orçamento (apenas local)
-    Route::get('/debug/orcamento/{id}/ensure-pix', function ($id) {
-        $orc = App\Models\Orcamento::find($id);
-        if (! $orc) {
-            return response()->json(['error' => 'not_found'], 404);
-        }
-
-        // Se forma de pagamento é pix e não tem QR salvo, tenta gerar
-        if ($orc->forma_pagamento === 'pix' && empty($orc->pix_qrcode_base64)) {
-            app(App\Services\StaticPixQrCodeService::class)->generate($orc);
-            $orc->refresh();
-        }
-
-        return response()->json([
-            'id' => $orc->id,
-            'forma_pagamento' => $orc->forma_pagamento,
-            'pix_qrcode_base64_exists' => ! empty($orc->pix_qrcode_base64),
-            'pix_qrcode_base64_preview' => $orc->pix_qrcode_base64 ? substr($orc->pix_qrcode_base64, 0, 40) : null,
-            'pix_copia_cola' => $orc->pix_copia_cola,
-            'pix_chave_tipo' => $orc->pix_chave_tipo,
-            'pix_chave_valor' => $orc->pix_chave_valor,
-        ]);
-    });
-
-    // Local-only upload tester: GET shows a simple form (POST upload removed for security)
-    Route::get('/debug/upload-test-form', function (\Illuminate\Http\Request $request) {
-        try {
-            \Illuminate\Support\Facades\Log::info('Serving upload test form', [
-                'path' => $request->path(),
-                'method' => $request->method(),
-                'session_id' => $request->session()->getId(),
-                'session_token' => $request->session()->token(),
-                'headers' => $request->headers->all(),
-                'cookies' => $request->cookies->all(),
-                'content_length' => $request->server('CONTENT_LENGTH'),
-            ]);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Failed to log upload form request: ' . $e->getMessage());
-        }
-
-        // Return a minimal HTML form to test multipart uploads from a browser (includes CSRF field)
-        $html = '';
-        $html .= '<!doctype html><html><head><meta charset="utf-8"><title>Upload Test</title></head><body>';
-        $html .= '<h1>Local Upload Test</h1>';
-        $html .= '<form method="POST" action="/debug/upload-test" enctype="multipart/form-data">';
-        $html .= csrf_field();
-        $html .= '<input type="file" name="file"> <button type="submit">Upload</button>';
-        $html .= '</form></body></html>';
-
-        return response($html, 200, ['Content-Type' => 'text/html']);
-    });
-
-    // Alternative local-only endpoint that uses the API middleware (no CSRF/session) for testing
-    Route::post('/debug/upload-test-no-csrf', function (\Illuminate\Http\Request $request) {
-        if (! $request->hasFile('file')) {
-            return response()->json(['error' => 'no_file_provided'], 400);
-        }
-
-        $file = $request->file('file');
-
-        $path = $file->store('debug-uploads');
-
-        return response()->json([
-            'stored_path' => $path,
-            'size' => $file->getSize(),
-            'original_name' => $file->getClientOriginalName(),
-        ]);
-    })->middleware('api')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-
-    // Local-only debug: phpinfo() for troubleshooting which php.ini is loaded
-    Route::get('/debug/phpinfo', function () {
-        ob_start();
-        phpinfo();
-        $html = ob_get_clean();
-
-        // Return a small subset: 'Loaded Configuration File' and SAPI
-        preg_match('/Loaded Configuration File.*?>(.*?)<\/div>/is', $html, $m1);
-        preg_match('/Server API.*?>(.*?)<\/div>/is', $html, $m2);
-
-        return response()->json([
-            'loaded_configuration_file' => $m1[1] ?? null,
-            'server_api' => $m2[1] ?? php_sapi_name(),
-        ]);
-    });
-}
-*/
-// Local-only debug: phpinfo() for troubleshooting which php.ini is loaded
-Route::get('/debug/phpinfo', function () {
-    if (!app()->environment('local')) {
-        abort(404);
-    }
-
-    ob_start();
-    phpinfo();
-    $html = ob_get_clean();
-
-    // Return a small subset: 'Loaded Configuration File' and SAPI
-    preg_match('/Loaded Configuration File.*?>(.*?)<\/div>/is', $html, $m1);
-    preg_match('/Server API.*?>(.*?)<\/div>/is', $html, $m2);
-
-    return response()->json([
-        'loaded_configuration_file' => $m1[1] ?? null,
-        'server_api' => $m2[1] ?? php_sapi_name(),
-    ]);
-});
 
 // NOTE: public debug PDF route removed for security. If you need a local-only test, use
 // `scripts/generate-pdf.js` with debug HTML files under `storage/debug` or run the

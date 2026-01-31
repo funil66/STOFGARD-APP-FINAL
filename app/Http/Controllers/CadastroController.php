@@ -19,8 +19,8 @@ class CadastroController extends Controller
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
                 $q->where('nome', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('celular', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('celular', 'like', "%{$search}%");
             });
         }
 
@@ -36,8 +36,8 @@ class CadastroController extends Controller
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
                 $q->where('nome', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('celular', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('celular', 'like', "%{$search}%");
             });
         }
 
@@ -53,8 +53,8 @@ class CadastroController extends Controller
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
                 $q->where('nome', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('celular', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('celular', 'like', "%{$search}%");
             });
         }
 
@@ -80,41 +80,40 @@ class CadastroController extends Controller
 
     protected function isAdmin(): bool
     {
-        if (! auth()->check()) {
+        if (!auth()->check()) {
             return false;
         }
 
-        $user = auth()->user();
-        return ($user->email === 'allisson@stofgard.com.br') || ($user->is_admin == true);
+        return settings()->isAdmin(auth()->user());
     }
 
     public function downloadArquivo(Request $request, $uuid)
     {
         $found = $this->findByUuid($uuid);
-        if (! $found) {
+        if (!$found) {
             abort(404);
         }
 
-        if (! auth()->check()) {
+        if (!auth()->check()) {
             abort(403);
         }
 
         $model = $found['instance'];
 
         $encoded = $request->query('path');
-        if (! $encoded) {
+        if (!$encoded) {
             return redirect()->route('cadastros.show', ['uuid' => $uuid])->with('error', 'Arquivo não especificado.');
         }
 
         $path = base64_decode($encoded);
         $files = $model->arquivos ?? [];
 
-        if (! in_array($path, $files, true)) {
+        if (!in_array($path, $files, true)) {
             abort(404);
         }
 
         $filePath = Storage::disk('public')->path($path);
-        if (! file_exists($filePath)) {
+        if (!file_exists($filePath)) {
             abort(404);
         }
 
@@ -126,18 +125,18 @@ class CadastroController extends Controller
         // Accept legacy numeric IDs and redirect to canonical uuid when found
         if (is_numeric($uuid)) {
             $cliente = Cliente::withTrashed()->find($uuid);
-            if ($cliente && ! empty($cliente->uuid)) {
+            if ($cliente && !empty($cliente->uuid)) {
                 return redirect()->route('cadastros.show', ['uuid' => $cliente->uuid], 301);
             }
 
             $parceiro = Parceiro::withTrashed()->find($uuid);
-            if ($parceiro && ! empty($parceiro->uuid)) {
+            if ($parceiro && !empty($parceiro->uuid)) {
                 return redirect()->route('cadastros.show', ['uuid' => $parceiro->uuid], 301);
             }
         }
 
         $found = $this->findByUuid($uuid);
-        if (! $found) {
+        if (!$found) {
             abort(404);
         }
 
@@ -148,11 +147,11 @@ class CadastroController extends Controller
     public function edit($uuid)
     {
         $found = $this->findByUuid($uuid);
-        if (! $found) {
+        if (!$found) {
             abort(404);
         }
 
-        if (! $this->isAdmin()) {
+        if (!$this->isAdmin()) {
             abort(403);
         }
 
@@ -162,11 +161,11 @@ class CadastroController extends Controller
     public function update(Request $request, $uuid)
     {
         $found = $this->findByUuid($uuid);
-        if (! $found) {
+        if (!$found) {
             abort(404);
         }
 
-        if (! $this->isAdmin()) {
+        if (!$this->isAdmin()) {
             abort(403);
         }
 
@@ -229,11 +228,11 @@ class CadastroController extends Controller
     public function destroy(Request $request, $uuid)
     {
         $found = $this->findByUuid($uuid);
-        if (! $found) {
+        if (!$found) {
             abort(404);
         }
 
-        if (! $this->isAdmin()) {
+        if (!$this->isAdmin()) {
             abort(403);
         }
 
@@ -247,18 +246,18 @@ class CadastroController extends Controller
     public function destroyArquivo(Request $request, $uuid)
     {
         $found = $this->findByUuid($uuid);
-        if (! $found) {
+        if (!$found) {
             abort(404);
         }
 
-        if (! $this->isAdmin()) {
+        if (!$this->isAdmin()) {
             abort(403);
         }
 
         $model = $found['instance'];
 
         $path = $request->input('path');
-        if (! $path) {
+        if (!$path) {
             return back()->with('error', 'Arquivo não especificado.');
         }
 
@@ -271,7 +270,7 @@ class CadastroController extends Controller
 
     public function bulkDestroy(Request $request)
     {
-        if (! $this->isAdmin()) {
+        if (!$this->isAdmin()) {
             abort(403);
         }
 
@@ -294,12 +293,12 @@ class CadastroController extends Controller
 
     public function downloadArquivos($uuid)
     {
-        if (! auth()->check()) {
+        if (!auth()->check()) {
             abort(403);
         }
 
         $found = $this->findByUuid($uuid);
-        if (! $found) {
+        if (!$found) {
             abort(404);
         }
 

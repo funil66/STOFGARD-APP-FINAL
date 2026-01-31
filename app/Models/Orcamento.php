@@ -45,6 +45,7 @@ class Orcamento extends Model implements HasMedia
         'pdf_incluir_pix',        // Controle do botão
         'pix_chave_selecionada',  // Chave escolhida (Crucial)
         'aplicar_desconto_pix',
+        'etapa_funil',
     ];
 
     protected $casts = [

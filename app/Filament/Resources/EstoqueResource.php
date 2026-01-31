@@ -15,10 +15,14 @@ class EstoqueResource extends Resource
 {
     protected static ?string $model = Estoque::class;
     protected static ?string $navigationIcon = 'heroicon-o-beaker';
-    protected static ?string $navigationGroup = '📦 Almoxarifado';
     protected static ?string $navigationLabel = 'Estoque';
     protected static ?string $modelLabel = 'Item de Estoque';
     protected static ?string $pluralModelLabel = 'Estoque';
+
+    // Submódulo do Almoxarifado
+    protected static ?string $slug = 'almoxarifado/estoques';
+
+    protected static bool $shouldRegisterNavigation = false;
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
