@@ -46,10 +46,7 @@ class GarantiaResource extends Resource
 
                         Forms\Components\Select::make('tipo_servico')
                             ->label('Tipo de Serviço')
-                            ->options([
-                                'higienizacao' => '🧼 Higienização (90 dias)',
-                                'impermeabilizacao' => '💧 Impermeabilização (365 dias)',
-                            ])
+                            ->options(\App\Enums\ServiceType::class)
                             ->required()
                             ->disabled(),
 
@@ -126,16 +123,8 @@ class GarantiaResource extends Resource
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'higienizacao' => 'info',
-                        'impermeabilizacao' => 'warning',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'higienizacao' => '🧼 Higienização',
-                        'impermeabilizacao' => '💧 Impermeabilização',
-                        default => $state,
-                    }),
+                    ->color(fn(string $state): string => \App\Enums\ServiceType::tryFrom($state)?->getColor() ?? 'gray')
+                    ->formatStateUsing(fn(string $state): string => \App\Enums\ServiceType::tryFrom($state)?->getLabel() ?? $state),
 
                 Tables\Columns\TextColumn::make('data_inicio')
                     ->label('Início')
@@ -209,10 +198,7 @@ class GarantiaResource extends Resource
 
                 Tables\Filters\SelectFilter::make('tipo_servico')
                     ->label('Tipo de Serviço')
-                    ->options([
-                        'higienizacao' => 'Higienização',
-                        'impermeabilizacao' => 'Impermeabilização',
-                    ]),
+                    ->options(\App\Enums\ServiceType::class),
 
                 Tables\Filters\Filter::make('proximas_vencer')
                     ->label('Próximas a vencer (30 dias)')

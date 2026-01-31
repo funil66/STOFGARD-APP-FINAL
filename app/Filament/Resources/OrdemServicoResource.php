@@ -86,11 +86,7 @@ class OrdemServicoResource extends Resource
                                 Group::make()->schema([
                                     Select::make('tipo_servico')
                                         ->label('Serviço Principal')
-                                        ->options([
-                                            'higienizacao' => 'Higienização',
-                                            'impermeabilizacao' => 'Impermeabilização',
-                                            'combo' => 'Combo (Higi + Imper)',
-                                        ])
+                                        ->options(\App\Enums\ServiceType::class)
                                         ->required()
                                         ->live()
                                         ->afterStateUpdated(function ($state, callable $set) {
@@ -114,6 +110,13 @@ class OrdemServicoResource extends Resource
                                         ])
                                         ->default('aberta')
                                         ->required(),
+
+                                    Forms\Components\KeyValue::make('extra_attributes')
+                                        ->label('Detalhes Adicionais (Personalizado)')
+                                        ->keyLabel('Campo (Ex: Tecido, Cor)')
+                                        ->valueLabel('Valor')
+                                        ->reorderable()
+                                        ->columnSpanFull(),
                                 ])->columns(2),
 
                                 Textarea::make('descricao_servico')
@@ -338,7 +341,7 @@ class OrdemServicoResource extends Resource
                             ->label('Valor Recebido (R$)')
                             ->default(fn(OrdemServico $record) => $record->valor_total)
                             ->numeric()
-                            ->itemType('currency')
+                            ->prefix('R$')
                             ->required(),
                         Forms\Components\Select::make('forma_pagamento')
                             ->label('Forma de Pagamento')

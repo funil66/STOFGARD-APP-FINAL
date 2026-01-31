@@ -39,10 +39,7 @@ class TabelaPrecoResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('tipo_servico')
                             ->label('Tipo de Serviço')
-                            ->options([
-                                'higienizacao' => 'Higienização',
-                                'impermeabilizacao' => 'Impermeabilização',
-                            ])
+                            ->options(\App\Enums\ServiceType::class)
                             ->required()
                             ->live()
                             ->columnSpan(1),
@@ -117,15 +114,8 @@ class TabelaPrecoResource extends Resource
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'higienizacao' => 'info',
-                        'impermeabilizacao' => 'warning',
-                    })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'higienizacao' => 'HIGI',
-                        'impermeabilizacao' => 'IMPER',
-                        default => $state,
-                    })
+                    ->color(fn(string $state): string => \App\Enums\ServiceType::tryFrom($state)?->getColor() ?? 'gray')
+                    ->formatStateUsing(fn(string $state): string => \App\Enums\ServiceType::tryFrom($state)?->getShortLabel() ?? $state)
                     ->sortable()
                     ->searchable(),
 
@@ -176,10 +166,7 @@ class TabelaPrecoResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('tipo_servico')
                     ->label('Tipo de Serviço')
-                    ->options([
-                        'higienizacao' => 'Higienização',
-                        'impermeabilizacao' => 'Impermeabilização',
-                    ]),
+                    ->options(\App\Enums\ServiceType::class),
 
                 Tables\Filters\SelectFilter::make('categoria')
                     ->label('Categoria')

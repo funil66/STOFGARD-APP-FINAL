@@ -54,12 +54,12 @@ class TabelaPreco extends Model
 
     public function scopeHigienizacao(Builder $query): Builder
     {
-        return $query->where('tipo_servico', 'higienizacao');
+        return $query->where('tipo_servico', \App\Enums\ServiceType::Higienizacao->value);
     }
 
     public function scopeImpermeabilizacao(Builder $query): Builder
     {
-        return $query->where('tipo_servico', 'impermeabilizacao');
+        return $query->where('tipo_servico', \App\Enums\ServiceType::Impermeabilizacao->value);
     }
 
     public function scopePorCategoria(Builder $query, string $categoria): Builder

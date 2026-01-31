@@ -55,6 +55,12 @@ class OrcamentoResource extends Resource
                             ->options(['rascunho' => 'Rascunho', 'enviado' => 'Enviado', 'aprovado' => 'Aprovado'])
                             ->default('rascunho')
                             ->required(),
+
+                        Forms\Components\KeyValue::make('extra_attributes')
+                            ->label('Dados Personalizados do Nicho')
+                            ->keyLabel('Campo')
+                            ->valueLabel('Valor')
+                            ->columnSpanFull(),
                     ])->columns(4),
                 // 2. COMERCIAL (AQUI ESTÁ A LÓGICA DE COMISSÃO)
                 Forms\Components\Section::make('Comercial & Pagamento')
@@ -199,12 +205,7 @@ class OrcamentoResource extends Resource
 
                                 Forms\Components\Select::make('servico_tipo')
                                     ->label('Tipo de Serviço')
-                                    ->options([
-                                        'higienizacao' => 'Higienização',
-                                        'impermeabilizacao' => 'Impermeabilização',
-                                        'combo' => 'Combo (Higi + Imper)',
-                                        'outro' => 'Outro/Personalizado'
-                                    ])
+                                    ->options(\App\Enums\ServiceType::class)
                                     ->required()
                                     ->default('higienizacao')
                                     ->live()
@@ -284,11 +285,11 @@ class OrcamentoResource extends Resource
         // Busca preço na Tabela
         $preco = 0;
 
-        if ($tipoServico === 'combo') {
-            $higi = \App\Models\TabelaPreco::where('nome_item', $nomeItem)->where('tipo_servico', 'higienizacao')->value('preco_vista') ?? 0;
-            $imper = \App\Models\TabelaPreco::where('nome_item', $nomeItem)->where('tipo_servico', 'impermeabilizacao')->value('preco_vista') ?? 0;
+        if ($tipoServico === \App\Enums\ServiceType::Combo->value) {
+            $higi = \App\Models\TabelaPreco::where('nome_item', $nomeItem)->where('tipo_servico', \App\Enums\ServiceType::Higienizacao->value)->value('preco_vista') ?? 0;
+            $imper = \App\Models\TabelaPreco::where('nome_item', $nomeItem)->where('tipo_servico', \App\Enums\ServiceType::Impermeabilizacao->value)->value('preco_vista') ?? 0;
             $preco = $higi + $imper;
-        } elseif ($tipoServico === 'outro') {
+        } elseif ($tipoServico === \App\Enums\ServiceType::Outro->value) {
             return; // Não altera preço para permitir digitação manual
         } else {
             // Busca direto

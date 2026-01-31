@@ -35,6 +35,7 @@ class OrdemServico extends Model implements HasMedia
         'loja_id',
         'vendedor_id',
         'origem',
+        'extra_attributes',
     ];
 
     protected $casts = [
@@ -42,6 +43,7 @@ class OrdemServico extends Model implements HasMedia
         'data_prevista' => 'datetime',
         'data_conclusao' => 'datetime', // Mantém datetime para precisão
         'valor_total' => 'decimal:2',
+        'extra_attributes' => 'array',
     ];
 
     // --- GARANTIA ---

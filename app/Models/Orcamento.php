@@ -41,6 +41,7 @@ class Orcamento extends Model implements HasMedia
         'valor_final_editado',    // Valor final após edição
         'desconto_prestador',     // Diferença (valor_total - valor_editado)
         'observacoes',
+        'extra_attributes',
         'numero_orcamento',
         'comissao_vendedor',
         'comissao_loja',
@@ -53,6 +54,7 @@ class Orcamento extends Model implements HasMedia
     protected $casts = [
         'data_orcamento' => 'date',
         'data_validade' => 'date',
+        'extra_attributes' => 'array',
         'valor_total' => 'decimal:2',
         'valor_final_editado' => 'decimal:2',
         'desconto_prestador' => 'decimal:2',
