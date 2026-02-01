@@ -10,6 +10,7 @@ class OrcamentoItem extends Model {
     protected $fillable = [
         'orcamento_id',
         'item_nome',
+        'descricao',
         'servico_tipo',
         'unidade',
         'quantidade',

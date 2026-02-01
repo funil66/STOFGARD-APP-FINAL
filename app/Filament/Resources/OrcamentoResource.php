@@ -91,15 +91,17 @@ class OrcamentoResource extends Resource
                                     $dados = json_decode($valor, true) ?? []; // Era string, virou array
                                 }
 
-                                // 4. Monta a lista para o Dropdown
+                                // 4. Monta a lista para o Dropdown com informações detalhadas
                                 $opcoes = [];
                                 foreach ($dados as $item) {
                                     if (!empty($item['chave'])) {
-                                        // Formata: "CHAVE - TITULAR"
-                                        $label = $item['chave'];
-                                        if (!empty($item['titular'])) {
-                                            $label .= " ({$item['titular']})";
-                                        }
+                                        // Formata: "TIPO: CHAVE - TITULAR (STATUS)"
+                                        $tipo = ucfirst($item['tipo'] ?? 'N/A');
+                                        $titular = $item['titular'] ?? 'Sem titular';
+                                        $validada = ($item['validada'] ?? false) ? '✓' : '⚠';
+                                        
+                                        $label = "{$tipo}: {$item['chave']} ({$titular}) {$validada}";
+                                        
                                         // O valor salvo é a própria chave
                                         $opcoes[$item['chave']] = $label;
                                     }
@@ -112,6 +114,7 @@ class OrcamentoResource extends Resource
                             ->live()
                             ->required(fn(Forms\Get $get) => $get('pdf_incluir_pix'))
                             ->visible(fn(Forms\Get $get) => $get('pdf_incluir_pix'))
+                            ->helperText('Chaves PIX disponíveis. ✓ = Validada, ⚠ = Não validada')
                             ->columnSpanFull(),
                         // Seleção de Vendedor com Trigger de Cálculo
                         Forms\Components\Select::make('vendedor_id')
@@ -197,18 +200,19 @@ class OrcamentoResource extends Resource
                                             $set('unidade', $item->unidade_medida);
                                         }
                                         self::atualizarPrecoItem($set, $get);
-                                    })->columnSpan(4),
+                                    })->columnSpan(5),
 
                                 Forms\Components\Select::make('servico_tipo')
-                                    ->label('Tipo de Serviço')
+                                    ->label('Serviço')
                                     ->options(\App\Services\ServiceTypeManager::getOptions())
                                     ->required()
                                     ->default('higienizacao')
                                     ->live()
                                     ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::atualizarPrecoItem($set, $get))
-                                    ->columnSpan(3),
+                                    ->columnSpan(2),
 
                                 Forms\Components\TextInput::make('quantidade')
+                                    ->label('Qtd')
                                     ->numeric()
                                     ->default(1)
                                     ->required()
@@ -216,28 +220,39 @@ class OrcamentoResource extends Resource
                                     ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
                                         $set('subtotal', (float) $get('quantidade') * (float) $get('valor_unitario'));
                                         self::recalcularTotal($set, $get);
-                                    })->columnSpan(2),
+                                    })->columnSpan(1),
 
                                 Forms\Components\TextInput::make('valor_unitario')
+                                    ->label('Vlr Unit.')
                                     ->numeric()
                                     ->prefix('R$')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
                                         $set('subtotal', (float) $get('quantidade') * (float) $get('valor_unitario'));
                                         self::recalcularTotal($set, $get);
-                                    })->columnSpan(3),
+                                    })->columnSpan(2),
 
                                 Forms\Components\TextInput::make('subtotal')
+                                    ->label('Total')
                                     ->disabled()
                                     ->dehydrated()
                                     ->numeric()
                                     ->prefix('R$')
+                                    ->columnSpan(2),
+
+                                Forms\Components\TextInput::make('descricao')
+                                    ->label('Descrição (opcional)')
+                                    ->placeholder('Detalhes adicionais...')
+                                    ->maxLength(500)
                                     ->columnSpan(3),
 
                                 Forms\Components\Hidden::make('unidade'),
                             ])
                             ->columns(15)
                             ->live()
+                            ->reorderable()
+                            ->collapsible()
+                            ->itemLabel(fn(array $state): ?string => ($state['item_nome'] ?? 'Item') . ' - ' . \App\Services\ServiceTypeManager::getLabel($state['servico_tipo'] ?? ''))
                             ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get)),
                     ]),
 
@@ -561,6 +576,9 @@ class OrcamentoResource extends Resource
                             ->rows(2)
                             ->default(function ($record) {
                                 $cadastro = $record->cliente;
+                                if (!empty($cadastro?->endereco_completo)) {
+                                    return $cadastro->endereco_completo;
+                                }
                                 return trim(implode(', ', array_filter([
                                     $cadastro?->logradouro,
                                     $cadastro && ($cadastro->numero ?? false) ? "nº {$cadastro->numero}" : null,

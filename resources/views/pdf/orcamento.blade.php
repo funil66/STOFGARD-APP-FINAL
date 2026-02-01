@@ -246,54 +246,103 @@
             @endif
 
             @if($block['type'] === 'tabela_itens')
+                @php
+                    // Agrupa itens por tipo de serviço
+                    $itensPorServico = $orcamento->itens->groupBy('servico_tipo');
+                @endphp
+                
                 <div class="section-header">{{ $data['titulo'] ?? 'ITENS DO ORÇAMENTO' }}</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th width="25%">SERVIÇO</th>
-                            <th width="35%">DESCRIÇÃO</th>
-                            <th width="5%">UN</th>
-                            <th width="5%">QTD</th>
-                            <th width="15%" style="text-align:right">VALOR UNIT.</th>
-                            <th width="15%" style="text-align:right">TOTAL</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($orcamento->itens as $item)
-                        @php
-                            $catClass = 'cat-outro';
-                            if(($data['show_category_colors'] ?? true)) {
-                                $cat = strtolower($item->categoria ?? '');
-                                if(str_contains($cat, 'higien')) $catClass = 'cat-higienizacao';
-                                if(str_contains($cat, 'imper')) $catClass = 'cat-impermeabilizacao';
-                            }
-                        @endphp
-                        <tr>
-                            <td><span class="item-category {{ $catClass }}">{{ strtoupper($item->categoria ?? 'SERVIÇO') }}</span></td>
-                            <td>
-                                <div class="item-description">
-                                    <strong>{{ $item->item_nome }}</strong>
-                                    @if($item->descricao && $item->descricao !== $item->item_nome) <br>{{ $item->descricao }} @endif
-                                </div>
-                            </td>
-                            <td>{{ $item->unidade_medida ?? 'UN' }}</td>
-                            <td>{{ $item->quantidade }}</td>
-                            <td style="text-align:right">R$ {{ number_format($item->valor_unitario, 2, ',', '.') }}</td>
-                            <td style="text-align:right">R$ {{ number_format($item->subtotal, 2, ',', '.') }}</td>
-                        </tr>
-                        @endforeach
-                        @if($orcamento->extra_attributes)
-                            @foreach($orcamento->extra_attributes as $key => $val)
-                                @if(is_numeric($val) && $val > 0)
-                                <tr>
-                                    <td colspan="5" style="text-align:right;"><strong>{{ ucfirst($key) }}</strong></td>
-                                    <td style="text-align:right;"><strong>R$ {{ number_format($val, 2, ',', '.') }}</strong></td>
-                                </tr>
-                                @endif
-                            @endforeach
+                
+                @foreach($itensPorServico as $tipoServico => $itens)
+                    @php
+                        // Usa o ServiceTypeManager para buscar os dados do tipo de serviço
+                        $servicoInfo = \App\Services\ServiceTypeManager::get($tipoServico);
+                        $servicoLabel = $servicoInfo['label'] ?? ucfirst($tipoServico ?? 'Serviço');
+                        $servicoDescricao = $servicoInfo['descricao_pdf'] ?? null;
+                        
+                        // Cores por tipo
+                        $bgColor = match($tipoServico) {
+                            'higienizacao' => '#dbeafe',
+                            'impermeabilizacao' => '#fef3c7',
+                            'combo' => '#d1fae5',
+                            default => '#f3f4f6'
+                        };
+                        $textColor = match($tipoServico) {
+                            'higienizacao' => '#1e40af',
+                            'impermeabilizacao' => '#92400e',
+                            'combo' => '#065f46',
+                            default => '#374151'
+                        };
+                    @endphp
+                    
+                    {{-- Badge do Serviço em Destaque --}}
+                    <div style="margin: 12px 0 8px 0; page-break-inside: avoid;">
+                        <span style="display: inline-block; 
+                                     background: {{ $bgColor }}; 
+                                     color: {{ $textColor }}; 
+                                     padding: 6px 14px; 
+                                     border-radius: 16px; 
+                                     font-weight: bold; 
+                                     font-size: 11px;
+                                     text-transform: uppercase;
+                                     border: 2px solid {{ $textColor }};">
+                            {{ $servicoLabel }}
+                        </span>
+                        @if($servicoDescricao)
+                            <span style="display: inline-block; 
+                                         margin-left: 10px;
+                                         font-size: 9px; 
+                                         color: #6b7280;
+                                         font-style: italic;">
+                                {{ $servicoDescricao }}
+                            </span>
                         @endif
-                    </tbody>
-                </table>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="50%">DESCRIÇÃO</th>
+                                <th width="10%">UN</th>
+                                <th width="10%">QTD</th>
+                                <th width="15%" style="text-align:right">VALOR UNIT.</th>
+                                <th width="15%" style="text-align:right">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($itens as $item)
+                            <tr>
+                                <td>
+                                    <div class="item-description">
+                                        <strong>{{ $item->item_nome }}</strong>
+                                        @if($item->descricao && $item->descricao !== $item->item_nome) 
+                                            <br><span style="color: #6b7280;">{{ $item->descricao }}</span> 
+                                        @endif
+                                    </div>
+                                </td>
+                                <td>{{ strtoupper($item->unidade ?? 'UN') }}</td>
+                                <td>{{ number_format($item->quantidade, $item->quantidade == intval($item->quantidade) ? 0 : 2, ',', '.') }}</td>
+                                <td style="text-align:right">R$ {{ number_format($item->valor_unitario, 2, ',', '.') }}</td>
+                                <td style="text-align:right"><strong>R$ {{ number_format($item->subtotal, 2, ',', '.') }}</strong></td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endforeach
+                
+                {{-- Extras (Nicho) --}}
+                @if($orcamento->extra_attributes)
+                    @foreach($orcamento->extra_attributes as $key => $val)
+                        @if(is_numeric($val) && $val > 0)
+                        <table style="margin-top: 5px;">
+                            <tr>
+                                <td width="85%" style="text-align:right; border-bottom: 1px dashed #ddd;"><strong>{{ ucfirst($key) }}</strong></td>
+                                <td width="15%" style="text-align:right; border-bottom: 1px dashed #ddd;"><strong>R$ {{ number_format($val, 2, ',', '.') }}</strong></td>
+                            </tr>
+                        </table>
+                        @endif
+                    @endforeach
+                @endif
             @endif
 
             @if($block['type'] === 'galeria_fotos')

@@ -13,7 +13,7 @@ class BackfillCadastroIds extends Command
     protected $signature = 'backfill:cadastro
         {--apply : Actually apply changes (default is dry-run)}
         {--rollback= : Path to CSV backup to rollback from}
-        {--tables= : Comma-separated list of tables to process (defaults: orcamentos,ordens_servico,transacoes_financeiras,agendas,notas_fiscais)}
+        {--tables= : Comma-separated list of tables to process (defaults: orcamentos,ordens_servico,agendas,notas_fiscais)}
         {--force : Skip confirmation prompts when applying or rolling back}
     ';
 
@@ -22,7 +22,6 @@ class BackfillCadastroIds extends Command
     protected array $defaultTables = [
         'orcamentos',
         'ordens_servico',
-        'transacoes_financeiras',
         'agendas',
         'notas_fiscais',
     ];

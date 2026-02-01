@@ -17,7 +17,8 @@ class FinanceiroResource extends Resource
     protected static ?string $model = Financeiro::class;
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationGroup = 'Financeiro';
-    protected static ?string $navigationLabel = 'Financeiro';
+    protected static ?string $navigationLabel = 'Transações Financeiras';
+    protected static ?string $slug = 'financeiros/transacoes';
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -38,13 +39,32 @@ class FinanceiroResource extends Resource
 
                         Forms\Components\Select::make('cadastro_id')
                             ->label('Cliente/Fornecedor')
-                            ->options(function () {
-                                $clientes = \App\Models\Cliente::all()->mapWithKeys(fn($c) => ["cliente_{$c->id}" => "👤 {$c->nome} (Cliente)"]);
-                                $parceiros = \App\Models\Parceiro::all()->mapWithKeys(fn($p) => ["parceiro_{$p->id}" => "🏢 {$p->nome_fantasia} (Parceiro)"]);
-                                return $clientes->union($parceiros);
+                            ->relationship('cadastro', 'nome')
+                            ->searchable(['nome', 'cpf_cnpj', 'email'])
+                            ->preload()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('nome')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\Select::make('tipo')
+                                    ->options([
+                                        'cliente' => 'Cliente',
+                                        'loja' => 'Loja',
+                                        'vendedor' => 'Vendedor',
+                                        'parceiro' => 'Parceiro',
+                                    ])
+                                    ->required(),
+                                Forms\Components\TextInput::make('cpf_cnpj')
+                                    ->label('CPF/CNPJ')
+                                    ->maxLength(18),
+                            ])
+                            ->getOptionLabelFromRecordUsing(fn($record) => match($record->tipo) {
+                                'cliente' => "👤 {$record->nome} (Cliente)",
+                                'parceiro' => "🏢 {$record->nome} (Parceiro)",
+                                'loja' => "🏪 {$record->nome} (Loja)",
+                                'vendedor' => "👔 {$record->nome} (Vendedor)",
+                                default => $record->nome,
                             })
-                            ->searchable()
-                            ->preload() // Opcional, dependendo da quantidade
                             ->required(),
 
                         Forms\Components\TextInput::make('descricao')
@@ -144,6 +164,7 @@ class FinanceiroResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn($query) => $query->with(['categoria', 'cadastro']))
             ->columns([
                 Tables\Columns\TextColumn::make('data')
                     ->label('Data')

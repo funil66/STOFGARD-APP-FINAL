@@ -11,38 +11,16 @@ class Financeiro extends Model implements HasMedia
 {
     use HasArquivos;
 
-    /**
-     * Retorna o cadastro relacionado (Cliente, Loja ou Vendedor)
-     */
-    public function getCadastroAttribute()
-    {
-        if (!$this->cadastro_id) {
-            return null;
-        }
-        if (str_starts_with($this->cadastro_id, 'cliente_')) {
-            $id = (int) str_replace('cliente_', '', $this->cadastro_id);
-            return Cliente::find($id);
-        }
-        if (str_starts_with($this->cadastro_id, 'parceiro_')) {
-            $id = (int) str_replace('parceiro_', '', $this->cadastro_id);
-            return Parceiro::find($id);
-        }
-        return null;
-    }
-
-
     protected $table = 'financeiros';
 
     protected $fillable = [
         'cadastro_id',
-        'cliente_id',
         'orcamento_id',
         'ordem_servico_id',
         'tipo',
         'descricao',
         'observacoes',
-        'categoria',
-        'categoria_id', // Novo campo
+        'categoria_id',
         'valor',
         'valor_pago',
         'desconto',
@@ -67,6 +45,14 @@ class Financeiro extends Model implements HasMedia
         'extra_attributes',
     ];
 
+    /**
+     * Atributos que devem ser escondidos para evitar conflito
+     * A coluna 'categoria' (string) conflita com o relacionamento categoria()
+     */
+    protected $hidden = [
+        'categoria', // Campo legacy que conflita com relacionamento
+    ];
+
     protected $casts = [
         'data' => 'date',
         'data_vencimento' => 'date',
@@ -85,9 +71,13 @@ class Financeiro extends Model implements HasMedia
     ];
 
     // Relacionamentos
-    public function cliente(): BelongsTo
+    
+    /**
+     * Cadastro relacionado (Cliente, Loja, Vendedor ou Parceiro).
+     */
+    public function cadastro(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(Cadastro::class, 'cadastro_id');
     }
 
     public function orcamento(): BelongsTo
@@ -125,60 +115,6 @@ class Financeiro extends Model implements HasMedia
         return \Carbon\Carbon::parse($this->data_vencimento)->isPast();
     }
 
-    // Mutators
-    public function setCadastroIdAttribute($value)
-    {
-        // Only set the cadastro_id column if the column actually exists in the database.
-        // This avoids SQL errors in test environments or older installations where the
-        // migration has not yet been applied.
-        try {
-            if (\Illuminate\Support\Facades\Schema::hasColumn('financeiros', 'cadastro_id')) {
-                $this->attributes['cadastro_id'] = $value;
-            }
-        } catch (\Throwable $e) {
-            // If the schema is not accessible for any reason (e.g. during certain test setups),
-            // ignore and continue by only setting legacy ids below.
-        }
-
-        // Reset legacy ids if those columns exist
-        try {
-            if (\Illuminate\Support\Facades\Schema::hasColumn('financeiros', 'cliente_id')) {
-                $this->attributes['cliente_id'] = null;
-            }
-            if (\Illuminate\Support\Facades\Schema::hasColumn('financeiros', 'parceiro_id')) {
-                $this->attributes['parceiro_id'] = null;
-            }
-        } catch (\Throwable $e) {
-            // ignore
-        }
-
-        if (!$value) {
-            return;
-        }
-
-        if (str_starts_with($value, 'cliente_')) {
-            $id = (int) str_replace('cliente_', '', $value);
-            try {
-                if (\Illuminate\Support\Facades\Schema::hasColumn('financeiros', 'cliente_id')) {
-                    $this->attributes['cliente_id'] = $id;
-                }
-            } catch (\Throwable $e) {
-                // ignore
-            }
-        }
-
-        if (str_starts_with($value, 'parceiro_')) {
-            $id = (int) str_replace('parceiro_', '', $value);
-            try {
-                if (\Illuminate\Support\Facades\Schema::hasColumn('financeiros', 'parceiro_id')) {
-                    $this->attributes['parceiro_id'] = $id;
-                }
-            } catch (\Throwable $e) {
-                // ignore
-            }
-        }
-    }
-
     // Scopes
     public function scopePendente($query)
     {
@@ -205,5 +141,23 @@ class Financeiro extends Model implements HasMedia
         return $query->where('status', 'pendente')
             ->whereNotNull('data_vencimento')
             ->whereDate('data_vencimento', '<', now());
+    }
+
+    /**
+     * Força o acesso ao relacionamento categoria ao invés do atributo
+     * Necessário por causa do conflito com campo legacy 'categoria' (string)
+     */
+    public function getCategoriaRelacionamento()
+    {
+        return $this->getRelationValue('categoria');
+    }
+
+    /**
+     * Override do accessor categoria para sempre retornar o relacionamento
+     * ao invés da string da coluna
+     */
+    public function getCategoriaAttribute()
+    {
+        return $this->getRelationValue('categoria');
     }
 }

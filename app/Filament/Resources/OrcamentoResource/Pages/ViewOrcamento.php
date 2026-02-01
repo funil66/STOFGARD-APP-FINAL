@@ -6,7 +6,6 @@ use App\Filament\Resources\OrcamentoResource;
 use App\Models\Agenda;
 use App\Models\OrdemServico;
 use App\Models\OrdemServicoItem;
-use App\Models\TransacaoFinanceira;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -69,6 +68,10 @@ class ViewOrcamento extends ViewRecord
                         ->rows(2)
                         ->default(function ($record) {
                             $cadastro = $record->cliente;
+                            // Prefer explicit endereco_completo when present (some imports/seeders store it)
+                            if (!empty($cadastro?->endereco_completo)) {
+                                return $cadastro->endereco_completo;
+                            }
                             return trim(implode(', ', array_filter([
                                 $cadastro?->logradouro,
                                 $cadastro && ($cadastro->numero ?? false) ? "nº {$cadastro->numero}" : null,

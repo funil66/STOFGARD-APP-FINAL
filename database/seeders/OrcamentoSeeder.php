@@ -15,12 +15,11 @@ class OrcamentoSeeder extends Seeder
         // Pega clientes existentes
         $clientes = Cadastro::where('tipo', 'cliente')->get();
 
-        // Pega o catálogo das configurações (decodificando JSON)
-        $catalogoRaw = Setting::get('catalogo_servicos_v2');
-        $catalogo = is_string($catalogoRaw) ? json_decode($catalogoRaw, true) : $catalogoRaw;
+        // Pega itens da tabela de preços
+        $tabelaPrecos = \App\Models\TabelaPreco::all();
 
-        if ($clientes->isEmpty() || empty($catalogo)) {
-            $this->command->info('Sem clientes ou catálogo para gerar orçamentos.');
+        if ($clientes->isEmpty() || $tabelaPrecos->isEmpty()) {
+            $this->command->info('Sem clientes ou itens na tabela de preços para gerar orçamentos.');
             return;
         }
 
@@ -39,8 +38,6 @@ class OrcamentoSeeder extends Seeder
                 'data_orcamento' => now(),
                 'data_validade' => now()->addDays(15),
                 'status' => fake()->randomElement(['rascunho', 'enviado']),
-                'tipo_servico' => 'misto',
-                'descricao_servico' => 'Serviços diversos (gerado automaticamente)',
                 'observacoes' => 'Orçamento gerado automaticamente pelo sistema.',
                 'criado_por' => 'SE',
                 'valor_total' => 0,
@@ -54,18 +51,18 @@ class OrcamentoSeeder extends Seeder
             $itensQtd = rand(2, 4);
 
             for ($j = 0; $j < $itensQtd; $j++) {
-                $itemCatalogo = $catalogo[array_rand($catalogo)];
+                $itemPreco = $tabelaPrecos->random();
                 $tipoServico = fake()->randomElement(['higienizacao', 'impermeabilizacao']);
 
                 // Pega o preço baseado no tipo
                 $preco = ($tipoServico == 'higienizacao')
-                    ? ($itemCatalogo['preco_higi'] ?? 0)
-                    : ($itemCatalogo['preco_imper'] ?? 0);
+                    ? $itemPreco->preco_vista
+                    : $itemPreco->preco_prazo;
 
                 // Se o preço for 0 (ex: imper em item que não tem imper), troca para higienização
                 if ($preco <= 0) {
                     $tipoServico = 'higienizacao';
-                    $preco = $itemCatalogo['preco_higi'] ?? 100;
+                    $preco = $itemPreco->preco_vista ?? 100;
                 }
 
                 $qtd = rand(1, 2);
@@ -73,9 +70,9 @@ class OrcamentoSeeder extends Seeder
 
                 OrcamentoItem::create([
                     'orcamento_id' => $orcamento->id,
-                    'item_nome' => $itemCatalogo['nome'],
+                    'item_nome' => $itemPreco->nome_item,
                     'servico_tipo' => $tipoServico,
-                    'unidade' => $itemCatalogo['unidade'] ?? 'un',
+                    'unidade' => $itemPreco->unidade_medida,
                     'quantidade' => $qtd,
                     'valor_unitario' => $preco,
                     'subtotal' => $subtotal,

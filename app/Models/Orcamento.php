@@ -26,7 +26,7 @@ class Orcamento extends Model implements HasMedia
 
     public function getGlobalSearchResultUrl(): string
     {
-        return route('filament.resources.orcamentos.edit', $this);
+        return route('filament.admin.resources.orcamentos.edit', ['record' => $this->id]);
     }
 
     protected $fillable = [

@@ -128,11 +128,11 @@ class OrcamentoPdfController extends Controller
             ->name("Orcamento-{$orcamento->id}.pdf")
             ->withBrowsershot(function ($browsershot) {
                 $browsershot->noSandbox()
-                    ->setChromePath(config('services.browsershot.chrome_path', '/usr/bin/google-chrome'))
-                    ->setNodeBinary(config('services.browsershot.node_path', '/usr/bin/node'))
-                    ->setNpmBinary(config('services.browsershot.npm_path', '/usr/bin/npm'))
-                    ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
-                    ->timeout(60);
+                    ->setChromePath(config('browsershot.chrome_path'))
+                    ->setNodeBinary(config('browsershot.node_path'))
+                    ->setNpmBinary(config('browsershot.npm_path'))
+                    ->setOption('args', config('browsershot.chrome_args'))
+                    ->timeout(config('browsershot.timeout'));
             })
             ->inline();
     }

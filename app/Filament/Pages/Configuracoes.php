@@ -36,7 +36,7 @@ class Configuracoes extends Page implements HasForms
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
         // chaves que são Arrays/Repeaters e precisam ser decodificadas do JSON
-        $jsonFields = ['catalogo_servicos_v2', 'financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento', 'system_service_types', 'admin_emails', 'pdf_layout'];
+        $jsonFields = ['financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento', 'system_service_types', 'admin_emails', 'pdf_layout'];
         foreach ($jsonFields as $key) {
             if (isset($settings[$key]) && is_string($settings[$key])) {
                 $decoded = json_decode($settings[$key], true);
@@ -44,11 +44,6 @@ class Configuracoes extends Page implements HasForms
                     $settings[$key] = $decoded;
                 }
             }
-        }
-
-        // AUTO-SEED: Se a lista estiver vazia, injeta o catálogo massivo
-        if (empty($settings['catalogo_servicos_v2'])) {
-            $settings['catalogo_servicos_v2'] = $this->getCatalogoMassivo();
         }
 
         // AUTO-SEED: Layout PDF Padrão
@@ -137,36 +132,81 @@ class Configuracoes extends Page implements HasForms
                                     ]),
                             ]),
 
-                        // 3. CATÁLOGO INTELIGENTE
-                        Tabs\Tab::make('Catálogo de Itens')
-                            ->icon('heroicon-m-tag')
+                        // 3. SERVIÇOS E ITENS (UNIFICADO)
+                        Tabs\Tab::make('Serviços e Itens')
+                            ->icon('heroicon-m-squares-plus')
                             ->schema([
-                                Section::make('Base de Precificação')
-                                    ->description('Defina os valores base. No orçamento, o sistema calculará automaticamente.')
+                                Section::make('Tipos de Serviço')
+                                    ->description('Personalize os nomes, cores e descrições dos serviços. Os identificadores (slugs) são fixos para manter a lógica do sistema.')
+                                    ->collapsible()
                                     ->schema([
-                                        Repeater::make('catalogo_servicos_v2')
-                                            ->label('Itens Cadastrados')
+                                        Repeater::make('system_service_types')
+                                            ->label('Serviços Disponíveis')
                                             ->schema([
-                                                TextInput::make('nome')
-                                                    ->label('Item')
+                                                TextInput::make('slug')
+                                                    ->label('Identificador')
+                                                    ->disabled()
+                                                    ->dehydrated()
                                                     ->required()
-                                                    ->columnSpan(3),
-                                                Select::make('unidade')
-                                                    ->options(['un' => 'Unidade', 'm2' => 'm²', 'ml' => 'Metro Linear'])
-                                                    ->default('un')
-                                                    ->required(),
-                                                TextInput::make('preco_higi')
-                                                    ->label('R$ Higienização')
-                                                    ->numeric()->prefix('R$')->default(0),
-                                                TextInput::make('preco_imper')
-                                                    ->label('R$ Impermeab.')
-                                                    ->numeric()->prefix('R$')->default(0),
+                                                    ->columnSpan(1),
+                                                TextInput::make('label')
+                                                    ->label('Nome Exibido')
+                                                    ->required()
+                                                    ->columnSpan(2),
+                                                Select::make('color')
+                                                    ->label('Cor')
+                                                    ->options([
+                                                        'primary' => 'Primary',
+                                                        'secondary' => 'Secondary',
+                                                        'success' => 'Success',
+                                                        'warning' => 'Warning',
+                                                        'danger' => 'Danger',
+                                                        'gray' => 'Gray',
+                                                        'info' => 'Info',
+                                                    ])
+                                                    ->required()
+                                                    ->columnSpan(1),
+                                                TextInput::make('icon')
+                                                    ->label('Ícone (Heroicon)')
+                                                    ->placeholder('heroicon-o-sparkles')
+                                                    ->columnSpan(2),
+                                                Textarea::make('descricao_pdf')
+                                                    ->label('Descrição para PDF')
+                                                    ->placeholder('Ex: Limpeza profunda com extração e sanitização...')
+                                                    ->helperText('Texto que aparecerá no PDF junto ao nome do serviço')
+                                                    ->rows(2)
+                                                    ->columnSpanFull(),
                                             ])
                                             ->columns(6)
-                                            ->cloneable()
+                                            ->addable(false)
+                                            ->deletable(false)
+                                            ->reorderable(true)
                                             ->collapsible()
-                                            ->collapsed(true)
-                                            ->itemLabel(fn(array $state): ?string => $state['nome'] ?? null),
+                                            ->itemLabel(fn(array $state): ?string => $state['label'] ?? null),
+                                    ]),
+
+                                Section::make('Gerenciamento de Itens/Produtos')
+                                    ->description('Para gerenciar preços e itens, utilize a Tabela de Preços avançada. Os dados foram migrados do catálogo JSON.')
+                                    ->collapsible()
+                                    ->schema([
+                                        \Filament\Forms\Components\Placeholder::make('link_tabela_precos')
+                                            ->label('')
+                                            ->content(new \Illuminate\Support\HtmlString(
+                                                '<div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">' .
+                                                '<div class="flex items-center space-x-3">' .
+                                                '<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">' .
+                                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"></path>' .
+                                                '</svg>' .
+                                                '<div>' .
+                                                '<h3 class="font-semibold text-blue-900">Tabela de Preços Unificada</h3>' .
+                                                '<p class="text-sm text-blue-700">Gerencie todos os itens, preços e categorias em um local único.</p>' .
+                                                '<a href="/admin/configuracoes/tabela-precos" class="inline-flex items-center mt-2 text-sm font-medium text-blue-600 hover:text-blue-800">' .
+                                                'Acessar Tabela de Preços →' .
+                                                '</a>' .
+                                                '</div>' .
+                                                '</div>' .
+                                                '</div>'
+                                            )),
                                     ]),
                             ]),
 
@@ -195,46 +235,6 @@ class Configuracoes extends Page implements HasForms
                                             )
                                             ->defaultItems(0)
                                             ->addActionLabel('Adicionar Email'),
-                                    ]),
-                                Section::make('Tipos de Serviço (Personalização de Nicho)')
-                                    ->description('Personalize os nomes e cores dos serviços para seu nicho (Ex: "Higienização" -> "Manutenção"). ATENÇÃO: Os identificadores (slugs) são fixos para manter a lógica do sistema.')
-                                    ->schema([
-                                        Repeater::make('system_service_types')
-                                            ->label('Tipos de Serviço')
-                                            ->schema([
-                                                TextInput::make('slug')
-                                                    ->label('Identificador Interno')
-                                                    ->disabled()
-                                                    ->dehydrated()
-                                                    ->required()
-                                                    ->columnSpan(1),
-                                                TextInput::make('label')
-                                                    ->label('Nome Exibido (Label)')
-                                                    ->required()
-                                                    ->columnSpan(2),
-                                                Select::make('color')
-                                                    ->label('Cor')
-                                                    ->options([
-                                                        'primary' => 'Primary',
-                                                        'secondary' => 'Secondary',
-                                                        'success' => 'Success',
-                                                        'warning' => 'Warning',
-                                                        'danger' => 'Danger',
-                                                        'gray' => 'Gray',
-                                                        'info' => 'Info',
-                                                    ])
-                                                    ->required()
-                                                    ->columnSpan(1),
-                                                TextInput::make('icon')
-                                                    ->label('Ícone (Heroicon)')
-                                                    ->placeholder('heroicon-o-sparkles')
-                                                    ->columnSpan(2),
-                                            ])
-                                            ->columns(6)
-                                            ->addable(false) // Não permitir adicionar novos tipos arbitrariamente, apenas editar os existentes para não quebrar lógica
-                                            ->deletable(false)
-                                            ->reorderable(true)
-                                            ->itemLabel(fn(array $state): ?string => $state['label'] ?? null),
                                     ]),
                             ]),
 
@@ -392,9 +392,109 @@ class Configuracoes extends Page implements HasForms
                                         Repeater::make('financeiro_pix_keys')
                                             ->label('Chaves Disponíveis')
                                             ->schema([
-                                                TextInput::make('chave')->label('Chave PIX')->required(),
-                                                TextInput::make('titular')->label('Titular'),
-                                            ])->columns(2),
+                                                Select::make('tipo')
+                                                    ->label('Tipo da Chave')
+                                                    ->options([
+                                                        'cpf' => 'CPF',
+                                                        'cnpj' => 'CNPJ',
+                                                        'telefone' => 'Telefone',
+                                                        'email' => 'E-mail',
+                                                        'aleatoria' => 'Aleatória (EVP)',
+                                                    ])
+                                                    ->required()
+                                                    ->reactive()
+                                                    ->afterStateUpdated(fn (callable $set) => $set('validada', false)),
+                                                
+                                                TextInput::make('chave')
+                                                    ->label('Chave PIX')
+                                                    ->required()
+                                                    ->reactive()
+                                                    ->afterStateUpdated(fn (callable $set) => $set('validada', false))
+                                                    ->rules(function (callable $get) {
+                                                        $tipo = $get('tipo');
+                                                        
+                                                        switch ($tipo) {
+                                                            case 'cpf':
+                                                                return ['regex:/^[0-9]{11}$|^[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}$/'];
+                                                            case 'cnpj':
+                                                                return ['regex:/^[0-9]{14}$|^[0-9]{2}\.[0-9]{3}\.[0-9]{3}\/[0-9]{4}-[0-9]{2}$/'];
+                                                            case 'telefone':
+                                                                return ['regex:/^(\+55)?[1-9][0-9][9][0-9]{8}$|^(\+55)?[1-9][0-9][0-9]{8}$/'];
+                                                            case 'email':
+                                                                return ['email'];
+                                                            case 'aleatoria':
+                                                                return ['regex:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i'];
+                                                            default:
+                                                                return [];
+                                                        }
+                                                    })
+                                                    ->helperText(function (callable $get) {
+                                                        $tipo = $get('tipo');
+                                                        
+                                                        switch ($tipo) {
+                                                            case 'cpf':
+                                                                return 'Ex: 01234567890 ou 012.345.678-90';
+                                                            case 'cnpj':
+                                                                return 'Ex: 12345678000190 ou 12.345.678/0001-90';
+                                                            case 'telefone':
+                                                                return 'Ex: +5516981017879, 5516981017879, 16981017879 ou 1634567890';
+                                                            case 'email':
+                                                                return 'Ex: nome@dominio.com';
+                                                            case 'aleatoria':
+                                                                return 'Ex: 12345678-1234-1234-1234-123456789012';
+                                                            default:
+                                                                return 'Selecione o tipo da chave primeiro';
+                                                        }
+                                                    }),
+                                                
+                                                TextInput::make('titular')
+                                                    ->label('Titular')
+                                                    ->required()
+                                                    ->maxLength(25)
+                                                    ->helperText('Máximo 25 caracteres (limitação PIX)'),
+                                                
+                                                TextInput::make('codigo_pais')
+                                                    ->label('Código do País')
+                                                    ->default('55')
+                                                    ->visible(fn (callable $get) => $get('tipo') === 'telefone')
+                                                    ->required(fn (callable $get) => $get('tipo') === 'telefone')
+                                                    ->numeric()
+                                                    ->helperText('Ex: 55 para Brasil'),
+                                                
+                                                Toggle::make('validada')
+                                                    ->label('Chave Validada')
+                                                    ->disabled()
+                                                    ->helperText('Indica se a chave passou pela validação automática'),
+                                            ])->columns(2)
+                                            ->itemLabel(fn (array $state): ?string => 
+                                                ($state['tipo'] ?? 'Novo') . ': ' . ($state['chave'] ?? 'Não definido')
+                                            )
+                                            ->afterStateUpdated(function (callable $get, callable $set, $state) {
+                                                // Validação automática quando chaves são adicionadas/editadas
+                                                if (is_array($state)) {
+                                                    foreach ($state as $index => $chaveData) {
+                                                        if (isset($chaveData['chave']) && isset($chaveData['tipo']) && !empty($chaveData['chave'])) {
+                                                            $validacao = \App\Services\Pix\PixKeyValidatorService::validate(
+                                                                $chaveData['chave'], 
+                                                                $chaveData['tipo'],
+                                                                $chaveData['codigo_pais'] ?? '55'
+                                                            );
+                                                            
+                                                            $state[$index]['validada'] = $validacao['valida'];
+                                                            $state[$index]['chave'] = $validacao['chave_formatada'];
+                                                            
+                                                            if (!$validacao['valida']) {
+                                                                \Filament\Notifications\Notification::make()
+                                                                    ->title('Chave PIX Inválida')
+                                                                    ->body($validacao['erro'] ?? 'Formato inválido')
+                                                                    ->warning()
+                                                                    ->send();
+                                                            }
+                                                        }
+                                                    }
+                                                    $set('financeiro_pix_keys', $state);
+                                                }
+                                            }),
                                     ]),
                                 Section::make('Regras de Pagamento')
                                     ->schema([
@@ -525,78 +625,6 @@ class Configuracoes extends Page implements HasForms
         ];
     }
 
-    // --- LISTA MASSIVA (CORRIGIDA E INCLUSA) ---
-    protected function getCatalogoMassivo(): array
-    {
-        return [
-            // CADEIRAS
-            ['nome' => 'Cadeira de Jantar (Somente Assento)', 'unidade' => 'un', 'preco_higi' => 35.00, 'preco_imper' => 55.00],
-            ['nome' => 'Cadeira de Jantar (Assento + Encosto)', 'unidade' => 'un', 'preco_higi' => 50.00, 'preco_imper' => 65.00],
-            ['nome' => 'Cadeira de Jantar (Tecido Completo)', 'unidade' => 'un', 'preco_higi' => 60.00, 'preco_imper' => 85.00],
-            ['nome' => 'Cadeira de Escritório (Simples)', 'unidade' => 'un', 'preco_higi' => 45.00, 'preco_imper' => 0.00],
-            ['nome' => 'Cadeira de Escritório (Presidente)', 'unidade' => 'un', 'preco_higi' => 65.00, 'preco_imper' => 0.00],
-            ['nome' => 'Cadeira Gamer', 'unidade' => 'un', 'preco_higi' => 80.00, 'preco_imper' => 0.00],
-            ['nome' => 'Cadeira Boneca / Decorativa', 'unidade' => 'un', 'preco_higi' => 70.00, 'preco_imper' => 110.00],
-            ['nome' => 'Banqueta Alta (Com Encosto)', 'unidade' => 'un', 'preco_higi' => 40.00, 'preco_imper' => 55.00],
 
-            // POLTRONAS
-            ['nome' => 'Poltrona Fixa Pequena', 'unidade' => 'un', 'preco_higi' => 120.00, 'preco_imper' => 150.00],
-            ['nome' => 'Poltrona do Papai (Reclinável)', 'unidade' => 'un', 'preco_higi' => 200.00, 'preco_imper' => 250.00],
-            ['nome' => 'Poltrona Berger (Clássica)', 'unidade' => 'un', 'preco_higi' => 220.00, 'preco_imper' => 280.00],
-            ['nome' => 'Poltrona Egg / Swan', 'unidade' => 'un', 'preco_higi' => 150.00, 'preco_imper' => 180.00],
-            ['nome' => 'Puff Pequeno', 'unidade' => 'un', 'preco_higi' => 40.00, 'preco_imper' => 60.00],
-            ['nome' => 'Puff Baú / Grande', 'unidade' => 'un', 'preco_higi' => 60.00, 'preco_imper' => 90.00],
-            // SOFÁS (FIXOS)
-            ['nome' => 'Sofá 2 Lugares (Fixo)', 'unidade' => 'un', 'preco_higi' => 160.00, 'preco_imper' => 350.00],
-            ['nome' => 'Sofá 3 Lugares (Fixo)', 'unidade' => 'un', 'preco_higi' => 200.00, 'preco_imper' => 450.00],
-            ['nome' => 'Sofá 4 Lugares (Fixo)', 'unidade' => 'un', 'preco_higi' => 250.00, 'preco_imper' => 550.00],
-            // SOFÁS (RETRÁTEIS/RECLINÁVEIS)
-            ['nome' => 'Sofá 2 Lugares (Retrátil)', 'unidade' => 'un', 'preco_higi' => 220.00, 'preco_imper' => 380.00],
-            ['nome' => 'Sofá 3 Lugares (Retrátil)', 'unidade' => 'un', 'preco_higi' => 280.00, 'preco_imper' => 515.00],
-            ['nome' => 'Sofá 4 Lugares (Retrátil)', 'unidade' => 'un', 'preco_higi' => 350.00, 'preco_imper' => 630.00],
-            ['nome' => 'Sofá de Canto (5 Lugares)', 'unidade' => 'un', 'preco_higi' => 350.00, 'preco_imper' => 650.00],
-            ['nome' => 'Sofá de Canto (6 Lugares)', 'unidade' => 'un', 'preco_higi' => 400.00, 'preco_imper' => 750.00],
-            // SOFÁS POR MEDIDA (ALTA PRECISÃO)
-            ['nome' => 'Sofá Retrátil (Até 2,00m)', 'unidade' => 'un', 'preco_higi' => 220.00, 'preco_imper' => 350.00],
-            ['nome' => 'Sofá Retrátil (2,10m a 2,40m)', 'unidade' => 'un', 'preco_higi' => 260.00, 'preco_imper' => 450.00],
-            ['nome' => 'Sofá Retrátil (2,50m a 2,90m)', 'unidade' => 'un', 'preco_higi' => 320.00, 'preco_imper' => 670.00],
-            ['nome' => 'Sofá Retrátil (Acima de 3,00m)', 'unidade' => 'un', 'preco_higi' => 380.00, 'preco_imper' => 710.00],
-            ['nome' => 'Sofá Living (Design - Por Metro Linear)', 'unidade' => 'ml', 'preco_higi' => 90.00, 'preco_imper' => 150.00],
-            // COLCHÕES
-            ['nome' => 'Colchão Berço', 'unidade' => 'un', 'preco_higi' => 100.00, 'preco_imper' => 150.00],
-            ['nome' => 'Colchão Solteiro', 'unidade' => 'un', 'preco_higi' => 180.00, 'preco_imper' => 340.00],
-            ['nome' => 'Colchão Casal Padrão', 'unidade' => 'un', 'preco_higi' => 240.00, 'preco_imper' => 465.00],
-            ['nome' => 'Colchão Queen Size', 'unidade' => 'un', 'preco_higi' => 280.00, 'preco_imper' => 550.00],
-            ['nome' => 'Colchão King Size', 'unidade' => 'un', 'preco_higi' => 350.00, 'preco_imper' => 650.00],
-            ['nome' => 'Cama Box (Base) Solteiro', 'unidade' => 'un', 'preco_higi' => 60.00, 'preco_imper' => 0.00],
-            ['nome' => 'Cama Box (Base) Casal', 'unidade' => 'un', 'preco_higi' => 80.00, 'preco_imper' => 0.00],
-            ['nome' => 'Cabeceira Cama (Solteiro)', 'unidade' => 'un', 'preco_higi' => 80.00, 'preco_imper' => 150.00],
-            ['nome' => 'Cabeceira Cama (Casal)', 'unidade' => 'un', 'preco_higi' => 120.00, 'preco_imper' => 250.00],
-            // AUTOMOTIVO
-            ['nome' => 'Carro Hatch (Bancos)', 'unidade' => 'un', 'preco_higi' => 180.00, 'preco_imper' => 0.00],
-            ['nome' => 'Carro Hatch (Completa: Teto+Carpete)', 'unidade' => 'un', 'preco_higi' => 350.00, 'preco_imper' => 0.00],
-            ['nome' => 'Carro Sedan (Bancos)', 'unidade' => 'un', 'preco_higi' => 200.00, 'preco_imper' => 0.00],
-            ['nome' => 'Carro Sedan (Completa)', 'unidade' => 'un', 'preco_higi' => 400.00, 'preco_imper' => 0.00],
-            ['nome' => 'SUV / Caminhonete (Bancos)', 'unidade' => 'un', 'preco_higi' => 250.00, 'preco_imper' => 0.00],
-            ['nome' => 'SUV / Caminhonete (Completa)', 'unidade' => 'un', 'preco_higi' => 480.00, 'preco_imper' => 0.00],
-            ['nome' => 'Teto Veicular (Avulso)', 'unidade' => 'un', 'preco_higi' => 100.00, 'preco_imper' => 0.00],
-            ['nome' => 'Caminhão (Cabine Simples)', 'unidade' => 'un', 'preco_higi' => 300.00, 'preco_imper' => 0.00],
-            ['nome' => 'Caminhão (Cabine Dupla)', 'unidade' => 'un', 'preco_higi' => 450.00, 'preco_imper' => 0.00],
-            // BEBÊ E CRIANÇA
-            ['nome' => 'Bebê Conforto', 'unidade' => 'un', 'preco_higi' => 80.00, 'preco_imper' => 0.00],
-            ['nome' => 'Carrinho de Bebê (Simples)', 'unidade' => 'un', 'preco_higi' => 100.00, 'preco_imper' => 0.00],
-            ['nome' => 'Carrinho de Bebê (Com Moises)', 'unidade' => 'un', 'preco_higi' => 150.00, 'preco_imper' => 0.00],
-            ['nome' => 'Urso de Pelúcia P', 'unidade' => 'un', 'preco_higi' => 20.00, 'preco_imper' => 0.00],
-            ['nome' => 'Urso de Pelúcia M', 'unidade' => 'un', 'preco_higi' => 40.00, 'preco_imper' => 0.00],
-            ['nome' => 'Urso de Pelúcia G', 'unidade' => 'un', 'preco_higi' => 60.00, 'preco_imper' => 0.00],
-            // TAPETES E CORTINAS (M2)
-            ['nome' => 'Tapete Pelo Curto/Sintético', 'unidade' => 'm2', 'preco_higi' => 25.00, 'preco_imper' => 0.00],
-            ['nome' => 'Tapete Pelo Alto/Shaggy', 'unidade' => 'm2', 'preco_higi' => 35.00, 'preco_imper' => 0.00],
-            ['nome' => 'Tapete Importado/Lã/Sisal', 'unidade' => 'm2', 'preco_higi' => 45.00, 'preco_imper' => 0.00],
-            ['nome' => 'Cortina Tecido Leve (Voil)', 'unidade' => 'm2', 'preco_higi' => 25.00, 'preco_imper' => 49.00],
-            ['nome' => 'Cortina Tecido Pesado (Linho/Blackout)', 'unidade' => 'm2', 'preco_higi' => 35.00, 'preco_imper' => 60.00],
-            ['nome' => 'Persianas', 'unidade' => 'm2', 'preco_higi' => 45.00, 'preco_imper' => 0.00],
-        ];
-    }
 }
 

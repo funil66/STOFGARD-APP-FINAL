@@ -34,9 +34,10 @@ class ServiceTypeManager
 
             return [
                 'slug' => $slug,
-                'label' => $custom['label'] ?? $enum->getLabel(), // Use custom label or enum default
-                'color' => $custom['color'] ?? $enum->getColor(), // Use custom color or enum default
+                'label' => $custom['label'] ?? $enum->getLabel(),
+                'color' => $custom['color'] ?? $enum->getColor(),
                 'icon' => $custom['icon'] ?? $enum->getIcon(),
+                'descricao_pdf' => $custom['descricao_pdf'] ?? null,
             ];
         });
 
@@ -77,5 +78,23 @@ class ServiceTypeManager
         $all = self::getAll();
         $item = $all->firstWhere('slug', $slug);
         return $item['color'] ?? 'gray';
+    }
+
+    /**
+     * Busca Descrição para PDF por Slug
+     */
+    public static function getDescricaoPdf(string $slug): ?string
+    {
+        $all = self::getAll();
+        $item = $all->firstWhere('slug', $slug);
+        return $item['descricao_pdf'] ?? null;
+    }
+
+    /**
+     * Retorna um serviço específico por slug
+     */
+    public static function get(string $slug): ?array
+    {
+        return self::getAll()->firstWhere('slug', $slug);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\TransacaoFinanceira;
+use App\Models\Financeiro;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
 
@@ -24,14 +24,14 @@ class FinanceiroChart extends ChartWidget
             $mes = Carbon::now()->subMonths($i);
             $meses[] = $mes->locale('pt_BR')->translatedFormat('M/Y');
 
-            $receitas[] = TransacaoFinanceira::where('tipo', 'receita')
-                ->whereYear('data_transacao', $mes->year)
-                ->whereMonth('data_transacao', $mes->month)
+            $receitas[] = Financeiro::where('tipo', 'receita')
+                ->whereYear('data', $mes->year)
+                ->whereMonth('data', $mes->month)
                 ->sum('valor');
 
-            $despesas[] = TransacaoFinanceira::where('tipo', 'despesa')
-                ->whereYear('data_transacao', $mes->year)
-                ->whereMonth('data_transacao', $mes->month)
+            $despesas[] = Financeiro::where('tipo', 'despesa')
+                ->whereYear('data', $mes->year)
+                ->whereMonth('data', $mes->month)
                 ->sum('valor');
         }
 

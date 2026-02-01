@@ -48,7 +48,7 @@ class Cadastro extends Model implements HasMedia
 
     public function getGlobalSearchResultUrl(): string
     {
-        return route('filament.resources.cadastros.edit', $this);
+        return route('filament.admin.resources.cadastros.edit', ['record' => $this->id]);
     }
 
     protected $fillable = [
@@ -69,10 +69,12 @@ class Cadastro extends Model implements HasMedia
         'estado',
         'complemento',
         'comissao_percentual',
+        'pdf_mostrar_documentos',
     ];
 
     protected $casts = [
         'comissao_percentual' => 'decimal:2',
+        'pdf_mostrar_documentos' => 'boolean',
     ];
 
     // Relacionamento: Vendedor pertence a uma Loja
@@ -225,5 +227,12 @@ class Cadastro extends Model implements HasMedia
     public function scopeParceiros($query)
     {
         return $query->whereIn('tipo', ['loja', 'vendedor', 'arquiteto']);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function ($model) {
+            $model->pdf_mostrar_documentos = $model->pdf_mostrar_documentos ?? \App\Models\Setting::get('pdf_mostrar_documentos_global', true);
+        });
     }
 }

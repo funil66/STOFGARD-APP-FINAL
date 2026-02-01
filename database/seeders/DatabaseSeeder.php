@@ -16,8 +16,10 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ConfiguracaoSeeder::class,
+            ConfigSeed::class, // Configurações personalizadas do sistema
             TabelaPrecosSeeder::class,
             UserSeeder::class, // Create default admin and users
+            // CompleteTestDataSeeder::class, // ⚠️ Descomente apenas para desenvolvimento/teste
             // ClienteFactory::class, // (Se necessário)
         ]);
     }

@@ -61,11 +61,6 @@ class Categoria extends Model
     }
 
     // Relacionamentos
-    public function transacoesFinanceiras()
-    {
-        return $this->hasMany(TransacaoFinanceira::class, 'categoria_id');
-    }
-
     public function financeiros()
     {
         return $this->hasMany(Financeiro::class, 'categoria_id');

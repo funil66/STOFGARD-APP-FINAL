@@ -10,16 +10,20 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('financeiros', function (Blueprint $table) {
-            $table->foreignId('categoria_id')
-                ->nullable()
-                ->after('categoria')
-                ->constrained('categorias')
-                ->nullOnDelete();
+        if (Schema::hasTable('financeiros')) {
+            Schema::table('financeiros', function (Blueprint $table) {
+                if (! Schema::hasColumn('financeiros', 'categoria_id')) {
+                    $table->foreignId('categoria_id')
+                        ->nullable()
+                        ->after('categoria')
+                        ->constrained('categorias')
+                        ->nullOnDelete();
 
-            // Adicionar índice para melhorar performance em relatórios
-            $table->index('categoria_id');
-        });
+                    // Adicionar índice para melhorar performance em relatórios
+                    $table->index('categoria_id');
+                }
+            });
+        }
     }
 
     /**

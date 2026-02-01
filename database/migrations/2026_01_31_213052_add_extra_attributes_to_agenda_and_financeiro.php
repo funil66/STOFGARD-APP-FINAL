@@ -14,9 +14,19 @@ return new class extends Migration {
             $table->json('extra_attributes')->nullable()->after('observacoes');
         });
 
-        Schema::table('financeiros', function (Blueprint $table) {
-            $table->json('extra_attributes')->nullable()->after('observacoes'); // Assuming observacoes exists, or put at end
-        });
+        if (Schema::hasTable('financeiros')) {
+            Schema::table('financeiros', function (Blueprint $table) {
+                if (! Schema::hasColumn('financeiros', 'extra_attributes')) {
+                    $table->json('extra_attributes')->nullable()->after('observacoes'); // Assuming observacoes exists, or put at end
+                }
+            });
+        } elseif (Schema::hasTable('transacoes_financeiras')) {
+            Schema::table('transacoes_financeiras', function (Blueprint $table) {
+                if (! Schema::hasColumn('transacoes_financeiras', 'extra_attributes')) {
+                    $table->json('extra_attributes')->nullable()->after('observacoes');
+                }
+            });
+        }
     }
 
     /**
@@ -28,8 +38,14 @@ return new class extends Migration {
             $table->dropColumn('extra_attributes');
         });
 
-        Schema::table('financeiros', function (Blueprint $table) {
-            $table->dropColumn('extra_attributes');
-        });
+        if (Schema::hasTable('financeiros') && Schema::hasColumn('financeiros', 'extra_attributes')) {
+            Schema::table('financeiros', function (Blueprint $table) {
+                $table->dropColumn('extra_attributes');
+            });
+        } elseif (Schema::hasTable('transacoes_financeiras') && Schema::hasColumn('transacoes_financeiras', 'extra_attributes')) {
+            Schema::table('transacoes_financeiras', function (Blueprint $table) {
+                $table->dropColumn('extra_attributes');
+            });
+        }
     }
 };

@@ -275,8 +275,10 @@ class CadastroResource extends Resource
                                 \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
                                     ->label('Galeria de Documentos')
                                     ->collection('arquivos')
-                                    ->size(100)
-                                    ->extraImgAttributes(['class' => 'rounded-lg shadow-md']),
+                                    ->size(200)
+                                    ->square()
+                                    ->extraImgAttributes(['class' => 'rounded-lg shadow-md'])
+                                    ->columnSpanFull(),
                             ]),
                     ])->columnSpanFull(),
             ]);
@@ -364,6 +366,12 @@ class CadastroResource extends Resource
                 ->collapsible()
                 ->collapsed()
                 ->schema([
+                    Forms\Components\Toggle::make('pdf_mostrar_documentos')
+                        ->label('Exibir Documentos no PDF?')
+                        ->helperText('Se marcado, os documentos anexados aparecerão no PDF da ficha cadastral.')
+                        ->default(fn() => \App\Models\Setting::get('pdf_mostrar_documentos_global', true))
+                        ->columnSpanFull(),
+
                     Forms\Components\SpatieMediaLibraryFileUpload::make('arquivos')
                         ->label('Anexos (Até 20MB)')
                         ->collection('arquivos')

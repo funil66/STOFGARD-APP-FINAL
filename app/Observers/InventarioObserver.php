@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Inventario;
-use App\Models\TransacaoFinanceira;
+use App\Models\Financeiro;
 
 class InventarioObserver
 {
@@ -12,16 +12,15 @@ class InventarioObserver
      */
     public function created(Inventario $inventario): void
     {
-        // Se o inventário tem valor, criar transação financeira (despesa)
+        // Se o inventário tem valor, criar registro financeiro (despesa)
         if ($inventario->valor_aquisicao && $inventario->valor_aquisicao > 0) {
-            TransacaoFinanceira::create([
+            Financeiro::create([
                 'tipo' => 'despesa',
-                'categoria' => 'operacional',
                 'descricao' => "Aquisição de Equipamento: {$inventario->nome}",
                 'valor' => $inventario->valor_aquisicao,
-                'data_transacao' => $inventario->data_aquisicao ?? now(),
-                'status' => 'confirmado',
-                'metodo_pagamento' => 'dinheiro',
+                'data' => $inventario->data_aquisicao ?? now(),
+                'status' => 'pago',
+                'forma_pagamento' => 'dinheiro',
                 'observacoes' => "Inventário ID: {$inventario->id} | Categoria: {$inventario->categoria}",
             ]);
         }
@@ -39,14 +38,13 @@ class InventarioObserver
             $diferenca = $valorNovo - $valorAntigo;
 
             if ($diferenca > 0) {
-                TransacaoFinanceira::create([
+                Financeiro::create([
                     'tipo' => 'despesa',
-                    'categoria' => 'operacional',
                     'descricao' => "Ajuste de Valor: {$inventario->nome} (Diferença: R$ {$diferenca})",
                     'valor' => $diferenca,
-                    'data_transacao' => now(),
-                    'status' => 'confirmado',
-                    'metodo_pagamento' => 'ajuste',
+                    'data' => now(),
+                    'status' => 'pago',
+                    'forma_pagamento' => 'ajuste',
                     'observacoes' => "Inventário ID: {$inventario->id} | Valor anterior: R$ {$valorAntigo} → Novo: R$ {$valorNovo}",
                 ]);
             }
@@ -60,14 +58,13 @@ class InventarioObserver
     {
         // Opcional: registrar baixa patrimonial se tinha valor
         if ($inventario->valor_aquisicao && $inventario->valor_aquisicao > 0) {
-            TransacaoFinanceira::create([
+            Financeiro::create([
                 'tipo' => 'despesa',
-                'categoria' => 'operacional',
                 'descricao' => "Baixa de Equipamento: {$inventario->nome}",
                 'valor' => 0,
-                'data_transacao' => now(),
+                'data' => now(),
                 'status' => 'cancelado',
-                'metodo_pagamento' => 'ajuste',
+                'forma_pagamento' => 'ajuste',
                 'observacoes' => "Inventário ID: {$inventario->id} | Valor original: R$ {$inventario->valor_aquisicao}",
             ]);
         }

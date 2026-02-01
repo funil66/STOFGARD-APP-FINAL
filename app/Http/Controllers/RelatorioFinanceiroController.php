@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TransacaoFinanceira;
+use App\Models\Financeiro;
 use Illuminate\Http\Request;
 
 class RelatorioFinanceiroController extends Controller
@@ -12,11 +12,12 @@ class RelatorioFinanceiroController extends Controller
         $inicio = $request->query('inicio') ? \Carbon\Carbon::parse($request->query('inicio'))->startOfDay() : now()->startOfMonth();
         $fim = $request->query('fim') ? \Carbon\Carbon::parse($request->query('fim'))->endOfDay() : now()->endOfMonth();
 
-        $data = TransacaoFinanceira::whereBetween('data_transacao', [$inicio, $fim])
-            ->selectRaw('categoria, SUM(CASE WHEN tipo = "receita" THEN valor ELSE -valor END) as total')
-            ->groupBy('categoria')
+        $data = Financeiro::whereBetween('data', [$inicio, $fim])
+            ->selectRaw('categoria_id, SUM(CASE WHEN tipo = "receita" THEN valor ELSE -valor END) as total')
+            ->groupBy('categoria_id')
+            ->with('categoria:id,nome')
             ->get()
-            ->mapWithKeys(fn ($row) => [$row->categoria => (float) $row->total]);
+            ->mapWithKeys(fn ($row) => [$row->categoria?->nome ?? 'Sem categoria' => (float) $row->total]);
 
         return response()->json(['inicio' => $inicio->toDateString(), 'fim' => $fim->toDateString(), 'por_categoria' => $data]);
     }
