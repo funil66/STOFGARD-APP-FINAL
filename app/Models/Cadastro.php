@@ -14,6 +14,22 @@ class Cadastro extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, HasArquivos;
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            // Auto-sync: If celular is set but telefone is empty, copy.
+            if (!empty($model->celular) && empty($model->telefone)) {
+                $model->telefone = $model->celular;
+            }
+            // Auto-sync: If telefone is set but celular is empty, copy (assuming it's mobile for simplicity).
+            if (!empty($model->telefone) && empty($model->celular)) {
+                $model->celular = $model->telefone;
+            }
+        });
+    }
+
     // CONFIGURAÇÃO DA BUSCA GLOBAL
     public static $globallySearchableAttributes = ['nome', 'email', 'telefone', 'cpf_cnpj'];
 
@@ -43,6 +59,7 @@ class Cadastro extends Model implements HasMedia
         'rg_ie',
         'email',
         'telefone',
+        'celular',
         'telefone_fixo',
         'cep',
         'logradouro',

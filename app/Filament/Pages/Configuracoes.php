@@ -13,6 +13,9 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\Builder;
+use Filament\Forms\Components\Builder\Block;
+use Filament\Forms\Components\RichEditor;
 use Filament\Notifications\Notification;
 use Filament\Actions\Action;
 use App\Models\Setting;
@@ -33,7 +36,7 @@ class Configuracoes extends Page implements HasForms
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
         // chaves que são Arrays/Repeaters e precisam ser decodificadas do JSON
-        $jsonFields = ['catalogo_servicos_v2', 'financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento', 'system_service_types'];
+        $jsonFields = ['catalogo_servicos_v2', 'financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento', 'system_service_types', 'admin_emails', 'pdf_layout'];
         foreach ($jsonFields as $key) {
             if (isset($settings[$key]) && is_string($settings[$key])) {
                 $decoded = json_decode($settings[$key], true);
@@ -46,6 +49,11 @@ class Configuracoes extends Page implements HasForms
         // AUTO-SEED: Se a lista estiver vazia, injeta o catálogo massivo
         if (empty($settings['catalogo_servicos_v2'])) {
             $settings['catalogo_servicos_v2'] = $this->getCatalogoMassivo();
+        }
+
+        // AUTO-SEED: Layout PDF Padrão
+        if (empty($settings['pdf_layout'])) {
+            $settings['pdf_layout'] = $this->getLayoutPadrao();
         }
 
         // AUTO-SEED: Tipos de Serviço (Carga inicial baseada no Enum)
@@ -72,11 +80,9 @@ class Configuracoes extends Page implements HasForms
                                             ->label('Nome do Sistema')
                                             ->placeholder('Ex: Minha Empresa')
                                             ->helperText('Aparece no header e PDFs')
-                                            ->required()
                                             ->columnSpan(1),
                                         TextInput::make('empresa_nome')
                                             ->label('Nome Fantasia')
-                                            ->required()
                                             ->columnSpan(1),
                                         FileUpload::make('empresa_logo')
                                             ->label('Logo Principal')
@@ -232,7 +238,152 @@ class Configuracoes extends Page implements HasForms
                                     ]),
                             ]),
 
-                        // 5. FINANCEIRO
+
+                        // 6. CUSTOMIZAÇÃO PDF (BUILDER)
+                        Tabs\Tab::make('Personalização de PDF')
+                            ->icon('heroicon-m-document-text')
+                            ->schema([
+                                Section::make('Identidade Visual (Global)')
+                                    ->description('Cores aplicadas em todo o documento')
+                                    ->columns(3)
+                                    ->schema([
+                                        ColorPicker::make('pdf_color_primary')
+                                            ->label('Cor Primária')
+                                            ->default('#2563eb'),
+                                        ColorPicker::make('pdf_color_secondary')
+                                            ->label('Cor Secundária')
+                                            ->default('#eff6ff'),
+                                        ColorPicker::make('pdf_color_text')
+                                            ->label('Cor do Texto')
+                                            ->default('#1f2937'),
+                                        Toggle::make('pdf_mostrar_fotos_global')
+                                            ->label('Habilitar Fotos nos PDFs (Global)')
+                                            ->default(true)
+                                            ->columnSpanFull(),
+                                        Toggle::make('pdf_include_pix_global')
+                                            ->label('Gerar QR Code PIX (Global)')
+                                            ->default(true)
+                                            ->columnSpanFull(),
+                                        Toggle::make('pdf_aplicar_desconto_global')
+                                            ->label('Aplicar Desconto à Vista (Global)')
+                                            ->default(true)
+                                            ->columnSpanFull(),
+                                    ]),
+
+                                Section::make('Construtor de Layout')
+                                    ->description('Arraste os boxes para alterar a ordem dos elementos no PDF.')
+                                    ->schema([
+                                        Builder::make('pdf_layout')
+                                            ->label('Estrutura do Documento')
+                                            ->collapsible()
+                                            ->cloneable()
+                                            ->reorderableWithButtons()
+                                            ->blocks([
+                                                // 1. HEADER
+                                                Block::make('header')
+                                                    ->label('Cabeçalho (Logo)')
+                                                    ->icon('heroicon-m-photo')
+                                                    ->schema([
+                                                        Toggle::make('show_logo')->label('Mostrar Logo')->default(true),
+                                                        Toggle::make('show_dates')->label('Mostrar Datas Emissão/Validade')->default(true),
+                                                        Select::make('alignment')
+                                                            ->label('Alinhamento')
+                                                            ->options(['left' => 'Logo à Esquerda', 'center' => 'Centralizado', 'right' => 'Logo à Direita'])
+                                                            ->default('left'),
+                                                    ]),
+
+                                                // 2. DADOS DO CLIENTE
+                                                Block::make('dados_cliente')
+                                                    ->label('Dados do Cliente')
+                                                    ->icon('heroicon-m-user')
+                                                    ->schema([
+                                                        TextInput::make('titulo')->label('Título da Seção')->default('DADOS DO CLIENTE'),
+                                                        Toggle::make('show_email')->label('Mostrar Email')->default(true),
+                                                        Toggle::make('show_phone')->label('Mostrar Telefone')->default(true),
+                                                        Toggle::make('show_address')->label('Mostrar Endereço')->default(true),
+                                                    ]),
+
+                                                // 3. TABELA ITENS
+                                                Block::make('tabela_itens')
+                                                    ->label('Tabela de Itens')
+                                                    ->icon('heroicon-m-table-cells')
+                                                    ->schema([
+                                                        TextInput::make('titulo')->label('Título da Seção')->default('ITENS DO ORÇAMENTO'),
+                                                        Toggle::make('show_category_colors')->label('Colorir por Categoria (Higienização/Impermeabilização)')->default(true),
+                                                    ]),
+
+                                                // 4. CONTAINER DUPLO (PIX / VALORES)
+                                                Block::make('container_duplo')
+                                                    ->label('Container Duplo (2 Colunas)')
+                                                    ->icon('heroicon-m-rectangle-group')
+                                                    ->schema([
+                                                        Select::make('coluna_esquerda')
+                                                            ->label('Coluna Esquerda')
+                                                            ->options([
+                                                                'totais' => 'Resumo Total',
+                                                                'pix' => 'QR Code PIX',
+                                                                'texto_garantia' => 'Garantia/Avisos',
+                                                                'vazio' => 'Vazio'
+                                                            ])->default('totais'),
+                                                        Select::make('coluna_direita')
+                                                            ->label('Coluna Direita')
+                                                            ->options([
+                                                                'totais' => 'Resumo Total',
+                                                                'pix' => 'QR Code PIX',
+                                                                'texto_garantia' => 'Garantia/Avisos',
+                                                                'vazio' => 'Vazio'
+                                                            ])->default('pix'),
+                                                    ])->columns(2),
+
+                                                // 5. TEXTO LIVRE
+                                                Block::make('texto_livre')
+                                                    ->label('Texto Livre / Termos')
+                                                    ->icon('heroicon-m-pencil-square')
+                                                    ->schema([
+                                                        RichEditor::make('conteudo')
+                                                            ->label('Conteúdo')
+                                                            ->toolbarButtons(['bold', 'italic', 'bulletList', 'orderedList', 'link']),
+                                                    ]),
+
+                                                // 6. LINHA SEPARADORA
+                                                Block::make('linha_separadora')
+                                                    ->label('Linha Separadora')
+                                                    ->icon('heroicon-m-minus')
+                                                    ->schema([
+                                                        ColorPicker::make('cor')->label('Cor da Linha')->default('#e5e7eb'),
+                                                        Select::make('espessura')->options(['1px' => 'Fina', '2px' => 'Média', '4px' => 'Grossa'])->default('1px'),
+                                                    ]),
+
+                                                // 8. GALERIA DE FOTOS
+                                                Block::make('galeria_fotos')
+                                                    ->label('Galeria de Fotos do Orçamento')
+                                                    ->icon('heroicon-m-camera')
+                                                    ->schema([
+                                                        TextInput::make('titulo')->label('Título da Seção')->default('REGISTROS FOTOGRÁFICOS'),
+                                                        Select::make('columns')
+                                                            ->label('Colunas por Linha')
+                                                            ->options([
+                                                                '1' => '1 Foto (Grande)',
+                                                                '2' => '2 Fotos (Médio)',
+                                                                '3' => '3 Fotos (Pequeno)',
+                                                                '4' => '4 Fotos (Mini)'
+                                                            ])->default('2'),
+                                                        Toggle::make('show_legend')->label('Mostrar Legenda (Nome do Arquivo)')->default(false),
+                                                    ]),
+
+                                                // 9. RODAPÉ FIXO
+                                                Block::make('rodape_padrao')
+                                                    ->label('Rodapé Padrão (Fixo)')
+                                                    ->icon('heroicon-m-arrow-down-tray')
+                                                    ->schema([
+                                                        Textarea::make('texto_legal')->label('Texto Legal Pequeno')->rows(2),
+                                                    ]),
+                                            ])
+                                        // ->minItems(1) // Opcional
+                                    ]),
+                            ]),
+
+                        // 5. FINANCEIRO (Reordenado)
                         Tabs\Tab::make('Financeiro')
                             ->icon('heroicon-m-banknotes')
                             ->schema([
@@ -308,12 +459,72 @@ class Configuracoes extends Page implements HasForms
                 ->icon('heroicon-m-arrow-path')
                 ->action(function () {
                     Artisan::call('view:clear');
-                    Artisan::call('filament:optimize-clear');
+                    // Artisan::call('filament:optimize-clear'); // Causing crash on icons:clear
+                    Artisan::call('route:clear');
+                    Artisan::call('config:clear');
                     settings()->clearCache();
                     Notification::make()->title('Sistema Limpo!')->success()->send();
                 })->requiresConfirmation(),
         ];
     }
+    // --- LAYOUT PADRÃO (BUILDER) ---
+    protected function getLayoutPadrao(): array
+    {
+        return [
+            [
+                'type' => 'header',
+                'data' => [
+                    'show_logo' => true,
+                    'show_dates' => true,
+                    'alignment' => 'left'
+                ]
+            ],
+            [
+                'type' => 'dados_cliente',
+                'data' => [
+                    'titulo' => 'DADOS DO CLIENTE',
+                    'show_email' => true,
+                    'show_phone' => true,
+                    'show_address' => true
+                ]
+            ],
+            [
+                'type' => 'tabela_itens',
+                'data' => [
+                    'titulo' => 'ITENS DO ORÇAMENTO',
+                    'show_category_colors' => true
+                ]
+            ],
+            [
+                'type' => 'container_duplo',
+                'data' => [
+                    'coluna_esquerda' => 'totais',
+                    'coluna_direita' => 'pix'
+                ]
+            ],
+            [
+                'type' => 'texto_livre',
+                'data' => [
+                    'conteudo' => '<ul><li>Orçamento válido por 7 dias.</li><li>Pagamento 50% na aprovação e 50% na entrega.</li></ul>'
+                ]
+            ],
+            [
+                'type' => 'galeria_fotos',
+                'data' => [
+                    'titulo' => 'REGISTROS FOTOGRÁFICOS',
+                    'columns' => '2',
+                    'show_legend' => false
+                ]
+            ],
+            [
+                'type' => 'rodape_padrao',
+                'data' => [
+                    'texto_legal' => 'Este documento não é fiscal.'
+                ]
+            ]
+        ];
+    }
+
     // --- LISTA MASSIVA (CORRIGIDA E INCLUSA) ---
     protected function getCatalogoMassivo(): array
     {

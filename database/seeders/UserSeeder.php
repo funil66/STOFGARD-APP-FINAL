@@ -13,8 +13,8 @@ class UserSeeder extends Seeder
         $users = [
             [
                 'name' => 'Allisson Gonçalves de Sousa',
-                'email' => 'allisson@stofgard.com.br',
-                'password' => Hash::make('Swordfish'),
+                'email' => env('FILAMENT_ADMIN_EMAIL', 'allisson@stofgard.com.br'),
+                'password' => Hash::make(env('FILAMENT_ADMIN_PASSWORD', 'Swordfish')),
                 'is_admin' => true,
             ],
             [

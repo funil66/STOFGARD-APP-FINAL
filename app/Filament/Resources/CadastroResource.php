@@ -139,9 +139,9 @@ class CadastroResource extends Resource
                                     ])
                                     ->grid(1)
                                     ->hidden(fn($record) => $record->orcamentos()->count() === 0),
-                                Infolists\Components\Placeholder::make('empty_orcamentos')
+                                Infolists\Components\TextEntry::make('empty_orcamentos')
                                     ->label('')
-                                    ->content('Nenhum orçamento encontrado.')
+                                    ->default('Nenhum orçamento encontrado.')
                                     ->visible(fn($record) => $record->orcamentos()->count() === 0),
                             ]),
 
@@ -175,9 +175,9 @@ class CadastroResource extends Resource
                                     ])
                                     ->grid(1)
                                     ->hidden(fn($record) => $record->ordensServico()->count() === 0),
-                                Infolists\Components\Placeholder::make('empty_os')
+                                Infolists\Components\TextEntry::make('empty_os')
                                     ->label('')
-                                    ->content('Nenhuma ordem de serviço encontrada.')
+                                    ->default('Nenhuma ordem de serviço encontrada.')
                                     ->visible(fn($record) => $record->ordensServico()->count() === 0),
                             ]),
 
@@ -208,9 +208,9 @@ class CadastroResource extends Resource
                                     ])
                                     ->grid(1)
                                     ->hidden(fn($record) => $record->financeiros()->count() === 0),
-                                Infolists\Components\Placeholder::make('empty_financeiro')
+                                Infolists\Components\TextEntry::make('empty_financeiro')
                                     ->label('')
-                                    ->content('Nenhum lançamento financeiro encontrado.')
+                                    ->default('Nenhum lançamento financeiro encontrado.')
                                     ->visible(fn($record) => $record->financeiros()->count() === 0),
                             ]),
 
@@ -238,9 +238,9 @@ class CadastroResource extends Resource
                                     ])
                                     ->grid(1)
                                     ->hidden(fn($record) => $record->agendas()->count() === 0),
-                                Infolists\Components\Placeholder::make('empty_agenda')
+                                Infolists\Components\TextEntry::make('empty_agenda')
                                     ->label('')
-                                    ->content('Nenhum agendamento encontrado.')
+                                    ->default('Nenhum agendamento encontrado.')
                                     ->visible(fn($record) => $record->agendas()->count() === 0),
                             ]),
 
@@ -263,16 +263,16 @@ class CadastroResource extends Resource
                                     ])
                                     ->grid(1)
                                     ->hidden(fn($record) => $record->vendedores()->count() === 0),
-                                Infolists\Components\Placeholder::make('empty_vendedores')
+                                Infolists\Components\TextEntry::make('empty_vendedores')
                                     ->label('')
-                                    ->content('Nenhum vendedor vinculado a esta loja.')
+                                    ->default('Nenhum vendedor vinculado a esta loja.')
                                     ->visible(fn($record) => $record->vendedores()->count() === 0),
                             ]),
 
                         // ABA 6: ARQUIVOS
                         Infolists\Components\Tabs\Tab::make('📁 Arquivos')
                             ->schema([
-                                Infolists\Components\ImageEntry::make('arquivos')
+                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
                                     ->label('Galeria de Documentos')
                                     ->collection('arquivos')
                                     ->size(100)
@@ -296,30 +296,40 @@ class CadastroResource extends Resource
                     Forms\Components\Select::make('tipo')
                         ->options([
                             'cliente' => 'Cliente Final',
-                            'loja' => 'Loja (Parceiro)',
-                            'vendedor' => 'Vendedor (Parceiro)',
-                            'arquiteto' => 'Arquiteto',
+                            'loja' => 'Loja (Ponto Fixo)',
+                            'vendedor' => 'Vendedor (Interno)',
+                            'parceiro' => 'Parceiro de Negócios',
                         ])
                         ->required()
-                        ->live(),
+                        ->live()
+                        ->afterStateUpdated(fn($state, Forms\Set $set) => $state === 'parceiro' ? $set('especialidade', 'Arquiteto') : null),
+
+                    Forms\Components\TextInput::make('especialidade')
+                        ->label('Ramo de Atividade / Profissão')
+                        ->placeholder('Ex: Arquiteto, Advogado, Zelador')
+                        ->visible(fn(Forms\Get $get) => in_array($get('tipo'), ['parceiro', 'loja']))
+                        ->columnSpan(1),
+
                     Forms\Components\Select::make('parent_id')
                         ->label('Loja Vinculada')
                         ->relationship('loja', 'nome', fn(\Illuminate\Database\Eloquent\Builder $query) => $query->where('tipo', 'loja'))
                         ->visible(fn(Forms\Get $get) => $get('tipo') === 'vendedor')
                         ->searchable(),
+
                     // CAMPO DE COMISSÃO
                     Forms\Components\TextInput::make('comissao_percentual')
                         ->label('Comissão Padrão (%)')
                         ->numeric()
                         ->suffix('%')
                         ->default(0)
-                        ->visible(fn(Forms\Get $get) => in_array($get('tipo'), ['vendedor', 'loja', 'arquiteto']))
+                        ->visible(fn(Forms\Get $get) => in_array($get('tipo'), ['vendedor', 'loja', 'parceiro']))
                         ->helperText('Porcentagem que será aplicada automaticamente nos orçamentos.'),
                 ])->columns(3),
             Forms\Components\Section::make('Dados Principais')
                 ->schema([
                     Forms\Components\TextInput::make('nome')->required()->columnSpan(2),
                     Forms\Components\TextInput::make('documento')->label('CPF / CNPJ')
+                        ->unique(ignoreRecord: true)
                         ->mask(\Filament\Support\RawJs::make(<<<'JS'
                             $input.length > 14 ? '99.999.999/9999-99' : '999.999.999-99'
                         JS)),

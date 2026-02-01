@@ -6,33 +6,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orçamento {{ $orcamento->numero ?? $orcamento->numero_orcamento }}</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        @page {
+            margin: 0px; /* Reset hard margins to allow absolute positioning from edge */
         }
 
-        @page {
-            margin: 12mm;
-        }
+        /* DYNAMIC STYLES */
+        @php
+            // Cores
+            $primary = $config->pdf_color_primary ?? '#2563eb';
+            $secondary = $config->pdf_color_secondary ?? '#eff6ff';
+            $text = $config->pdf_color_text ?? '#1f2937';
+        @endphp
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', Arial, sans-serif;
             font-size: 10px;
-            color: #1f2937;
+            color: {{ $text }};
             line-height: 1.4;
+            
+            /* Define content safe area via padding */
+            padding-top: 4.5cm;    
+            padding-bottom: 2.5cm; 
+            padding-left: 1cm;
+            padding-right: 1cm;
+            margin: 0;
         }
 
-        /* HEADER */
+        /* HEADER FIXO - Topo absoluto da página */
         .header {
-            border-bottom: 3px solid #2563eb;
-            padding-bottom: 12px;
-            margin-bottom: 16px;
+            position: fixed; 
+            top: 0;
+            left: 1cm; /* Match the body padding/margin */
+            right: 1cm; 
+            height: 4cm;
+            padding-top: 0.5cm; /* Top Margin visual */
+            border-bottom: 3px solid {{ $primary }};
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            background: white; /* Ensure no transparent conflicts */
+            z-index: 1000;
         }
 
+        /* FOOTER FIXO - Rodapé absoluto da página */
+        .footer {
+            position: fixed; 
+            bottom: 0;
+            left: 1cm; 
+            right: 1cm; 
+            height: 2cm;
+            padding-bottom: 0.5cm; /* Bottom Margin visual */
+            background: white;
+            padding-top: 5px;
+            border-top: 1px solid #e5e7eb;
+            z-index: 1000;
+        }
+        
         .header-left {
             max-width: 55%;
         }
@@ -48,9 +75,9 @@
             color: #374151;
             line-height: 1.6;
         }
-
+        
         .header-right {
-            background: #2563eb;
+            background: {{ $primary }};
             color: white;
             padding: 12px 16px;
             border-radius: 8px;
@@ -69,9 +96,9 @@
             line-height: 1.7;
         }
 
-        /* SECTIONS */
+        /* REST OF STYLES (Unchanged) */
         .section-header {
-            background: #2563eb;
+            background: {{ $primary }};
             color: white;
             padding: 7px 12px;
             font-size: 10px;
@@ -79,457 +106,252 @@
             margin-top: 14px;
             margin-bottom: 8px;
             text-transform: uppercase;
+            page-break-after: avoid; 
         }
 
-        /* CLIENT */
-        .client-box {
-            padding: 10px 0;
-            border-bottom: 1px solid #e5e7eb;
-        }
+        .client-box { padding: 10px 0; border-bottom: 1px solid #e5e7eb; page-break-inside: avoid; }
+        .client-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .client-name { font-size: 11px; font-weight: bold; }
+        .client-detail { font-size: 9px; color: #6b7280; }
 
-        .client-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-        }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        table thead { background: #f3f4f6; }
+        table thead th { padding: 8px 6px; text-align: left; font-size: 9px; font-weight: 600; color: #374151; border-bottom: 2px solid #d1d5db; }
+        table thead th:nth-child(3), table thead th:nth-child(4), table thead th:nth-child(5) { text-align: right; }
+        table tbody td { padding: 8px 6px; font-size: 9px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+        table tbody td:nth-child(3), table tbody td:nth-child(4), table tbody td:nth-child(5) { text-align: right; }
 
-        .client-name {
-            font-size: 11px;
-            font-weight: bold;
-        }
+        .item-category { display: inline-block; padding: 2px 6px; border-radius: 3px; font-weight: 600; font-size: 7px; text-transform: uppercase; margin-bottom: 3px; }
+        .cat-higienizacao { background: #dbeafe; color: #1e40af; }
+        .cat-impermeabilizacao { background: #fef3c7; color: #92400e; }
+        .cat-outro { background: #e5e7eb; color: #374151; }
+        .item-description { color: #6b7280; font-size: 8px; line-height: 1.3; }
 
-        .client-detail {
-            font-size: 9px;
-            color: #6b7280;
-        }
+        .valores-section { margin-top: 16px; display: flex; gap: 20px; page-break-inside: avoid; }
+        .valores-left { flex: 1; }
+        .valores-right { width: 220px; }
+        .valores-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; }
+        .valor-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 10px; }
+        .valor-row.desconto { color: #dc2626; font-weight: 600; }
+        .valor-row.desconto-prestador { color: #ea580c; font-weight: 600; }
+        .valor-row-separator { border-top: 2px solid #2563eb; margin: 8px 0; }
+        .valor-total-box { background: #eff6ff; border: 2px solid #2563eb; border-radius: 6px; padding: 12px; text-align: center; margin-top: 10px; }
+        .valor-total-label { font-size: 11px; color: #1e40af; font-weight: 600; }
+        .valor-total-value { font-size: 24px; font-weight: bold; color: #2563eb; }
 
-        /* TABLE */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-        }
+        .pix-box { background: #ecfdf5; border: 2px solid #10b981; border-radius: 8px; padding: 12px; text-align: center; }
+        .pix-title { font-size: 11px; font-weight: bold; color: #065f46; margin-bottom: 8px; }
+        .pix-qrcode img { width: 100px; height: 100px; border: 2px solid #10b981; border-radius: 4px; background: white; padding: 3px; }
+        .pix-valor { margin-top: 8px; font-size: 12px; font-weight: bold; color: #065f46; }
+        .pix-desconto { font-size: 9px; color: #059669; }
+        .pix-chave { margin-top: 8px; font-size: 7px; color: #374151; }
+        .pix-code { background: white; border: 1px solid #10b981; border-radius: 4px; padding: 5px; font-family: 'Courier New', monospace; font-size: 6px; word-break: break-all; color: #111; line-height: 1.4; margin-top: 5px; }
 
-        table thead {
-            background: #f3f4f6;
-        }
-
-        table thead th {
-            padding: 8px 6px;
-            text-align: left;
-            font-size: 9px;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 2px solid #d1d5db;
-        }
-
-        table thead th:nth-child(3),
-        table thead th:nth-child(4),
-        table thead th:nth-child(5) {
-            text-align: right;
-        }
-
-        table tbody td {
-            padding: 8px 6px;
-            font-size: 9px;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: top;
-        }
-
-        table tbody td:nth-child(3),
-        table tbody td:nth-child(4),
-        table tbody td:nth-child(5) {
-            text-align: right;
-        }
-
-        .item-category {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-weight: 600;
-            font-size: 7px;
-            text-transform: uppercase;
-            margin-bottom: 3px;
-        }
-
-        .cat-higienizacao {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .cat-impermeabilizacao {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .cat-outro {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .item-description {
-            color: #6b7280;
-            font-size: 8px;
-            line-height: 1.3;
-        }
-
-        /* VALUES SECTION - 2 COLUMNS */
-        .valores-section {
-            margin-top: 16px;
-            display: flex;
-            gap: 20px;
-        }
-
-        .valores-left {
-            flex: 1;
-        }
-
-        .valores-right {
-            width: 220px;
-        }
-
-        .valores-box {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 12px;
-        }
-
-        .valor-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            font-size: 10px;
-        }
-
-        .valor-row.desconto {
-            color: #dc2626;
-            font-weight: 600;
-        }
-
-        .valor-row.desconto-prestador {
-            color: #ea580c;
-            font-weight: 600;
-        }
-
-        .valor-row-separator {
-            border-top: 2px solid #2563eb;
-            margin: 8px 0;
-        }
-
-        .valor-total-box {
-            background: #eff6ff;
-            border: 2px solid #2563eb;
-            border-radius: 6px;
-            padding: 12px;
-            text-align: center;
-            margin-top: 10px;
-        }
-
-        .valor-total-label {
-            font-size: 11px;
-            color: #1e40af;
-            font-weight: 600;
-        }
-
-        .valor-total-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-        }
-
-        /* PIX BOX */
-        .pix-box {
-            background: #ecfdf5;
-            border: 2px solid #10b981;
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        .pix-title {
-            font-size: 11px;
-            font-weight: bold;
-            color: #065f46;
-            margin-bottom: 8px;
-        }
-
-        .pix-qrcode img {
-            width: 100px;
-            height: 100px;
-            border: 2px solid #10b981;
-            border-radius: 4px;
-            background: white;
-            padding: 3px;
-        }
-
-        .pix-valor {
-            margin-top: 8px;
-            font-size: 12px;
-            font-weight: bold;
-            color: #065f46;
-        }
-
-        .pix-desconto {
-            font-size: 9px;
-            color: #059669;
-        }
-
-        .pix-chave {
-            margin-top: 8px;
-            font-size: 7px;
-            color: #374151;
-        }
-
-        .pix-code {
-            background: white;
-            border: 1px solid #10b981;
-            border-radius: 4px;
-            padding: 5px;
-            font-family: 'Courier New', monospace;
-            font-size: 6px;
-            word-break: break-all;
-            color: #111;
-            line-height: 1.4;
-            margin-top: 5px;
-        }
-
-        /* FOOTER */
-        .footer {
-            margin-top: 16px;
-            padding-top: 10px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .footer-warning {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 4px;
-            padding: 8px 10px;
-            font-size: 8px;
-            color: #dc2626;
-            text-align: center;
-            margin-bottom: 8px;
-        }
-
-        .footer-legal {
-            font-size: 7px;
-            color: #9ca3af;
-            text-align: center;
-            line-height: 1.5;
-        }
+        .footer-warning { background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 8px 10px; font-size: 8px; color: #dc2626; text-align: center; margin-bottom: 8px; }
+        .footer-legal { font-size: 7px; color: #9ca3af; text-align: center; line-height: 1.5; }
     </style>
 </head>
 
 <body>
-    <!-- HEADER -->
-    <div class="header">
-        <div class="header-left">
-            @php
-                $logoPath = null;
-                if (isset($config->empresa_logo) && $config->empresa_logo) {
-                    $logoPath = $config->empresa_logo;
-                    if (!file_exists($logoPath)) {
-                        $logoPath = storage_path('app/public/' . $config->empresa_logo);
-                    }
-                } else {
-                    // Tenta buscar logo padrão do storage
-                    $manualPath = storage_path('app/public/logos/logo.png');
-                    if (file_exists($manualPath)) {
-                        $logoPath = $manualPath;
-                    }
-                }
-                $nomeSistema = settings('nome_sistema', $config->empresa_nome ?? 'Empresa');
-            @endphp
+    <!-- LAYOUT LOGIC -->
+    @php
+        $layout = $config->pdf_layout ?? [];
+        if (empty($layout)) {
+            $layout = [
+                ['type' => 'header', 'data' => ['show_logo' => true, 'show_dates' => true, 'alignment' => 'left']],
+                ['type' => 'dados_cliente', 'data' => []],
+                ['type' => 'tabela_itens', 'data' => []],
+                ['type' => 'container_duplo', 'data' => ['coluna_esquerda' => 'totais', 'coluna_direita' => 'pix']],
+                ['type' => 'rodape_padrao', 'data' => []]
+            ];
+        }
 
-            @if($logoPath && file_exists($logoPath))
-                <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo"
-                    class="logo-img">
-            @else
-                <div style="font-size: 16px; font-weight: bold; color: #2563eb; margin-bottom: 8px;">
-                    {{ $nomeSistema }}
-                </div>
-                <div style="font-size: 10px; color: #6b7280;">{{ settings('empresa_slogan', 'Serviços Profissionais') }}
-                </div>
-            @endif
+        $headerBlock = collect($layout)->firstWhere('type', 'header');
+        $footerBlock = collect($layout)->firstWhere('type', 'rodape_padrao');
+        $mainBlocks = collect($layout)->reject(fn($b) => in_array($b['type'], ['header', 'rodape_padrao']));
+    @endphp
 
-            <div class="company-info">
-                <div><strong>CNPJ:</strong> {{ $config->empresa_cnpj ?? settings('empresa_cnpj', '') }}</div>
-                <div><strong>Telefone:</strong> {{ $config->empresa_telefone ?? settings('empresa_telefone', '') }}
-                </div>
-                <div><strong>E-mail:</strong> {{ $config->empresa_email ?? settings('empresa_email', '') }}</div>
-            </div>
-        </div>
-        <div class="header-right">
-            <div class="numero-orcamento">{{ $orcamento->numero ?? $orcamento->numero_orcamento }}</div>
-            <div class="datas">
-                <div><strong>Data de Emissão:</strong><br>
-                    {{ $orcamento->data_orcamento ? \Carbon\Carbon::parse($orcamento->data_orcamento)->format('d/m/Y H:i') : $orcamento->created_at->format('d/m/Y H:i') }}
-                </div>
-                <div style="margin-top: 4px;"><strong>Válido até:</strong><br>
-                    {{ $orcamento->data_validade ? \Carbon\Carbon::parse($orcamento->data_validade)->format('d/m/Y') : ($orcamento->created_at ?? now())->addDays(15)->format('d/m/Y') }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- DADOS DO CLIENTE -->
-    <div class="section-header">DADOS DO CLIENTE</div>
-    <div class="client-box">
-        <div class="client-row">
-            <span class="client-name">Cliente:
-                {{ strtoupper($orcamento->cliente->nome ?? 'Cliente Não Informado') }}</span>
-        </div>
-        <div class="client-row">
-            <span class="client-detail">Telefone:
-                {{ $orcamento->cliente->telefone ?? $orcamento->cliente->celular ?? '(--) -----' }}</span>
-            <span class="client-detail">E-mail: {{ $orcamento->cliente->email ?? 'Não informado' }}</span>
-        </div>
-    </div>
-
-    <!-- ITENS DO ORÇAMENTO -->
-    <div class="section-header">ITENS DO ORÇAMENTO</div>
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 45%;">Item</th>
-                <th style="width: 10%;">Un</th>
-                <th style="width: 10%;">Qtd</th>
-                <th style="width: 17%;">Valor Unit.</th>
-                <th style="width: 18%;">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if($orcamento->itens && count($orcamento->itens) > 0)
-                @foreach($orcamento->itens as $item)
+    <!-- FIXED HEADER -->
+    @if($headerBlock)
+        @php $data = $headerBlock['data'] ?? []; @endphp
+        <div class="header"
+            style="justify-content: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'space-between' }};
+                   flex-direction: {{ ($data['alignment'] ?? 'left') === 'center' ? 'column' : 'row' }};
+                   align-items: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'flex-start' }};">
+            
+            @if(($data['show_logo'] ?? true))
+                <div class="header-left" style="{{ ($data['alignment'] ?? 'left') === 'center' ? 'text-align:center; max-width:100%;' : '' }}">
                     @php
-                        $categoria = strtolower($item->categoria ?? 'outro');
-                        $catClass = match (true) {
-                            str_contains($categoria, 'higien') => 'cat-higienizacao',
-                            str_contains($categoria, 'imper') => 'cat-impermeabilizacao',
-                            default => 'cat-outro'
-                        };
+                        $logoPath = $config->empresa_logo ?? null;
+                        if ($logoPath && !file_exists($logoPath)) $logoPath = storage_path('app/public/' . $logoPath);
                     @endphp
-                    <tr>
-                        <td>
-                            <span class="item-category {{ $catClass }}">
-                                {{ strtoupper($item->categoria ?? 'SERVIÇO') }}
-                            </span>
-                            <div class="item-description">{{ $item->descricao }}</div>
-                        </td>
-                        <td>{{ strtoupper($item->unidade_medida ?? 'UN') }}</td>
-                        <td>{{ number_format($item->quantidade, 0) }}</td>
-                        <td><strong>R$ {{ number_format($item->valor_unitario, 2, ',', '.') }}</strong></td>
-                        <td><strong>R$ {{ number_format($item->subtotal, 2, ',', '.') }}</strong></td>
-                    </tr>
-                @endforeach
-            @else
-                <tr>
-                    <td colspan="5" style="text-align: center; padding: 20px; color: #9ca3af;">
-                        Nenhum item cadastrado
-                    </td>
-                </tr>
-            @endif
-        </tbody>
-    </table>
-
-    <!-- VALORES (2 COLUNAS) -->
-    <div class="valores-section">
-        <!-- COLUNA ESQUERDA: VALORES -->
-        <div class="valores-left">
-            <div class="section-header" style="margin-top: 0;">VALORES</div>
-            <div class="valores-box">
-                <div class="valor-row">
-                    <span>Subtotal:</span>
-                    <span><strong>R$ {{ number_format($orcamento->valor_total, 2, ',', '.') }}</strong></span>
-                </div>
-
-                @php
-                    $valorFinal = $orcamento->valor_total;
-                    $descontoPix = 0;
-                    $descontoPrestador = $orcamento->desconto_prestador ?? 0;
-
-                    // Desconto PIX
-                    if ($orcamento->aplicar_desconto_pix && $config && isset($config->percentual_desconto_pix) && $config->percentual_desconto_pix > 0) {
-                        $percentual = $config->percentual_desconto_pix;
-                        $descontoPix = ($orcamento->valor_total * $percentual) / 100;
-                        $valorFinal -= $descontoPix;
-                    }
-
-                    // Desconto do Prestador
-                    if ($descontoPrestador > 0) {
-                        $valorFinal -= $descontoPrestador;
-                    }
-
-                    // Usa valor editado se existir
-                    if ($orcamento->valor_final_editado) {
-                        $valorFinal = $orcamento->valor_final_editado;
-                    }
-                @endphp
-
-                @if($descontoPix > 0)
-                    <div class="valor-row desconto">
-                        <span>Desconto PIX ({{ $config->percentual_desconto_pix ?? 0 }}%):</span>
-                        <span>- R$ {{ number_format($descontoPix, 2, ',', '.') }}</span>
-                    </div>
-                @endif
-
-                @if($descontoPrestador > 0)
-                    <div class="valor-row desconto-prestador">
-                        <span>Desconto Prestador:</span>
-                        <span>- R$ {{ number_format($descontoPrestador, 2, ',', '.') }}</span>
-                    </div>
-                @endif
-
-                <div class="valor-row">
-                    <span>Forma de Pagamento:</span>
-                    <span><strong>{{ strtoupper($orcamento->forma_pagamento ?? 'PIX') }}</strong></span>
-                </div>
-            </div>
-
-            <div class="valor-total-box">
-                <div class="valor-total-label">VALOR TOTAL:</div>
-                <div class="valor-total-value">R$ {{ number_format($valorFinal, 2, ',', '.') }}</div>
-            </div>
-        </div>
-
-        <!-- COLUNA DIREITA: PIX -->
-        <div class="valores-right">
-            @if($orcamento->pdf_incluir_pix && $orcamento->pix_qrcode_base64)
-                <div class="pix-box">
-                    <div class="pix-title">💚 PAGAMENTO VIA PIX</div>
-                    <div class="pix-qrcode">
-                        <img src="{{ $orcamento->pix_qrcode_base64 }}" alt="QR Code PIX">
-                    </div>
-                    <div class="pix-valor">R$ {{ number_format($valorFinal, 2, ',', '.') }}</div>
-                    @if($descontoPix > 0)
-                        <div class="pix-desconto">DESCONTO DE {{ $config->percentual_desconto_pix }}%</div>
-                    @endif
-                    @if($config->pix_chave ?? false)
-                        <div class="pix-chave">
-                            <strong>CHAVE PIX:</strong> {{ $config->pix_tipo_chave ?? 'TELEFONE' }}:
-                            {{ $config->pix_chave ?? '' }}
+                    @if($logoPath && file_exists($logoPath))
+                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
+                    @else
+                        <div style="font-size: 16px; font-weight: bold; color: {{ $primary }}; margin-bottom: 8px;">
+                            {{ $config->nome_sistema ?? 'Empresa' }}
                         </div>
                     @endif
-                    @if($orcamento->pix_copia_cola)
-                        <div class="pix-code">{{ $orcamento->pix_copia_cola }}</div>
-                    @endif
+                    <div class="company-info">
+                        {{ $config->empresa_cnpj ?? '' }}<br>
+                        {{ $config->empresa_telefone ?? '' }}<br>
+                        {{ $config->empresa_email ?? '' }}
+                    </div>
+                </div>
+            @endif
+
+            @if(($data['show_dates'] ?? true))
+                <div class="header-right" style="{{ ($data['alignment'] ?? 'left') === 'center' ? 'margin-top:10px; width:100%; text-align:center;' : '' }}">
+                    <div style="font-size: 10px; opacity: 0.9;">ORÇAMENTO</div>
+                    <div class="numero-orcamento">{{ $orcamento->numero ?? $orcamento->numero_orcamento }}</div>
+                    <div class="datas">
+                        Emissão: {{ $orcamento->data_orcamento ? \Carbon\Carbon::parse($orcamento->data_orcamento)->format('d/m/Y') : now()->format('d/m/Y') }}<br>
+                        Validade: {{ $orcamento->data_validade ? \Carbon\Carbon::parse($orcamento->data_validade)->format('d/m/Y') : '' }}
+                    </div>
                 </div>
             @endif
         </div>
-    </div>
+    @endif
 
-    <!-- FOOTER -->
-    <div class="footer">
-        <div class="footer-warning">
-            ⚠️ Validade: Orçamento e QR Code PIX válidos por 7 dias a partir da emissão.
+    <!-- FIXED FOOTER -->
+    @if($footerBlock)
+        @php $data = $footerBlock['data'] ?? []; @endphp
+        <div class="footer">
+            <div class="footer-warning">
+                ⚠️ {{ $config->pdf_texto_garantia ?? 'Validade 7 dias' }}
+            </div>
+            <div class="footer-legal">
+                {{ $data['texto_legal'] ?? 'Documento não fiscal' }}
+            </div>
         </div>
-        <div class="footer-legal">
-            Este documento não representa um contrato firmado. Após a aprovação do orçamento, será gerada uma Ordem de
-            Serviço oficial.<br>
-            Documento gerado em {{ now()->format('d/m/Y H:i:s') }}
-        </div>
-    </div>
-</body>
+    @endif
 
-</html>
+    <!-- MAIN CONTENT (Flows inside margins) -->
+    <div style="width: 100%;">
+        @foreach($mainBlocks as $block)
+            @php $data = $block['data'] ?? []; @endphp
+            
+            <!-- (RENDER BLOCKS - SIMPLIFIED MATCHING TO PREVIOUS CODE) -->
+            @if($block['type'] === 'dados_cliente')
+                <div class="section-header">{{ $data['titulo'] ?? 'DADOS DO CLIENTE' }}</div>
+                <div class="client-box">
+                    <span class="client-name">Nome: {{ strtoupper($orcamento->cliente->nome ?? '') }}</span><br>
+                    @if(!empty($orcamento->cliente->telefone)) <strong>Tel:</strong> {{ $orcamento->cliente->telefone }} @endif
+                    @if(!empty($orcamento->cliente->email)) | <strong>Email:</strong> {{ $orcamento->cliente->email }} @endif
+                    @if(!empty($orcamento->cliente->logradouro))
+                        <br><strong>End:</strong> {{ $orcamento->cliente->logradouro }}, {{ $orcamento->cliente->numero ?? 'S/N' }} 
+                        {{ $orcamento->cliente->bairro ? '- '.$orcamento->cliente->bairro : '' }}
+                    @endif
+                </div>
+            @endif
+
+            @if($block['type'] === 'tabela_itens')
+                <div class="section-header">{{ $data['titulo'] ?? 'ITENS DO ORÇAMENTO' }}</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="25%">SERVIÇO</th>
+                            <th width="35%">DESCRIÇÃO</th>
+                            <th width="5%">UN</th>
+                            <th width="5%">QTD</th>
+                            <th width="15%" style="text-align:right">VALOR UNIT.</th>
+                            <th width="15%" style="text-align:right">TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($orcamento->itens as $item)
+                        @php
+                            $catClass = 'cat-outro';
+                            if(($data['show_category_colors'] ?? true)) {
+                                $cat = strtolower($item->categoria ?? '');
+                                if(str_contains($cat, 'higien')) $catClass = 'cat-higienizacao';
+                                if(str_contains($cat, 'imper')) $catClass = 'cat-impermeabilizacao';
+                            }
+                        @endphp
+                        <tr>
+                            <td><span class="item-category {{ $catClass }}">{{ strtoupper($item->categoria ?? 'SERVIÇO') }}</span></td>
+                            <td>
+                                <div class="item-description">
+                                    <strong>{{ $item->item_nome }}</strong>
+                                    @if($item->descricao && $item->descricao !== $item->item_nome) <br>{{ $item->descricao }} @endif
+                                </div>
+                            </td>
+                            <td>{{ $item->unidade_medida ?? 'UN' }}</td>
+                            <td>{{ $item->quantidade }}</td>
+                            <td style="text-align:right">R$ {{ number_format($item->valor_unitario, 2, ',', '.') }}</td>
+                            <td style="text-align:right">R$ {{ number_format($item->subtotal, 2, ',', '.') }}</td>
+                        </tr>
+                        @endforeach
+                        @if($orcamento->extra_attributes)
+                            @foreach($orcamento->extra_attributes as $key => $val)
+                                @if(is_numeric($val) && $val > 0)
+                                <tr>
+                                    <td colspan="5" style="text-align:right;"><strong>{{ ucfirst($key) }}</strong></td>
+                                    <td style="text-align:right;"><strong>R$ {{ number_format($val, 2, ',', '.') }}</strong></td>
+                                </tr>
+                                @endif
+                            @endforeach
+                        @endif
+                    </tbody>
+                </table>
+            @endif
+
+            @if($block['type'] === 'galeria_fotos')
+                 @php
+                    $showPhotos = $orcamento->pdf_mostrar_fotos ?? true;
+                    $colArq = $orcamento->getMedia('arquivos');
+                    $colFotos = $orcamento->getMedia('fotos_orcamento');
+                    $allMedia = $colArq->merge($colFotos);
+                    $images = $allMedia->filter(fn ($media) => str_starts_with($media->mime_type, 'image/'));
+                    $fotos = $images->map(function($media) {
+                        try {
+                            $path = $media->getPath();
+                            if (file_exists($path)) {
+                                $type = pathinfo($path, PATHINFO_EXTENSION);
+                                $data = file_get_contents($path);
+                                if ($data) {
+                                    $media->base64_src = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                                    return $media;
+                                }
+                            }
+                        } catch (\Exception $e) {}
+                        return null;
+                    })->filter();
+                    $cols = (int) ($data['columns'] ?? 2);
+                 @endphp
+                 @if($showPhotos && count($fotos) > 0)
+                    <div class="section-header" style="page-break-inside: avoid;">{{ $data['titulo'] ?? 'REGISTROS FOTOGRÁFICOS' }}</div>
+                    <div class="fotos-grid" style="display: grid; grid-template-columns: repeat({{ $cols }}, 1fr); gap: 10px; margin-bottom: 20px; page-break-inside: avoid;">
+                        @foreach($fotos as $foto)
+                            @if($foto->base64_src)
+                            <div class="foto-item" style="text-align: center; page-break-inside: avoid;">
+                                 <img src="{{ $foto->base64_src }}" style="width: 100%; height: auto; border-radius: 4px; border: 1px solid #eee;">
+                                 @if(($data['show_legend'] ?? false)) <div style="font-size: 8px; color: #999;">{{ $foto->file_name }}</div> @endif
+                            </div>
+                            @endif
+                        @endforeach
+                    </div>
+                 @endif
+            @endif
+
+            @if($block['type'] === 'container_duplo')
+                <div class="valores-section" style="page-break-inside: avoid;">
+                    <div class="valores-left" style="flex:1; margin-right: 15px;">
+                        @include('pdf.partials.block_content', ['type' => $data['coluna_esquerda'] ?? 'totais', 'orcamento' => $orcamento, 'config' => $config])
+                    </div>
+                    <div class="valores-right" style="flex:1;">
+                        @include('pdf.partials.block_content', ['type' => $data['coluna_direita'] ?? 'pix', 'orcamento' => $orcamento, 'config' => $config])
+                    </div>
+                </div>
+            @endif
+
+            @if($block['type'] === 'texto_livre')
+                <div style="margin: 20px 0; page-break-inside: avoid;">{!! $data['conteudo'] ?? '' !!}</div>
+            @endif
+            
+            @if($block['type'] === 'linha_separadora')
+                <hr style="border: 0; border-top: {{ $data['espessura'] ?? '1px' }} solid {{ $data['cor'] ?? '#eee' }}; margin: 20px 0;">
+            @endif
+
+        @endforeach
+    </div>

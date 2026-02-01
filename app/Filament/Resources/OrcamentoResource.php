@@ -69,10 +69,6 @@ class OrcamentoResource extends Resource
                         Forms\Components\Toggle::make('pdf_incluir_pix')
                             ->label('Gerar QR Code PIX')
                             ->default(true),
-                        Toggle::make('aplicar_desconto_pix')
-                            ->label('Aplicar Desconto à Vista (PIX)?')
-                            ->default(true)
-                            ->columnSpanFull(),
                         Forms\Components\Select::make('pix_chave_selecionada')
                             ->label('Selecionar Chave PIX')
                             ->options(function () {
@@ -244,7 +240,10 @@ class OrcamentoResource extends Resource
                             ->live()
                             ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get)),
                     ]),
-                // 4. TOTAL
+
+                // (SEÇÃO DE FOTOS REMOVIDA PARA EVITAR DUPLICIDADE)
+
+                // 5. TOTAL
                 Forms\Components\Section::make()
                     ->schema([
                         Forms\Components\TextInput::make('valor_total')
@@ -254,12 +253,18 @@ class OrcamentoResource extends Resource
                             ->readOnly()->dehydrated()->columnSpanFull(),
                         Forms\Components\Textarea::make('observacoes')->label('Observações')->columnSpanFull(),
                     ]),
-                // GALERIA DE ARQUIVOS E MÍDIA
-                \Filament\Forms\Components\Section::make('Galeria de Arquivos e Mídia')
+                // GALERIA DE ARQUIVOS E MÍDIA (CONSOLIDADO)
+                \Filament\Forms\Components\Section::make('Fotos e Arquivos')
                     ->collapsible()
                     ->schema([
+                        Forms\Components\Toggle::make('pdf_mostrar_fotos')
+                            ->label('Exibir Imagens e Fotos no PDF?')
+                            ->helperText('Se marcado, as imagens deste painel aparecerão no PDF gerado.')
+                            ->default(fn() => \App\Models\Setting::get('pdf_mostrar_fotos_global', true))
+                            ->columnSpanFull(),
+
                         SpatieMediaLibraryFileUpload::make('arquivos')
-                            ->label('Anexos (Fotos, PDFs, Docs)')
+                            ->label('Upload de Fotos e Documentos')
                             ->collection('arquivos')
                             ->multiple()
                             ->disk('public')
@@ -319,6 +324,24 @@ class OrcamentoResource extends Resource
         $total = collect($itens)->sum(function ($item) {
             return floatval($item['subtotal'] ?? 0);
         });
+
+        // Adiciona valores de "extra_attributes" (Nicho)
+        $extras = $get('extra_attributes') ?? $get('../../extra_attributes') ?? [];
+        if (is_array($extras)) {
+            foreach ($extras as $key => $value) {
+                // Tenta limpar e converter para float se for string numérica
+                if (is_numeric($value)) {
+                    $total += (float) $value;
+                } elseif (is_string($value)) {
+                    // Remove R$, pontos de milhar, troca vírgula por ponto
+                    $clean = preg_replace('/[^0-9,]/', '', $value); // 1.200,50 -> 1200,50
+                    $clean = str_replace(',', '.', $clean); // 1200.50
+                    if (is_numeric($clean)) {
+                        $total += (float) $clean;
+                    }
+                }
+            }
+        }
 
         // Atualiza ambos os caminhos do formulário
         $set('valor_total', $total);
@@ -553,32 +576,71 @@ class OrcamentoResource extends Resource
                         Forms\Components\Textarea::make('observacoes_os')
                             ->label('📝 Observações para a OS')
                             ->rows(3)
-                            ->placeholder('Observações adicionais para a Ordem de Serviço...'),
+                            ->placeholder('Observações adicionais para a Ordem de Serviço...')
+                            ->columnSpanFull(),
+
+                        Forms\Components\Section::make('Ajuste de Valores')
+                            ->description('Defina o valor final acordado. A diferença será lançada como desconto.')
+                            ->schema([
+                                Forms\Components\TextInput::make('valor_original')
+                                    ->label('Valor Original')
+                                    ->prefix('R$')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->default(fn(Orcamento $record) => number_format((float) $record->valor_total, 2, ',', '.')),
+
+                                Forms\Components\TextInput::make('valor_final')
+                                    ->label('Valor Final Acordado')
+                                    ->prefix('R$')
+                                    ->numeric()
+                                    ->required()
+                                    ->default(fn(Orcamento $record) => $record->valor_final_editado ?? $record->valor_total)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function ($state, Forms\Set $set, Orcamento $record) {
+                                        $val = floatval($state);
+                                        $desconto = (float) $record->valor_total - $val;
+                                        $set('desconto_calculado', number_format(max(0, $desconto), 2, ',', '.'));
+                                    }),
+
+                                Forms\Components\TextInput::make('desconto_calculado')
+                                    ->label('Desconto do Prestador (Previsto)')
+                                    ->prefix('R$')
+                                    ->disabled()
+                                    ->dehydrated(false) // Apenas visual
+                            ])->columns(3),
                     ])
                     ->action(function (Orcamento $record, array $data): void {
                         \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data) {
-                            // 1. Criar Ordem de Serviço
-                            $cadastro = $record->cliente;
-                            $enderecoCompleto = $data['local_servico'] ?? 'Endereço não informado';
+                            // 0. Atualizar valores do Orçamento antes de gerar OS
+                            $valorFinal = floatval($data['valor_final']);
+                            $desconto = $record->valor_total - $valorFinal;
 
-                            $osData = [
-                                'numero_os' => \App\Models\OrdemServico::gerarNumeroOS(),
-                                'orcamento_id' => $record->id,
-                                'cadastro_id' => $record->cadastro_id,
-                                'loja_id' => $record->loja_id,
-                                'vendedor_id' => $record->vendedor_id,
-                                'tipo_servico' => $record->tipo_servico ?? 'servico',
-                                'descricao_servico' => $record->descricao_servico ?? 'Conforme orçamento ' . $record->numero,
-                                'data_abertura' => now(),
-                                'data_prevista' => $data['data_servico'] ?? null,
-                                'status' => 'pendente',
-                                'valor_total' => $record->valor_total,
-                                'observacoes' => $data['observacoes_os'] ?? $record->observacoes,
-                                'extra_attributes' => $record->extra_attributes, // COPY DYNAMIC ATTRIBUTES
-                                'criado_por' => auth()->user()->name ?? auth()->id(),
-                            ];
+                            $record->update([
+                                'valor_final_editado' => $valorFinal,
+                                'desconto_prestador' => max(0, $desconto),
+                            ]);
 
-                            $os = \App\Models\OrdemServico::create($osData);
+                            // 1. Criar Ordem de Serviço (Sem disparar eventos para evitar Agenda duplicada)
+                            $os = \App\Models\OrdemServico::withoutEvents(function () use ($record, $data, $valorFinal) {
+                                $osData = [
+                                    'numero_os' => \App\Models\OrdemServico::gerarNumeroOS(),
+                                    'orcamento_id' => $record->id,
+                                    'cadastro_id' => $record->cadastro_id,
+                                    'loja_id' => $record->loja_id,
+                                    'vendedor_id' => $record->vendedor_id,
+                                    'tipo_servico' => $record->tipo_servico ?? 'servico',
+                                    'descricao_servico' => $record->descricao_servico ?? 'Conforme orçamento ' . $record->numero,
+                                    'data_abertura' => now(),
+                                    'data_prevista' => $data['data_servico'] ?? null,
+                                    'status' => 'pendente',
+                                    'valor_total' => $valorFinal,
+                                    'observacoes' => $data['observacoes_os'] ?? $record->observacoes,
+                                    'extra_attributes' => $record->extra_attributes,
+                                    'criado_por' => auth()->user()->name ?? auth()->id(),
+                                ];
+
+                                return \App\Models\OrdemServico::create($osData);
+                            });
 
                             // Copiar itens do orçamento para a OS
                             foreach ($record->itens as $item) {
@@ -679,7 +741,7 @@ class OrcamentoResource extends Resource
                             ->label('Valor Original (calculado)')
                             ->prefix('R$')
                             ->disabled()
-                            ->default(fn(Orcamento $record) => number_format($record->valor_total, 2, ',', '.')),
+                            ->default(fn(Orcamento $record) => number_format((float) $record->valor_total, 2, ',', '.')),
 
                         Forms\Components\TextInput::make('valor_final')
                             ->label('Valor Final Acordado')
@@ -689,7 +751,7 @@ class OrcamentoResource extends Resource
                             ->default(fn(Orcamento $record) => $record->valor_final_editado ?? $record->valor_total)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, Forms\Set $set, Orcamento $record) {
-                                $desconto = $record->valor_total - floatval($state);
+                                $desconto = (float) $record->valor_total - floatval($state);
                                 $set('desconto_calculado', 'R$ ' . number_format(max(0, $desconto), 2, ',', '.'));
                             }),
 

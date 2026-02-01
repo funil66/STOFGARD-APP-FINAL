@@ -46,6 +46,7 @@ class Orcamento extends Model implements HasMedia
         'comissao_vendedor',
         'comissao_loja',
         'pdf_incluir_pix',        // Controle do botão
+        'pdf_mostrar_fotos',      // Controle de exibição de fotos
         'pix_chave_selecionada',  // Chave escolhida (Crucial)
         'aplicar_desconto_pix',
         'etapa_funil',
@@ -61,6 +62,7 @@ class Orcamento extends Model implements HasMedia
         'comissao_vendedor' => 'decimal:2',
         'comissao_loja' => 'decimal:2',
         'pdf_incluir_pix' => 'boolean',
+        'pdf_mostrar_fotos' => 'boolean',
         'aplicar_desconto_pix' => 'boolean',
     ];
 
@@ -113,8 +115,9 @@ class Orcamento extends Model implements HasMedia
             $model->comissao_vendedor = $model->comissao_vendedor ?? 0;
             $model->comissao_loja = $model->comissao_loja ?? 0;
 
-            $model->pdf_incluir_pix = $model->pdf_incluir_pix ?? true;
-            $model->aplicar_desconto_pix = $model->aplicar_desconto_pix ?? true;
+            $model->pdf_incluir_pix = $model->pdf_incluir_pix ?? \App\Models\Setting::get('pdf_include_pix_global', true);
+            $model->pdf_mostrar_fotos = $model->pdf_mostrar_fotos ?? \App\Models\Setting::get('pdf_mostrar_fotos_global', true);
+            $model->aplicar_desconto_pix = $model->aplicar_desconto_pix ?? \App\Models\Setting::get('pdf_aplicar_desconto_global', true);
         });
     }
 

@@ -12,6 +12,22 @@ Route::get('/', function () {
 });
 
 // --- ROTA PÚBLICA DE CAPTAÇÃO DE LEADS ---
+if (app()->isLocal()) {
+    Route::get('/dev-login', function () {
+        $user = \App\Models\User::where('is_admin', true)->first();
+        if (!$user) {
+            $user = \App\Models\User::first();
+        }
+
+        if ($user) {
+            auth()->login($user);
+            return redirect('/admin');
+        }
+
+        return 'Nenhum usuário encontrado. Execute: php artisan migrate:fresh --seed';
+    });
+}
+
 Route::get('/solicitar-orcamento', function () {
     return view('landing.solicitar-orcamento');
 })->name('solicitar.orcamento');
