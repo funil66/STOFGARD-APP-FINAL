@@ -576,18 +576,7 @@ class OrcamentoResource extends Resource
                             ->rows(2)
                             ->default(function ($record) {
                                 $cadastro = $record->cliente;
-                                if (!empty($cadastro?->endereco_completo)) {
-                                    return $cadastro->endereco_completo;
-                                }
-                                return trim(implode(', ', array_filter([
-                                    $cadastro?->logradouro,
-                                    $cadastro && ($cadastro->numero ?? false) ? "nº {$cadastro->numero}" : null,
-                                    $cadastro?->complemento,
-                                    $cadastro?->bairro,
-                                    $cadastro?->cidade,
-                                    $cadastro?->estado,
-                                    $cadastro?->cep ? "CEP: {$cadastro->cep}" : null,
-                                ])));
+                                return $cadastro?->formatEnderecoCompleto() ?? '';
                             })
                             ->helperText('Endereço completo onde o serviço será realizado (pode ser editado)'),
 

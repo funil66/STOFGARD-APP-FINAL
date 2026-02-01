@@ -95,6 +95,27 @@ class Cadastro extends Model implements HasMedia
         return $this->hasMany(Orcamento::class, 'cadastro_id');
     }
 
+    /**
+     * Retorna o endereço completo do cadastro: prioriza `endereco_completo` quando presente,
+     * caso contrário monta a string a partir dos campos (logradouro, número, complemento, bairro, cidade, estado, CEP).
+     */
+    public function formatEnderecoCompleto(): string
+    {
+        if (!empty($this->endereco_completo)) {
+            return $this->endereco_completo;
+        }
+
+        return trim(implode(', ', array_filter([
+            $this->logradouro,
+            $this && ($this->numero ?? false) ? "nº {$this->numero}" : null,
+            $this->complemento,
+            $this->bairro,
+            $this->cidade,
+            $this->estado,
+            $this->cep ? "CEP: {$this->cep}" : null,
+        ])));
+    }
+
     public function ordensServico(): HasMany
     {
         return $this->hasMany(OrdemServico::class, 'cadastro_id');
