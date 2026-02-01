@@ -611,7 +611,11 @@ class OrcamentoResource extends Resource
                     ])
                     ->action(function (Orcamento $record, array $data): void {
                         \Illuminate\Support\Facades\DB::transaction(function () use ($record, $data) {
-                            // 0. Atualizar valores do Orçamento antes de gerar OS
+                            // 0. Preparar dados
+                            $cadastro = $record->cliente;
+                            $enderecoCompleto = $data['local_servico'] ?? 'Endereço não informado';
+
+                            // 1. Atualizar valores do Orçamento antes de gerar OS
                             $valorFinal = floatval($data['valor_final']);
                             $desconto = $record->valor_total - $valorFinal;
 
