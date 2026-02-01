@@ -21,7 +21,7 @@ class FinanceiroFilamentAccessTest extends TestCase
         ]);
 
         // Testar se a página carrega sem o erro "Attempt to read property tipo on string"
-        $response = $this->actingAs($user)->get('/admin/financeiros');
+        $response = $this->actingAs($user)->get('/admin/financeiros/transacoes');
         
         $response->assertStatus(200);
         

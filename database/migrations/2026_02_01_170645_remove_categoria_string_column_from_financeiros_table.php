@@ -18,6 +18,9 @@ return new class extends Migration
             try {
                 if (DB::getDriverName() === 'sqlite') {
                     // No SQLite, vamos criar nova tabela sem a coluna conflitante
+                    // Remover view de auditoria temporariamente para evitar conflitos ao renomear tabelas
+                    DB::statement('DROP VIEW IF EXISTS financeiro_audit');
+
                     Schema::create('financeiros_new', function (Blueprint $table) {
                         $table->id();
                         $table->foreignId('cadastro_id')->nullable()->constrained('cadastros')->nullOnDelete();
@@ -68,8 +71,49 @@ return new class extends Migration
                     FROM financeiros');
 
                     // Substituir tabela
+                    // Se estivermos usando SQLite e houver uma view dependente, removê-la temporariamente
+                    if (DB::getDriverName() === 'sqlite') {
+                        DB::statement('DROP VIEW IF EXISTS financeiro_audit');
+                    }
+
                     Schema::dropIfExists('financeiros');
                     Schema::rename('financeiros_new', 'financeiros');
+
+                    // Recriar a view de auditoria no SQLite (se aplicável)
+                    if (DB::getDriverName() === 'sqlite') {
+                        $selects = [];
+
+                        if (Schema::hasTable('financeiros')) {
+                            $selects[] = "SELECT 
+                'financeiros' AS tabela,
+                COUNT(*) AS total_registros,
+                SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
+                SUM(CASE WHEN status = 'pago' THEN 1 ELSE 0 END) AS pagos,
+                SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END) AS total_entradas,
+                SUM(CASE WHEN tipo = 'saida' THEN valor ELSE 0 END) AS total_saidas,
+                MAX(created_at) AS ultimo_registro
+            FROM financeiros
+            WHERE deleted_at IS NULL";
+                        }
+
+                        if (Schema::hasTable('transacoes_financeiras')) {
+                            $selects[] = "SELECT 
+                'transacoes_financeiras' AS tabela,
+                COUNT(*) AS total_registros,
+                SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
+                SUM(CASE WHEN status = 'pago' THEN 1 ELSE 0 END) AS pagos,
+                SUM(CASE WHEN tipo = 'receita' THEN valor_total ELSE 0 END) AS total_entradas,
+                SUM(CASE WHEN tipo = 'despesa' THEN valor_total ELSE 0 END) AS total_saidas,
+                MAX(created_at) AS ultimo_registro
+            FROM transacoes_financeiras
+            WHERE deleted_at IS NULL";
+                        }
+
+                        if (! empty($selects)) {
+                            $sql = 'CREATE VIEW financeiro_audit AS ' . implode("\nUNION ALL\n", $selects);
+                            DB::statement($sql);
+                        }
+                    }
                 } else {
                     // Para outros DBs, remover coluna diretamente
                     Schema::table('financeiros', function (Blueprint $table) {

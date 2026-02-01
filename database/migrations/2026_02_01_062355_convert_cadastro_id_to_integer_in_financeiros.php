@@ -80,12 +80,24 @@ return new class extends Migration
             }
 
             // PASSO 4: Copiar valores numéricos diretos (se houver)
-            $numericos = DB::table('financeiros')
-                ->whereRaw('cadastro_id REGEXP \'^[0-9]+$\'')
-                ->whereNull('cadastro_id_new')
-                ->update([
-                    'cadastro_id_new' => DB::raw('CAST(cadastro_id AS UNSIGNED)')
-                ]);
+            $driver = DB::connection()->getDriverName();
+
+            if ($driver === 'sqlite') {
+                // SQLite não possui REGEXP por padrão — usar GLOB como fallback e CAST para INTEGER
+                $numericos = DB::table('financeiros')
+                    ->whereRaw("cadastro_id GLOB '[0-9]*'")
+                    ->whereNull('cadastro_id_new')
+                    ->update([
+                        'cadastro_id_new' => DB::raw('CAST(cadastro_id AS INTEGER)')
+                    ]);
+            } else {
+                $numericos = DB::table('financeiros')
+                    ->whereRaw('cadastro_id REGEXP \'^[0-9]+$\'')
+                    ->whereNull('cadastro_id_new')
+                    ->update([
+                        'cadastro_id_new' => DB::raw('CAST(cadastro_id AS UNSIGNED)')
+                    ]);
+            }
 
             if ($numericos > 0) {
                 $this->log("✓ Migrados {$numericos} registros com cadastro_id numérico direto");
@@ -102,6 +114,14 @@ return new class extends Migration
             $this->log("   Pendentes (NULL): {$pendentes}");
 
             // PASSO 6: Remover coluna antiga e renomear nova
+            // Precisamos dropar view de auditoria temporariamente para permitir alterações em SQLite
+            DB::statement('DROP VIEW IF EXISTS financeiro_audit');
+
+            // Em SQLite precisamos remover índices que referenciam a coluna antes de dropar
+            if (Schema::hasTable('financeiros')) {
+                DB::statement('DROP INDEX IF EXISTS idx_financeiros_cadastro_status_tipo');
+            }
+
             Schema::table('financeiros', function (Blueprint $table) {
                 // Drop foreign key se existir
                 try {
@@ -140,6 +160,41 @@ return new class extends Migration
             });
 
             $this->log('✓ Colunas legadas cliente_id e parceiro_id removidas');
+
+            // RECRIAR view de auditoria (se aplicável) — mesmo SQL da migração de criação de view
+            $selects = [];
+
+            if (Schema::hasTable('financeiros')) {
+                $selects[] = "SELECT 
+                'financeiros' AS tabela,
+                COUNT(*) AS total_registros,
+                SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
+                SUM(CASE WHEN status = 'pago' THEN 1 ELSE 0 END) AS pagos,
+                SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END) AS total_entradas,
+                SUM(CASE WHEN tipo = 'saida' THEN valor ELSE 0 END) AS total_saidas,
+                MAX(created_at) AS ultimo_registro
+            FROM financeiros
+            WHERE deleted_at IS NULL";
+            }
+
+            if (Schema::hasTable('transacoes_financeiras')) {
+                $selects[] = "SELECT 
+                'transacoes_financeiras' AS tabela,
+                COUNT(*) AS total_registros,
+                SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
+                SUM(CASE WHEN status = 'pago' THEN 1 ELSE 0 END) AS pagos,
+                SUM(CASE WHEN tipo = 'receita' THEN valor_total ELSE 0 END) AS total_entradas,
+                SUM(CASE WHEN tipo = 'despesa' THEN valor_total ELSE 0 END) AS total_saidas,
+                MAX(created_at) AS ultimo_registro
+            FROM transacoes_financeiras
+            WHERE deleted_at IS NULL";
+            }
+
+            if (! empty($selects)) {
+                $sql = 'CREATE VIEW financeiro_audit AS ' . implode("\nUNION ALL\n", $selects);
+                DB::statement($sql);
+            }
+
             $this->log("\n✅ MIGRAÇÃO CONCLUÍDA COM SUCESSO!");
         });
     }

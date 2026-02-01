@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('financeiros', 'extra_attributes')) {
+        if (Schema::hasTable('financeiros') && !Schema::hasColumn('financeiros', 'extra_attributes')) {
             Schema::table('financeiros', function (Blueprint $table) {
                 $table->json('extra_attributes')->nullable()->after('observacoes');
             });
@@ -23,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('financeiros', function (Blueprint $table) {
-            $table->dropColumn('extra_attributes');
-        });
+        if (Schema::hasTable('financeiros') && Schema::hasColumn('financeiros', 'extra_attributes')) {
+            Schema::table('financeiros', function (Blueprint $table) {
+                $table->dropColumn('extra_attributes');
+            });
+        }
     }
 };
