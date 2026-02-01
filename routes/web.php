@@ -11,6 +11,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Rota de login (redireciona para Filament)
+Route::get('/login', function () {
+    return redirect('/admin/login');
+})->name('login');
+
 // --- ROTA PÚBLICA DE CAPTAÇÃO DE LEADS ---
 if (app()->isLocal()) {
     Route::get('/dev-login', function () {
