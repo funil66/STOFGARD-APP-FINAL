@@ -25,7 +25,7 @@ return new class extends Migration
                         $table->id();
                         $table->foreignId('cadastro_id')->nullable()->constrained('cadastros')->nullOnDelete();
                         $table->foreignId('orcamento_id')->nullable()->constrained('orcamentos')->nullOnDelete();
-                        $table->foreignId('ordem_servico_id')->nullable()->constrained('ordem_servicos')->nullOnDelete();
+                        $table->foreignId('ordem_servico_id')->nullable()->constrained('ordens_servico')->nullOnDelete();
                         $table->enum('tipo', ['entrada', 'saida']);
                         $table->string('descricao');
                         $table->text('observacoes')->nullable();

@@ -697,7 +697,6 @@ class OrcamentoResource extends Resource
                             // 3. Criar lançamento no Financeiro (Conta a Receber) - STATUS PENDENTE
                             \App\Models\Financeiro::create([
                                 'tipo' => 'entrada',
-                                'categoria' => 'servico',
                                 'descricao' => sprintf(
                                     'Serviço - OS %s - Cliente: %s',
                                     $os->numero_os,
