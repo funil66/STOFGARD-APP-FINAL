@@ -29,8 +29,9 @@ class CadastroFichaPdfTest extends TestCase
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/pdf');
         
-        // Verificar se está configurado como inline (visualização direta)
-        $this->assertStringContainsString('inline', $response->headers->get('Content-Disposition'));
+        // Verificar se está configurado como attachment (download)
+        $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
+        $this->assertStringContainsString('Ficha-Cadastral', $response->headers->get('Content-Disposition'));
     }
 
     /** @test */  
