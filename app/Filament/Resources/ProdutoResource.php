@@ -49,15 +49,6 @@ class ProdutoResource extends Resource
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
                 
-                // PDF Download
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('info')
-                    ->url(fn(Produto $record) => route('produto.pdf', $record))
-                    ->openUrlInNewTab(),
-                
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -65,6 +56,7 @@ class ProdutoResource extends Resource
                     ->color('success')
                     ->url(fn(Produto $record) => route('produto.pdf', $record))
                     ->openUrlInNewTab(),
+                    
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([

@@ -266,15 +266,6 @@ class FinanceiroResource extends Resource
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
                 
-                // PDF Download
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('info')
-                    ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
-                    ->openUrlInNewTab(),
-                
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -282,6 +273,7 @@ class FinanceiroResource extends Resource
                     ->color('success')
                     ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
                     ->openUrlInNewTab(),
+                    
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
