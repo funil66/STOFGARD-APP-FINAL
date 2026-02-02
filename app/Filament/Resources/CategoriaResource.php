@@ -180,17 +180,21 @@ class CategoriaResource extends Resource
                     ->falseLabel('Apenas inativos'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                
-                // PDF Download
-                Tables\Actions\Action::make('download')
+                Tables\Actions\Action::make('pdf')
                     ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
+                    ->tooltip('Abrir PDF')
+                    ->icon('heroicon-o-document-text')
                     ->color('info')
                     ->url(fn(Categoria $record) => route('categoria.pdf', $record))
                     ->openUrlInNewTab(),
+                    
+                Tables\Actions\ViewAction::make()
+                    ->label('')
+                    ->tooltip('Visualizar'),
+                    
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->tooltip('Editar'),
                 
                 Tables\Actions\Action::make('download')
                     ->label('')
@@ -199,7 +203,10 @@ class CategoriaResource extends Resource
                     ->color('success')
                     ->url(fn(Categoria $record) => route('categoria.pdf', $record))
                     ->openUrlInNewTab(),
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+                    
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

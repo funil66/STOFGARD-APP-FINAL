@@ -238,15 +238,22 @@ class GarantiaResource extends Resource
                         ]);
                     }),
 
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('download')
+                Tables\Actions\Action::make('pdf')
                     ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
+                    ->tooltip('Abrir PDF')
+                    ->icon('heroicon-o-document-text')
                     ->color('info')
-                    ->url(fn (Garantia $record) => route('garantia.pdf', $record))
+                    ->url(fn(Garantia $record) => route('garantia.pdf', $record))
                     ->openUrlInNewTab(),
+
+                Tables\Actions\ViewAction::make()
+                    ->label('')
+                    ->tooltip('Visualizar'),
+                    
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->tooltip('Editar'),
+                
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -254,7 +261,10 @@ class GarantiaResource extends Resource
                     ->color('success')
                     ->url(fn(Garantia $record) => route('garantia.pdf', $record))
                     ->openUrlInNewTab(),
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+                    
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

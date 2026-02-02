@@ -198,15 +198,22 @@ class TabelaPrecoResource extends Resource
                     ->label('Excluídos'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('download')
+                Tables\Actions\Action::make('pdf')
                     ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
+                    ->tooltip('Abrir PDF')
+                    ->icon('heroicon-o-document-text')
                     ->color('info')
-                    ->url(fn (TabelaPreco $record) => route('tabelapreco.pdf', $record))
+                    ->url(fn(TabelaPreco $record) => route('tabelapreco.pdf', $record))
                     ->openUrlInNewTab(),
+                    
+                Tables\Actions\ViewAction::make()
+                    ->label('')
+                    ->tooltip('Visualizar'),
+                    
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->tooltip('Editar'),
+                    
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -214,7 +221,11 @@ class TabelaPrecoResource extends Resource
                     ->color('success')
                     ->url(fn(TabelaPreco $record) => route('tabelapreco.pdf', $record))
                     ->openUrlInNewTab(),
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+                    
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->tooltip('Excluir'),
+                    
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([

@@ -227,15 +227,22 @@ class EstoqueResource extends Resource
                             ->send();
                     }),
 
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('download')
+                Tables\Actions\Action::make('pdf')
                     ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
+                    ->tooltip('Abrir PDF')
+                    ->icon('heroicon-o-document-text')
                     ->color('info')
-                    ->url(fn (Estoque $record) => route('estoque.pdf', $record))
+                    ->url(fn(Estoque $record) => route('estoque.pdf', $record))
                     ->openUrlInNewTab(),
+
+                Tables\Actions\ViewAction::make()
+                    ->label('')
+                    ->tooltip('Visualizar'),
+                    
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->tooltip('Editar'),
+                    
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -243,7 +250,10 @@ class EstoqueResource extends Resource
                     ->color('success')
                     ->url(fn(Estoque $record) => route('estoque.pdf', $record))
                     ->openUrlInNewTab(),
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+                    
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
