@@ -35,7 +35,7 @@ class AlertLowStock extends Command
                 ->actions([
                     \Filament\Notifications\Actions\Action::make('comprar')
                         ->label('Ver Estoque')
-                        ->url(route('filament.admin.resources.estoques.index'))
+                        ->url(\App\Filament\Resources\EstoqueResource::getUrl('index'))
                         ->button(),
                 ])
                 ->sendToDatabase($admins);
