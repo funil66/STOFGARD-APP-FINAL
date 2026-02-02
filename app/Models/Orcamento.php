@@ -10,12 +10,18 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
+use App\Traits\HasSequentialNumber;
 
 class Orcamento extends Model implements HasMedia
 {
     use HasFactory;
     use HasArquivos;
     use SoftDeletes;
+    use HasSequentialNumber;
+
+    // Configuração para HasSequentialNumber trait
+    protected string $sequenceType = 'orcamento';
+    protected string $sequenceColumn = 'numero';
 
     public static $globallySearchableAttributes = ['numero', 'cadastro.nome'];
 
@@ -104,14 +110,12 @@ class Orcamento extends Model implements HasMedia
         return $this->hasOne(\App\Models\OrdemServico::class);
     }
 
-    // --- GERAÇÃO DE NÚMERO ---
+    // --- GERAÇÃO DE NÚMERO (LEGADO - MANTIDO PARA RETROCOMPATIBILIDADE) ---
     protected static function booted()
     {
         static::creating(function ($model) {
-            if (empty($model->numero)) {
-                $model->numero = date('Y') . '.' . str_pad(static::max('id') + 1, 4, '0', STR_PAD_LEFT);
-            }
-
+            // Número é gerado automaticamente pelo HasSequentialNumber trait
+            
             $model->comissao_vendedor = $model->comissao_vendedor ?? 0;
             $model->comissao_loja = $model->comissao_loja ?? 0;
 
@@ -121,22 +125,16 @@ class Orcamento extends Model implements HasMedia
         });
     }
 
+    /**
+     * Método legado - mantido para retrocompatibilidade
+     * Use generateSequentialNumber() do trait HasSequentialNumber
+     * 
+     * @deprecated Use HasSequentialNumber::generateSequentialNumber()
+     * @return string
+     */
     public static function gerarNumeroOrcamento(): string
     {
-        $ano = date('Y');
-        $ultimo = self::withTrashed()->whereYear('created_at', $ano)->latest('id')->first();
-
-        $sequencia = 1;
-        if ($ultimo && preg_match('/\.(\d+)$/', $ultimo->numero, $matches)) {
-            $sequencia = intval($matches[1]) + 1;
-        }
-        do {
-            $numero = $ano . '.' . str_pad($sequencia, 4, '0', STR_PAD_LEFT);
-            $existe = self::withTrashed()->where('numero', $numero)->exists();
-            if ($existe)
-                $sequencia++;
-        } while ($existe);
-        return $numero;
+        return self::gerarNumeroSequencial();
     }
 }
 
