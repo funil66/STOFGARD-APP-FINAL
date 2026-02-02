@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Widget Clima</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #1e293b;
+            color: white;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: visible !important;
+        }
+        .widget {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 80px;
+            max-width: 280px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 50;
+        }
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .dots {
+            display: flex;
+            gap: 5px;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        .hidden { display: none !important; }
+        .content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .temp {
+            font-size: 36px;
+            font-weight: bold;
+        }
+        .logs {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .log-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+        .log-error { color: #ef4444; }
+        .log-success { color: #10b981; }
+        .log-info { color: #3b82f6; }
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .error-msg {
+            color: #ef4444;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="margin-bottom: 20px;">🔬 Debug do Widget de Clima</h1>
+        
+        <div class="header">
+            <h2 style="margin-bottom: 20px;">Dashboard Simulado</h2>
+            
+            <div id="weather-widget" data-city="Ribeirão Preto" class="widget">
+                <div id="weather-loading" class="loading">
+                    <div class="dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                    <span>Carregando clima...</span>
+                </div>
+
+                <div id="weather-content" class="content hidden">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <img id="weather-icon" src="" alt="" style="width: 60px; height: 60px;" />
+                        <div>
+                            <div class="temp">
+                                <span id="weather-temp">--</span>°C
+                            </div>
+                            <div id="weather-desc" style="font-size: 12px; opacity: 0.9;">--</div>
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 12px;">
+                        <div id="weather-city" style="font-weight: bold; margin-bottom: 5px;">--</div>
+                        <div>Sensação: <span id="weather-feels">--</span>°C</div>
+                    </div>
+                </div>
+
+                <div id="weather-error" class="hidden">
+                    <p class="error-msg">⚠️ Erro ao carregar clima</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-buttons">
+            <button onclick="testAPI()">🧪 Testar API Diretamente</button>
+            <button onclick="reloadWidget()">🔄 Recarregar Widget</button>
+            <button onclick="clearLogs()">🗑️ Limpar Logs</button>
+            <button onclick="testDifferentCity('London')">🇬🇧 Testar Londres</button>
+            <button onclick="testDifferentCity('São Paulo')">🇧🇷 Testar São Paulo</button>
+        </div>
+
+        <div class="logs">
+            <h3 style="margin-bottom: 10px; color: #3b82f6;">📋 Console Logs</h3>
+            <div id="log-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const logContainer = document.getElementById('log-container');
+
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log-item log-${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(div);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Também loga no console real
+            console.log(message);
+        }
+
+        function clearLogs() {
+            logContainer.innerHTML = '';
+            addLog('Logs limpos', 'info');
+        }
+
+        async function testAPI() {
+            addLog('🧪 Testando API diretamente...', 'info');
+            try {
+                const response = await fetch('/api/widget/weather?city=Ribeirão Preto');
+                addLog(`📥 Status: ${response.status} ${response.statusText}`, 'info');
+                
+                const data = await response.json();
+                addLog(`✅ Resposta: ${JSON.stringify(data)}`, 'success');
+            } catch (err) {
+                addLog(`❌ Erro: ${err.message}`, 'error');
+            }
+        }
+
+        async function loadWeatherData(city) {
+            const loading = document.getElementById('weather-loading');
+            const content = document.getElementById('weather-content');
+            const error = document.getElementById('weather-error');
+
+            addLog(`🌤️ Carregando clima para: ${city}`, 'info');
+
+            try {
+                const url = `/api/widget/weather?city=${encodeURIComponent(city)}`;
+                addLog(`📡 URL: ${url}`, 'info');
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                addLog(`📥 Status HTTP: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    addLog(`❌ Erro HTTP: ${errorText}`, 'error');
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                addLog(`✅ Dados: ${JSON.stringify(result)}`, 'success');
+                
+                if (result.success && result.data) {
+                    document.getElementById('weather-icon').src = result.data.icon_url;
+                    document.getElementById('weather-temp').textContent = result.data.temperature;
+                    document.getElementById('weather-desc').textContent = result.data.description;
+                    document.getElementById('weather-city').textContent = result.data.city;
+                    document.getElementById('weather-feels').textContent = result.data.feels_like;
+                    
+                    loading.classList.add('hidden');
+                    content.classList.remove('hidden');
+                    error.classList.add('hidden');
+                    
+                    addLog('✅ Widget carregado com sucesso!', 'success');
+                } else {
+                    throw new Error('Dados inválidos na resposta');
+                }
+                
+            } catch (err) {
+                addLog(`❌ Erro: ${err.message}`, 'error');
+                loading.classList.add('hidden');
+                error.classList.remove('hidden');
+            }
+        }
+
+        function reloadWidget() {
+            const widget = document.getElementById('weather-widget');
+            const city = widget.getAttribute('data-city');
+            
+            document.getElementById('weather-loading').classList.remove('hidden');
+            document.getElementById('weather-content').classList.add('hidden');
+            document.getElementById('weather-error').classList.add('hidden');
+            
+            addLog('🔄 Recarregando widget...', 'info');
+            loadWeatherData(city);
+        }
+
+        function testDifferentCity(city) {
+            const widget = document.getElementById('weather-widget');
+            widget.setAttribute('data-city', city);
+            reloadWidget();
+        }
+
+        // Inicia automaticamente
+        addLog('🚀 Página carregada', 'success');
+        addLog('📋 Estado do DOM: ' + document.readyState, 'info');
+        
+        const widget = document.getElementById('weather-widget');
+        if (widget) {
+            addLog('✅ Widget encontrado', 'success');
+            const city = widget.getAttribute('data-city');
+            loadWeatherData(city);
+        } else {
+            addLog('❌ Widget não encontrado!', 'error');
+        }
+    </script>
+</body>
+</html>

@@ -106,6 +106,46 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cadastro/{cadastro}/pdf', [CadastroPdfController::class, 'gerarPdf'])
         ->name('cadastro.pdf');
 
+    // Rota para visualizar PDF do Financeiro
+    Route::get('/financeiro/{financeiro}/pdf', [\App\Http\Controllers\FinanceiroPdfController::class, 'gerarPdf'])
+        ->name('financeiro.pdf');
+
+    // Rota para visualizar PDF da Nota Fiscal
+    Route::get('/nota-fiscal/{notaFiscal}/pdf', [\App\Http\Controllers\NotaFiscalPdfController::class, 'gerarPdf'])
+        ->name('nota-fiscal.pdf');
+
+    // Rota para visualizar PDF da Categoria
+    Route::get('/categoria/{categoria}/pdf', [\App\Http\Controllers\CategoriaPdfController::class, 'gerarPdf'])
+        ->name('categoria.pdf');
+
+    // Rota para visualizar PDF do Produto
+    Route::get('/produto/{produto}/pdf', [\App\Http\Controllers\ProdutoPdfController::class, 'gerarPdf'])
+        ->name('produto.pdf');
+
+    // Rota para visualizar PDF da Tarefa
+    Route::get('/tarefa/{tarefa}/pdf', [\App\Http\Controllers\TarefaPdfController::class, 'gerarPdf'])
+        ->name('tarefa.pdf');
+
+    // Rota para visualizar PDF do Equipamento
+    Route::get('/equipamento/{equipamento}/pdf', [\App\Http\Controllers\EquipamentoPdfController::class, 'gerarPdf'])
+        ->name('equipamento.pdf');
+
+    // Rota para visualizar PDF da Garantia
+    Route::get('/garantia/{garantia}/pdf', [\App\Http\Controllers\GarantiaPdfController::class, 'gerarPdf'])
+        ->name('garantia.pdf');
+
+    // Rota para visualizar PDF da Tabela de Preço
+    Route::get('/tabelapreco/{tabelapreco}/pdf', [\App\Http\Controllers\TabelaPrecoPdfController::class, 'gerarPdf'])
+        ->name('tabelapreco.pdf');
+
+    // Rota para visualizar PDF da Lista de Desejos
+    Route::get('/listadesejo/{listadesejo}/pdf', [\App\Http\Controllers\ListaDesejoPdfController::class, 'gerarPdf'])
+        ->name('listadesejo.pdf');
+
+    // Rota para visualizar PDF do Estoque
+    Route::get('/estoque/{estoque}/pdf', [\App\Http\Controllers\EstoquePdfController::class, 'gerarPdf'])
+        ->name('estoque.pdf');
+
     // Rota para gerar e salvar PDF (inclui opção include_pix e persist)
     Route::post('/orcamento/{orcamento}/generate-pdf', [OrcamentoPdfController::class, 'generateAndSave'])
         ->name('orcamento.generate');

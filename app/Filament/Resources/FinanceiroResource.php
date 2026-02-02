@@ -11,6 +11,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry;
 
 class FinanceiroResource extends Resource
 {
@@ -242,8 +246,6 @@ class FinanceiroResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-
                 Tables\Actions\Action::make('baixar')
                     ->label('Baixar')
                     ->icon('heroicon-o-check-circle')
@@ -263,18 +265,23 @@ class FinanceiroResource extends Resource
 
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('share')
+                
+                // PDF Download
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
+                    ->openUrlInNewTab(),
+                
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (Financeiro $record) {
-                        Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/financeiros/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
@@ -304,12 +311,173 @@ class FinanceiroResource extends Resource
             ]);
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                // CABEÇALHO FINANCEIRO
+                InfolistSection::make()
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('tipo')
+                                ->label('Tipo')
+                                ->badge()
+                                ->color(fn($state) => $state === 'entrada' ? 'success' : 'danger')
+                                ->formatStateUsing(fn($state) => $state === 'entrada' ? '💰 Entrada' : '💸 Saída')
+                                ->size(TextEntry\TextEntrySize::Large),
+                            TextEntry::make('status')
+                                ->badge()
+                                ->color(fn($state) => match ($state) {
+                                    'pago' => 'success',
+                                    'vencido' => 'danger',
+                                    'pendente' => 'warning',
+                                    default => 'gray',
+                                })
+                                ->formatStateUsing(fn($state) => match ($state) {
+                                    'pago' => '✅ Pago',
+                                    'pendente' => '⏳ Pendente',
+                                    'vencido' => '🔴 Vencido',
+                                    'cancelado' => '❌ Cancelado',
+                                    default => $state,
+                                }),
+                            TextEntry::make('valor')
+                                ->label('Valor')
+                                ->money('BRL')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->weight('bold')
+                                ->color(fn($record) => $record->tipo === 'entrada' ? 'success' : 'danger'),
+                        ]),
+                    ]),
+
+                // INFORMAÇÕES PRINCIPAIS
+                InfolistSection::make('📋 Informações da Transação')
+                    ->schema([
+                        InfolistGrid::make(2)->schema([
+                            TextEntry::make('descricao')
+                                ->label('Descrição')
+                                ->columnSpanFull(),
+                            TextEntry::make('categoria.nome')
+                                ->label('Categoria')
+                                ->badge()
+                                ->color('info')
+                                ->icon(fn($record) => $record->categoria?->icone ?? '📌'),
+                            TextEntry::make('forma_pagamento')
+                                ->label('Forma de Pagamento')
+                                ->formatStateUsing(fn($state) => match ($state) {
+                                    'pix' => '💳 PIX',
+                                    'dinheiro' => '💵 Dinheiro',
+                                    'cartao_credito' => '💳 Cartão de Crédito',
+                                    'cartao_debito' => '💳 Cartão de Débito',
+                                    'boleto' => '📄 Boleto',
+                                    'transferencia' => '🏦 Transferência',
+                                    default => $state ?? 'Não informado',
+                                }),
+                        ]),
+                    ]),
+
+                // DATAS
+                InfolistSection::make('📅 Datas')
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('data')
+                                ->label('Data do Lançamento')
+                                ->date('d/m/Y')
+                                ->icon('heroicon-m-calendar'),
+                            TextEntry::make('data_vencimento')
+                                ->label('Data de Vencimento')
+                                ->date('d/m/Y')
+                                ->icon('heroicon-m-calendar-days')
+                                ->color(fn($record) => $record->status === 'vencido' ? 'danger' : 'gray'),
+                            TextEntry::make('data_pagamento')
+                                ->label('Data do Pagamento')
+                                ->dateTime('d/m/Y H:i')
+                                ->icon('heroicon-m-check-circle')
+                                ->color('success')
+                                ->placeholder('Não pago'),
+                        ]),
+                    ]),
+
+                // VALORES DETALHADOS
+                InfolistSection::make('💵 Detalhamento de Valores')
+                    ->schema([
+                        InfolistGrid::make(4)->schema([
+                            TextEntry::make('valor')
+                                ->label('Valor Original')
+                                ->money('BRL'),
+                            TextEntry::make('desconto')
+                                ->label('Desconto')
+                                ->money('BRL')
+                                ->color('success')
+                                ->placeholder('R$ 0,00'),
+                            TextEntry::make('juros')
+                                ->label('Juros')
+                                ->money('BRL')
+                                ->color('warning')
+                                ->placeholder('R$ 0,00'),
+                            TextEntry::make('multa')
+                                ->label('Multa')
+                                ->money('BRL')
+                                ->color('danger')
+                                ->placeholder('R$ 0,00'),
+                        ]),
+                        InfolistGrid::make(2)->schema([
+                            TextEntry::make('valor_total')
+                                ->label('Valor Total (com juros/multa)')
+                                ->money('BRL')
+                                ->weight('bold')
+                                ->size(TextEntry\TextEntrySize::Medium)
+                                ->color('info'),
+                            TextEntry::make('valor_pago')
+                                ->label('Valor Pago')
+                                ->money('BRL')
+                                ->weight('bold')
+                                ->size(TextEntry\TextEntrySize::Medium)
+                                ->color('success')
+                                ->placeholder('R$ 0,00'),
+                        ]),
+                    ]),
+
+                // VINCULAÇÕES
+                InfolistSection::make('🔗 Vinculações')
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('cadastro.nome')
+                                ->label('Cliente/Fornecedor')
+                                ->icon('heroicon-m-user')
+                                ->placeholder('Não vinculado'),
+                            TextEntry::make('ordemServico.numero_os')
+                                ->label('Ordem de Serviço')
+                                ->icon('heroicon-m-document-text')
+                                ->url(fn($record) => $record->ordem_servico_id ? "/admin/ordem-servicos/{$record->ordem_servico_id}" : null)
+                                ->placeholder('Não vinculado'),
+                            TextEntry::make('orcamento.numero')
+                                ->label('Orçamento')
+                                ->icon('heroicon-m-document-text')
+                                ->url(fn($record) => $record->orcamento_id ? "/admin/orcamentos/{$record->orcamento_id}" : null)
+                                ->placeholder('Não vinculado'),
+                        ]),
+                    ])
+                    ->collapsed(),
+
+                // OBSERVAÇÕES
+                InfolistSection::make('📝 Observações')
+                    ->schema([
+                        TextEntry::make('observacoes')
+                            ->label('')
+                            ->placeholder('Nenhuma observação registrada')
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsed(),
+            ]);
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListFinanceiros::route('/'),
             'create' => Pages\CreateFinanceiro::route('/create'),
             'edit' => Pages\EditFinanceiro::route('/{record}/edit'),
+            'view' => Pages\ViewFinanceiro::route('/{record}'),
             'dashboard' => Pages\DashboardFinanceiro::route('/dashboard'),
         ];
     }

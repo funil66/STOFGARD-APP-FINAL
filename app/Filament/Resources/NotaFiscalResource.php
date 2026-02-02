@@ -23,11 +23,14 @@ class NotaFiscalResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Notas Fiscais';
 
-    // Submódulo do Financeiro
-    protected static ?string $slug = 'financeiros/notas-fiscais';
+    // Slug direto para acesso
+    protected static ?string $slug = 'notas-fiscais';
 
-    // Ocultar da navegação principal
-    protected static bool $shouldRegisterNavigation = false;
+    // Grupo de navegação
+    protected static ?string $navigationGroup = 'Financeiro';
+
+    // Exibir na navegação
+    protected static bool $shouldRegisterNavigation = true;
 
     protected static ?int $navigationSort = 8;
 
@@ -229,40 +232,121 @@ class NotaFiscalResource extends Resource
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('Nota Fiscal')
+                // ===== CABEÇALHO DA NOTA FISCAL =====
+                Infolists\Components\Section::make()
                     ->schema([
-                        Infolists\Components\TextEntry::make('numero_nf')->label('Número')->weight('bold'),
-                        Infolists\Components\TextEntry::make('serie')->label('Série'),
-                        Infolists\Components\TextEntry::make('data_emissao')->label('Data Emissão')->dateTime('d/m/Y'),
-                        Infolists\Components\TextEntry::make('cadastro.nome')->label('Cadastro')->url(fn($record) => $record->cadastro ? url('/admin/clientes/' . $record->cadastro->id) : null),
-                    ])
-                    ->columns(2),
+                        Infolists\Components\Grid::make(4)->schema([
+                            Infolists\Components\TextEntry::make('numero_nf')
+                                ->label('Número da NF')
+                                ->weight('bold')
+                                ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
+                                ->copyable(),
+                            Infolists\Components\TextEntry::make('serie')
+                                ->label('Série'),
+                            Infolists\Components\TextEntry::make('tipo')
+                                ->label('Tipo')
+                                ->badge()
+                                ->color(fn($state) => match ($state) {
+                                    'entrada' => 'info',
+                                    'saida' => 'warning',
+                                    default => 'gray',
+                                }),
+                            Infolists\Components\TextEntry::make('status')
+                                ->label('Status')
+                                ->badge()
+                                ->color(fn($state) => match ($state) {
+                                    'autorizada' => 'success',
+                                    'cancelada' => 'danger',
+                                    'pendente' => 'warning',
+                                    default => 'gray',
+                                }),
+                        ]),
+                        Infolists\Components\Grid::make(4)->schema([
+                            Infolists\Components\TextEntry::make('cadastro.nome')
+                                ->label('Cliente/Fornecedor')
+                                ->icon('heroicon-m-user')
+                                ->url(fn($record) => $record->cadastro 
+                                    ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro->id]) 
+                                    : null)
+                                ->color('primary'),
+                            Infolists\Components\TextEntry::make('modelo')
+                                ->label('Modelo')
+                                ->badge(),
+                            Infolists\Components\TextEntry::make('data_emissao')
+                                ->label('Data Emissão')
+                                ->date('d/m/Y')
+                                ->icon('heroicon-m-calendar'),
+                            Infolists\Components\TextEntry::make('chave_acesso')
+                                ->label('Chave de Acesso')
+                                ->copyable()
+                                ->limit(20)
+                                ->tooltip(fn($state) => $state),
+                        ]),
+                    ]),
 
-                Infolists\Components\Section::make('Valores')
+                // ===== RESUMO DE VALORES =====
+                Infolists\Components\Section::make('💰 Valores')
                     ->schema([
-                        Infolists\Components\TextEntry::make('valor_produtos')->label('Valor Produtos')->suffix('R$'),
-                        Infolists\Components\TextEntry::make('valor_servicos')->label('Valor Serviços')->suffix('R$'),
-                        Infolists\Components\TextEntry::make('valor_desconto')->label('Descontos')->suffix('R$'),
-                        Infolists\Components\TextEntry::make('valor_total')->label('Total')->suffix('R$')->weight('bold'),
+                        Infolists\Components\Grid::make(4)->schema([
+                            Infolists\Components\TextEntry::make('valor_produtos')
+                                ->label('📦 Produtos')
+                                ->money('BRL'),
+                            Infolists\Components\TextEntry::make('valor_servicos')
+                                ->label('🛠️ Serviços')
+                                ->money('BRL'),
+                            Infolists\Components\TextEntry::make('valor_desconto')
+                                ->label('🏷️ Descontos')
+                                ->money('BRL')
+                                ->color('danger'),
+                            Infolists\Components\TextEntry::make('valor_total')
+                                ->label('💵 Total')
+                                ->money('BRL')
+                                ->weight('bold')
+                                ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
+                                ->color('success'),
+                        ]),
                     ])
-                    ->columns(2),
+                    ->collapsible(),
 
-                Infolists\Components\Section::make('Observações e Status')
+                // ===== OBSERVAÇÕES =====
+                Infolists\Components\Section::make('📝 Observações')
                     ->schema([
-                        Infolists\Components\TextEntry::make('status')->label('Status')->badge(),
-                        Infolists\Components\TextEntry::make('observacoes')->label('Observações')->markdown()->columnSpanFull(),
+                        Infolists\Components\TextEntry::make('observacoes')
+                            ->label('')
+                            ->markdown()
+                            ->placeholder('Sem observações')
+                            ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->collapsible()
+                    ->collapsed(),
 
-                Infolists\Components\Section::make('Arquivos')
+                // ===== ARQUIVOS =====
+                Infolists\Components\Section::make('📎 Arquivos')
                     ->schema([
                         Infolists\Components\ImageEntry::make('arquivos')
-                            ->label('Arquivos')
+                            ->label('')
                             ->disk('public')
                             ->openUrlInNewTab()
                             ->limit(10)
                             ->height(400)
                             ->columnSpanFull(),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
+                // ===== INFORMAÇÕES DO SISTEMA =====
+                Infolists\Components\Section::make('ℹ️ Informações do Sistema')
+                    ->schema([
+                        Infolists\Components\Grid::make(3)->schema([
+                            Infolists\Components\TextEntry::make('created_at')
+                                ->label('Criado em')
+                                ->dateTime('d/m/Y H:i'),
+                            Infolists\Components\TextEntry::make('updated_at')
+                                ->label('Atualizado em')
+                                ->dateTime('d/m/Y H:i'),
+                            Infolists\Components\TextEntry::make('id')
+                                ->label('ID'),
+                        ]),
                     ])
                     ->collapsible()
                     ->collapsed(),
@@ -372,18 +456,23 @@ class NotaFiscalResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('share')
+                
+                // PDF Download
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn(NotaFiscal $record) => route('nota-fiscal.pdf', $record))
+                    ->openUrlInNewTab(),
+                
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (NotaFiscal $record) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/nota-fiscals/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(NotaFiscal $record) => route('nota-fiscal.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([

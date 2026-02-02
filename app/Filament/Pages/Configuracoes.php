@@ -113,22 +113,77 @@ class Configuracoes extends Page implements HasForms
                         Tabs\Tab::make('Dashboard')
                             ->icon('heroicon-m-home')
                             ->schema([
-                                Section::make('Personalização do Dashboard')
-                                    ->description('Customize a aparência da tela inicial')
+                                Section::make('Banner Superior')
+                                    ->description('Customize a faixa azul do dashboard - Layout: Esquerda (Saudação) | Centro (Frase) | Direita (Clima)')
+                                    ->columns(2)
                                     ->schema([
+                                        TextInput::make('dashboard_saudacao')
+                                            ->label('Frase de Boas-Vindas (Esquerda)')
+                                            ->placeholder('Ex: Tenha um dia de trabalho produtivo.')
+                                            ->helperText('Aparece alinhado à esquerda no banner')
+                                            ->default('Tenha um dia de trabalho produtivo.')
+                                            ->columnSpan(1),
                                         TextInput::make('dashboard_frase')
-                                            ->label('Frase Central')
-                                            ->placeholder('Ex: Bem-vindo ao Sistema')
-                                            ->helperText('Aparece no banner do dashboard')
-                                            ->columnSpanFull(),
+                                            ->label('Frase Motivacional (Centro)')
+                                            ->placeholder('Ex: DEUS SEJA LOUVADO')
+                                            ->helperText('Aparece centralizado no banner (estilo destaque)')
+                                            ->default('BORA TRABALHAR!')
+                                            ->columnSpan(1),
+                                        ColorPicker::make('dashboard_banner_color_start')
+                                            ->label('Cor Inicial do Gradiente')
+                                            ->default('#1e40af')
+                                            ->helperText('Cor da esquerda do gradiente'),
+                                        ColorPicker::make('dashboard_banner_color_end')
+                                            ->label('Cor Final do Gradiente')
+                                            ->default('#60a5fa')
+                                            ->helperText('Cor da direita do gradiente'),
+                                    ]),
+                                Section::make('Widget de Clima')
+                                    ->description('Configure o widget de clima exibido à direita do banner')
+                                    ->columns(2)
+                                    ->schema([
                                         Toggle::make('dashboard_mostrar_clima')
                                             ->label('Mostrar Widget de Clima')
-                                            ->default(true),
-                                        TextInput::make('url_clima')
-                                            ->label('URL do Widget de Clima')
-                                            ->placeholder('https://wttr.in/SuaCidade?0&Q&T&lang=pt')
-                                            ->helperText('Use wttr.in ou weatherwidget.io')
-                                            ->columnSpanFull(),
+                                            ->default(true)
+                                            ->columnSpan(1),
+                                        TextInput::make('dashboard_weather_city')
+                                            ->label('Cidade para Previsão do Tempo')
+                                            ->placeholder('São Paulo')
+                                            ->helperText('Digite o nome da cidade (ex: São Paulo, Rio de Janeiro, London)')
+                                            ->default('São Paulo')
+                                            ->required()
+                                            ->columnSpan(1),
+                                    ]),
+                                Section::make('Layout dos Ícones')
+                                    ->description('Configure o grid de atalhos (8 ícones em formato 4x2 recomendado)')
+                                    ->columns(3)
+                                    ->schema([
+                                        Select::make('dashboard_grid_colunas')
+                                            ->label('Colunas no Desktop')
+                                            ->options([
+                                                '2' => '2 Colunas (4 linhas)',
+                                                '3' => '3 Colunas (3 linhas)',
+                                                '4' => '4 Colunas (2 linhas) ⭐',
+                                                '5' => '5 Colunas (2 linhas)',
+                                                '8' => '8 Colunas (1 linha)',
+                                            ])
+                                            ->default('4')
+                                            ->helperText('Layout recomendado: 4 colunas = grid 4x2'),
+                                        Select::make('dashboard_grid_colunas_mobile')
+                                            ->label('Colunas no Mobile')
+                                            ->options([
+                                                '1' => '1 Coluna (lista vertical)',
+                                                '2' => '2 Colunas (4 linhas) ⭐',
+                                                '3' => '3 Colunas (3 linhas)',
+                                                '4' => '4 Colunas (2 linhas)',
+                                            ])
+                                            ->default('2')
+                                            ->helperText('Mobile recomendado: 2 colunas'),
+                                        TextInput::make('dashboard_grid_gap')
+                                            ->label('Espaçamento entre Ícones')
+                                            ->placeholder('2rem')
+                                            ->default('2rem')
+                                            ->helperText('Ex: 1rem, 2rem, 24px'),
                                     ]),
                             ]),
 

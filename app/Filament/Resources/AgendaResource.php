@@ -12,6 +12,11 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
 
 class AgendaResource extends Resource
 {
@@ -309,19 +314,13 @@ class AgendaResource extends Resource
                     ->url(fn(Agenda $record) => route('agenda.pdf', $record))
                     ->openUrlInNewTab(),
 
-                Tables\Actions\Action::make('share')
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (Agenda $record) {
-                        // Notification with link (user can copy)
-                        \Filament\Notifications\Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/agendas/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(Agenda $record) => route('agenda.pdf', $record))
+                    ->openUrlInNewTab(),
 
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
@@ -356,6 +355,155 @@ class AgendaResource extends Resource
             'edit' => Pages\EditAgenda::route('/{record}/edit'),
             'view' => Pages\ViewAgenda::route('/{record}'),
         ];
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                // ===== CABEÇALHO DO AGENDAMENTO =====
+                InfolistSection::make()
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('titulo')
+                                ->label('Título')
+                                ->weight('bold')
+                                ->columnSpan(2)
+                                ->size(TextEntry\TextEntrySize::Large),
+                            TextEntry::make('status')
+                                ->badge()
+                                ->color(fn(string $state): string => match ($state) {
+                                    'concluido' => 'success',
+                                    'cancelado' => 'danger',
+                                    'em_andamento' => 'warning',
+                                    default => 'info',
+                                })
+                                ->formatStateUsing(fn($state) => match ($state) {
+                                    'agendado' => '📅 Agendado',
+                                    'em_andamento' => '🔄 Em Andamento',
+                                    'concluido' => '✅ Concluído',
+                                    'cancelado' => '❌ Cancelado',
+                                    default => $state,
+                                }),
+                        ]),
+                        InfolistGrid::make(4)->schema([
+                            TextEntry::make('tipo')
+                                ->label('Tipo')
+                                ->badge()
+                                ->color(fn($state) => match ($state) {
+                                    'servico' => 'info',
+                                    'visita' => 'warning',
+                                    'reuniao' => 'success',
+                                    default => 'gray',
+                                })
+                                ->formatStateUsing(fn($state) => match ($state) {
+                                    'servico' => '🧼 Serviço',
+                                    'visita' => '👁️ Visita Técnica',
+                                    'reuniao' => '🤝 Reunião',
+                                    'outro' => '📌 Outro',
+                                    default => $state,
+                                }),
+                            TextEntry::make('data_hora_inicio')
+                                ->label('Início')
+                                ->dateTime('d/m/Y H:i')
+                                ->icon('heroicon-m-clock'),
+                            TextEntry::make('data_hora_fim')
+                                ->label('Término')
+                                ->dateTime('d/m/Y H:i')
+                                ->icon('heroicon-m-clock'),
+                            TextEntry::make('dia_inteiro')
+                                ->label('Dia Inteiro')
+                                ->badge()
+                                ->color(fn($state) => $state ? 'success' : 'gray')
+                                ->formatStateUsing(fn($state) => $state ? 'Sim' : 'Não'),
+                        ]),
+                    ]),
+
+                // ===== VINCULAÇÕES =====
+                InfolistSection::make('🔗 Vinculações')
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('cliente.nome')
+                                ->label('Cliente')
+                                ->icon('heroicon-m-user')
+                                ->url(fn($record) => $record->cadastro_id 
+                                    ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id]) 
+                                    : null)
+                                ->color('primary')
+                                ->placeholder('Não vinculado'),
+                            TextEntry::make('ordemServico.numero_os')
+                                ->label('Ordem de Serviço')
+                                ->icon('heroicon-m-clipboard-document-check')
+                                ->url(fn($record) => $record->ordem_servico_id 
+                                    ? \App\Filament\Resources\OrdemServicoResource::getUrl('view', ['record' => $record->ordem_servico_id]) 
+                                    : null)
+                                ->color('primary')
+                                ->placeholder('Não vinculada'),
+                            TextEntry::make('orcamento.numero')
+                                ->label('Orçamento')
+                                ->icon('heroicon-m-document-text')
+                                ->url(fn($record) => $record->orcamento_id 
+                                    ? \App\Filament\Resources\OrcamentoResource::getUrl('view', ['record' => $record->orcamento_id]) 
+                                    : null)
+                                ->color('primary')
+                                ->placeholder('Não vinculado'),
+                        ]),
+                    ])
+                    ->collapsible(),
+
+                // ===== LOCALIZAÇÃO =====
+                InfolistSection::make('📍 Local do Serviço')
+                    ->schema([
+                        InfolistGrid::make(1)->schema([
+                            TextEntry::make('local')
+                                ->label('')
+                                ->icon('heroicon-m-map-pin')
+                                ->url(fn($record) => $record->endereco_maps, true)
+                                ->placeholder('Local não informado'),
+                            TextEntry::make('endereco_completo')
+                                ->label('Endereço Completo')
+                                ->placeholder('Endereço não informado')
+                                ->visible(fn($record) => $record->endereco_completo && $record->endereco_completo !== $record->local),
+                        ]),
+                    ])
+                    ->collapsible(),
+
+                // ===== DESCRIÇÃO E OBSERVAÇÕES =====
+                InfolistSection::make('📝 Detalhes')
+                    ->schema([
+                        InfolistGrid::make(1)->schema([
+                            TextEntry::make('descricao')
+                                ->label('Descrição')
+                                ->markdown()
+                                ->placeholder('Sem descrição'),
+                            TextEntry::make('observacoes')
+                                ->label('Observações Internas')
+                                ->markdown()
+                                ->placeholder('Sem observações'),
+                        ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
+                // ===== INFORMAÇÕES DO SISTEMA =====
+                InfolistSection::make('ℹ️ Informações do Sistema')
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('created_at')
+                                ->label('Criado em')
+                                ->dateTime('d/m/Y H:i'),
+                            TextEntry::make('updated_at')
+                                ->label('Atualizado em')
+                                ->dateTime('d/m/Y H:i'),
+                            TextEntry::make('cor')
+                                ->label('Cor no Calendário')
+                                ->badge()
+                                ->color(fn($state) => $state ?? 'gray'),
+                        ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+            ]);
     }
 
     public static function getNavigationBadge(): ?string

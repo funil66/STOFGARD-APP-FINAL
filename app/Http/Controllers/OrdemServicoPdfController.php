@@ -36,6 +36,6 @@ class OrdemServicoPdfController extends Controller
                     ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
                     ->timeout(60);
             })
-            ->inline();
+            ->download();
     }
 }

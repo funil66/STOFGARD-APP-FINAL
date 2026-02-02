@@ -382,58 +382,139 @@ class OrcamentoResource extends Resource
     {
         return $infolist
             ->schema([
-                // CABEÇALHO COM STATUS E VALORES
-                Section::make('Resumo do Pedido')
-                    ->columns(4)
+                // ===== CABEÇALHO DO ORÇAMENTO =====
+                Section::make()
                     ->schema([
-                        TextEntry::make('numero')
-                            ->label('Número')
-                            ->weight('bold')
-                            ->size(TextEntry\TextEntrySize::Large),
+                        Grid::make(4)->schema([
+                            TextEntry::make('numero')
+                                ->label('Número')
+                                ->weight('bold')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->copyable(),
 
-                        TextEntry::make('status')
-                            ->badge()
-                            ->color(fn(string $state): string => match ($state) {
-                                'aprovado' => 'success',
-                                'rejeitado' => 'danger',
-                                'enviado' => 'warning',
-                                default => 'gray',
-                            }),
+                            TextEntry::make('status')
+                                ->badge()
+                                ->color(fn(string $state): string => match ($state) {
+                                    'aprovado' => 'success',
+                                    'rejeitado', 'cancelado' => 'danger',
+                                    'enviado' => 'warning',
+                                    'pendente' => 'info',
+                                    default => 'gray',
+                                }),
 
-                        TextEntry::make('created_at')
-                            ->label('Emissão')
-                            ->date('d/m/Y'),
+                            TextEntry::make('created_at')
+                                ->label('Emissão')
+                                ->date('d/m/Y')
+                                ->icon('heroicon-m-calendar'),
 
-                        TextEntry::make('data_validade')
-                            ->label('Válido até')
-                            ->date('d/m/Y')
-                            ->color('danger'),
+                            TextEntry::make('data_validade')
+                                ->label('Válido até')
+                                ->date('d/m/Y')
+                                ->color(fn($record) => $record->data_validade && $record->data_validade < now() ? 'danger' : 'success'),
+                        ]),
+                        Grid::make(4)->schema([
+                            TextEntry::make('cliente.nome')
+                                ->label('Cliente')
+                                ->icon('heroicon-m-user')
+                                ->weight('bold')
+                                ->url(fn($record) => $record->cadastro_id 
+                                    ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id]) 
+                                    : null)
+                                ->color('primary'),
+                            TextEntry::make('cliente.telefone')
+                                ->label('WhatsApp')
+                                ->icon('heroicon-m-chat-bubble-left-right')
+                                ->url(fn($state) => $state ? 'https://wa.me/55' . preg_replace('/\D/', '', $state) : null, true),
+                            TextEntry::make('vendedor.nome')
+                                ->label('Vendedor')
+                                ->icon('heroicon-m-user-circle'),
+                            TextEntry::make('loja.nome')
+                                ->label('Loja')
+                                ->icon('heroicon-m-building-storefront'),
+                        ]),
                     ]),
-                // DADOS DO CLIENTE
-                Section::make('Dados do Cliente')
-                    ->icon('heroicon-m-user')
+
+                // ===== RESUMO FINANCEIRO =====
+                Section::make('💰 Resumo Financeiro')
+                    ->schema([
+                        Grid::make(4)->schema([
+                            TextEntry::make('valor_total')
+                                ->label('💵 Valor Total')
+                                ->money('BRL')
+                                ->color('success')
+                                ->weight('bold')
+                                ->size(TextEntry\TextEntrySize::Large),
+                            TextEntry::make('comissao_vendedor')
+                                ->label('👤 Comissão Vendedor')
+                                ->money('BRL')
+                                ->color('warning'),
+                            TextEntry::make('comissao_loja')
+                                ->label('🏪 Comissão Loja')
+                                ->money('BRL')
+                                ->color('warning'),
+                            TextEntry::make('tipo_servico')
+                                ->label('🛠️ Tipo Serviço')
+                                ->badge()
+                                ->color('primary'),
+                        ]),
+                    ])
+                    ->collapsible(),
+
+                // ===== DADOS DO CLIENTE =====
+                Section::make('👤 Dados do Cliente')
                     ->schema([
                         Grid::make(3)->schema([
-                            TextEntry::make('cliente.nome')->label('Nome')->weight('bold'),
-                            TextEntry::make('cliente.telefone')->label('WhatsApp'),
-                            TextEntry::make('cliente.email')->label('E-mail'),
+                            TextEntry::make('cliente.nome')
+                                ->label('Nome')
+                                ->weight('bold'),
+                            TextEntry::make('cliente.telefone')
+                                ->label('WhatsApp')
+                                ->url(fn($state) => $state ? 'https://wa.me/55' . preg_replace('/\D/', '', $state) : null, true),
+                            TextEntry::make('cliente.email')
+                                ->label('E-mail')
+                                ->copyable(),
                         ]),
                         Grid::make(3)->schema([
-                            TextEntry::make('cliente.cidade')->label('Cidade'),
-                            TextEntry::make('cliente.bairro')->label('Bairro'),
-                            TextEntry::make('cliente.logradouro')->label('Endereço'),
+                            TextEntry::make('cliente.cidade')
+                                ->label('Cidade'),
+                            TextEntry::make('cliente.bairro')
+                                ->label('Bairro'),
+                            TextEntry::make('cliente.logradouro')
+                                ->label('Endereço'),
                         ]),
-                    ]),
-                // LISTA DE ITENS (REPEATABLE)
-                Section::make('Itens do Orçamento')
+                    ])
+                    ->collapsible(),
+
+                // ===== DADOS PERSONALIZADOS DO NICHO =====
+                Section::make('🏷️ Dados Personalizados')
+                    ->schema([
+                        Infolists\Components\KeyValueEntry::make('extra_attributes')
+                            ->label('')
+                            ->keyLabel('Campo')
+                            ->valueLabel('Valor')
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible()
+                    ->visible(fn($record) => !empty($record->extra_attributes)),
+
+                // ===== ITENS DO ORÇAMENTO =====
+                Section::make('📋 Itens do Orçamento')
                     ->schema([
                         RepeatableEntry::make('itens')
-                            ->label('') // Remove label redundante
+                            ->label('')
                             ->schema([
-                                Grid::make(4)->schema([
-                                    TextEntry::make('item_nome')->label('Item')->weight('bold'),
-                                    TextEntry::make('servico_tipo')->label('Serviço')->badge(),
-                                    TextEntry::make('quantidade')->label('Qtd'),
+                                Grid::make(5)->schema([
+                                    TextEntry::make('item_nome')
+                                        ->label('Item')
+                                        ->weight('bold')
+                                        ->columnSpan(2),
+                                    TextEntry::make('servico_tipo')
+                                        ->label('Serviço')
+                                        ->badge()
+                                        ->color('info'),
+                                    TextEntry::make('quantidade')
+                                        ->label('Qtd')
+                                        ->alignCenter(),
                                     TextEntry::make('subtotal')
                                         ->label('Subtotal')
                                         ->money('BRL')
@@ -441,23 +522,57 @@ class OrcamentoResource extends Resource
                                         ->color('success'),
                                 ]),
                             ])
-                            ->grid(1) // Lista um embaixo do outro
-                    ]),
-                // TOTALIZADOR
+                            ->grid(1),
+                    ])
+                    ->collapsible(),
+
+                // ===== TOTALIZADOR =====
                 Section::make()
                     ->schema([
-                        TextEntry::make('valor_total')
-                            ->label('VALOR TOTAL')
-                            ->money('BRL')
-                            ->size(TextEntry\TextEntrySize::Large)
-                            ->weight('black')
-                            ->color('success')
-                            ->alignRight(),
-
-                        TextEntry::make('observacoes')
-                            ->label('Observações')
-                            ->markdown(),
+                        Grid::make(1)->schema([
+                            TextEntry::make('valor_total')
+                                ->label('VALOR TOTAL')
+                                ->money('BRL')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->weight('bold')
+                                ->color('success'),
+                        ]),
                     ]),
+
+                // ===== OBSERVAÇÕES =====
+                Section::make('📝 Observações')
+                    ->schema([
+                        TextEntry::make('observacoes')
+                            ->label('')
+                            ->markdown()
+                            ->placeholder('Sem observações')
+                            ->columnSpanFull(),
+                        TextEntry::make('descricao_servico')
+                            ->label('Descrição do Serviço')
+                            ->markdown()
+                            ->placeholder('Sem descrição'),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
+                // ===== INFORMAÇÕES DO SISTEMA =====
+                Section::make('ℹ️ Informações do Sistema')
+                    ->schema([
+                        Grid::make(4)->schema([
+                            TextEntry::make('created_at')
+                                ->label('Criado em')
+                                ->dateTime('d/m/Y H:i'),
+                            TextEntry::make('updated_at')
+                                ->label('Atualizado em')
+                                ->dateTime('d/m/Y H:i'),
+                            TextEntry::make('criado_por')
+                                ->label('Criado por'),
+                            TextEntry::make('id')
+                                ->label('ID'),
+                        ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
             ]);
     }
 
@@ -713,7 +828,64 @@ class OrcamentoResource extends Resource
                                 'extra_attributes' => $record->extra_attributes, // COPY DYNAMIC ATTRIBUTES
                             ]);
 
-                            // 4. Atualizar orçamento com link para OS
+                            // 4. CRIAR LANÇAMENTOS DE COMISSÃO (Despesas)
+                            // 4.1 Comissão do Vendedor
+                            if (!empty($record->comissao_vendedor) && $record->comissao_vendedor > 0) {
+                                $categoriaVendedor = \App\Models\Categoria::where('slug', 'comissao-vendedor')->first();
+                                $vendedor = $record->vendedor;
+                                
+                                \App\Models\Financeiro::create([
+                                    'tipo' => 'saida',
+                                    'descricao' => sprintf(
+                                        'Comissão Vendedor - OS %s - %s',
+                                        $os->numero_os,
+                                        $vendedor?->nome ?? 'Vendedor não identificado'
+                                    ),
+                                    'valor' => $record->comissao_vendedor,
+                                    'data' => $data['data_servico'] ?? now(),
+                                    'data_vencimento' => $data['data_servico'] ?? now()->addDays(30),
+                                    'status' => 'pendente',
+                                    'categoria_id' => $categoriaVendedor?->id,
+                                    'cadastro_id' => $record->vendedor_id, // Associa ao vendedor
+                                    'ordem_servico_id' => $os->id,
+                                    'orcamento_id' => $record->id,
+                                    'observacoes' => sprintf(
+                                        'Comissão de %.2f%% sobre venda total de R$ %s',
+                                        $vendedor?->comissao_percentual ?? 0,
+                                        number_format($record->valor_total, 2, ',', '.')
+                                    ),
+                                ]);
+                            }
+
+                            // 4.2 Comissão da Loja
+                            if (!empty($record->comissao_loja) && $record->comissao_loja > 0) {
+                                $categoriaLoja = \App\Models\Categoria::where('slug', 'comissao-loja')->first();
+                                $loja = $record->loja;
+                                
+                                \App\Models\Financeiro::create([
+                                    'tipo' => 'saida',
+                                    'descricao' => sprintf(
+                                        'Comissão Loja - OS %s - %s',
+                                        $os->numero_os,
+                                        $loja?->nome ?? 'Loja não identificada'
+                                    ),
+                                    'valor' => $record->comissao_loja,
+                                    'data' => $data['data_servico'] ?? now(),
+                                    'data_vencimento' => $data['data_servico'] ?? now()->addDays(30),
+                                    'status' => 'pendente',
+                                    'categoria_id' => $categoriaLoja?->id,
+                                    'cadastro_id' => $record->loja_id, // Associa à loja
+                                    'ordem_servico_id' => $os->id,
+                                    'orcamento_id' => $record->id,
+                                    'observacoes' => sprintf(
+                                        'Comissão de %.2f%% sobre venda total de R$ %s',
+                                        $loja?->comissao_percentual ?? 0,
+                                        number_format($record->valor_total, 2, ',', '.')
+                                    ),
+                                ]);
+                            }
+
+                            // 5. Atualizar orçamento com link para OS
                             $record->update([
                                 'status' => 'aprovado',
                             ]);
@@ -722,7 +894,7 @@ class OrcamentoResource extends Resource
                         \Filament\Notifications\Notification::make()
                             ->success()
                             ->title('Orçamento Aprovado!')
-                            ->body('A Ordem de Serviço, Agenda e Financeiro foram criados automaticamente.')
+                            ->body('A Ordem de Serviço, Agenda, Financeiro e Comissões foram criados automaticamente.')
                             ->send();
                     }),
 
@@ -792,18 +964,13 @@ class OrcamentoResource extends Resource
                     }),
 
                 // 5. COMPARTILHAR
-                Tables\Actions\Action::make('share')
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (Orcamento $record) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/orcamentos/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(Orcamento $record) => route('orcamento.pdf', $record))
+                    ->openUrlInNewTab(),
 
                 // 6. WHATSAPP ACTIONS (NOVO)
                 Tables\Actions\ActionGroup::make([
@@ -852,6 +1019,7 @@ class OrcamentoResource extends Resource
         return [
             'index' => Pages\ListOrcamentos::route('/'),
             'create' => Pages\CreateOrcamento::route('/create'),
+            'view' => Pages\ViewOrcamento::route('/{record}'),
             'edit' => Pages\EditOrcamento::route('/{record}/edit'),
         ];
     }

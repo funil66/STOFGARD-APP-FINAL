@@ -173,6 +173,55 @@
         @endif
     @endforeach
 
+    {{-- Extras (Dados Personalizados por Nicho) --}}
+    @if($orcamento->extra_attributes && is_array($orcamento->extra_attributes))
+        @foreach($orcamento->extra_attributes as $key => $val)
+            @if(is_numeric($val) && $val > 0)
+            <table class="items-table" style="margin-top: 8px; border: 1px dashed #94a3b8;">
+                <tbody>
+                    <tr style="background-color: #f8fafc;">
+                        <td width="85%" style="text-align:right; font-weight: bold; color: #334155;">{{ ucfirst($key) }}</td>
+                        <td width="15%" style="text-align:right; font-weight: bold; color: #0f766e;">R$ {{ number_format($val, 2, ',', '.') }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            @endif
+        @endforeach
+    @endif
+
+    @php
+        // Calcula total dos itens
+        $total = $orcamento->itens->sum('subtotal');
+
+        // Adiciona valores de extra_attributes (Dados Personalizados por Nicho)
+        if ($orcamento->extra_attributes && is_array($orcamento->extra_attributes)) {
+            foreach ($orcamento->extra_attributes as $key => $val) {
+                if (is_numeric($val) && $val > 0) {
+                    $total += (float) $val;
+                }
+            }
+        }
+
+        // Percentual de desconto PIX
+        $percDesconto = $config['financeiro_desconto_avista'] ?? 10;
+        
+        // Total à vista com desconto PIX
+        $totalAvista = $total * (1 - ($percDesconto / 100));
+        
+        // Regras de parcelamento
+        $regras = $config['financeiro_parcelamento'] ?? [];
+        
+        // Dados do PIX
+        $pix = [
+            'ativo' => (bool)($orcamento->pdf_incluir_pix && $orcamento->pix_qrcode_base64),
+            'img' => $orcamento->pix_qrcode_base64 ?? null,
+            'payload' => $orcamento->pix_copia_cola ?? null,
+            'txid' => $orcamento->numero ?? 'N/A',
+            'beneficiario' => $config['empresa_nome'] ?? 'Stofgard',
+            'chave_visual' => $orcamento->pix_chave_selecionada ?? 'N/A'
+        ];
+    @endphp
+
     <div class="section-bar">RESUMO & PAGAMENTO</div>
     
     <table class="finance-grid">

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Widget Direto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&display=swap');
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <h1 class="text-2xl font-bold mb-4">Teste: Widget deve aparecer abaixo</h1>
+    
+    <div class="w-full rounded-xl shadow-2xl relative text-white px-8 py-8 mb-8"
+         style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
+        
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <!-- Saudação -->
+            <div>
+                <h2 class="text-2xl font-bold">Olá, Usuário!</h2>
+                <p class="text-sm">Tenha um dia produtivo</p>
+            </div>
+            
+            <!-- Frase Central -->
+            <div class="flex-1 text-center">
+                <h1 class="text-4xl font-black uppercase" style="font-family: 'Cinzel', serif;">
+                    BORA TRABALHAR!
+                </h1>
+            </div>
+            
+            <!-- Widget Clima -->
+            <div id="weather-widget" 
+                 data-city="Ribeirão Preto"
+                 class="rounded-xl shadow-lg border border-white/20 relative"
+                 style="width: 100%; max-width: 280px; min-height: 80px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 50;">
+
+                <div id="weather-loading" class="flex flex-col items-center justify-center h-20 text-white/80 gap-2">
+                    <div class="flex gap-1">
+                        <div class="w-2 h-2 bg-white/60 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+                        <div class="w-2 h-2 bg-white/60 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                        <div class="w-2 h-2 bg-white/60 rounded-full animate-bounce" style="animation-delay: 0.4s;"></div>
+                    </div>
+                    <span class="text-xs">Carregando clima...</span>
+                </div>
+
+                <div id="weather-content" class="hidden h-20 p-3 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <img id="weather-icon" src="" alt="" class="w-12 h-12" />
+                        <div>
+                            <div class="text-2xl font-bold text-white">
+                                <span id="weather-temp">--</span>°C
+                            </div>
+                            <div class="text-xs text-blue-100" id="weather-desc">--</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-xs text-blue-100">
+                        <div id="weather-city" class="font-semibold">--</div>
+                        <div>Sensação: <span id="weather-feels">--</span>°C</div>
+                    </div>
+                </div>
+
+                <div id="weather-error" class="hidden flex flex-col items-center justify-center h-20 text-white/80 gap-1">
+                    <span class="text-2xl">⚠️</span>
+                    <span class="text-xs">Erro ao carregar clima</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+        <h2 class="font-bold mb-2">Status:</h2>
+        <pre id="status" class="text-sm bg-gray-100 p-2 rounded">Aguardando...</pre>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        
+        function log(msg) {
+            console.log(msg);
+            statusEl.textContent += msg + '\n';
+        }
+
+        (function() {
+            'use strict';
+            
+            log('[Weather] 🚀 Script iniciado');
+
+            function initializeWeatherWidget() {
+                log('[Weather] Executando initializeWeatherWidget()');
+                
+                const widget = document.getElementById('weather-widget');
+                
+                if (!widget) {
+                    log('[Weather] ❌ Widget não encontrado!');
+                    setTimeout(initializeWeatherWidget, 500);
+                    return;
+                }
+                
+                log('[Weather] ✅ Widget encontrado!');
+                
+                const loading = document.getElementById('weather-loading');
+                const content = document.getElementById('weather-content');
+                const error = document.getElementById('weather-error');
+                
+                const city = widget.getAttribute('data-city') || 'São Paulo';
+                log(`[Weather] 🌤️ Cidade: ${city}`);
+                
+                loadWeatherData(city, loading, content, error);
+            }
+
+            async function loadWeatherData(city, loadingEl, contentEl, errorEl) {
+                try {
+                    const url = `/api/widget/weather?city=${encodeURIComponent(city)}`;
+                    log(`[Weather] 📡 URL: ${url}`);
+                    
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    log(`[Weather] 📥 Status: ${response.status}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    log(`[Weather] ✅ Dados: ${JSON.stringify(result).substring(0, 100)}...`);
+                    
+                    if (result.success && result.data) {
+                        document.getElementById('weather-icon').src = result.data.icon_url;
+                        document.getElementById('weather-temp').textContent = result.data.temperature;
+                        document.getElementById('weather-desc').textContent = result.data.description;
+                        document.getElementById('weather-city').textContent = result.data.city;
+                        document.getElementById('weather-feels').textContent = result.data.feels_like;
+                        
+                        loadingEl.classList.add('hidden');
+                        contentEl.classList.remove('hidden');
+                        
+                        log('[Weather] ✅ Widget carregado com sucesso!');
+                    } else {
+                        throw new Error('Resposta inválida');
+                    }
+                    
+                } catch (err) {
+                    log(`[Weather] ❌ Erro: ${err.message}`);
+                    loadingEl.classList.add('hidden');
+                    errorEl.classList.remove('hidden');
+                }
+            }
+            
+            if (document.readyState === 'loading') {
+                log('[Weather] Aguardando DOMContentLoaded');
+                document.addEventListener('DOMContentLoaded', initializeWeatherWidget);
+            } else {
+                log('[Weather] DOM pronto, executando');
+                initializeWeatherWidget();
+            }
+            
+        })();
+    </script>
+</body>
+</html>

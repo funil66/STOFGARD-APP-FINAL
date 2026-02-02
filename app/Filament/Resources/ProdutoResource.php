@@ -10,6 +10,10 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry;
 
 class ProdutoResource extends Resource
 {
@@ -44,24 +48,103 @@ class ProdutoResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('share')
+                
+                // PDF Download
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn(Produto $record) => route('produto.pdf', $record))
+                    ->openUrlInNewTab(),
+                
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (Produto $record) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/produtos/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(Produto $record) => route('produto.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfolistSection::make()
+                    ->schema([
+                        InfolistGrid::make(2)->schema([
+                            TextEntry::make('nome')
+                                ->label('Nome do Produto')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->weight('bold'),
+                            TextEntry::make('preco_venda')
+                                ->label('Preço de Venda')
+                                ->money('BRL')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->color('success'),
+                        ]),
+                    ]),
+                
+                InfolistSection::make('💰 Informações de Preço')
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('preco_custo')
+                                ->label('Preço de Custo')
+                                ->money('BRL')
+                                ->placeholder('Não informado'),
+                            TextEntry::make('preco_venda')
+                                ->label('Preço de Venda')
+                                ->money('BRL'),
+                            TextEntry::make('margem')
+                                ->label('Margem')
+                                ->formatStateUsing(function ($record) {
+                                    if ($record->preco_custo && $record->preco_venda && $record->preco_custo > 0) {
+                                        $margem = (($record->preco_venda - $record->preco_custo) / $record->preco_custo) * 100;
+                                        return number_format($margem, 2) . '%';
+                                    }
+                                    return 'N/A';
+                                })
+                                ->badge()
+                                ->color('success'),
+                        ]),
+                    ]),
+                
+                InfolistSection::make('📦 Estoque')
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('quantidade_estoque')
+                                ->label('Quantidade em Estoque')
+                                ->badge()
+                                ->color(fn($state) => $state > 10 ? 'success' : ($state > 0 ? 'warning' : 'danger')),
+                            TextEntry::make('estoque_minimo')
+                                ->label('Estoque Mínimo')
+                                ->placeholder('Não definido'),
+                            TextEntry::make('unidade_medida')
+                                ->label('Unidade de Medida')
+                                ->placeholder('UN'),
+                        ]),
+                    ]),
+                
+                InfolistSection::make('📋 Detalhes')
+                    ->schema([
+                        TextEntry::make('descricao')
+                            ->label('Descrição')
+                            ->columnSpanFull()
+                            ->placeholder('Sem descrição'),
+                        TextEntry::make('categoria.nome')
+                            ->label('Categoria')
+                            ->badge()
+                            ->color('info')
+                            ->placeholder('Sem categoria'),
+                    ]),
             ]);
     }
 
@@ -76,6 +159,7 @@ class ProdutoResource extends Resource
             'index' => Pages\ListProdutos::route('/'),
             'create' => Pages\CreateProduto::route('/create'),
             'edit' => Pages\EditProduto::route('/{record}/edit'),
+            'view' => Pages\ViewProduto::route('/{record}'),
         ];
     }
 }

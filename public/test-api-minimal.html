@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Minimalista API</title>
+</head>
+<body style="background: #1e293b; color: white; padding: 40px; font-family: monospace;">
+    <h1>🧪 Teste API Clima - Minimalista</h1>
+    <div id="status">Iniciando...</div>
+    <hr style="margin: 20px 0;">
+    <div id="result" style="white-space: pre-wrap; background: #0f172a; padding: 20px; border-radius: 8px;"></div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const resultEl = document.getElementById('result');
+
+        async function testarAPI() {
+            statusEl.textContent = '⏳ Fazendo requisição...';
+            resultEl.textContent = '';
+
+            try {
+                const url = '/api/widget/weather?city=Ribeirão Preto';
+                statusEl.textContent = `📡 URL: ${url}`;
+
+                const response = await fetch(url);
+                
+                statusEl.textContent = `📥 Status: ${response.status} ${response.statusText}`;
+                
+                const data = await response.json();
+                
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                
+                if (data.success) {
+                    statusEl.textContent = `✅ SUCESSO! Temp: ${data.data.temperature}°C em ${data.data.city}`;
+                    statusEl.style.color = '#10b981';
+                } else {
+                    statusEl.textContent = '❌ Resposta sem sucesso';
+                    statusEl.style.color = '#ef4444';
+                }
+            } catch (err) {
+                statusEl.textContent = `❌ ERRO: ${err.message}`;
+                statusEl.style.color = '#ef4444';
+                resultEl.textContent = err.stack;
+            }
+        }
+
+        // Executa imediatamente
+        testarAPI();
+
+        // Adiciona botão para testar novamente
+        const btn = document.createElement('button');
+        btn.textContent = '🔄 Testar Novamente';
+        btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; background: #3b82f6; color: white; border: none; border-radius: 6px;';
+        btn.onclick = testarAPI;
+        document.body.insertBefore(btn, resultEl);
+    </script>
+</body>
+</html>

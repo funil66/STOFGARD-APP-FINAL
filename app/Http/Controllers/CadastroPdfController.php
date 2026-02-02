@@ -59,6 +59,6 @@ class CadastroPdfController extends Controller
                     ->setOption('args', config('browsershot.chrome_args'))
                     ->timeout(config('browsershot.timeout'));
             })
-            ->inline();
+            ->download();
     }
 }

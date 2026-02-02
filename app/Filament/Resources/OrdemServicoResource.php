@@ -20,6 +20,12 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Group;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\RepeatableEntry;
 
 class OrdemServicoResource extends Resource
 {
@@ -404,18 +410,13 @@ class OrdemServicoResource extends Resource
                     ->url(fn(?OrdemServico $record) => $record ? route('os.pdf', $record) : null)
                     ->openUrlInNewTab(),
 
-                Tables\Actions\Action::make('share')
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (OrdemServico $record) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/ordem-servicos/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(OrdemServico $record) => route('os.pdf', $record))
+                    ->openUrlInNewTab(),
 
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
@@ -443,6 +444,191 @@ class OrdemServicoResource extends Resource
     {
         return [];
     }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                // ===== CABEÇALHO DA OS =====
+                InfolistSection::make()
+                    ->schema([
+                        InfolistGrid::make(4)->schema([
+                            TextEntry::make('numero_os')
+                                ->label('Número da OS')
+                                ->weight('bold')
+                                ->columnSpan(1)
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->copyable(),
+                            TextEntry::make('status')
+                                ->badge()
+                                ->color(fn(string $state): string => match ($state) {
+                                    'concluida' => 'success',
+                                    'cancelada' => 'danger',
+                                    'agendada' => 'warning',
+                                    'aberta' => 'info',
+                                    default => 'gray',
+                                }),
+                            TextEntry::make('tipo_servico')
+                                ->label('Tipo de Serviço')
+                                ->badge()
+                                ->color('primary'),
+                            TextEntry::make('data_abertura')
+                                ->label('Data Abertura')
+                                ->date('d/m/Y'),
+                        ]),
+                        InfolistGrid::make(4)->schema([
+                            TextEntry::make('cliente.nome')
+                                ->label('Cliente')
+                                ->icon('heroicon-m-user')
+                                ->weight('bold'),
+                            TextEntry::make('cliente.telefone')
+                                ->label('WhatsApp')
+                                ->icon('heroicon-m-chat-bubble-left-right')
+                                ->url(fn($state) => $state ? 'https://wa.me/55' . preg_replace('/\D/', '', $state) : null, true),
+                            TextEntry::make('loja.nome')
+                                ->label('Loja Parceira')
+                                ->icon('heroicon-m-building-storefront'),
+                            TextEntry::make('vendedor.nome')
+                                ->label('Vendedor')
+                                ->icon('heroicon-m-user-circle'),
+                        ]),
+                    ]),
+
+                // ===== RESUMO DE VALORES =====
+                InfolistSection::make('💰 Resumo Financeiro')
+                    ->schema([
+                        InfolistGrid::make(4)->schema([
+                            TextEntry::make('valor_total')
+                                ->label('💵 Valor Total')
+                                ->money('BRL')
+                                ->color('success')
+                                ->weight('bold')
+                                ->size(TextEntry\TextEntrySize::Large),
+                            TextEntry::make('data_prevista')
+                                ->label('📅 Data Agendada')
+                                ->date('d/m/Y')
+                                ->color('warning'),
+                            TextEntry::make('data_conclusao')
+                                ->label('✅ Conclusão')
+                                ->date('d/m/Y')
+                                ->color('success')
+                                ->placeholder('Não concluída'),
+                            TextEntry::make('status_garantia')
+                                ->label('🛡️ Garantia')
+                                ->badge()
+                                ->color(fn($state) => match ($state) {
+                                    'ativa' => 'success',
+                                    'vencida' => 'danger',
+                                    'pendente' => 'warning',
+                                    default => 'gray',
+                                })
+                                ->formatStateUsing(fn($state) => match ($state) {
+                                    'ativa' => 'Ativa',
+                                    'vencida' => 'Vencida',
+                                    'pendente' => 'Aguardando Conclusão',
+                                    'nenhuma' => 'Sem garantia',
+                                    default => '-',
+                                }),
+                        ]),
+                    ])
+                    ->collapsible(),
+
+                // ===== ITENS DO SERVIÇO =====
+                InfolistSection::make('🛠️ Itens do Serviço')
+                    ->schema([
+                        RepeatableEntry::make('itens')
+                            ->label('')
+                            ->schema([
+                                InfolistGrid::make(5)->schema([
+                                    TextEntry::make('descricao')
+                                        ->label('Item')
+                                        ->weight('bold')
+                                        ->columnSpan(2),
+                                    TextEntry::make('quantidade')
+                                        ->label('Qtd')
+                                        ->alignCenter(),
+                                    TextEntry::make('valor_unitario')
+                                        ->label('Unit.')
+                                        ->money('BRL'),
+                                    TextEntry::make('subtotal')
+                                        ->label('Subtotal')
+                                        ->money('BRL')
+                                        ->weight('bold')
+                                        ->color('success'),
+                                ]),
+                            ])
+                            ->grid(1),
+                    ])
+                    ->collapsible(),
+
+                // ===== DESCRIÇÃO E OBSERVAÇÕES =====
+                InfolistSection::make('📝 Descrição do Serviço')
+                    ->schema([
+                        TextEntry::make('descricao_servico')
+                            ->label('')
+                            ->markdown()
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
+                // ===== ABAS DE HISTÓRICO =====
+                Infolists\Components\Tabs::make('Informações Adicionais')
+                    ->tabs([
+                        // ABA: FINANCEIRO
+                        Infolists\Components\Tabs\Tab::make('💰 Financeiro')
+                            ->schema([
+                                InfolistGrid::make(3)->schema([
+                                    TextEntry::make('financeiro.status')
+                                        ->label('Status Pagamento')
+                                        ->badge()
+                                        ->color(fn($state) => match ($state) {
+                                            'pago' => 'success',
+                                            'cancelado' => 'danger',
+                                            default => 'warning',
+                                        }),
+                                    TextEntry::make('financeiro.data')
+                                        ->label('Data Pagamento')
+                                        ->date('d/m/Y'),
+                                    TextEntry::make('financeiro.valor')
+                                        ->label('Valor')
+                                        ->money('BRL')
+                                        ->weight('bold'),
+                                ]),
+                                Infolists\Components\TextEntry::make('empty_financeiro')
+                                    ->label('')
+                                    ->default('Nenhum registro financeiro vinculado.')
+                                    ->visible(fn($record) => !$record->financeiro),
+                            ]),
+
+                        // ABA: AGENDA
+                        Infolists\Components\Tabs\Tab::make('📅 Agendamento')
+                            ->schema([
+                                InfolistGrid::make(3)->schema([
+                                    TextEntry::make('data_prevista')
+                                        ->label('Data/Hora Prevista')
+                                        ->dateTime('d/m/Y H:i'),
+                                    TextEntry::make('data_conclusao')
+                                        ->label('Conclusão')
+                                        ->date('d/m/Y'),
+                                    TextEntry::make('dias_garantia')
+                                        ->label('Garantia (dias)')
+                                        ->suffix(' dias'),
+                                ]),
+                            ]),
+
+                        // ABA: ARQUIVOS
+                        Infolists\Components\Tabs\Tab::make('📎 Arquivos')
+                            ->schema([
+                                Infolists\Components\TextEntry::make('arquivos_info')
+                                    ->label('')
+                                    ->default('Para gerenciar arquivos, use o modo de edição.')
+                                    ->helperText('Clique em "Editar" para adicionar ou remover arquivos.'),
+                            ]),
+                    ]),
+            ]);
+    }
+
     public static function getPages(): array
     {
         return [

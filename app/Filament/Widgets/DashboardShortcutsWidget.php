@@ -19,14 +19,29 @@ class DashboardShortcutsWidget extends Widget
     protected int|string|array $columnSpan = 'full';
     protected static ?int $sort = 1;
 
-    protected function getViewData(): array
+    public function getViewData(): array
     {
-        return [
-            // Agora busca do banco. Se quiser mudar a cidade, muda no banco, não no código.
-            'weatherUrl' => Configuracao::where('chave', 'url_clima')->value('valor')
-                ?? 'https://wttr.in/Ribeirao+Preto?0QT&lang=pt',
+        return array_merge(parent::getViewData(), [
+            // Widget de Clima
+            'weatherCity' => settings('dashboard_weather_city', 'São Paulo'),
+            'mostrarClima' => settings('dashboard_mostrar_clima', true),
+            
+            // Textos personalizáveis do banner
+            'saudacaoTexto' => settings('dashboard_saudacao', 'Tenha um dia de trabalho produtivo.'),
+            'fraseMotivacional' => settings('dashboard_frase', 'BORA TRABALHAR!'),
+            
+            // Cores do gradiente do banner
+            'bannerColorStart' => settings('dashboard_banner_color_start', '#1e3a8a'),
+            'bannerColorEnd' => settings('dashboard_banner_color_end', '#3b82f6'),
+            
+            // Grid customizável
+            'gridColunasDesktop' => settings('dashboard_grid_colunas', '4'),
+            'gridColunasMobile' => settings('dashboard_grid_colunas_mobile', '2'),
+            'gridGap' => settings('dashboard_grid_gap', '2rem'),
+            
+            // Atalhos
             'shortcuts' => $this->getShortcuts(),
-        ];
+        ]);
     }
 
     public function getShortcuts(): array

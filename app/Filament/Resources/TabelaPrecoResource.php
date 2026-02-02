@@ -6,6 +6,10 @@ use App\Filament\Resources\TabelaPrecoResource\Pages;
 use App\Models\TabelaPreco;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -196,18 +200,20 @@ class TabelaPrecoResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('share')
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn (TabelaPreco $record) => route('tabelapreco.pdf', $record))
+                    ->openUrlInNewTab(),
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (TabelaPreco $record) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/tabela-precos/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(TabelaPreco $record) => route('tabelapreco.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
                 Tables\Actions\RestoreAction::make(),
             ])
@@ -217,6 +223,25 @@ class TabelaPrecoResource extends Resource
                     Tables\Actions\RestoreBulkAction::make(),
                     Tables\Actions\ForceDeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfolistSection::make('Informações do Preço')
+                    ->schema([
+                        InfolistGrid::make(2)
+                            ->schema([
+                                TextEntry::make('tipo_servico')->label('Tipo de Serviço'),
+                                TextEntry::make('categoria')->label('Categoria'),
+                                TextEntry::make('preco_base')->label('Preço Base')->money('BRL'),
+                                TextEntry::make('preco_adicional')->label('Preço Adicional')->money('BRL'),
+                                TextEntry::make('unidade')->label('Unidade'),
+                                TextEntry::make('ativo')->label('Status')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
+                            ]),
+                    ]),
             ]);
     }
 
@@ -232,6 +257,7 @@ class TabelaPrecoResource extends Resource
         return [
             'index' => Pages\ListTabelaPrecos::route('/'),
             'create' => Pages\CreateTabelaPreco::route('/create'),
+            'view' => Pages\ViewTabelaPreco::route('/{record}'),
             'edit' => Pages\EditTabelaPreco::route('/{record}/edit'),
         ];
     }

@@ -47,4 +47,9 @@ return [
         'npm_path' => env('BROWSERSHOT_NPM_PATH', '/usr/bin/npm'),
     ],
 
+    'openweather' => [
+        'api_key' => env('OPENWEATHER_API_KEY'),
+        'default_city' => env('OPENWEATHER_DEFAULT_CITY', 'São Paulo'),
+    ],
+
 ];

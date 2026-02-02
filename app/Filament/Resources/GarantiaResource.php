@@ -9,6 +9,10 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry;
 use Illuminate\Database\Eloquent\Builder;
 
 class GarantiaResource extends Resource
@@ -236,24 +240,46 @@ class GarantiaResource extends Resource
 
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('share')
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn (Garantia $record) => route('garantia.pdf', $record))
+                    ->openUrlInNewTab(),
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (Garantia $record) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/garantias/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(Garantia $record) => route('garantia.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfolistSection::make('Informações da Garantia')
+                    ->schema([
+                        InfolistGrid::make(2)
+                            ->schema([
+                                TextEntry::make('numero_garantia')->label('Número da Garantia'),
+                                TextEntry::make('status')->label('Status')->badge(),
+                                TextEntry::make('data_inicio')->label('Data de Início')->date('d/m/Y'),
+                                TextEntry::make('data_fim')->label('Data de Fim')->date('d/m/Y'),
+                                TextEntry::make('tipo_servico')->label('Tipo de Serviço'),
+                                TextEntry::make('usado_em')->label('Data de Uso')->date('d/m/Y')->visible(fn($record) => $record->usado_em),
+                                TextEntry::make('motivo_uso')->label('Motivo de Uso')->columnSpanFull()->visible(fn($record) => $record->motivo_uso),
+                            ]),
+                    ]),
             ]);
     }
 
@@ -269,6 +295,7 @@ class GarantiaResource extends Resource
         return [
             'index' => Pages\ListGarantias::route('/'),
             'create' => Pages\CreateGarantia::route('/create'),
+            'view' => Pages\ViewGarantia::route('/{record}'),
             'edit' => Pages\EditGarantia::route('/{record}/edit'),
         ];
     }

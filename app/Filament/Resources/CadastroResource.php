@@ -168,7 +168,7 @@ class CadastroResource extends Resource
                                             TextEntry::make('id')
                                                 ->label('')
                                                 ->formatStateUsing(fn() => 'Ver PDF')
-                                                ->url(fn($record) => route('ordem-servico.pdf', $record), true)
+                                                ->url(fn($record) => route('os.pdf', $record), true)
                                                 ->icon('heroicon-o-document-arrow-down')
                                                 ->color('primary'),
                                         ]),
@@ -416,19 +416,14 @@ class CadastroResource extends Resource
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Ver Detalhes'),
                 // 3. EDITAR (Lápis)
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                // 4. COMPARTILHAR
-                Tables\Actions\Action::make('share')
+                // 4. BAIXAR PDF
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (Cadastro $record) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/cadastros/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
+                    ->openUrlInNewTab(),
                 // 5. EXCLUIR (Lixeira)
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])

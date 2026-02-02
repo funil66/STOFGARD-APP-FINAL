@@ -9,6 +9,10 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry;
 
 class CategoriaResource extends Resource
 {
@@ -22,11 +26,14 @@ class CategoriaResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Categorias';
 
-    // Submódulo do Financeiro
-    protected static ?string $slug = 'financeiros/categorias';
+    // Slug direto para acesso
+    protected static ?string $slug = 'categorias';
 
-    // Ocultar da navegação principal
-    protected static bool $shouldRegisterNavigation = false;
+    // Grupo de navegação
+    protected static ?string $navigationGroup = 'Financeiro';
+
+    // Exibir na navegação
+    protected static bool $shouldRegisterNavigation = true;
 
     protected static ?int $navigationSort = 10;
 
@@ -175,24 +182,100 @@ class CategoriaResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('share')
+                
+                // PDF Download
+                Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Compartilhar')
-                    ->icon('heroicon-o-share')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn(Categoria $record) => route('categoria.pdf', $record))
+                    ->openUrlInNewTab(),
+                
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->action(function (Categoria $record) {
-                        \Filament\Notifications\Notification::make()
-                            ->title('Link Copiado!')
-                            ->body(url("/admin/categorias/{$record->id}"))
-                            ->success()
-                            ->send();
-                    }),
+                    ->url(fn(Categoria $record) => route('categoria.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfolistSection::make()
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('nome')
+                                ->label('Nome da Categoria')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->weight('bold')
+                                ->columnSpan(2),
+                            TextEntry::make('ativo')
+                                ->badge()
+                                ->color(fn($state) => $state ? 'success' : 'danger')
+                                ->formatStateUsing(fn($state) => $state ? '✅ Ativo' : '❌ Inativo'),
+                        ]),
+                    ]),
+                
+                InfolistSection::make('📋 Detalhes')
+                    ->schema([
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('tipo')
+                                ->label('Tipo')
+                                ->badge()
+                                ->color('info')
+                                ->formatStateUsing(fn($state) => match($state) {
+                                    'financeiro_receita' => '💰 Receita',
+                                    'financeiro_despesa' => '💸 Despesa',
+                                    'produto' => '📦 Produto',
+                                    default => $state,
+                                }),
+                            TextEntry::make('slug')
+                                ->label('Identificador (Slug)')
+                                ->copyable(),
+                            TextEntry::make('ordem')
+                                ->label('Ordem de Exibição')
+                                ->badge()
+                                ->color('gray'),
+                        ]),
+                        InfolistGrid::make(2)->schema([
+                            TextEntry::make('icone')
+                                ->label('Ícone')
+                                ->formatStateUsing(fn($state) => $state ?? '📌')
+                                ->size(TextEntry\TextEntrySize::Large),
+                            TextEntry::make('cor')
+                                ->label('Cor')
+                                ->color(fn($record) => $record->cor ?? 'gray')
+                                ->badge(),
+                        ]),
+                        TextEntry::make('descricao')
+                            ->label('Descrição')
+                            ->columnSpanFull()
+                            ->placeholder('Sem descrição'),
+                    ]),
+                
+                InfolistSection::make('📊 Estatísticas')
+                    ->schema([
+                        InfolistGrid::make(2)->schema([
+                            TextEntry::make('created_at')
+                                ->label('Criado em')
+                                ->dateTime('d/m/Y H:i'),
+                            TextEntry::make('updated_at')
+                                ->label('Atualizado em')
+                                ->dateTime('d/m/Y H:i'),
+                        ]),
+                    ])
+                    ->collapsed(),
             ]);
     }
 
@@ -209,6 +292,7 @@ class CategoriaResource extends Resource
             'index' => Pages\ListCategorias::route('/'),
             'create' => Pages\CreateCategoria::route('/create'),
             'edit' => Pages\EditCategoria::route('/{record}/edit'),
+            'view' => Pages\ViewCategoria::route('/{record}'),
         ];
     }
 }

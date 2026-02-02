@@ -10,6 +10,10 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry;
 
 class TarefaResource extends Resource
 {
@@ -151,11 +155,75 @@ class TarefaResource extends Resource
                     ->relationship('responsavel', 'name'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
+                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
+                
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn(Tarefa $record) => route('tarefa.pdf', $record))
+                    ->openUrlInNewTab(),
+                
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->url(fn(Tarefa $record) => route('tarefa.pdf', $record))
+                    ->openUrlInNewTab(),
+                
+                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfolistSection::make()
+                    ->schema([
+                        InfolistGrid::make(2)->schema([
+                            TextEntry::make('titulo')
+                                ->label('Título da Tarefa')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->weight('bold'),
+                            TextEntry::make('status')
+                                ->badge()
+                                ->color(fn($state) => match($state) {
+                                    'concluida' => 'success',
+                                    'em_andamento' => 'warning',
+                                    'pendente' => 'info',
+                                    default => 'gray'
+                                }),
+                        ]),
+                    ]),
+                InfolistSection::make('📋 Detalhes')
+                    ->schema([
+                        TextEntry::make('descricao')
+                            ->label('Descrição')
+                            ->columnSpanFull(),
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('data_vencimento')
+                                ->label('Vencimento')
+                                ->date('d/m/Y'),
+                            TextEntry::make('prioridade')
+                                ->badge()
+                                ->color(fn($state) => match($state) {
+                                    'alta' => 'danger',
+                                    'media' => 'warning',
+                                    'baixa' => 'success',
+                                    default => 'gray'
+                                }),
+                            TextEntry::make('responsavel.name')
+                                ->label('Responsável')
+                                ->placeholder('Não atribuído'),
+                        ]),
+                    ]),
             ]);
     }
 
@@ -165,6 +233,7 @@ class TarefaResource extends Resource
             'index' => Pages\ListTarefas::route('/'),
             'create' => Pages\CreateTarefa::route('/create'),
             'edit' => Pages\EditTarefa::route('/{record}/edit'),
+            'view' => Pages\ViewTarefa::route('/{record}'),
         ];
     }
 }

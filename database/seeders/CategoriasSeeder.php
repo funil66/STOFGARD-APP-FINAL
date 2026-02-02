@@ -97,6 +97,35 @@ class CategoriasSeeder extends Seeder
             );
         }
 
+        // Categorias de Comissão (Sistema) - para separação financeira automática
+        $categoriasComissao = [
+            [
+                'nome' => 'Comissão Vendedor',
+                'slug' => 'comissao-vendedor',
+                'tipo' => 'financeiro_despesa',
+                'icone' => '👤💰',
+                'cor' => '#8b5cf6',
+                'descricao' => 'Comissão paga ao vendedor pela venda de serviços/produtos',
+                'ordem' => 100,
+            ],
+            [
+                'nome' => 'Comissão Loja',
+                'slug' => 'comissao-loja',
+                'tipo' => 'financeiro_despesa',
+                'icone' => '🏪💰',
+                'cor' => '#ec4899',
+                'descricao' => 'Comissão paga à loja indicadora pela venda de serviços/produtos',
+                'ordem' => 101,
+            ],
+        ];
+
+        foreach ($categoriasComissao as $cat) {
+            Categoria::updateOrCreate(
+                ['slug' => $cat['slug']],
+                array_merge($cat, ['ativo' => true])
+            );
+        }
+
         $this->command->info('✅ Categorias criadas com sucesso!');
         $this->command->info('📊 Receitas: '.count($categoriasReceita).' categorias');
         $this->command->info('📊 Despesas: '.count($categoriasDespesa).' categorias');

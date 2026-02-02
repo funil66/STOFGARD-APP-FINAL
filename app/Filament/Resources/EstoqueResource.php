@@ -6,6 +6,10 @@ use App\Filament\Resources\EstoqueResource\Pages;
 use App\Models\Estoque;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -223,9 +227,47 @@ class EstoqueResource extends Resource
                             ->send();
                     }),
 
+                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn (Estoque $record) => route('estoque.pdf', $record))
+                    ->openUrlInNewTab(),
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->url(fn(Estoque $record) => route('estoque.pdf', $record))
+                    ->openUrlInNewTab(),
+                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
-            ->bulkActions([]);
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfolistSection::make('Informações do Estoque')
+                    ->schema([
+                        InfolistGrid::make(2)
+                            ->schema([
+                                TextEntry::make('item')->label('Item'),
+                                TextEntry::make('quantidade')->label('Quantidade')->suffix(' L'),
+                                TextEntry::make('unidade')->label('Unidade'),
+                                TextEntry::make('minimo')->label('Mínimo')->suffix(' L'),
+                                TextEntry::make('observacoes')->label('Observações')->columnSpanFull(),
+                            ]),
+                    ]),
+            ]);
     }
 
     public static function getPages(): array
@@ -233,6 +275,7 @@ class EstoqueResource extends Resource
         return [
             'index' => Pages\ListEstoques::route('/'),
             'create' => Pages\CreateEstoque::route('/create'),
+            'view' => Pages\ViewEstoque::route('/{record}'),
             'edit' => Pages\EditEstoque::route('/{record}/edit'),
         ];
     }

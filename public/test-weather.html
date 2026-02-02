@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Widget Clima</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        #test-widget { background: white; padding: 20px; border-radius: 8px; max-width: 400px; margin: 20px auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .log { background: #000; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; margin-top: 20px; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+        .result { margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🌤️ Teste do Widget de Clima</h1>
+    
+    <div id="test-widget">
+        <h2>Teste com Ribeirão Preto</h2>
+        <button onclick="testWeather('Ribeirao Preto')">Testar "Ribeirao Preto"</button>
+        <button onclick="testWeather('Ribeirão Preto')">Testar "Ribeirão Preto" (com acento)</button>
+        <button onclick="testWeather('ribeirao preto')">Testar minúsculo</button>
+        
+        <div id="result" class="result" style="display:none;">
+            <h3>Resultado:</h3>
+            <div id="result-content"></div>
+        </div>
+    </div>
+    
+    <div class="log" id="console"></div>
+
+    <script>
+        const logDiv = document.getElementById('console');
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            logDiv.textContent += args.join(' ') + '\n';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            logDiv.textContent += '❌ ERROR: ' + args.join(' ') + '\n';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+        
+        console.log('=== TESTE DO WIDGET DE CLIMA ===');
+        console.log('Host:', window.location.host);
+        console.log('');
+        
+        async function testWeather(city) {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('result-content');
+            
+            console.log(`\n🔍 Testando cidade: "${city}"`);
+            console.log(`📡 URL: /api/widget/weather?city=${encodeURIComponent(city)}`);
+            
+            try {
+                const response = await fetch(`/api/widget/weather?city=${encodeURIComponent(city)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                console.log(`📥 Status: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('✅ Dados recebidos:', JSON.stringify(result, null, 2));
+                
+                if (result.success && result.data) {
+                    resultContent.innerHTML = `
+                        <strong>🌍 Cidade:</strong> ${result.data.city} (${result.data.country})<br>
+                        <strong>🌡️ Temperatura:</strong> ${result.data.temperature}°C<br>
+                        <strong>💨 Sensação:</strong> ${result.data.feels_like}°C<br>
+                        <strong>☁️ Descrição:</strong> ${result.data.description}<br>
+                        <strong>💧 Umidade:</strong> ${result.data.humidity}%<br>
+                        <img src="${result.data.icon_url}" alt="${result.data.description}">
+                    `;
+                    resultDiv.style.display = 'block';
+                    console.log('✅ SUCESSO!');
+                } else {
+                    throw new Error(result.message || 'Dados inválidos');
+                }
+                
+            } catch (err) {
+                console.error('Erro:', err.message);
+                resultContent.innerHTML = `<strong>❌ Erro:</strong> ${err.message}`;
+                resultDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

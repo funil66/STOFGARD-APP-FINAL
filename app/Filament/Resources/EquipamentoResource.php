@@ -10,6 +10,10 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry;
 
 class EquipamentoResource extends Resource
 {
@@ -179,6 +183,23 @@ class EquipamentoResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
+                
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
+                    ->openUrlInNewTab(),
+                
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
+                    ->openUrlInNewTab(),
+                
                 Tables\Actions\Action::make('enviar_lista_desejos')
                     ->label('')
                     ->tooltip('Enviar para Lista de Desejos')
@@ -209,6 +230,25 @@ class EquipamentoResource extends Resource
             ]);
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            InfolistSection::make()->schema([
+                InfolistGrid::make(2)->schema([
+                    TextEntry::make('nome')->label('Nome do Equipamento')->size(TextEntry\TextEntrySize::Large)->weight('bold'),
+                    TextEntry::make('status')->badge()->color(fn($state) => match($state) { 'ativo' => 'success', 'manutencao' => 'warning', default => 'danger' }),
+                ]),
+            ]),
+            InfolistSection::make('Detalhes')->schema([
+                InfolistGrid::make(3)->schema([
+                    TextEntry::make('numero_serie')->label('Número de Série'),
+                    TextEntry::make('data_aquisicao')->label('Data de Aquisição')->date('d/m/Y'),
+                    TextEntry::make('valor_aquisicao')->label('Valor')->money('BRL'),
+                ]),
+            ]),
+        ]);
+    }
+
     public static function getRelations(): array
     {
         return [];
@@ -220,6 +260,7 @@ class EquipamentoResource extends Resource
             'index' => Pages\ListEquipamentos::route('/'),
             'create' => Pages\CreateEquipamento::route('/create'),
             'edit' => Pages\EditEquipamento::route('/{record}/edit'),
+            'view' => Pages\ViewEquipamento::route('/{record}'),
         ];
     }
 }

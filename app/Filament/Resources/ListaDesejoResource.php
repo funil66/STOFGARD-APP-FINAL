@@ -6,6 +6,10 @@ use App\Filament\Resources\ListaDesejoResource\Pages;
 use App\Models\ListaDesejo;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -219,12 +223,44 @@ class ListaDesejoResource extends Resource
 
                 Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
                 Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->url(fn (ListaDesejo $record) => route('listadesejo.pdf', $record))
+                    ->openUrlInNewTab(),
+                Tables\Actions\Action::make('download')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->url(fn(ListaDesejo $record) => route('listadesejo.pdf', $record))
+                    ->openUrlInNewTab(),
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfolistSection::make('Item Desejado')
+                    ->schema([
+                        InfolistGrid::make(2)
+                            ->schema([
+                                TextEntry::make('nome')->label('Nome do Item'),
+                                TextEntry::make('prioridade')->label('Prioridade')->badge(),
+                                TextEntry::make('valor_estimado')->label('Valor Estimado')->money('BRL'),
+                                TextEntry::make('status')->label('Status')->badge(),
+                                TextEntry::make('justificativa')->label('Justificativa')->columnSpanFull(),
+                            ]),
+                    ]),
             ]);
     }
 
@@ -238,6 +274,7 @@ class ListaDesejoResource extends Resource
         return [
             'index' => Pages\ListListaDesejos::route('/'),
             'create' => Pages\CreateListaDesejo::route('/create'),
+            'view' => Pages\ViewListaDesejo::route('/{record}'),
             'edit' => Pages\EditListaDesejo::route('/{record}/edit'),
         ];
     }
