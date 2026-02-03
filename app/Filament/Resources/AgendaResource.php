@@ -72,7 +72,8 @@ class AgendaResource extends Resource
                             ->columnSpan(1),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Data e Horário')
+                Forms\Components\Section::make('🕒 Data e Horário')
+                    ->description('Defina quando o agendamento acontecerá')
                     ->schema([
                         Forms\Components\DateTimePicker::make('data_hora_inicio')
                             ->label('Data/Hora Início')
@@ -81,6 +82,7 @@ class AgendaResource extends Resource
                             ->seconds(false)
                             ->displayFormat('d/m/Y H:i')
                             ->default(now()->addHours(1)->setMinutes(0))
+                            ->helperText('Horário de início da atividade')
                             ->columnSpan(1),
 
                         Forms\Components\DateTimePicker::make('data_hora_fim')
@@ -90,16 +92,19 @@ class AgendaResource extends Resource
                             ->seconds(false)
                             ->displayFormat('d/m/Y H:i')
                             ->default(now()->addHours(3)->setMinutes(0))
+                            ->helperText('Horário previsto de término')
                             ->columnSpan(1),
 
                         Forms\Components\Toggle::make('dia_inteiro')
-                            ->label('Dia Inteiro')
+                            ->label('Evento de Dia Inteiro')
                             ->default(false)
+                            ->helperText('Marque se o agendamento ocupar o dia todo')
                             ->columnSpan(2),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Vinculações')
-                    ->description('Vincular a cliente, OS ou orçamento')
+                Forms\Components\Section::make('🔗 Vínculos e Relacionamentos')
+                    ->description('Associe este agendamento a um cliente, OS ou orçamento')
+                    ->collapsible()
                     ->schema([
                         Forms\Components\Select::make('cadastro_id')
                             ->label('Cliente')
@@ -128,29 +133,36 @@ class AgendaResource extends Resource
                             ->columnSpan(1),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Localização e Detalhes')
+                Forms\Components\Section::make('📍 Localização e Descrição')
+                    ->description('Informe onde e o que será realizado')
+                    ->collapsible()
                     ->schema([
                         Forms\Components\Textarea::make('local')
-                            ->label('Local')
+                            ->label('Local do Serviço')
                             ->rows(2)
-                            ->placeholder('Endereço onde o serviço será realizado')
+                            ->placeholder('Ex: Rua das Flores, 123 - Centro - Ribeirão Preto/SP')
+                            ->helperText('Endereço completo onde o serviço será executado')
                             ->columnSpanFull(),
 
                         Forms\Components\Textarea::make('descricao')
-                            ->label('Descrição')
+                            ->label('Descrição Detalhada')
                             ->rows(3)
+                            ->placeholder('Descreva os detalhes do serviço, materiais necessários, observações importantes...')
                             ->columnSpanFull(),
 
                         Forms\Components\Textarea::make('observacoes')
                             ->label('Observações Internas')
                             ->rows(2)
+                            ->placeholder('Anotações visíveis apenas pela equipe')
+                            ->helperText('⚠️ Estas informações não serão visíveis para o cliente')
                             ->columnSpanFull(),
 
                         Forms\Components\ColorPicker::make('cor')
                             ->label('Cor no Calendário')
                             ->default('#3b82f6')
+                            ->helperText('Escolha uma cor para identificar visualmente no calendário')
                             ->columnSpan(1),
-                    ])->collapsible(),
+                    ]),
 
                 Forms\Components\Section::make('✅ Checklist de Tarefas')
                     ->description('Lista de tarefas a serem executadas neste agendamento')
@@ -229,21 +241,24 @@ class AgendaResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('data_hora_inicio')
-                    ->label('Data/Hora')
+                    ->label('📅 Data/Hora')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('titulo')
                     ->label('Título')
                     ->searchable()
-                    ->weight('bold')
-                    ->limit(40),
+                    ->limit(40)
+                    ->tooltip(fn($record) => $record->titulo),
 
-                Tables\Columns\TextColumn::make('cliente.nome')
+                Tables\Columns\TextColumn::make('cadastro.nome')
                     ->label('Cliente')
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->icon('heroicon-m-user')
+                    ->placeholder('Não vinculado'),
 
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
@@ -276,8 +291,15 @@ class AgendaResource extends Resource
                         default => $state,
                     }),
 
+                Tables\Columns\TextColumn::make('local')
+                    ->label('Local')
+                    ->icon('heroicon-m-map-pin')
+                    ->limit(30)
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('ordemServico.numero_os')
                     ->label('OS')
+                    ->icon('heroicon-m-clipboard-document-check')
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -324,14 +346,23 @@ class AgendaResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                // 1. VISUALIZAR (Olho)
+                Tables\Actions\ViewAction::make()
+                    ->label('')
+                    ->tooltip('Ver Detalhes'),
+                
+                // 2. EDITAR (Lápis)
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->tooltip('Editar'),
 
+                // 3. CONCLUIR (Check Verde)
                 Tables\Actions\Action::make('concluir')
-                    ->label('Concluir')
+                    ->label('')
+                    ->tooltip('Marcar como Concluído')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn(Agenda $record) => $record->status !== 'concluido')
+                    ->visible(fn(Agenda $record) => !in_array($record->status, ['concluido', 'cancelado']))
                     ->requiresConfirmation()
                     ->action(function (Agenda $record) {
                         $record->update(['status' => 'concluido']);
@@ -341,8 +372,10 @@ class AgendaResource extends Resource
                             ->send();
                     }),
 
+                // 4. CANCELAR (X Vermelho)
                 Tables\Actions\Action::make('cancelar')
-                    ->label('Cancelar')
+                    ->label('')
+                    ->tooltip('Cancelar Agendamento')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(fn(Agenda $record) => $record->status === 'agendado')
@@ -355,25 +388,10 @@ class AgendaResource extends Resource
                             ->send();
                     }),
 
-                Tables\Actions\Action::make('download')
+                // 5. EXCLUIR (Lixeira)
+                Tables\Actions\DeleteAction::make()
                     ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('info')
-                    ->url(fn(Agenda $record) => route('agenda.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn(Agenda $record) => route('agenda.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+                    ->tooltip('Excluir'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
