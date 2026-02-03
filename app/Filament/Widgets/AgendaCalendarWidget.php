@@ -8,6 +8,8 @@ use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
 class AgendaCalendarWidget extends FullCalendarWidget
 {
+    protected static string $view = 'filament.widgets.agenda-calendar-widget';
+    
     public function fetchEvents(array $fetchInfo): array
     {
         return Agenda::query()
@@ -63,13 +65,6 @@ class AgendaCalendarWidget extends FullCalendarWidget
                 'center' => 'title',
                 'right' => 'customCreateButton dayGridMonth,timeGridWeek,timeGridDay',
             ],
-            'customButtons' => [
-                'customCreateButton' => [
-                    'text' => '➕ Novo',
-                    'hint' => 'Criar novo agendamento',
-                    'click' => 'function() { window.location.href = "' . AgendaResource::getUrl('create') . '"; }',
-                ],
-            ],
             'buttonText' => [
                 'today' => 'Hoje',
                 'month' => 'Mês',
@@ -77,12 +72,12 @@ class AgendaCalendarWidget extends FullCalendarWidget
                 'day' => 'Dia',
             ],
             'locale' => 'pt-br',
-            'height' => 'auto', // Auto height para caber melhor
+            'height' => 'auto',
             'contentHeight' => 'auto',
             'editable' => false,
             'selectable' => true,
-            'dayMaxEvents' => 5, // Mostrar mais eventos antes do "+more"
-            'eventDisplay' => 'block', // Bloco sólido
+            'dayMaxEvents' => 5,
+            'eventDisplay' => 'block',
             'views' => [
                 'dayGridMonth' => [
                     'dayMaxEvents' => 4,
