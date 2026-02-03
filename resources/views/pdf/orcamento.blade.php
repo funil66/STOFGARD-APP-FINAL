@@ -24,9 +24,9 @@
             color: {{ $text }};
             line-height: 1.4;
             
-            /* Define content safe area via padding */
-            padding-top: 4.5cm;    
-            padding-bottom: 2.5cm; 
+            /* Define content safe area via padding - AUMENTADO para evitar sobreposição */
+            padding-top: 5.5cm;    /* Aumentado de 4.5cm para 5.5cm */
+            padding-bottom: 3cm;   /* Aumentado de 2.5cm para 3cm */
             padding-left: 1cm;
             padding-right: 1cm;
             margin: 0;
@@ -36,13 +36,13 @@
         .header {
             position: fixed; 
             top: 0;
-            left: 1cm; /* Match the body padding/margin */
+            left: 1cm;
             right: 1cm; 
-            height: 4cm;
-            padding-top: 0.5cm; /* Top Margin visual */
+            height: 4.5cm;  /* Aumentado de 4cm para 4.5cm */
+            padding-top: 0.5cm;
             border-bottom: 3px solid {{ $primary }};
             display: flex;
-            background: white; /* Ensure no transparent conflicts */
+            background: white;
             z-index: 1000;
         }
 
@@ -52,8 +52,8 @@
             bottom: 0;
             left: 1cm; 
             right: 1cm; 
-            height: 2cm;
-            padding-bottom: 0.5cm; /* Bottom Margin visual */
+            height: 2.5cm;  /* Aumentado de 2cm para 2.5cm */
+            padding-bottom: 0.5cm;
             background: white;
             padding-top: 5px;
             border-top: 1px solid #e5e7eb;
@@ -221,7 +221,8 @@
                 ⚠️ {{ $config->pdf_texto_garantia ?? 'Validade 7 dias' }}
             </div>
             <div class="footer-legal">
-                {{ $data['texto_legal'] ?? 'Documento não fiscal' }}
+                {{ $data['texto_legal'] ?? 'Documento não fiscal' }}<br>
+                <strong>Certificado de Geração:</strong> {{ now()->format('d/m/Y H:i:s') }} | Orçamento #{{ $orcamento->numero }}
             </div>
         </div>
     @endif

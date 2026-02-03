@@ -51,7 +51,7 @@ trait HasSequentialNumber
     }
 
     /**
-     * Gera número sequencial único no formato YYYY.XXXX
+     * Gera número único no formato YYYY.XXXX (aleatório)
      * 
      * @return string
      */
@@ -60,38 +60,24 @@ trait HasSequentialNumber
         return DB::transaction(function () {
             $ano = date('Y');
             $tipo = $this->getSequenceType();
-
-            // Busca ou cria registro de sequência com lock FOR UPDATE
-            $sequencia = DB::table('sequencias')
-                ->where('tipo', $tipo)
-                ->where('ano', $ano)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$sequencia) {
-                // Primeira sequência do ano
-                DB::table('sequencias')->insert([
-                    'tipo' => $tipo,
-                    'ano' => $ano,
-                    'ultimo_numero' => 1,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                $proximoNumero = 1;
-            } else {
-                // Incrementa sequência existente
-                $proximoNumero = $sequencia->ultimo_numero + 1;
-                DB::table('sequencias')
-                    ->where('tipo', $tipo)
-                    ->where('ano', $ano)
-                    ->update([
-                        'ultimo_numero' => $proximoNumero,
-                        'updated_at' => now(),
-                    ]);
+            
+            // Gera 10 tentativas de número aleatório
+            for ($i = 0; $i < 10; $i++) {
+                // Gera 4 dígitos aleatórios (1000-9999)
+                $randomDigits = rand(1000, 9999);
+                $numero = sprintf('%s.%04d', $ano, $randomDigits);
+                
+                // Verifica se já existe
+                $existe = static::where($this->getSequenceColumn(), $numero)->exists();
+                
+                if (!$existe) {
+                    return $numero;
+                }
             }
-
-            // Formata: YYYY.XXXX (ex: 2026.0001)
-            return sprintf('%s.%04d', $ano, $proximoNumero);
+            
+            // Fallback: se após 10 tentativas ainda colidiu, usa timestamp
+            $timestamp = substr(str_replace('.', '', microtime(true)), -4);
+            return sprintf('%s.%s', $ano, $timestamp);
         });
     }
 

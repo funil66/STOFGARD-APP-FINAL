@@ -423,22 +423,28 @@ class AgendaResource extends Resource
                 InfolistSection::make('🔗 Vinculações')
                     ->schema([
                         InfolistGrid::make(3)->schema([
-                            TextEntry::make('cliente.nome')
+                            TextEntry::make('cadastro.nome')
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
-                                ->url(fn($record) => $record->cadastro_id 
-                                    ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id]) 
-                                    : null)
+                                ->url(fn($record) => $record->cadastro_url)
                                 ->color('primary')
                                 ->placeholder('Não vinculado'),
-                            TextEntry::make('ordemServico.numero_os')
-                                ->label('Ordem de Serviço')
-                                ->icon('heroicon-m-clipboard-document-check')
-                                ->url(fn($record) => $record->ordem_servico_id 
-                                    ? \App\Filament\Resources\OrdemServicoResource::getUrl('view', ['record' => $record->ordem_servico_id]) 
-                                    : null)
-                                ->color('primary')
-                                ->placeholder('Não vinculada'),
+                            TextEntry::make('tipo_servico_exibicao')
+                                ->label('Tipo de Serviço')
+                                ->icon('heroicon-m-wrench-screwdriver')
+                                ->badge()
+                                ->color('info')
+                                ->getStateUsing(function ($record) {
+                                    // Prioriza OS, depois Orçamento
+                                    if ($record->ordem_servico_id && $record->ordemServico) {
+                                        return \App\Services\ServiceTypeManager::getLabel($record->ordemServico->tipo_servico ?? 'servico');
+                                    }
+                                    if ($record->orcamento_id && $record->orcamento) {
+                                        return \App\Services\ServiceTypeManager::getLabel($record->orcamento->tipo_servico ?? 'servico');
+                                    }
+                                    return null;
+                                })
+                                ->placeholder('Não vinculado'),
                             TextEntry::make('orcamento.numero')
                                 ->label('Orçamento')
                                 ->icon('heroicon-m-document-text')
@@ -447,6 +453,16 @@ class AgendaResource extends Resource
                                     : null)
                                 ->color('primary')
                                 ->placeholder('Não vinculado'),
+                        ]),
+                        InfolistGrid::make(1)->schema([
+                            TextEntry::make('ordemServico.numero_os')
+                                ->label('Ordem de Serviço')
+                                ->icon('heroicon-m-clipboard-document-check')
+                                ->url(fn($record) => $record->ordem_servico_id 
+                                    ? \App\Filament\Resources\OrdemServicoResource::getUrl('view', ['record' => $record->ordem_servico_id]) 
+                                    : null)
+                                ->color('primary')
+                                ->placeholder('Não vinculada'),
                         ]),
                     ])
                     ->collapsible(),

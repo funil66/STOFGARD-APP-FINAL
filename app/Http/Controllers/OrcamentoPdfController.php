@@ -13,7 +13,7 @@ class OrcamentoPdfController extends Controller
      */
     public function gerarPdf(Orcamento $orcamento)
     {
-        return $this->renderPdf($orcamento);
+        return $this->renderPdf($orcamento, true); // true = download
     }
 
     /**
@@ -22,14 +22,13 @@ class OrcamentoPdfController extends Controller
     public function stream(Orcamento $orcamento)
     {
         // Se a rota for assinada, o Laravel já validou no middleware 'signed'.
-        // Se quiser validar expiração extra, faça aqui.
-        return $this->renderPdf($orcamento);
+        return $this->renderPdf($orcamento, false); // false = inline (visualização)
     }
 
     /**
      * Lógica central de geração do PDF.
      */
-    private function renderPdf(Orcamento $orcamento)
+    private function renderPdf(Orcamento $orcamento, bool $download = true)
     {
         // Garante que o diretório de arquivos temporários exista e tenha permissão
         $tempPath = storage_path('app/temp');
@@ -120,7 +119,7 @@ class OrcamentoPdfController extends Controller
             $config = (object) $settingsArray;
         }
 
-        return Pdf::view('pdf.orcamento', [
+        $pdf = Pdf::view('pdf.orcamento', [
             'orcamento' => $orcamento,
             'config' => $config
         ])
@@ -133,7 +132,9 @@ class OrcamentoPdfController extends Controller
                     ->setNpmBinary(config('browsershot.npm_path'))
                     ->setOption('args', config('browsershot.chrome_args'))
                     ->timeout(config('browsershot.timeout'));
-            })
-            ->download();
+            });
+
+        // Retorna inline (visualização) ou download
+        return $download ? $pdf->download() : $pdf->inline();
     }
 }

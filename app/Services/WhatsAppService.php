@@ -43,10 +43,19 @@ class WhatsAppService
             return '';
 
         $nome = explode(' ', $cliente->nome)[0];
-        $linkPdf = route('orcamento.pdf', $orcamento); // Link direto para o PDF
+        
+        // Gera URL assinada que expira em 30 dias
+        $linkPdf = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'orcamento.compartilhar',
+            now()->addDays(30),
+            ['orcamento' => $orcamento->id]
+        );
 
         $msg = "Olá {$nome}! Tudo bem?\n\n";
-        $msg .= "Conforme combinamos, segue o link do seu orçamento detalhado: {$linkPdf}\n\n";
+        $msg .= "Conforme combinamos, segue o link seguro do seu orçamento detalhado:\n\n";
+        $msg .= "{$linkPdf}\n\n";
+        $msg .= "📱 *Este link é válido por 30 dias*\n";
+        $msg .= "📄 Clique para visualizar ou baixar o PDF\n\n";
         $msg .= "Ficamos à disposição para qualquer dúvida!";
 
         return $this->getLink($cliente->celular, $msg);

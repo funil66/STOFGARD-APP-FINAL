@@ -83,6 +83,11 @@ Route::post('/solicitar-orcamento', function (\Illuminate\Http\Request $request)
     return back()->with('success', 'Sua solicitação foi enviada! Em breve entraremos em contato.');
 })->name('solicitar.orcamento.post');
 
+// Rota pública para visualizar PDF do orçamento via link assinado (WhatsApp)
+Route::get('/orcamento/{orcamento}/compartilhar', [OrcamentoPdfController::class, 'stream'])
+    ->middleware('signed')
+    ->name('orcamento.compartilhar');
+
 // Rotas de autenticação do Google Calendar
 Route::middleware(['auth'])->group(function () {
     Route::get('/google/auth', [GoogleCalendarController::class, 'redirectToGoogle'])

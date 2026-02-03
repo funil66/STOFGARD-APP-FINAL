@@ -572,6 +572,39 @@ class OrdemServicoResource extends Resource
                     ->collapsible()
                     ->collapsed(),
 
+                // ===== DADOS PERSONALIZADOS =====
+                InfolistSection::make('🏷️ Dados Personalizados')
+                    ->schema([
+                        Infolists\Components\KeyValueEntry::make('extra_attributes')
+                            ->label('')
+                            ->keyLabel('Campo')
+                            ->valueLabel('Valor')
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->visible(fn($record) => !empty($record->extra_attributes)),
+
+                // ===== IMAGENS DO ORÇAMENTO =====
+                InfolistSection::make('📸 Imagens do Orçamento')
+                    ->schema([
+                        Infolists\Components\ImageEntry::make('orcamento_fotos')
+                            ->label('')
+                            ->getStateUsing(function ($record) {
+                                if (!$record->orcamento) return [];
+                                return $record->orcamento->getMedia('orcamento_fotos')->map(fn($media) => $media->getUrl())->toArray();
+                            })
+                            ->disk('public')
+                            ->height(200)
+                            ->columnSpanFull(),
+                        Infolists\Components\TextEntry::make('sem_imagens')
+                            ->label('')
+                            ->default('Nenhuma imagem anexada ao orçamento.')
+                            ->visible(fn($record) => !$record->orcamento || $record->orcamento->getMedia('orcamento_fotos')->isEmpty()),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
                 // ===== ABAS DE HISTÓRICO =====
                 Infolists\Components\Tabs::make('Informações Adicionais')
                     ->tabs([
