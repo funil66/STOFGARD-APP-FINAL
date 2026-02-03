@@ -25,21 +25,17 @@ class CalendarioAgenda extends ListRecords
         ];
     }
 
-    protected function getHeaderWidgets(): array
+    // Movido calendário para footer widgets para não sobrepor o botão
+    protected function getFooterWidgets(): array
     {
         return [
             AgendaCalendarWidget::class,
         ];
     }
 
-    public function getHeaderWidgetsColumns(): int|array
+    public function getFooterWidgetsColumns(): int|array
     {
         return 1;
-    }
-
-    public function getHeader(): ?\Illuminate\Contracts\View\View
-    {
-        return view('filament.components.calendar-styles');
     }
 }
 
