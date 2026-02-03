@@ -455,7 +455,8 @@ class OrcamentoResource extends Resource
                             TextEntry::make('tipo_servico')
                                 ->label('🛠️ Tipo Serviço')
                                 ->badge()
-                                ->color('primary'),
+                                ->formatStateUsing(fn($state) => \App\Services\ServiceTypeManager::getLabel($state ?? 'servico'))
+                                ->color(fn($state) => \App\Services\ServiceTypeManager::getColor($state ?? 'servico')),
                         ]),
                     ])
                     ->collapsible(),

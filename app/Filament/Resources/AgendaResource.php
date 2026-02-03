@@ -152,6 +152,55 @@ class AgendaResource extends Resource
                             ->columnSpan(1),
                     ])->collapsible(),
 
+                Forms\Components\Section::make('✅ Checklist de Tarefas')
+                    ->description('Lista de tarefas a serem executadas neste agendamento')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Forms\Components\Repeater::make('extra_attributes.tarefas')
+                            ->label('')
+                            ->schema([
+                                Forms\Components\Checkbox::make('concluida')
+                                    ->label('Concluída')
+                                    ->inline(false),
+                                Forms\Components\TextInput::make('descricao')
+                                    ->label('Descrição da Tarefa')
+                                    ->required()
+                                    ->placeholder('Ex: Separar equipamentos')
+                                    ->columnSpan(2),
+                            ])
+                            ->columns(3)
+                            ->defaultItems(0)
+                            ->addActionLabel('➕ Adicionar Tarefa')
+                            ->columnSpanFull()
+                            ->grid(1),
+                    ]),
+
+                Forms\Components\Section::make('🔔 Lembretes e Notificações')
+                    ->description('Configure quando você quer ser lembrado deste agendamento')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Forms\Components\Grid::make(2)->schema([
+                            Forms\Components\Select::make('minutos_antes_lembrete')
+                                ->label('Lembrete Antes do Evento')
+                                ->options([
+                                    15 => '15 minutos antes',
+                                    30 => '30 minutos antes',
+                                    60 => '1 hora antes',
+                                    120 => '2 horas antes',
+                                    1440 => '1 dia antes',
+                                    2880 => '2 dias antes',
+                                ])
+                                ->default(60)
+                                ->helperText('Sistema enviará notificação no tempo selecionado'),
+                            Forms\Components\Toggle::make('lembrete_enviado')
+                                ->label('Lembrete já enviado')
+                                ->disabled()
+                                ->helperText('Marcado automaticamente após envio'),
+                        ]),
+                    ]),
+
                 Forms\Components\Section::make('Central de Arquivos')
                     ->description('Envie fotos, documentos e comprovantes (Máx: 20MB).')
                     ->collapsible()
@@ -496,6 +545,61 @@ class AgendaResource extends Resource
                                 ->label('Observações Internas')
                                 ->markdown()
                                 ->placeholder('Sem observações'),
+                        ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
+                // ===== CHECKLIST DE TAREFAS =====
+                InfolistSection::make('✅ Checklist de Tarefas')
+                    ->schema([
+                        Infolists\Components\RepeatableEntry::make('extra_attributes.tarefas')
+                            ->label('')
+                            ->schema([
+                                Infolists\Components\IconEntry::make('concluida')
+                                    ->label('')
+                                    ->boolean()
+                                    ->trueIcon('heroicon-o-check-circle')
+                                    ->falseIcon('heroicon-o-x-circle')
+                                    ->trueColor('success')
+                                    ->falseColor('gray'),
+                                TextEntry::make('descricao')
+                                    ->label('Tarefa')
+                                    ->weight(fn($record) => $record['concluida'] ?? false ? 'normal' : 'bold')
+                                    ->color(fn($record) => $record['concluida'] ?? false ? 'gray' : 'primary'),
+                            ])
+                            ->columns(2)
+                            ->columnSpanFull(),
+                        TextEntry::make('tarefas_vazio')
+                            ->label('')
+                            ->default('Nenhuma tarefa cadastrada')
+                            ->visible(fn($record) => empty($record->extra_attributes['tarefas'] ?? [])),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->visible(fn($record) => !empty($record->extra_attributes['tarefas'] ?? []) || true),
+
+                // ===== LEMBRETES E NOTIFICAÇÕES =====
+                InfolistSection::make('🔔 Lembretes')
+                    ->schema([
+                        InfolistGrid::make(2)->schema([
+                            TextEntry::make('minutos_antes_lembrete')
+                                ->label('Lembrete Configurado')
+                                ->badge()
+                                ->formatStateUsing(fn($state) => match((int)$state) {
+                                    15 => '15 min antes',
+                                    30 => '30 min antes',
+                                    60 => '1h antes',
+                                    120 => '2h antes',
+                                    1440 => '1 dia antes',
+                                    2880 => '2 dias antes',
+                                    default => $state . ' min antes',
+                                }),
+                            TextEntry::make('lembrete_enviado')
+                                ->label('Status do Lembrete')
+                                ->badge()
+                                ->color(fn($state) => $state ? 'success' : 'warning')
+                                ->formatStateUsing(fn($state) => $state ? '✅ Enviado' : '⏳ Pendente'),
                         ]),
                     ])
                     ->collapsible()
