@@ -165,51 +165,54 @@ class AgendaResource extends Resource
                     ]),
 
                 Forms\Components\Section::make('✅ Checklist de Tarefas')
-                    ->description('Lista de tarefas a serem executadas neste agendamento')
+                    ->description('Crie uma lista de tarefas para organizar este agendamento')
                     ->collapsible()
-                    ->collapsed()
                     ->schema([
                         Forms\Components\Repeater::make('extra_attributes.tarefas')
-                            ->label('')
+                            ->label('Lista de Tarefas')
                             ->schema([
-                                Forms\Components\Checkbox::make('concluida')
-                                    ->label('Concluída')
-                                    ->inline(false),
                                 Forms\Components\TextInput::make('descricao')
                                     ->label('Descrição da Tarefa')
                                     ->required()
-                                    ->placeholder('Ex: Separar equipamentos')
+                                    ->placeholder('Ex: Separar equipamentos, Confirmar com cliente, Preparar materiais')
                                     ->columnSpan(2),
+                                Forms\Components\Checkbox::make('concluida')
+                                    ->label('Concluída')
+                                    ->default(false)
+                                    ->inline(false),
                             ])
                             ->columns(3)
                             ->defaultItems(0)
-                            ->addActionLabel('➕ Adicionar Tarefa')
-                            ->columnSpanFull()
-                            ->grid(1),
+                            ->addActionLabel('➕ Adicionar Nova Tarefa')
+                            ->reorderable()
+                            ->collapsible()
+                            ->itemLabel(fn (array $state): ?string => $state['descricao'] ?? null)
+                            ->columnSpanFull(),
                     ]),
 
                 Forms\Components\Section::make('🔔 Lembretes e Notificações')
-                    ->description('Configure quando você quer ser lembrado deste agendamento')
+                    ->description('Receba um lembrete antes do agendamento acontecer')
                     ->collapsible()
-                    ->collapsed()
                     ->schema([
                         Forms\Components\Grid::make(2)->schema([
                             Forms\Components\Select::make('minutos_antes_lembrete')
-                                ->label('Lembrete Antes do Evento')
+                                ->label('⏰ Enviar Lembrete')
                                 ->options([
-                                    15 => '15 minutos antes',
-                                    30 => '30 minutos antes',
-                                    60 => '1 hora antes',
-                                    120 => '2 horas antes',
-                                    1440 => '1 dia antes',
-                                    2880 => '2 dias antes',
+                                    15 => '🟢 15 minutos antes',
+                                    30 => '🟢 30 minutos antes',
+                                    60 => '🟡 1 hora antes',
+                                    120 => '🟡 2 horas antes',
+                                    1440 => '🔵 1 dia antes',
+                                    2880 => '🔵 2 dias antes',
                                 ])
                                 ->default(60)
-                                ->helperText('Sistema enviará notificação no tempo selecionado'),
+                                ->native(false)
+                                ->helperText('Sistema enviará notificação automática automática no tempo selecionado'),
                             Forms\Components\Toggle::make('lembrete_enviado')
-                                ->label('Lembrete já enviado')
+                                ->label('✅ Status do Lembrete')
                                 ->disabled()
-                                ->helperText('Marcado automaticamente após envio'),
+                                ->helperText('Marcado automaticamente pelo sistema após envio')
+                                ->visible(fn ($record) => $record?->lembrete_enviado ?? false),
                         ]),
                     ]),
 
