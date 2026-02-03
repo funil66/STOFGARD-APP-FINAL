@@ -10,7 +10,7 @@ class FinanceiroRoutingTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_can_access_new_financeiro_routes_correctly()
     {
         $user = User::create([
@@ -35,7 +35,7 @@ class FinanceiroRoutingTest extends TestCase
         $this->assertFalse(class_exists('App\Filament\Resources\TransacaoFinanceiraResource'));
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function legacy_transacao_financeira_system_is_removed()
     {
         // Verificar que o sistema legacy foi completamente removido

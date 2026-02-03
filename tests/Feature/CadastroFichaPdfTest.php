@@ -11,7 +11,7 @@ class CadastroFichaPdfTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_generates_ficha_cadastral_pdf_without_signature_fields()
     {
         // Criar um usuário autenticado
@@ -34,7 +34,7 @@ class CadastroFichaPdfTest extends TestCase
         $this->assertStringContainsString('Ficha-Cadastral', $response->headers->get('Content-Disposition'));
     }
 
-    /** @test */  
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_generates_pdf_template_without_signature_sections()
     {
         $cadastro = Cadastro::factory()->create([

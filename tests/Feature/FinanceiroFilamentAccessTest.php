@@ -11,7 +11,7 @@ class FinanceiroFilamentAccessTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function it_can_access_financeiro_index_without_categoria_conflict_error()
     {
         $user = User::create([
@@ -33,7 +33,7 @@ class FinanceiroFilamentAccessTest extends TestCase
         $response->assertSee('Financeiro'); // Título da página
     }
 
-    /** @test */
+    #[\PHPUnit\Framework\Attributes\Test]
     public function financeiro_categoria_accessor_returns_relationship_object()
     {
         // Este teste verifica se o accessor categoria funciona corretamente
