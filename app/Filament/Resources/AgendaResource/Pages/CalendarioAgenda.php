@@ -17,8 +17,11 @@ class CalendarioAgenda extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Novo Agendamento')
-                ->icon('heroicon-o-plus'),
+                ->label('➕ Novo Agendamento')
+                ->icon('heroicon-o-plus')
+                ->color('success')
+                ->button()
+                ->size('lg'),
         ];
     }
 
