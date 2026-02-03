@@ -61,7 +61,14 @@ class AgendaCalendarWidget extends FullCalendarWidget
             'headerToolbar' => [
                 'left' => 'prev,next today',
                 'center' => 'title',
-                'right' => 'dayGridMonth,timeGridWeek,timeGridDay',
+                'right' => 'customCreateButton dayGridMonth,timeGridWeek,timeGridDay',
+            ],
+            'customButtons' => [
+                'customCreateButton' => [
+                    'text' => '➕ Novo',
+                    'hint' => 'Criar novo agendamento',
+                    'click' => 'function() { window.location.href = "' . AgendaResource::getUrl('create') . '"; }',
+                ],
             ],
             'buttonText' => [
                 'today' => 'Hoje',

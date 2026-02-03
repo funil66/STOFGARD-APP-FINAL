@@ -13,27 +13,21 @@ class CalendarioAgenda extends ListRecords
 
     protected static ?string $title = 'Agenda';
 
+    // Botão removido daqui, agora está integrado no calendário
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make()
-                ->label('➕ Novo Agendamento')
-                ->icon('heroicon-o-plus')
-                ->color('success')
-                ->button()
-                ->size('lg'),
-        ];
+        return [];
     }
 
-    // Movido calendário para footer widgets para não sobrepor o botão
-    protected function getFooterWidgets(): array
+    // Calendário volta para o topo
+    protected function getHeaderWidgets(): array
     {
         return [
             AgendaCalendarWidget::class,
         ];
     }
 
-    public function getFooterWidgetsColumns(): int|array
+    public function getHeaderWidgetsColumns(): int|array
     {
         return 1;
     }
