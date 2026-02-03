@@ -8,8 +8,6 @@ use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
 class AgendaCalendarWidget extends FullCalendarWidget
 {
-    protected static string $view = 'filament.widgets.agenda-calendar-widget';
-    
     public function fetchEvents(array $fetchInfo): array
     {
         return Agenda::query()
