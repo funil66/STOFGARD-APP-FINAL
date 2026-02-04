@@ -203,34 +203,28 @@ class ViewOrcamento extends ViewRecord
                         ->default(false),
                 ])
                 ->action(function ($record, array $data) {
-                    // Montar uma Request e delegar ao controller (reaproveita a lógica já criada)
-                    $request = new HttpRequest($data);
-                    $controller = app(OrcamentoPdfController::class);
+                    // Atualizar preferência de PIX se solicitado
+                    if ($data['persist'] ?? false) {
+                        $record->update([
+                            'pdf_incluir_pix' => $data['include_pix'] ?? true,
+                        ]);
+                    } else {
+                        // Apenas atualiza temporariamente para esta geração
+                        $record->pdf_incluir_pix = $data['include_pix'] ?? true;
+                    }
 
-                    $response = $controller->generateAndSave($request, $record, app(PixService::class));
-
-                    // Interpreta resposta (JSON com url)
+                    // Gerar PDF usando o controller
                     try {
-                        $payload = json_decode($response->getContent(), true);
-                        if (isset($payload['url'])) {
-                            Notification::make()
-                                ->success()
-                                ->title('PDF Gerado')
-                                ->body("PDF salvo: <a href='{$payload['url']}' target='_blank'>Abrir PDF</a>")
-                                ->send();
-                        } else {
-                            Notification::make()
-                                ->danger()
-                                ->title('Erro')
-                                ->body('Não foi possível gerar o PDF. Veja logs para detalhes.')
-                                ->send();
-                        }
+                        $controller = app(OrcamentoPdfController::class);
+                        return $controller->gerarPdf($record);
                     } catch (\Throwable $e) {
                         Notification::make()
                             ->danger()
-                            ->title('Erro')
-                            ->body('Erro ao processar resposta: ' . $e->getMessage())
+                            ->title('Erro ao gerar PDF')
+                            ->body($e->getMessage())
                             ->send();
+
+                        return null;
                     }
                 }),
 

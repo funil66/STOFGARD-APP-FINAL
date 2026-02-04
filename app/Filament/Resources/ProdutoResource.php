@@ -46,9 +46,16 @@ class ProdutoResource extends Resource
         ])
             ->defaultSort('id', 'desc')
             ->actions([
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                
+                Tables\Actions\ViewAction::make()
+                    ->label('')
+                    ->tooltip('Visualizar')
+                    ->iconButton(),
+
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->tooltip('Editar')
+                    ->iconButton(),
+
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -56,8 +63,11 @@ class ProdutoResource extends Resource
                     ->color('success')
                     ->url(fn(Produto $record) => route('produto.pdf', $record))
                     ->openUrlInNewTab(),
-                    
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->tooltip('Excluir')
+                    ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -84,7 +94,7 @@ class ProdutoResource extends Resource
                                 ->color('success'),
                         ]),
                     ]),
-                
+
                 InfolistSection::make('💰 Informações de Preço')
                     ->schema([
                         InfolistGrid::make(3)->schema([
@@ -108,7 +118,7 @@ class ProdutoResource extends Resource
                                 ->color('success'),
                         ]),
                     ]),
-                
+
                 InfolistSection::make('📦 Estoque')
                     ->schema([
                         InfolistGrid::make(3)->schema([
@@ -124,7 +134,7 @@ class ProdutoResource extends Resource
                                 ->placeholder('UN'),
                         ]),
                     ]),
-                
+
                 InfolistSection::make('📋 Detalhes')
                     ->schema([
                         TextEntry::make('descricao')

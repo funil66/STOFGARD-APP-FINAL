@@ -155,9 +155,16 @@ class TarefaResource extends Resource
                     ->relationship('responsavel', 'name'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                
+                Tables\Actions\ViewAction::make()
+                    ->label('')
+                    ->tooltip('Visualizar')
+                    ->iconButton(),
+
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->tooltip('Editar')
+                    ->iconButton(),
+
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -165,8 +172,11 @@ class TarefaResource extends Resource
                     ->color('success')
                     ->url(fn(Tarefa $record) => route('tarefa.pdf', $record))
                     ->openUrlInNewTab(),
-                
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->tooltip('Excluir')
+                    ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),
@@ -186,7 +196,7 @@ class TarefaResource extends Resource
                                 ->weight('bold'),
                             TextEntry::make('status')
                                 ->badge()
-                                ->color(fn($state) => match($state) {
+                                ->color(fn($state) => match ($state) {
                                     'concluida' => 'success',
                                     'em_andamento' => 'warning',
                                     'pendente' => 'info',
@@ -205,7 +215,7 @@ class TarefaResource extends Resource
                                 ->date('d/m/Y'),
                             TextEntry::make('prioridade')
                                 ->badge()
-                                ->color(fn($state) => match($state) {
+                                ->color(fn($state) => match ($state) {
                                     'alta' => 'danger',
                                     'media' => 'warning',
                                     'baixa' => 'success',

@@ -696,7 +696,7 @@ a.fi-btn,
     .fi-section-content {
         padding: 1.25rem !important;
     }
-}}
+}
 
 /* =========================
    MOBILE CARD SYSTEM
@@ -787,5 +787,268 @@ a.fi-btn,
 
     .responsive-grid-shortcuts {
         grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* ===================================================
+   MOBILE-FIRST CARDS V2 - Sistema Avançado
+   =================================================== */
+
+/* Container de Cards Mobile */
+.mobile-cards-container {
+    display: none;
+}
+
+@media (max-width: 639px) {
+    .mobile-cards-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.5rem;
+    }
+
+    /* Esconder tabela no mobile */
+    .fi-ta-content > .overflow-x-auto {
+        display: none;
+    }
+}
+
+/* Resource Card Aprimorado */
+.mobile-resource-card {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-resource-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+}
+
+/* Ícone de Ação Mobile - Botão apenas com ícone */
+.mobile-icon-action {
+    min-width: 40px;
+    min-height: 40px;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    background-color: transparent;
+    color: rgb(107 114 128);
+    transition: all 0.15s ease;
+}
+
+.mobile-icon-action:hover,
+.mobile-icon-action:focus {
+    background-color: rgb(243 244 246);
+}
+
+.mobile-icon-action.success {
+    color: rgb(16 185 129);
+}
+
+.mobile-icon-action.success:hover {
+    background-color: rgb(209 250 229);
+}
+
+.mobile-icon-action.danger {
+    color: rgb(239 68 68);
+}
+
+.mobile-icon-action.danger:hover {
+    background-color: rgb(254 226 226);
+}
+
+.mobile-icon-action.warning {
+    color: rgb(245 158 11);
+}
+
+.mobile-icon-action.warning:hover {
+    background-color: rgb(254 243 199);
+}
+
+.mobile-icon-action.info {
+    color: rgb(59 130 246);
+}
+
+.mobile-icon-action.info:hover {
+    background-color: rgb(219 234 254);
+}
+
+/* Dark mode para ações */
+.dark .mobile-icon-action {
+    color: rgb(156 163 175);
+}
+
+.dark .mobile-icon-action:hover {
+    background-color: rgb(55 65 81);
+}
+
+.dark .mobile-icon-action.success {
+    color: rgb(52 211 153);
+}
+
+.dark .mobile-icon-action.success:hover {
+    background-color: rgba(16, 185, 129, 0.2);
+}
+
+.dark .mobile-icon-action.danger {
+    color: rgb(248 113 113);
+}
+
+.dark .mobile-icon-action.danger:hover {
+    background-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Badge de Valor Grande */
+.mobile-value-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    background: linear-gradient(135deg, rgb(16 185 129 / 0.1), rgb(16 185 129 / 0.05));
+    border: 1px solid rgb(16 185 129 / 0.2);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: rgb(5 150 105);
+}
+
+.mobile-value-badge.danger {
+    background: linear-gradient(135deg, rgb(239 68 68 / 0.1), rgb(239 68 68 / 0.05));
+    border-color: rgb(239 68 68 / 0.2);
+    color: rgb(220 38 38);
+}
+
+.dark .mobile-value-badge {
+    background: linear-gradient(135deg, rgb(16 185 129 / 0.2), rgb(16 185 129 / 0.1));
+    border-color: rgb(16 185 129 / 0.3);
+    color: rgb(52 211 153);
+}
+
+.dark .mobile-value-badge.danger {
+    background: linear-gradient(135deg, rgb(239 68 68 / 0.2), rgb(239 68 68 / 0.1));
+    border-color: rgb(239 68 68 / 0.3);
+    color: rgb(248 113 113);
+}
+
+/* Status Indicator - Ponto colorido */
+.mobile-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.mobile-status-dot.success {
+    background-color: rgb(16 185 129);
+}
+
+.mobile-status-dot.danger {
+    background-color: rgb(239 68 68);
+}
+
+.mobile-status-dot.warning {
+    background-color: rgb(245 158 11);
+}
+
+.mobile-status-dot.info {
+    background-color: rgb(59 130 246);
+}
+
+.mobile-status-dot.gray {
+    background-color: rgb(156 163 175);
+}
+
+/* Indicador de Status com Animação */
+.mobile-status-dot.pulse {
+    animation: status-pulse 2s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.6;
+        transform: scale(1.2);
+    }
+}
+
+/* Filament Table Mobile Override */
+@media (max-width: 639px) {
+
+    /* Compactar ações na tabela */
+    .fi-ta-actions {
+        gap: 0.25rem !important;
+    }
+
+    /* Ações apenas com ícone */
+    .fi-ta-actions .fi-btn:not(.fi-icon-btn) .fi-btn-label {
+        display: none;
+    }
+
+    .fi-ta-actions .fi-btn:not(.fi-icon-btn) {
+        padding: 0.5rem !important;
+        min-width: 36px !important;
+    }
+
+    /* Header de página compacto */
+    .fi-header-heading {
+        font-size: 1.125rem !important;
+    }
+
+    /* Esconder colunas secundárias */
+    .fi-ta-cell[data-hide-on-mobile="true"],
+    .fi-ta-header-cell[data-hide-on-mobile="true"] {
+        display: none !important;
+    }
+
+    /* Status badges compactos */
+    .fi-badge {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.625rem !important;
+    }
+
+    /* Valores monetários em destaque */
+    .fi-ta-text.fi-ta-text-money {
+        font-weight: 700 !important;
+    }
+}
+
+/* Animação de entrada para cards */
+.mobile-resource-card {
+    animation: card-slide-up 0.3s ease-out;
+}
+
+@keyframes card-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Espaçamento otimizado mobile */
+@media (max-width: 639px) {
+    .fi-section-content {
+        padding: 0.75rem !important;
+    }
+
+    .fi-section-header {
+        padding: 0.75rem !important;
+    }
+
+    .fi-fo-field-wrp {
+        margin-bottom: 0.5rem;
     }
 }

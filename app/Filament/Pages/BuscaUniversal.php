@@ -250,7 +250,7 @@ class BuscaUniversal extends Page implements HasForms
                 'data' => $cadastro->created_at?->format('d/m/Y'),
                 'data_raw' => $cadastro->created_at,
                 'valor_raw' => 0,
-                'view_url' => route('filament.admin.resources.cadastros.edit', ['record' => $cadastro->id]),
+                'view_url' => route('filament.admin.resources.cadastros.view', ['record' => $cadastro->id]),
                 'edit_url' => route('filament.admin.resources.cadastros.edit', ['record' => $cadastro->id]),
             ]);
         }
@@ -310,7 +310,7 @@ class BuscaUniversal extends Page implements HasForms
                 'data' => $orcamento->created_at?->format('d/m/Y'),
                 'data_raw' => $orcamento->created_at,
                 'valor_raw' => $orcamento->valor_total ?? 0,
-                'view_url' => route('filament.admin.resources.orcamentos.edit', ['record' => $orcamento->id]),
+                'view_url' => route('filament.admin.resources.orcamentos.view', ['record' => $orcamento->id]),
                 'edit_url' => route('filament.admin.resources.orcamentos.edit', ['record' => $orcamento->id]),
             ]);
         }
@@ -427,8 +427,8 @@ class BuscaUniversal extends Page implements HasForms
                 'data' => $financeiro->data?->format('d/m/Y'),
                 'data_raw' => $financeiro->data,
                 'valor_raw' => $financeiro->valor ?? 0,
-                'view_url' => route('filament.admin.resources.financeiros.edit', ['record' => $financeiro->id]),
-                'edit_url' => route('filament.admin.resources.financeiros.edit', ['record' => $financeiro->id]),
+                'view_url' => route('filament.admin.resources.financeiros.transacoes.view', ['record' => $financeiro->id]),
+                'edit_url' => route('filament.admin.resources.financeiros.transacoes.edit', ['record' => $financeiro->id]),
             ]);
         }
     }
@@ -527,8 +527,8 @@ class BuscaUniversal extends Page implements HasForms
                 'data' => $produto->created_at?->format('d/m/Y'),
                 'data_raw' => $produto->created_at,
                 'valor_raw' => $produto->preco_venda ?? 0,
-                'view_url' => route('filament.admin.resources.produtos.edit', ['record' => $produto->id]),
-                'edit_url' => route('filament.admin.resources.produtos.edit', ['record' => $produto->id]),
+                'view_url' => route('filament.admin.resources.almoxarifado.produtos.view', ['record' => $produto->id]),
+                'edit_url' => route('filament.admin.resources.almoxarifado.produtos.edit', ['record' => $produto->id]),
             ]);
         }
     }

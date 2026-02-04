@@ -186,7 +186,7 @@ class AgendaResource extends Resource
                             ->addActionLabel('➕ Adicionar Nova Tarefa')
                             ->reorderable()
                             ->collapsible()
-                            ->itemLabel(fn (array $state): ?string => $state['descricao'] ?? null)
+                            ->itemLabel(fn(array $state): ?string => $state['descricao'] ?? null)
                             ->columnSpanFull(),
                     ]),
 
@@ -212,7 +212,7 @@ class AgendaResource extends Resource
                                 ->label('✅ Status do Lembrete')
                                 ->disabled()
                                 ->helperText('Marcado automaticamente pelo sistema após envio')
-                                ->visible(fn ($record) => $record?->lembrete_enviado ?? false),
+                                ->visible(fn($record) => $record?->lembrete_enviado ?? false),
                         ]),
                     ]),
 
@@ -243,73 +243,88 @@ class AgendaResource extends Resource
     {
         return $table
             ->columns([
+                // MOBILE: Data + Título combinados
                 Tables\Columns\TextColumn::make('data_hora_inicio')
-                    ->label('📅 Data/Hora')
-                    ->dateTime('d/m/Y H:i')
+                    ->label('Data')
+                    ->dateTime('d/m H:i')
                     ->sortable()
                     ->searchable()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->description(fn($record) => $record->titulo ? mb_substr($record->titulo, 0, 25) . (mb_strlen($record->titulo) > 25 ? '...' : '') : '-')
+                    ->icon('heroicon-o-calendar-days'),
 
+                // DESKTOP ONLY: Título separado
                 Tables\Columns\TextColumn::make('titulo')
                     ->label('Título')
                     ->searchable()
-                    ->limit(40)
-                    ->tooltip(fn($record) => $record->titulo),
+                    ->limit(25)
+                    ->visibleFrom('md'),
 
+                // DESKTOP ONLY: Cliente
                 Tables\Columns\TextColumn::make('cadastro.nome')
                     ->label('Cliente')
                     ->searchable()
-                    ->toggleable()
                     ->icon('heroicon-m-user')
-                    ->placeholder('Não vinculado'),
+                    ->placeholder('-')
+                    ->visibleFrom('lg'),
 
+                // SEMPRE VISÍVEL: Tipo com ícone
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'servico' => '🧼',
+                        'visita' => '👁️',
+                        'reuniao' => '🤝',
+                        default => '📌',
+                    })
+                    ->tooltip(fn(string $state): string => match ($state) {
+                        'servico' => 'Serviço',
+                        'visita' => 'Visita',
+                        'reuniao' => 'Reunião',
+                        default => 'Outro',
+                    })
                     ->color(fn(string $state): string => match ($state) {
                         'servico' => 'info',
                         'visita' => 'warning',
                         'reuniao' => 'success',
                         default => 'gray',
-                    })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'servico' => 'Serviço',
-                        'visita' => 'Visita',
-                        'reuniao' => 'Reunião',
-                        default => 'Outro',
                     }),
 
+                // SEMPRE VISÍVEL: Status com ícone
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'concluido' => 'success',
-                        'em_andamento' => 'warning',
-                        'cancelado' => 'danger',
-                        default => 'info',
-                    })
                     ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'concluido' => '✓',
+                        'em_andamento' => '⏳',
+                        'cancelado' => '✗',
+                        default => '📅',
+                    })
+                    ->tooltip(fn(string $state): string => match ($state) {
                         'agendado' => 'Agendado',
                         'em_andamento' => 'Em Andamento',
                         'concluido' => 'Concluído',
                         'cancelado' => 'Cancelado',
                         default => $state,
+                    })
+                    ->color(fn(string $state): string => match ($state) {
+                        'concluido' => 'success',
+                        'em_andamento' => 'warning',
+                        'cancelado' => 'danger',
+                        default => 'info',
                     }),
 
+                // DESKTOP ONLY: Local
                 Tables\Columns\TextColumn::make('local')
                     ->label('Local')
                     ->icon('heroicon-m-map-pin')
-                    ->limit(30)
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->limit(20)
+                    ->visibleFrom('xl'),
 
+                // DESKTOP ONLY: OS vinculada
                 Tables\Columns\TextColumn::make('ordemServico.numero_os')
                     ->label('OS')
                     ->icon('heroicon-m-clipboard-document-check')
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Criado em')
-                    ->dateTime('d/m/Y')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->visibleFrom('xl'),
             ])
             ->defaultSort('data_hora_inicio', 'desc')
             ->filters([
@@ -349,52 +364,57 @@ class AgendaResource extends Resource
                     }),
             ])
             ->actions([
-                // 1. VISUALIZAR (Olho)
+                // View
                 Tables\Actions\ViewAction::make()
                     ->label('')
-                    ->tooltip('Ver Detalhes'),
-                
-                // 2. EDITAR (Lápis)
+                    ->tooltip('Ver Detalhes')
+                    ->iconButton(),
+
+                // Edit
                 Tables\Actions\EditAction::make()
                     ->label('')
-                    ->tooltip('Editar'),
+                    ->tooltip('Editar')
+                    ->iconButton(),
 
-                // 3. CONCLUIR (Check Verde)
+                // Concluir
                 Tables\Actions\Action::make('concluir')
                     ->label('')
-                    ->tooltip('Marcar como Concluído')
+                    ->tooltip('Marcar Concluído')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
+                    ->iconButton()
                     ->visible(fn(Agenda $record) => !in_array($record->status, ['concluido', 'cancelado']))
                     ->requiresConfirmation()
                     ->action(function (Agenda $record) {
                         $record->update(['status' => 'concluido']);
                         \Filament\Notifications\Notification::make()
                             ->success()
-                            ->title('Agendamento Concluído!')
+                            ->title('Concluído!')
                             ->send();
                     }),
 
-                // 4. CANCELAR (X Vermelho)
+                // Cancelar
                 Tables\Actions\Action::make('cancelar')
                     ->label('')
-                    ->tooltip('Cancelar Agendamento')
+                    ->tooltip('Cancelar')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
+                    ->iconButton()
                     ->visible(fn(Agenda $record) => $record->status === 'agendado')
                     ->requiresConfirmation()
                     ->action(function (Agenda $record) {
                         $record->update(['status' => 'cancelado']);
                         \Filament\Notifications\Notification::make()
                             ->warning()
-                            ->title('Agendamento Cancelado')
+                            ->title('Cancelado')
                             ->send();
                     }),
 
-                // 5. EXCLUIR (Lixeira)
+                // Excluir
                 Tables\Actions\DeleteAction::make()
                     ->label('')
-                    ->tooltip('Excluir'),
+                    ->tooltip('Excluir')
+                    ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -518,8 +538,8 @@ class AgendaResource extends Resource
                             TextEntry::make('orcamento.numero')
                                 ->label('Orçamento')
                                 ->icon('heroicon-m-document-text')
-                                ->url(fn($record) => $record->orcamento_id 
-                                    ? \App\Filament\Resources\OrcamentoResource::getUrl('view', ['record' => $record->orcamento_id]) 
+                                ->url(fn($record) => $record->orcamento_id
+                                    ? \App\Filament\Resources\OrcamentoResource::getUrl('view', ['record' => $record->orcamento_id])
                                     : null)
                                 ->color('primary')
                                 ->placeholder('Não vinculado'),
@@ -528,8 +548,8 @@ class AgendaResource extends Resource
                             TextEntry::make('ordemServico.numero_os')
                                 ->label('Ordem de Serviço')
                                 ->icon('heroicon-m-clipboard-document-check')
-                                ->url(fn($record) => $record->ordem_servico_id 
-                                    ? \App\Filament\Resources\OrdemServicoResource::getUrl('view', ['record' => $record->ordem_servico_id]) 
+                                ->url(fn($record) => $record->ordem_servico_id
+                                    ? \App\Filament\Resources\OrdemServicoResource::getUrl('view', ['record' => $record->ordem_servico_id])
                                     : null)
                                 ->color('primary')
                                 ->placeholder('Não vinculada'),
@@ -607,7 +627,7 @@ class AgendaResource extends Resource
                             TextEntry::make('minutos_antes_lembrete')
                                 ->label('Lembrete Configurado')
                                 ->badge()
-                                ->formatStateUsing(fn($state) => match((int)$state) {
+                                ->formatStateUsing(fn($state) => match ((int) $state) {
                                     15 => '15 min antes',
                                     30 => '30 min antes',
                                     60 => '1h antes',

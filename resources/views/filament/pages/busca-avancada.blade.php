@@ -15,24 +15,24 @@
                     </div>
                 </x-slot>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
                     @foreach($resultados as $resultado)
                         <div
-                            class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                            class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
                             {{-- Header --}}
                             <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                                 <div class="flex items-center gap-3">
                                     <span class="text-2xl">{{ $resultado['tipo_icon'] }}</span>
                                     <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <x-filament::badge :color="$resultado['tipo_color']" size="sm">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <x-filament::badge :color="$resultado['tipo_color']" size="xs">
                                                 {{ $resultado['tipo_label'] }}
                                             </x-filament::badge>
-                                            <x-filament::badge :color="$resultado['status_color']" size="sm">
+                                            <x-filament::badge :color="$resultado['status_color']" size="xs">
                                                 {{ $resultado['status'] }}
                                             </x-filament::badge>
                                         </div>
-                                        <h3 class="font-bold text-gray-900 dark:text-white truncate mt-1">
+                                        <h3 class="font-bold text-sm md:text-base text-gray-900 dark:text-white truncate mt-1">
                                             {{ $resultado['titulo'] }}
                                         </h3>
                                     </div>
@@ -58,17 +58,17 @@
                             </div>
 
                             {{-- Ações --}}
-                            <div class="px-4 pb-4 flex gap-2 justify-end">
-                                <a href="{{ $resultado['view_url'] }}"
-                                    class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                                    <x-heroicon-o-eye class="w-4 h-4" />
-                                    Visualizar
-                                </a>
-                                <a href="{{ $resultado['edit_url'] }}"
-                                    class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors">
-                                    <x-heroicon-o-pencil-square class="w-4 h-4" />
+                            <div class="px-4 pb-4 flex flex-col sm:flex-row gap-2 justify-end">
+                                <x-filament::button :href="$resultado['view_url']" tag="a" color="gray" size="sm"
+                                    icon="heroicon-o-eye" outlined>
+                                    <span class="hidden sm:inline">Visualizar</span>
+                                    <span class="sm:hidden">Ver</span>
+                                </x-filament::button>
+
+                                <x-filament::button :href="$resultado['edit_url']" tag="a" color="primary" size="sm"
+                                    icon="heroicon-o-pencil-square">
                                     Editar
-                                </a>
+                                </x-filament::button>
                             </div>
                         </div>
                     @endforeach

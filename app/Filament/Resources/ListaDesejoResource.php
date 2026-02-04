@@ -221,15 +221,16 @@ class ListaDesejoResource extends Resource
                     ->requiresConfirmation()
                     ->action(fn(ListaDesejo $record) => $record->marcarComoComprado()),
 
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                Tables\Actions\Action::make('download')
+                Tables\Actions\ViewAction::make()
                     ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('info')
-                    ->url(fn (ListaDesejo $record) => route('listadesejo.pdf', $record))
-                    ->openUrlInNewTab(),
+                    ->tooltip('Visualizar')
+                    ->iconButton(),
+
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->tooltip('Editar')
+                    ->iconButton(),
+
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -237,7 +238,11 @@ class ListaDesejoResource extends Resource
                     ->color('success')
                     ->url(fn(ListaDesejo $record) => route('listadesejo.pdf', $record))
                     ->openUrlInNewTab(),
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->tooltip('Excluir')
+                    ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

@@ -248,12 +248,14 @@ class GarantiaResource extends Resource
 
                 Tables\Actions\ViewAction::make()
                     ->label('')
-                    ->tooltip('Visualizar'),
-                    
+                    ->tooltip('Visualizar')
+                    ->iconButton(),
+
                 Tables\Actions\EditAction::make()
                     ->label('')
-                    ->tooltip('Editar'),
-                
+                    ->tooltip('Editar')
+                    ->iconButton(),
+
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -261,10 +263,11 @@ class GarantiaResource extends Resource
                     ->color('success')
                     ->url(fn(Garantia $record) => route('garantia.pdf', $record))
                     ->openUrlInNewTab(),
-                    
+
                 Tables\Actions\DeleteAction::make()
                     ->label('')
-                    ->tooltip('Excluir'),
+                    ->tooltip('Excluir')
+                    ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

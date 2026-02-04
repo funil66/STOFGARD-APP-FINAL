@@ -53,9 +53,6 @@
                         @endphp
                         <tr>
                             <td style="padding: 2px 0;">{{ $qtd }}x de R$ {{ number_format($valorParcela, 2, ',', '.') }}</td>
-                            <td style="padding: 2px 0; text-align: right;">Total: R$
-                                {{ number_format($valorComJuros, 2, ',', '.') }}
-                            </td>
                         </tr>
                     @endforeach
                 </table>
@@ -96,24 +93,20 @@
                     <!-- Label discreto -->
                     <div style="font-size: 7px; color: #777; margin-bottom: 2px;">PIX COPIA E COLA:</div>
                     <div class="pix-code" style="
-                                    word-break: break-all; 
-                                    font-size: 8px; 
-                                    text-align: left; 
-                                    color: #333; 
-                                    padding: 6px; 
-                                    background: #fdfdfd; 
-                                    border: 1px dashed #a7f3d0; 
-                                    border-radius: 4px;
-                                    line-height: 1.25;
-                                 ">
+                                                word-break: break-all; 
+                                                font-size: 8px; 
+                                                text-align: left; 
+                                                color: #333; 
+                                                padding: 6px; 
+                                                background: #fdfdfd; 
+                                                border: 1px dashed #a7f3d0; 
+                                                border-radius: 4px;
+                                                line-height: 1.25;
+                                             ">
                         {{ $orcamento->pix_copia_cola }}
                     </div>
                 </div>
             @endif
-        </div>
-    @else
-        <div style="border: 1px dashed #ccc; padding: 10px; text-align:center; color: #999;">
-            PIX não disponível para este orçamento.
         </div>
     @endif
 @endif

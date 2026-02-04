@@ -62,7 +62,7 @@ class FinanceiroResource extends Resource
                                     ->label('CPF/CNPJ')
                                     ->maxLength(18),
                             ])
-                            ->getOptionLabelFromRecordUsing(fn($record) => match($record->tipo) {
+                            ->getOptionLabelFromRecordUsing(fn($record) => match ($record->tipo) {
                                 'cliente' => "👤 {$record->nome} (Cliente)",
                                 'parceiro' => "🏢 {$record->nome} (Parceiro)",
                                 'loja' => "🏪 {$record->nome} (Loja)",
@@ -170,51 +170,84 @@ class FinanceiroResource extends Resource
         return $table
             ->modifyQueryUsing(fn($query) => $query->with(['categoria', 'cadastro']))
             ->columns([
+                // MOBILE: Data + Descricao combinados
                 Tables\Columns\TextColumn::make('data')
                     ->label('Data')
-                    ->date('d/m/Y')
-                    ->sortable(),
+                    ->date('d/m')
+                    ->sortable()
+                    ->description(fn($record) => $record->descricao ? mb_substr($record->descricao, 0, 20) . (mb_strlen($record->descricao) > 20 ? '...' : '') : '-')
+                    ->icon(fn($record) => $record->tipo === 'entrada' ? 'heroicon-o-arrow-down-circle' : 'heroicon-o-arrow-up-circle')
+                    ->iconColor(fn($record) => $record->tipo === 'entrada' ? 'success' : 'danger'),
 
+                // SEMPRE VISÍVEL: Tipo com ícone
                 Tables\Columns\TextColumn::make('tipo')
-                    ->label('Tipo')
+                    ->label('')
                     ->badge()
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'entrada' => '↓',
+                        'saida' => '↑',
+                    })
+                    ->tooltip(fn(string $state): string => match ($state) {
+                        'entrada' => 'Entrada (Receita)',
+                        'saida' => 'Saída (Despesa)',
+                    })
                     ->color(fn(string $state): string => match ($state) {
                         'entrada' => 'success',
                         'saida' => 'danger',
-                    })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
-                        'entrada' => '💰 Entrada',
-                        'saida' => '📤 Saída',
                     }),
 
+                // DESKTOP ONLY: Cliente/Fornecedor
                 Tables\Columns\TextColumn::make('cadastro.nome')
-                    ->label('Cliente/Fornecedor')
+                    ->label('Cliente')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->limit(15)
+                    ->visibleFrom('md'),
 
+                // DESKTOP ONLY: Descricao
                 Tables\Columns\TextColumn::make('descricao')
                     ->label('Descrição')
                     ->searchable()
-                    ->limit(30),
+                    ->limit(20)
+                    ->visibleFrom('lg'),
 
+                // DESKTOP ONLY: Categoria
                 Tables\Columns\TextColumn::make('categoria.nome')
-                    ->label('Categoria')
+                    ->label('Cat.')
                     ->badge()
-                    ->color(fn($record) => $record->categoria?->tipo === 'financeiro_receita' ? 'success' : ($record->categoria?->tipo === 'financeiro_despesa' ? 'danger' : 'gray'))
-                    ->icon(fn($record) => $record->categoria?->icone),
+                    ->color('gray')
+                    ->visibleFrom('xl'),
 
+                // SEMPRE VISÍVEL: Valor em destaque
                 Tables\Columns\TextColumn::make('valor')
                     ->label('Valor')
                     ->money('BRL')
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold')
+                    ->color(fn($record) => $record->tipo === 'entrada' ? 'success' : 'danger'),
 
+                // DESKTOP ONLY: Vencimento
                 Tables\Columns\TextColumn::make('data_vencimento')
-                    ->label('Vencimento')
-                    ->date('d/m/Y')
-                    ->sortable(),
+                    ->label('Venc.')
+                    ->date('d/m')
+                    ->sortable()
+                    ->visibleFrom('lg'),
 
+                // SEMPRE VISÍVEL: Status com ícone
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'pago' => '✓',
+                        'pendente' => '⏳',
+                        'atrasado' => '!',
+                        'cancelado' => '✗',
+                    })
+                    ->tooltip(fn(string $state): string => match ($state) {
+                        'pago' => 'Pago',
+                        'pendente' => 'Pendente',
+                        'atrasado' => 'Atrasado',
+                        'cancelado' => 'Cancelado',
+                    })
                     ->color(fn(string $state): string => match ($state) {
                         'pago' => 'success',
                         'pendente' => 'warning',
@@ -246,10 +279,13 @@ class FinanceiroResource extends Resource
                     }),
             ])
             ->actions([
+                // Baixar pagamento
                 Tables\Actions\Action::make('baixar')
-                    ->label('Baixar')
+                    ->label('')
+                    ->tooltip('Baixar Pagamento')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
+                    ->iconButton()
                     ->visible(fn(Financeiro $record) => $record->status === 'pendente')
                     ->requiresConfirmation()
                     ->action(function (Financeiro $record) {
@@ -258,23 +294,38 @@ class FinanceiroResource extends Resource
                             'data_pagamento' => now()
                         ]);
                         Notification::make()
-                            ->title('✅ Pagamento Confirmado!')
+                            ->title('Pago!')
                             ->success()
                             ->send();
                     }),
 
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                
+                // View
+                Tables\Actions\ViewAction::make()
+                    ->label('')
+                    ->tooltip('Ver')
+                    ->iconButton(),
+
+                // Edit
+                Tables\Actions\EditAction::make()
+                    ->label('')
+                    ->tooltip('Editar')
+                    ->iconButton(),
+
+                // PDF
                 Tables\Actions\Action::make('download')
                     ->label('')
-                    ->tooltip('Baixar PDF')
+                    ->tooltip('PDF')
                     ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
+                    ->color('info')
+                    ->iconButton()
                     ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
                     ->openUrlInNewTab(),
-                    
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+
+                // Excluir
+                Tables\Actions\DeleteAction::make()
+                    ->label('')
+                    ->tooltip('Excluir')
+                    ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

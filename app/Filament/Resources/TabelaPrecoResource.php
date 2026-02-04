@@ -205,15 +205,17 @@ class TabelaPrecoResource extends Resource
                     ->color('info')
                     ->url(fn(TabelaPreco $record) => route('tabelapreco.pdf', $record))
                     ->openUrlInNewTab(),
-                    
+
                 Tables\Actions\ViewAction::make()
                     ->label('')
-                    ->tooltip('Visualizar'),
-                    
+                    ->tooltip('Visualizar')
+                    ->iconButton(),
+
                 Tables\Actions\EditAction::make()
                     ->label('')
-                    ->tooltip('Editar'),
-                    
+                    ->tooltip('Editar')
+                    ->iconButton(),
+
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -221,11 +223,12 @@ class TabelaPrecoResource extends Resource
                     ->color('success')
                     ->url(fn(TabelaPreco $record) => route('tabelapreco.pdf', $record))
                     ->openUrlInNewTab(),
-                    
+
                 Tables\Actions\DeleteAction::make()
                     ->label('')
-                    ->tooltip('Excluir'),
-                    
+                    ->tooltip('Excluir')
+                    ->iconButton(),
+
                 Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([

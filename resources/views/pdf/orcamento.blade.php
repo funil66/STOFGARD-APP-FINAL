@@ -235,13 +235,49 @@
             <!-- (RENDER BLOCKS - SIMPLIFIED MATCHING TO PREVIOUS CODE) -->
             @if($block['type'] === 'dados_cliente')
                 <div class="section-header">{{ $data['titulo'] ?? 'DADOS DO CLIENTE' }}</div>
-                <div class="client-box">
-                    <span class="client-name">Nome: {{ strtoupper($orcamento->cliente->nome ?? '') }}</span><br>
-                    @if(!empty($orcamento->cliente->telefone)) <strong>Tel:</strong> {{ $orcamento->cliente->telefone }} @endif
-                    @if(!empty($orcamento->cliente->email)) | <strong>Email:</strong> {{ $orcamento->cliente->email }} @endif
+                <div class="client-box" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; padding: 12px 0;">
+                    {{-- Nome completo ocupa as 2 colunas --}}
+                    <div style="grid-column: 1 / -1;">
+                        <span class="client-name">{{ strtoupper($orcamento->cliente->nome ?? '') }}</span>
+                    </div>
+                    
+                    {{-- Telefone --}}
+                    @if(!empty($orcamento->cliente->telefone))
+                    <div style="font-size: 9px;">
+                        <strong style="color: #6b7280;">📞 Telefone:</strong><br>
+                        <span style="color: #111827;">{{ $orcamento->cliente->telefone }}</span>
+                    </div>
+                    @endif
+                    
+                    {{-- Email --}}
+                    @if(!empty($orcamento->cliente->email))
+                    <div style="font-size: 9px;">
+                        <strong style="color: #6b7280;">✉️ Email:</strong><br>
+                        <span style="color: #111827;">{{ $orcamento->cliente->email }}</span>
+                    </div>
+                    @endif
+                    
+                    {{-- Endereço completo ocupa as 2 colunas --}}
                     @if(!empty($orcamento->cliente->logradouro))
-                        <br><strong>End:</strong> {{ $orcamento->cliente->logradouro }}, {{ $orcamento->cliente->numero ?? 'S/N' }} 
-                        {{ $orcamento->cliente->bairro ? '- '.$orcamento->cliente->bairro : '' }}
+                    <div style="grid-column: 1 / -1; font-size: 9px; margin-top: 4px;">
+                        <strong style="color: #6b7280;">📍 Endereço:</strong><br>
+                        <span style="color: #111827;">
+                            {{ $orcamento->cliente->logradouro }}, {{ $orcamento->cliente->numero ?? 'S/N' }}
+                            @if(!empty($orcamento->cliente->complemento)) - {{ $orcamento->cliente->complemento }}@endif
+                            @if(!empty($orcamento->cliente->bairro))<br>{{ $orcamento->cliente->bairro }}@endif
+                            @if(!empty($orcamento->cliente->cidade)) - {{ $orcamento->cliente->cidade }}@endif
+                            @if(!empty($orcamento->cliente->estado))/{{ $orcamento->cliente->estado }}@endif
+                            @if(!empty($orcamento->cliente->cep)) - CEP: {{ $orcamento->cliente->cep }}@endif
+                        </span>
+                    </div>
+                    @endif
+                    
+                    {{-- Documento (CPF/CNPJ) --}}
+                    @if(!empty($orcamento->cliente->documento))
+                    <div style="font-size: 9px;">
+                        <strong style="color: #6b7280;">🆔 Documento:</strong><br>
+                        <span style="color: #111827;">{{ $orcamento->cliente->documento }}</span>
+                    </div>
                     @endif
                 </div>
             @endif

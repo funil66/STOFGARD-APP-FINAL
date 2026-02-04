@@ -265,8 +265,8 @@ class NotaFiscalResource extends Resource
                             Infolists\Components\TextEntry::make('cadastro.nome')
                                 ->label('Cliente/Fornecedor')
                                 ->icon('heroicon-m-user')
-                                ->url(fn($record) => $record->cadastro 
-                                    ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro->id]) 
+                                ->url(fn($record) => $record->cadastro
+                                    ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro->id])
                                     : null)
                                 ->color('primary'),
                             Infolists\Components\TextEntry::make('modelo')
@@ -461,15 +461,17 @@ class NotaFiscalResource extends Resource
                     ->color('info')
                     ->url(fn(NotaFiscal $record) => route('nota-fiscal.pdf', $record))
                     ->openUrlInNewTab(),
-                    
+
                 Tables\Actions\ViewAction::make()
                     ->label('')
-                    ->tooltip('Visualizar'),
-                    
+                    ->tooltip('Visualizar')
+                    ->iconButton(),
+
                 Tables\Actions\EditAction::make()
                     ->label('')
-                    ->tooltip('Editar'),
-                
+                    ->tooltip('Editar')
+                    ->iconButton(),
+
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -477,10 +479,11 @@ class NotaFiscalResource extends Resource
                     ->color('success')
                     ->url(fn(NotaFiscal $record) => route('nota-fiscal.pdf', $record))
                     ->openUrlInNewTab(),
-                    
+
                 Tables\Actions\DeleteAction::make()
                     ->label('')
-                    ->tooltip('Excluir'),
+                    ->tooltip('Excluir')
+                    ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

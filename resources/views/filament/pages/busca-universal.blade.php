@@ -96,16 +96,16 @@
                             {{-- Ações --}}
                             <div
                                 class="px-3 md:px-4 pb-3 md:pb-4 flex flex-col sm:flex-row gap-2 justify-end border-t border-gray-100 dark:border-gray-700 pt-2 md:pt-3">
-                                <a href="{{ $resultado['view_url'] }}"
-                                    class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                                    <x-heroicon-o-eye class="w-4 h-4" />
-                                    Visualizar
-                                </a>
-                                <a href="{{ $resultado['edit_url'] }}"
-                                    class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors">
-                                    <x-heroicon-o-pencil-square class="w-4 h-4" />
+                                <x-filament::button :href="$resultado['view_url']" tag="a" color="gray" size="sm"
+                                    icon="heroicon-o-eye" outlined>
+                                    <span class="hidden sm:inline">Visualizar</span>
+                                    <span class="sm:hidden">Ver</span>
+                                </x-filament::button>
+
+                                <x-filament::button :href="$resultado['edit_url']" tag="a" color="primary" size="sm"
+                                    icon="heroicon-o-pencil-square">
                                     Editar
-                                </a>
+                                </x-filament::button>
                             </div>
                         </div>
                 @endforeach

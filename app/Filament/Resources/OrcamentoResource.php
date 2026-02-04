@@ -99,9 +99,9 @@ class OrcamentoResource extends Resource
                                         $tipo = ucfirst($item['tipo'] ?? 'N/A');
                                         $titular = $item['titular'] ?? 'Sem titular';
                                         $validada = ($item['validada'] ?? false) ? '✓' : '⚠';
-                                        
+
                                         $label = "{$tipo}: {$item['chave']} ({$titular}) {$validada}";
-                                        
+
                                         // O valor salvo é a própria chave
                                         $opcoes[$item['chave']] = $label;
                                     }
@@ -417,8 +417,8 @@ class OrcamentoResource extends Resource
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
                                 ->weight('bold')
-                                ->url(fn($record) => $record->cadastro_id 
-                                    ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id]) 
+                                ->url(fn($record) => $record->cadastro_id
+                                    ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id])
                                     : null)
                                 ->color('primary'),
                             TextEntry::make('cliente.telefone')
@@ -439,11 +439,12 @@ class OrcamentoResource extends Resource
                     ->schema([
                         Grid::make(4)->schema([
                             TextEntry::make('valor_total')
-                                ->label('💵 Valor Total')
+                                ->label('💵 Valor Final')
                                 ->money('BRL')
                                 ->color('success')
                                 ->weight('bold')
-                                ->size(TextEntry\TextEntrySize::Large),
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->state(fn(Orcamento $record) => $record->valor_final_editado ?? $record->valor_total),
                             TextEntry::make('comissao_vendedor')
                                 ->label('👤 Comissão Vendedor')
                                 ->money('BRL')
@@ -532,11 +533,12 @@ class OrcamentoResource extends Resource
                     ->schema([
                         Grid::make(1)->schema([
                             TextEntry::make('valor_total')
-                                ->label('VALOR TOTAL')
+                                ->label('VALOR FINAL')
                                 ->money('BRL')
                                 ->size(TextEntry\TextEntrySize::Large)
                                 ->weight('bold')
-                                ->color('success'),
+                                ->color('success')
+                                ->state(fn(Orcamento $record) => $record->valor_final_editado ?? $record->valor_total),
                         ]),
                     ]),
 
@@ -581,35 +583,67 @@ class OrcamentoResource extends Resource
     {
         return $table
             ->columns([
+                // Número do Orçamento
                 Tables\Columns\TextColumn::make('numero')
-                    ->label('Nº')
+                    ->label('Orçamento')
                     ->sortable()
                     ->searchable()
                     ->weight('bold')
                     ->color('primary')
-                    ->copyable(), // Permite copiar o número com 1 clique
+                    ->copyable()
+                    ->icon('heroicon-o-document-text')
+                    // No mobile, mostra cliente abaixo do número
+                    ->description(fn($record) => $record->cliente?->nome ?? '-')
+                    ->hiddenFrom('md'), // Visível apenas no mobile
 
+                // DESKTOP: Número sem descrição (cliente vai em coluna separada)
+                Tables\Columns\TextColumn::make('numero')
+                    ->label('Orçamento')
+                    ->sortable()
+                    ->searchable()
+                    ->weight('bold')
+                    ->color('primary')
+                    ->copyable()
+                    ->icon('heroicon-o-document-text')
+                    ->visibleFrom('md'), // Visível apenas no desktop
+
+                // DESKTOP ONLY: Tipo como badge separado
                 Tables\Columns\TextColumn::make('servico_tipo')
                     ->label('Tipo')
                     ->badge()
                     ->color(fn(string $state): string => \App\Services\ServiceTypeManager::getColor($state))
                     ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'), // Oculto no mobile
+
+                // DESKTOP ONLY: Cliente separado
                 Tables\Columns\TextColumn::make('cliente.nome')
                     ->label('Cliente')
                     ->searchable()
                     ->sortable()
-                    ->limit(30), // Evita que nomes gigantes quebrem a tabela
+                    ->limit(25)
+                    ->visibleFrom('md'), // Oculto no mobile
 
+                // SEMPRE VISÍVEL: Valor em destaque (usa valor_final_editado se disponível)
                 Tables\Columns\TextColumn::make('valor_total')
                     ->money('BRL')
                     ->label('Valor')
                     ->sortable()
                     ->weight('bold')
-                    ->color('success'), // Dinheiro sempre verde
+                    ->size(Tables\Columns\TextColumn\TextColumnSize::Medium)
+                    ->color('success')
+                    ->state(fn(Orcamento $record) => $record->valor_final_editado ?? $record->valor_total),
 
+                // Status com ícone + texto
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'aprovado' => '✓ Aprovado',
+                        'rejeitado' => '✗ Rejeitado',
+                        'enviado' => '📤 Enviado',
+                        'rascunho' => '📝 Rascunho',
+                        default => ucfirst($state),
+                    })
                     ->color(fn(string $state): string => match ($state) {
                         'aprovado' => 'success',
                         'rejeitado' => 'danger',
@@ -618,16 +652,19 @@ class OrcamentoResource extends Resource
                         default => 'gray',
                     }),
 
+                // DESKTOP ONLY: Validade
                 Tables\Columns\TextColumn::make('data_validade')
                     ->label('Validade')
-                    ->date('d/m/Y')
+                    ->date('d/m')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true), // Escondido por padrão para limpar a tela
+                    ->visibleFrom('lg'),
 
+                // DESKTOP ONLY: Emissão
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Emissão')
-                    ->date('d/m/Y')
-                    ->sortable(),
+                    ->date('d/m')
+                    ->sortable()
+                    ->visibleFrom('lg'),
             ])
             ->filters([
                 // Filtro Rápido por Status
@@ -640,25 +677,28 @@ class OrcamentoResource extends Resource
                     ]),
             ])
             ->actions([
-                // 1. PDF (Botão de Texto Verde)
+                // 1. PDF (Ícone verde - sem texto no mobile)
                 Tables\Actions\Action::make('pdf')
-                    ->label('PDF')
+                    ->label('')
+                    ->tooltip('Baixar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->button() // Força estilo botão para destaque
+                    ->iconButton()
                     ->url(fn(Orcamento $record) => route('orcamento.pdf', $record))
                     ->openUrlInNewTab(),
 
-                // 2. Gerar OS (Aprovar e criar Ordem de Serviço) - COM MODAL DE DATA/HORA/LOCAL
+                // 2. Gerar OS (Aprovar) - Ícone apenas no mobile
                 Tables\Actions\Action::make('gerar_os')
-                    ->label('Aprovar & Gerar OS')
+                    ->label('')
+                    ->tooltip('Aprovar & Gerar OS')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
+                    ->iconButton()
                     ->slideOver()
                     ->modalWidth('3xl')
                     ->modalHeading('Aprovar Orçamento e Gerar OS')
-                    ->modalDescription('Configure a data e horário do serviço. Após aprovação, será criada a Ordem de Serviço, o agendamento e o lançamento financeiro.')
-                    ->modalSubmitActionLabel('✓ Aprovar e Criar Registros')
+                    ->modalDescription('Configure a data e horário do serviço.')
+                    ->modalSubmitActionLabel('✓ Aprovar')
                     ->visible(fn(Orcamento $record) => in_array($record->status, ['rascunho', 'enviado', 'pendente']))
                     ->form([
                         Forms\Components\Grid::make(2)
@@ -834,7 +874,7 @@ class OrcamentoResource extends Resource
                             if (!empty($record->comissao_vendedor) && $record->comissao_vendedor > 0) {
                                 $categoriaVendedor = \App\Models\Categoria::where('slug', 'comissao-vendedor')->first();
                                 $vendedor = $record->vendedor;
-                                
+
                                 \App\Models\Financeiro::create([
                                     'tipo' => 'saida',
                                     'descricao' => sprintf(
@@ -862,7 +902,7 @@ class OrcamentoResource extends Resource
                             if (!empty($record->comissao_loja) && $record->comissao_loja > 0) {
                                 $categoriaLoja = \App\Models\Categoria::where('slug', 'comissao-loja')->first();
                                 $loja = $record->loja;
-                                
+
                                 \App\Models\Financeiro::create([
                                     'tipo' => 'saida',
                                     'descricao' => sprintf(
@@ -964,49 +1004,40 @@ class OrcamentoResource extends Resource
                             ->send();
                     }),
 
-                // 5. COMPARTILHAR
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn(Orcamento $record) => route('orcamento.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                // 6. WHATSAPP ACTIONS (NOVO)
+                // 5. WHATSAPP (Menu agrupado - oculto no mobile extremo)
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\Action::make('wa_ola')
-                        ->label('👋 Olá Inicial')
+                        ->label('Olá')
                         ->icon('heroicon-o-chat-bubble-left-right')
                         ->url(fn(Orcamento $record) => app(\App\Services\WhatsAppService::class)->getWelcomeLink($record->cliente))
                         ->openUrlInNewTab(),
-
                     Tables\Actions\Action::make('wa_proposta')
-                        ->label('📄 Enviar Proposta')
+                        ->label('Proposta')
                         ->icon('heroicon-o-document-text')
                         ->url(fn(Orcamento $record) => app(\App\Services\WhatsAppService::class)->getProposalLink($record))
                         ->openUrlInNewTab(),
-
                     Tables\Actions\Action::make('wa_cobrar')
-                        ->label('🤔 Cobrar Resposta')
+                        ->label('Cobrar')
                         ->icon('heroicon-o-clock')
                         ->url(fn(Orcamento $record) => app(\App\Services\WhatsAppService::class)->getFollowUpLink($record))
                         ->openUrlInNewTab(),
-
                     Tables\Actions\Action::make('wa_pix')
-                        ->label('💸 Enviar PIX')
+                        ->label('PIX')
                         ->icon('heroicon-o-banknotes')
                         ->url(fn(Orcamento $record) => app(\App\Services\WhatsAppService::class)->getPaymentLink($record))
                         ->openUrlInNewTab(),
                 ])
-                    ->label('WhatsApp')
+                    ->label('')
+                    ->tooltip('WhatsApp')
                     ->icon('heroicon-o-chat-bubble-left-ellipsis')
-                    ->color('success'),
+                    ->color('success')
+                    ->iconButton(),
 
-                // 7. EXCLUIR (Ícone Vermelho)
+                // 6. EXCLUIR
                 Tables\Actions\DeleteAction::make()
                     ->label('')
-                    ->tooltip('Excluir'),
+                    ->tooltip('Excluir')
+                    ->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

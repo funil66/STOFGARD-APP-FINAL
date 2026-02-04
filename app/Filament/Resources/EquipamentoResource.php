@@ -181,9 +181,9 @@ class EquipamentoResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                
+                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar')->iconButton(),
+                Tables\Actions\EditAction::make()->label('')->tooltip('Editar')->iconButton(),
+
                 Tables\Actions\Action::make('download')
                     ->label('')
                     ->tooltip('Baixar PDF')
@@ -191,7 +191,7 @@ class EquipamentoResource extends Resource
                     ->color('success')
                     ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
                     ->openUrlInNewTab(),
-                
+
                 Tables\Actions\Action::make('enviar_lista_desejos')
                     ->label('')
                     ->tooltip('Enviar para Lista de Desejos')
@@ -213,7 +213,7 @@ class EquipamentoResource extends Resource
                             ->success()
                             ->send();
                     }),
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir')->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -228,7 +228,7 @@ class EquipamentoResource extends Resource
             InfolistSection::make()->schema([
                 InfolistGrid::make(2)->schema([
                     TextEntry::make('nome')->label('Nome do Equipamento')->size(TextEntry\TextEntrySize::Large)->weight('bold'),
-                    TextEntry::make('status')->badge()->color(fn($state) => match($state) { 'ativo' => 'success', 'manutencao' => 'warning', default => 'danger' }),
+                    TextEntry::make('status')->badge()->color(fn($state) => match ($state) { 'ativo' => 'success', 'manutencao' => 'warning', default => 'danger'}),
                 ]),
             ]),
             InfolistSection::make('Detalhes')->schema([
