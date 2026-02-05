@@ -57,7 +57,7 @@ class NotaFiscalResource extends Resource
                             ->searchable()
                             ->preload(),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 1, 'md' => 2, 'lg' => 3])
                             ->schema([
                                 Forms\Components\TextInput::make('numero_nf')
                                     ->label('Número NF')
@@ -75,7 +75,7 @@ class NotaFiscalResource extends Resource
                                     ->default(now()),
                             ]),
 
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 1, 'md' => 2])
                             ->schema([
                                 Forms\Components\Select::make('tipo')
                                     ->label('Tipo')
@@ -364,13 +364,15 @@ class NotaFiscalResource extends Resource
                 Tables\Columns\TextColumn::make('serie')
                     ->label('Série')
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('lg'),
 
                 Tables\Columns\TextColumn::make('cadastro.nome')
                     ->label('Cadastro')
                     ->searchable()
                     ->sortable()
-                    ->limit(30),
+                    ->limit(30)
+                    ->visibleFrom('md'),
 
                 Tables\Columns\TextColumn::make('tipo')
                     ->label('Tipo')
@@ -383,12 +385,14 @@ class NotaFiscalResource extends Resource
                 Tables\Columns\TextColumn::make('modelo')
                     ->label('Modelo')
                     ->badge()
-                    ->color('gray'),
+                    ->color('gray')
+                    ->visibleFrom('xl'),
 
                 Tables\Columns\TextColumn::make('data_emissao')
                     ->label('Data Emissão')
                     ->date('d/m/Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('md'),
 
                 Tables\Columns\TextColumn::make('valor_total')
                     ->label('Valor Total')

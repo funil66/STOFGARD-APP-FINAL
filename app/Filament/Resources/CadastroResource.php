@@ -60,14 +60,16 @@ class CadastroResource extends Resource
                             TextEntry::make('telefone')
                                 ->label('WhatsApp')
                                 ->icon('heroicon-m-chat-bubble-left-right')
-                                ->url(fn($state) => 'https://wa.me/55' . preg_replace('/\D/', '', $state), true),
+                                ->url(fn($state) => 'https://wa.me/55' . preg_replace('/\D/', '', $state), true)
+                                ->visibleFrom('md'),
                             TextEntry::make('email')
                                 ->label('E-mail')
                                 ->icon('heroicon-m-envelope')
                                 ->copyable(),
                             TextEntry::make('cidade')
                                 ->label('Localização')
-                                ->formatStateUsing(fn($record) => "{$record->cidade}/{$record->estado}"),
+                                ->formatStateUsing(fn($record) => "{$record->cidade}/{$record->estado}")
+                                ->visibleFrom('lg'),
                             TextEntry::make('created_at')
                                 ->label('Cliente desde')
                                 ->date('d/m/Y'),
@@ -391,7 +393,10 @@ class CadastroResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nome')->searchable()->sortable()->weight('bold'),
+                Tables\Columns\TextColumn::make('nome')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
@@ -400,32 +405,35 @@ class CadastroResource extends Resource
                         'vendedor' => 'warning',
                         default => 'gray',
                     }),
-                Tables\Columns\TextColumn::make('telefone')->label('WhatsApp')->icon('heroicon-m-phone'),
-                Tables\Columns\TextColumn::make('cidade')->label('Cidade'),
+                Tables\Columns\TextColumn::make('telefone')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-m-phone')
+                    ->visibleFrom('md'),
+                Tables\Columns\TextColumn::make('cidade')
+                    ->label('Cidade')
+                    ->visibleFrom('lg'),
             ])
             ->actions([
-                // 1. PDF (Verde Destaque)
+                // 1. PDF (Verde Destaque) - Mobile: só ícone
                 Tables\Actions\Action::make('pdf')
                     ->label('Ficha')
                     ->icon('heroicon-o-document-text')
                     ->color('success')
-                    ->button()
+                    ->iconButton() // Mobile-friendly
                     ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
                     ->openUrlInNewTab(),
-                // 2. VISUALIZAR (Olho)
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Ver Detalhes'),
-                // 3. EDITAR (Lápis)
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar'),
-                // 4. BAIXAR PDF
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
-                    ->openUrlInNewTab(),
-                // 5. EXCLUIR (Lixeira)
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir'),
+                // 2. VISUALIZAR
+                Tables\Actions\ViewAction::make()
+                    ->iconButton()
+                    ->tooltip('Ver Detalhes'),
+                // 3. EDITAR
+                Tables\Actions\EditAction::make()
+                    ->iconButton()
+                    ->tooltip('Editar'),
+                // 4. EXCLUIR
+                Tables\Actions\DeleteAction::make()
+                    ->iconButton()
+                    ->tooltip('Excluir'),
             ])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }

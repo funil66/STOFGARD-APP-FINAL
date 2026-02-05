@@ -93,7 +93,7 @@
 
                 {{-- 2. FRASE CENTRAL (Centralizado) --}}
                 <div class="banner-phrase">
-                    <h1 class="text-lg sm:text-xl md:text-3xl lg:text-5xl font-black uppercase text-transparent bg-clip-text bg-gradient-to-t from-blue-100 via-white to-blue-50 drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]"
+                    <h1 class="text-lg sm:text-xl md:text-3xl lg:text-5xl font-black uppercase text-transparent bg-clip-text bg-gradient-to-t from-blue-100 via-white to-blue-50 drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)] break-words text-center"
                         style="font-family: 'Cinzel', serif; letter-spacing: 0.05em; line-height: 1.2;">
                         {{ $fraseMotivacional ?? 'BORA TRABALHAR!' }}
                     </h1>
@@ -107,7 +107,7 @@
                     <div id="weather-widget" 
                          data-city="{{ $weatherCity ?? 'São Paulo' }}"
                          class="rounded-xl shadow-lg md:shadow-xl border border-white/20 relative group transition-transform duration-300 hover:scale-[1.02]"
-                         style="width: 100%; max-width: 280px; min-height: 80px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 50; overflow: visible;">
+                         style="width: 100%; max-width: 280px; min-height: 100px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 50; overflow: visible;">
 
                         {{-- Skeleton Loading (Estado Inicial) --}}
                         <div id="weather-loading" class="flex flex-col items-center justify-center h-20 text-white/80 gap-2">
