@@ -16,6 +16,8 @@ use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\Grid as InfolistGrid;
 use Filament\Infolists\Components\TextEntry;
 
+use Filament\Tables\Columns\Summarizers\Sum;
+
 class FinanceiroResource extends Resource
 {
     protected static ?string $model = Financeiro::class;
@@ -196,6 +198,23 @@ class FinanceiroResource extends Resource
                         'saida' => 'danger',
                     }),
 
+                // Badge de Comissão
+                Tables\Columns\TextColumn::make('comissao')
+                    ->label('')
+                    ->badge()
+                    ->getStateUsing(fn(Financeiro $record) => $record->is_comissao ? ($record->comissao_paga ? 'Paga' : 'Pendente') : null)
+                    ->color(fn(string $state): string => match ($state) {
+                        'Paga' => 'success',
+                        'Pendente' => 'warning',
+                        default => 'gray',
+                    })
+                    ->icon(fn(string $state): string => match ($state) {
+                        'Paga' => 'heroicon-m-check-circle',
+                        'Pendente' => 'heroicon-m-clock',
+                        default => '',
+                    })
+                    ->tooltip(fn($record) => $record?->is_comissao ? 'Comissão ' . ($record->comissao_paga ? 'paga' : 'pendente') : ''),
+
                 // DESKTOP ONLY: Cliente/Fornecedor
                 Tables\Columns\TextColumn::make('cadastro.nome')
                     ->label('Cliente')
@@ -224,7 +243,8 @@ class FinanceiroResource extends Resource
                     ->money('BRL')
                     ->sortable()
                     ->weight('bold')
-                    ->color(fn($record) => $record->tipo === 'entrada' ? 'success' : 'danger'),
+                    ->color(fn($record) => $record->tipo === 'entrada' ? 'success' : 'danger')
+                    ->summarize(Sum::make()->money('BRL')->label('Total')),
 
                 // DESKTOP ONLY: Vencimento
                 Tables\Columns\TextColumn::make('data_vencimento')
@@ -257,25 +277,136 @@ class FinanceiroResource extends Resource
             ])
             ->defaultSort('data', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('tipo')
+                // Filtro de Período (Atalhos)
+                Tables\Filters\SelectFilter::make('periodo')
+                    ->label('Período Rápido')
                     ->options([
-                        'entrada' => 'Entradas',
-                        'saida' => 'Saídas',
-                    ]),
+                        'hoje' => 'Hoje',
+                        'ontem' => 'Ontem',
+                        'esta_semana' => 'Esta Semana',
+                        'este_mes' => 'Este Mês',
+                        'mes_passado' => 'Mês Passado',
+                        'este_ano' => 'Este Ano',
+                    ])
+                    ->query(function ($query, array $data) {
+                        return match ($data['value']) {
+                            'hoje' => $query->whereDate('data', now()),
+                            'ontem' => $query->whereDate('data', now()->subDay()),
+                            'esta_semana' => $query->whereBetween('data', [now()->startOfWeek(), now()->endOfWeek()]),
+                            'este_mes' => $query->whereMonth('data', now()->month)->whereYear('data', now()->year),
+                            'mes_passado' => $query->whereMonth('data', now()->subMonth()->month)->whereYear('data', now()->subMonth()->year),
+                            'este_ano' => $query->whereYear('data', now()->year),
+                            default => $query,
+                        };
+                    }),
 
-                Tables\Filters\SelectFilter::make('status'),
-
+                // Filtro por Data Personalizada
                 Tables\Filters\Filter::make('data_range')
                     ->form([
-                        Forms\Components\DatePicker::make('data_de')
-                            ->label('Data de'),
-                        Forms\Components\DatePicker::make('data_ate')
-                            ->label('Data até'),
+                        Forms\Components\DatePicker::make('data_de')->label('De'),
+                        Forms\Components\DatePicker::make('data_ate')->label('Até'),
                     ])
                     ->query(function ($query, array $data) {
                         return $query
-                            ->when($data['data_de'], fn($q, $date) => $q->whereDate('data', '>=', $date))
-                            ->when($data['data_ate'], fn($q, $date) => $q->whereDate('data', '<=', $date));
+                            ->when($data['data_de'], fn($q, $d) => $q->whereDate('data', '>=', $d))
+                            ->when($data['data_ate'], fn($q, $d) => $q->whereDate('data', '<=', $d));
+                    }),
+
+                // Filtro por Data de Vencimento
+                Tables\Filters\Filter::make('vencimento')
+                    ->form([
+                        Forms\Components\DatePicker::make('vencimento_de')->label('Vencimento De'),
+                        Forms\Components\DatePicker::make('vencimento_ate')->label('Vencimento Até'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['vencimento_de'], fn($q, $d) => $q->whereDate('data_vencimento', '>=', $d))
+                            ->when($data['vencimento_ate'], fn($q, $d) => $q->whereDate('data_vencimento', '<=', $d));
+                    }),
+
+                // Tipo (Entrada/Saída)
+                Tables\Filters\SelectFilter::make('tipo')
+                    ->options([
+                        'entrada' => 'Entradas (Receitas)',
+                        'saida' => 'Saídas (Despesas)',
+                    ]),
+
+                // Status
+                Tables\Filters\SelectFilter::make('status')
+                    ->options([
+                        'pendente' => 'Pendente',
+                        'pago' => 'Pago',
+                        'atrasado' => 'Atrasado',
+                        'cancelado' => 'Cancelado',
+                    ]),
+
+                // Categoria
+                Tables\Filters\SelectFilter::make('categoria_id')
+                    ->label('Categoria')
+                    ->relationship('categoria', 'nome')
+                    ->searchable()
+                    ->preload(),
+
+                // Forma de Pagamento
+                Tables\Filters\SelectFilter::make('forma_pagamento')
+                    ->label('Forma de Pagamento')
+                    ->options([
+                        'pix' => 'PIX',
+                        'dinheiro' => 'Dinheiro',
+                        'cartao_credito' => 'Cartão de Crédito',
+                        'cartao_debito' => 'Cartão de Débito',
+                        'boleto' => 'Boleto',
+                        'transferencia' => 'Transferência',
+                    ]),
+
+                // Cliente/Fornecedor
+                Tables\Filters\SelectFilter::make('cadastro_id')
+                    ->label('Cliente/Fornecedor')
+                    ->relationship('cadastro', 'nome')
+                    ->searchable()
+                    ->preload(),
+
+                // Loja (Store)
+                Tables\Filters\SelectFilter::make('loja_id')
+                    ->label('Loja')
+                    ->relationship(
+                        'ordemServico.loja',
+                        'nome',
+                        fn($query) => $query->where('tipo', 'loja')
+                    )
+                    ->searchable()
+                    ->preload(),
+
+                // Vendedor (Salesperson)
+                Tables\Filters\SelectFilter::make('vendedor_id')
+                    ->label('Vendedor')
+                    ->relationship(
+                        'ordemServico.vendedor',
+                        'nome',
+                        fn($query) => $query->where('tipo', 'vendedor')
+                    )
+                    ->searchable()
+                    ->preload(),
+
+                // Status de Comissão
+                Tables\Filters\SelectFilter::make('comissao_status')
+                    ->label('Status de Comissão')
+                    ->options([
+                        'pendente' => 'Comissões Pendentes',
+                        'paga' => 'Comissões Pagas',
+                        'todas' => 'Todas as Comissões',
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (!isset($data['value'])) {
+                            return $query;
+                        }
+
+                        return match ($data['value']) {
+                            'pendente' => $query->comissaoPendente(),
+                            'paga' => $query->comissaoPaga(),
+                            'todas' => $query->where('is_comissao', true),
+                            default => $query,
+                        };
                     }),
             ])
             ->actions([
@@ -286,7 +417,7 @@ class FinanceiroResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->iconButton()
-                    ->visible(fn(Financeiro $record) => $record->status === 'pendente')
+                    ->visible(fn(Financeiro $record) => $record->status === 'pendente' || $record->status === 'atrasado')
                     ->requiresConfirmation()
                     ->action(function (Financeiro $record) {
                         $record->update([
@@ -299,16 +430,77 @@ class FinanceiroResource extends Resource
                             ->send();
                     }),
 
-                // View
+                // Estornar (Desfazer pagamento)
+                Tables\Actions\Action::make('estornar')
+                    ->label('')
+                    ->tooltip('Estornar (Voltar para Pendente)')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->iconButton()
+                    ->visible(fn(Financeiro $record) => $record->status === 'pago')
+                    ->requiresConfirmation()
+                    ->action(function (Financeiro $record) {
+                        $record->update([
+                            'status' => 'pendente',
+                            'data_pagamento' => null
+                        ]);
+                        Notification::make()
+                            ->title('Estornado!')
+                            ->body('O lançamento voltou para pendente.')
+                            ->warning()
+                            ->send();
+                    }),
+
+                // Pagar Comissão
+                Tables\Actions\Action::make('pagar_comissao')
+                    ->label('')
+                    ->tooltip('Pagar Comissão')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->iconButton()
+                    ->visible(fn(Financeiro $record) => $record->is_comissao && !$record->comissao_paga && $record->status !== 'pago')
+                    ->requiresConfirmation()
+                    ->modalHeading('Confirmar Pagamento de Comissão')
+                    ->modalDescription(fn(Financeiro $record) => 'Deseja marcar a comis são de ' . ($record->cadastro?->nome ?? 'N/A') . ' no valor de R$ ' . number_format((float) $record->valor, 2, ',', '.') . ' como paga?')
+                    ->action(function (Financeiro $record) {
+                        $record->update([
+                            'comissao_paga' => true,
+                            'comissao_data_pagamento' => now(),
+                            'status' => 'pago',
+                            'data_pagamento' => now(),
+                            'valor_pago' => $record->valor,
+                        ]);
+
+                        Notification::make()
+                            ->title('Comissão paga com sucesso!')
+                            ->body('A comissão foi marcada como paga e o lançamento foi atualizado.')
+                            ->success()
+                            ->send();
+                    }),
+
+                // Ver
                 Tables\Actions\ViewAction::make()
                     ->label('')
                     ->tooltip('Ver')
                     ->iconButton(),
 
-                // Edit
+                // Editar
                 Tables\Actions\EditAction::make()
                     ->label('')
                     ->tooltip('Editar')
+                    ->iconButton(),
+
+                // Duplicar
+                Tables\Actions\ReplicateAction::make()
+                    ->label('')
+                    ->tooltip('Duplicar Lançamento')
+                    ->modalHeading('Duplicar Lançamento')
+                    ->excludeAttributes(['status', 'data_pagamento', 'created_at', 'updated_at'])
+                    ->beforeReplicaSaved(function (Financeiro $replica) {
+                        $replica->status = 'pendente';
+                        $replica->data_pagamento = null;
+                        $replica->descricao = $replica->descricao . ' (Cópia)';
+                    })
                     ->iconButton(),
 
                 // PDF
@@ -347,6 +539,42 @@ class FinanceiroResource extends Resource
                                 ->title('Pagamentos confirmados em lote!')
                                 ->success()
                                 ->send();
+                        }),
+
+                    // EXPORTAR SIMPLE CSV
+                    Tables\Actions\BulkAction::make('exportar')
+                        ->label('Exportar CSV')
+                        ->icon('heroicon-o-table-cells')
+                        ->action(function ($records) {
+                            $headers = [
+                                "Content-type" => "text/csv",
+                                "Content-Disposition" => "attachment; filename=relatorio_financeiro.csv",
+                                "Pragma" => "no-cache",
+                                "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+                                "Expires" => "0"
+                            ];
+
+                            $callback = function () use ($records) {
+                                $file = fopen('php://output', 'w');
+                                fputcsv($file, ['ID', 'Data', 'Tipo', 'Descricao', 'Categoria', 'Cliente', 'Valor', 'Status', 'Forma Pagamento']);
+
+                                foreach ($records as $row) {
+                                    fputcsv($file, [
+                                        $row->id,
+                                        $row->data->format('d/m/Y'),
+                                        $row->tipo,
+                                        $row->descricao,
+                                        $row->categoria?->nome ?? '-',
+                                        $row->cadastro?->nome ?? '-',
+                                        number_format($row->valor, 2, ',', '.'),
+                                        $row->status,
+                                        $row->forma_pagamento
+                                    ]);
+                                }
+                                fclose($file);
+                            };
+
+                            return response()->streamDownload($callback, 'relatorio_financeiro.csv', $headers);
                         }),
 
                     Tables\Actions\DeleteBulkAction::make(),
@@ -502,6 +730,17 @@ class FinanceiroResource extends Resource
                     ])
                     ->collapsed(),
 
+                // COMPROVANTES
+                InfolistSection::make('📎 Comprovantes e Anexos')
+                    ->schema([
+                        \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
+                            ->collection('arquivos')
+                            ->label('')
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn($record) => $record->getMedia('arquivos')->isNotEmpty())
+                    ->collapsed(),
+
                 // OBSERVAÇÕES
                 InfolistSection::make('📝 Observações')
                     ->schema([
@@ -522,6 +761,14 @@ class FinanceiroResource extends Resource
             'edit' => Pages\EditFinanceiro::route('/{record}/edit'),
             'view' => Pages\ViewFinanceiro::route('/{record}'),
             'dashboard' => Pages\DashboardFinanceiro::route('/dashboard'),
+            'extratos' => Pages\Extratos::route('/extratos'),
+
+            // Filtered views
+            'receitas' => Pages\ListReceitas::route('/receitas'),
+            'despesas' => Pages\ListDespesas::route('/despesas'),
+            'pendentes' => Pages\ListPendentes::route('/pendentes'),
+            'atrasadas' => Pages\ListAtrasadas::route('/atrasadas'),
+
         ];
     }
 

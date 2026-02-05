@@ -70,8 +70,11 @@ class OrcamentoPdfController extends Controller
                 $percentualPix = $settingsArray['financeiro_desconto_avista'] ?? 10;
 
                 if ($orcamento->aplicar_desconto_pix && $percentualPix > 0) {
-                    $descontoPix = ($valorFinal * $percentualPix) / 100;
-                    $valorFinal -= $descontoPix;
+                    // NEW RULE: If value was manually edited, do NOT apply PIX discount again
+                    if (!$orcamento->valor_final_editado) {
+                        $descontoPix = ($valorFinal * $percentualPix) / 100;
+                        $valorFinal -= $descontoPix;
+                    }
                 }
 
                 // 2. Encontrar Titular da Chave
@@ -133,6 +136,11 @@ class OrcamentoPdfController extends Controller
                     ->setOption('args', config('browsershot.chrome_args'))
                     ->timeout(config('browsershot.timeout'));
             });
+
+        // Limpa qualquer saída anterior (espaços em branco, logs) para evitar corromper o PDF
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
 
         // Retorna inline (visualização) ou download
         return $download ? $pdf->download() : $pdf->inline();

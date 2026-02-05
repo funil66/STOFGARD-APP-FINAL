@@ -23,7 +23,7 @@ class OrdemServicoPdfController extends Controller
         }
 
         return Pdf::view('pdf.os', [
-            'record' => $record,
+            'record' => $record->load(['produtosUtilizados', 'cliente', 'itens']),
             'config' => Configuracao::first()
         ])
             ->format('a4')

@@ -68,7 +68,14 @@ class OrcamentoResource extends Resource
                     ->schema([
                         Forms\Components\Toggle::make('pdf_incluir_pix')
                             ->label('Gerar QR Code PIX')
-                            ->default(true),
+                            ->default(true)
+                            ->live(),
+
+                        Forms\Components\Toggle::make('aplicar_desconto_pix')
+                            ->label('Aplicar Desconto PIX')
+                            ->helperText('Se ativado, aplica o desconto PIX configurado globalmente')
+                            ->default(fn() => \App\Models\Setting::get('pdf_aplicar_desconto_global', true))
+                            ->visible(fn(Forms\Get $get) => $get('pdf_incluir_pix')),
                         Forms\Components\Select::make('pix_chave_selecionada')
                             ->label('Selecionar Chave PIX')
                             ->options(function () {
@@ -877,6 +884,8 @@ class OrcamentoResource extends Resource
 
                                 \App\Models\Financeiro::create([
                                     'tipo' => 'saida',
+                                    'is_comissao' => true,
+                                    'comissao_paga' => false,
                                     'descricao' => sprintf(
                                         'Comissão Vendedor - OS %s - %s',
                                         $os->numero_os,
@@ -893,7 +902,7 @@ class OrcamentoResource extends Resource
                                     'observacoes' => sprintf(
                                         'Comissão de %.2f%% sobre venda total de R$ %s',
                                         $vendedor?->comissao_percentual ?? 0,
-                                        number_format($record->valor_total, 2, ',', '.')
+                                        number_format((float) $record->valor_total, 2, ',', '.')
                                     ),
                                 ]);
                             }
@@ -905,6 +914,8 @@ class OrcamentoResource extends Resource
 
                                 \App\Models\Financeiro::create([
                                     'tipo' => 'saida',
+                                    'is_comissao' => true,
+                                    'comissao_paga' => false,
                                     'descricao' => sprintf(
                                         'Comissão Loja - OS %s - %s',
                                         $os->numero_os,
@@ -921,7 +932,7 @@ class OrcamentoResource extends Resource
                                     'observacoes' => sprintf(
                                         'Comissão de %.2f%% sobre venda total de R$ %s',
                                         $loja?->comissao_percentual ?? 0,
-                                        number_format($record->valor_total, 2, ',', '.')
+                                        number_format((float) $record->valor_total, 2, ',', '.')
                                     ),
                                 ]);
                             }

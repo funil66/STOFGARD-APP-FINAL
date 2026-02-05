@@ -4,17 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comprovante Financeiro - #{{ $financeiro->id }}</title>
+    <title>Financeiro #{{ $financeiro->id }}</title>
     <style>
         @page {
             margin: 0px;
         }
 
+        /* DYNAMIC STYLES */
         @php
             $primary = $config->pdf_color_primary ?? '#2563eb';
             $secondary = $config->pdf_color_secondary ?? '#eff6ff';
             $text = $config->pdf_color_text ?? '#1f2937';
-            $tipoCor = $financeiro->tipo === 'entrada' ? '#10b981' : '#ef4444';
         @endphp
 
         body {
@@ -22,8 +22,8 @@
             font-size: 10px;
             color: {{ $text }};
             line-height: 1.4;
-            padding-top: 4.5cm;
-            padding-bottom: 2.5cm;
+            padding-top: 5cm;
+            padding-bottom: 3cm;
             padding-left: 1cm;
             padding-right: 1cm;
             margin: 0;
@@ -35,14 +35,14 @@
             top: 0;
             left: 1cm;
             right: 1cm;
-            height: 4cm;
+            height: 3.8cm;
             padding-top: 0.5cm;
             border-bottom: 3px solid {{ $primary }};
             display: flex;
-            background: white;
-            z-index: 1000;
             justify-content: space-between;
             align-items: flex-start;
+            background: white;
+            z-index: 1000;
         }
 
         /* FOOTER FIXO */
@@ -51,16 +51,12 @@
             bottom: 0;
             left: 1cm;
             right: 1cm;
-            height: 2cm;
+            height: 2.5cm;
             padding-bottom: 0.5cm;
             background: white;
             padding-top: 5px;
             border-top: 1px solid #e5e7eb;
             z-index: 1000;
-        }
-
-        .header-left {
-            max-width: 55%;
         }
 
         .logo-img {
@@ -76,7 +72,7 @@
         }
 
         .header-right {
-            background: {{ $tipoCor }};
+            background: {{ $primary }};
             color: white;
             padding: 12px 16px;
             border-radius: 8px;
@@ -84,130 +80,121 @@
             min-width: 170px;
         }
 
-        .doc-number {
+        .titulo-doc {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .numero-doc {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 8px;
         }
 
-        .doc-meta {
-            font-size: 8px;
-            line-height: 1.7;
-        }
-
-        /* SECTION HEADER */
         .section-header {
             background: {{ $primary }};
             color: white;
-            padding: 8px 12px;
+            padding: 7px 12px;
+            font-size: 10px;
             font-weight: bold;
-            font-size: 11px;
-            text-transform: uppercase;
-            border-radius: 4px;
             margin-top: 20px;
             margin-bottom: 10px;
+            text-transform: uppercase;
+            page-break-after: avoid;
         }
 
-        .section-content {
-            background: white;
+        .info-box {
+            background: #f9fafb;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
-            padding: 14px;
-            margin-bottom: 16px;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-        }
-
-        .field {
+            padding: 12px;
             margin-bottom: 10px;
         }
 
-        .field-label {
-            font-size: 8px;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 3px;
-            font-weight: 600;
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
         }
 
-        .field-value {
+        .info-label {
+            width: 120px;
+            font-weight: bold;
+            color: #4b5563;
+        }
+
+        .info-value {
+            flex: 1;
+            color: #111827;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
             font-size: 10px;
-            color: {{ $text }};
-            font-weight: 500;
+            text-transform: uppercase;
         }
 
-        .field-value.large {
-            font-size: 14px;
+        .status-pago {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #166534;
+        }
+
+        .status-pendente {
+            background: #fef9c3;
+            color: #854d0e;
+            border: 1px solid #854d0e;
+        }
+
+        .status-vencido {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #991b1b;
+        }
+
+        .tipo-entrada {
+            color: #166534;
             font-weight: bold;
         }
 
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 8.5px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-success {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .badge-danger {
-            background: #fee2e2;
+        .tipo-saida {
             color: #991b1b;
+            font-weight: bold;
         }
 
-        .badge-warning {
-            background: #fef3c7;
-            color: #92400e;
+        .valores-box {
+            background: #eff6ff;
+            border: 2px solid {{ $primary }};
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
         }
 
-        .badge-info {
-            background: #dbeafe;
-            color: #1e40af;
+        .valor-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 11px;
         }
 
         .valor-total {
-            background: {{ $secondary }};
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 4px solid {{ $tipoCor }};
-            margin-top: 10px;
+            border-top: 2px solid {{ $primary }};
+            padding-top: 8px;
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: {{ $primary }};
         }
 
-        .footer-text {
-            font-size: 8px;
-            color: #6b7280;
+        .footer-legal {
+            font-size: 7px;
+            color: #9ca3af;
             text-align: center;
-            line-height: 1.6;
-        }
-
-        .footer-divider {
-            border-top: 1px solid #e5e7eb;
-            margin: 8px 0;
-        }
-
-        .observacoes {
-            background: #f9fafb;
-            padding: 10px;
-            border-left: 3px solid {{ $primary }};
-            font-size: 9px;
-            line-height: 1.6;
-            margin-top: 10px;
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -216,229 +203,183 @@
     <!-- HEADER -->
     <div class="header">
         <div class="header-left">
-            @if ($config->pdf_logo_base64)
-                <img src="{{ $config->pdf_logo_base64 }}" alt="Logo" class="logo-img">
+            @php
+                $logoPath = $config->empresa_logo ?? null;
+                if ($logoPath && !file_exists($logoPath)) $logoPath = storage_path('app/public/' . $logoPath);
+            @endphp
+            @if($logoPath && file_exists($logoPath))
+               <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
+            @else
+                <div style="font-size: 16px; font-weight: bold; color: {{ $primary }}; margin-bottom: 8px;">
+                    {{ $config->nome_sistema ?? 'Sistema Financeiro' }}
+                </div>
             @endif
             <div class="company-info">
-                <strong>{{ $config->nome_empresa ?? 'Empresa' }}</strong><br>
-                @if ($config->cnpj)
-                    CNPJ: {{ $config->cnpj }}<br>
-                @endif
-                @if ($config->telefone)
-                    Telefone: {{ $config->telefone }}<br>
-                @endif
-                @if ($config->endereco)
-                    {{ $config->endereco }}
-                @endif
+                {{ $config->empresa_cnpj ?? '' }}<br>
+                {{ $config->empresa_telefone ?? '' }}<br>
+                {{ $config->empresa_email ?? '' }}
             </div>
         </div>
 
         <div class="header-right">
-            <div class="doc-number">{{ $financeiro->tipo === 'entrada' ? '💰 RECEITA' : '💸 DESPESA' }}</div>
-            <div class="doc-meta">
-                <strong>ID:</strong> #{{ $financeiro->id }}<br>
-                <strong>Emissão:</strong> {{ $financeiro->created_at->format('d/m/Y H:i') }}
+            <div class="titulo-doc">RECIBO / DETALHAMENTO</div>
+            <div class="numero-doc">#{{ str_pad($financeiro->id, 6, '0', STR_PAD_LEFT) }}</div>
+            <div style="font-size: 9px; opacity: 0.9;">
+                Emissão: {{ now()->format('d/m/Y') }}
             </div>
         </div>
     </div>
 
     <!-- FOOTER -->
     <div class="footer">
-        <div class="footer-divider"></div>
-        <div class="footer-text">
-            <strong>{{ $config->nome_empresa ?? 'Empresa' }}</strong><br>
-            Este documento foi gerado automaticamente pelo sistema em {{ now()->format('d/m/Y às H:i') }}
+        <div class="footer-legal">
+            Documento gerado automaticamente pelo sistema.<br>
+            <strong>Data da Geração:</strong> {{ now()->format('d/m/Y H:i:s') }}
         </div>
     </div>
 
     <!-- CONTEÚDO -->
-    
-    <!-- INFORMAÇÕES PRINCIPAIS -->
-    <div class="section-header">📋 INFORMAÇÕES DA TRANSAÇÃO</div>
-    <div class="section-content">
-        <div class="grid-3" style="margin-bottom: 12px;">
-            <div class="field">
-                <div class="field-label">Tipo de Transação</div>
-                <div class="field-value">
-                    <span class="badge {{ $financeiro->tipo === 'entrada' ? 'badge-success' : 'badge-danger' }}">
-                        {{ $financeiro->tipo === 'entrada' ? '💰 ENTRADA' : '💸 SAÍDA' }}
+    <div class="content">
+        <!-- DADOS PRINCIPAIS -->
+        <div class="section-header">DADOS DA TRANSAÇÃO</div>
+        <div class="info-box">
+            <div class="info-row">
+                <div class="info-label">Descrição:</div>
+                <div class="info-value">{{ $financeiro->descricao }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Tipo:</div>
+                <div class="info-value {{ $financeiro->tipo === 'entrada' ? 'tipo-entrada' : 'tipo-saida' }}">
+                    {{ $financeiro->tipo === 'entrada' ? 'RECEITA (ENTRADA)' : 'DESPESA (SAÍDA)' }}
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Categoria:</div>
+                <div class="info-value">{{ $financeiro->categoria->nome ?? 'Sem categoria' }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Status:</div>
+                <div class="info-value">
+                    <span class="status-badge status-{{ $financeiro->status }}">
+                        {{ strtoupper($financeiro->status) }}
                     </span>
                 </div>
             </div>
-            <div class="field">
-                <div class="field-label">Status</div>
-                <div class="field-value">
-                    @php
-                        $statusClass = match($financeiro->status) {
-                            'pago' => 'badge-success',
-                            'vencido' => 'badge-danger',
-                            'pendente' => 'badge-warning',
-                            default => 'badge-info'
-                        };
-                        $statusLabel = match($financeiro->status) {
-                            'pago' => '✅ PAGO',
-                            'pendente' => '⏳ PENDENTE',
-                            'vencido' => '🔴 VENCIDO',
-                            'cancelado' => '❌ CANCELADO',
-                            default => strtoupper($financeiro->status)
-                        };
-                    @endphp
-                    <span class="badge {{ $statusClass }}">{{ $statusLabel }}</span>
+        </div>
+
+        <!-- DADOS DO CLIENTE/FORNECEDOR -->
+        @if($financeiro->cadastro)
+        <div class="section-header">DADOS DO {{ $financeiro->tipo === 'entrada' ? 'PAGADOR' : 'BENEFICIÁRIO' }}</div>
+        <div class="info-box">
+            <div class="info-row">
+                <div class="info-label">Nome:</div>
+                <div class="info-value">{{ $financeiro->cadastro->nome }}</div>
+            </div>
+            @if($financeiro->cadastro->cpf_cnpj)
+            <div class="info-row">
+                <div class="info-label">CPF/CNPJ:</div>
+                <div class="info-value">{{ $financeiro->cadastro->cpf_cnpj }}</div>
+            </div>
+            @endif
+            @if($financeiro->cadastro->email)
+            <div class="info-row">
+                <div class="info-label">Email:</div>
+                <div class="info-value">{{ $financeiro->cadastro->email }}</div>
+            </div>
+            @endif
+        </div>
+        @endif
+
+        <!-- DATAS E VALORES -->
+        <div class="section-header">DETALHAMENTO FINANCEIRO</div>
+        <div style="display: flex; gap: 20px;">
+            <div style="flex: 1;">
+                <div class="info-box">
+                    <div class="info-row">
+                        <div class="info-label">Data Lançamento:</div>
+                        <div class="info-value">{{ $financeiro->data ? $financeiro->data->format('d/m/Y') : '-' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Vencimento:</div>
+                        <div class="info-value">{{ $financeiro->data_vencimento ? $financeiro->data_vencimento->format('d/m/Y') : '-' }}</div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Pagamento:</div>
+                        <div class="info-value">{{ $financeiro->data_pagamento ? $financeiro->data_pagamento->format('d/m/Y') : 'Pendente' }}</div>
+                    </div>
+                    @if($financeiro->forma_pagamento)
+                    <div class="info-row">
+                        <div class="info-label">Forma Pagto:</div>
+                        <div class="info-value">{{ ucfirst(str_replace('_', ' ', $financeiro->forma_pagamento)) }}</div>
+                    </div>
+                    @endif
                 </div>
             </div>
-            <div class="field">
-                <div class="field-label">Categoria</div>
-                <div class="field-value">
-                    @if ($financeiro->categoria)
-                        <span class="badge badge-info">
-                            {{ $financeiro->categoria->icone ?? '📌' }} {{ $financeiro->categoria->nome }}
-                        </span>
-                    @else
-                        <span style="color: #9ca3af;">Sem categoria</span>
+
+            <div style="width: 250px;">
+                <div class="valores-box">
+                    <div class="valor-row">
+                        <span>Valor Original:</span>
+                        <span>R$ {{ number_format($financeiro->valor, 2, ',', '.') }}</span>
+                    </div>
+                    @if($financeiro->juros > 0)
+                    <div class="valor-row" style="color: #b91c1c;">
+                        <span>(+) Juros:</span>
+                        <span>R$ {{ number_format($financeiro->juros, 2, ',', '.') }}</span>
+                    </div>
+                    @endif
+                    @if($financeiro->multa > 0)
+                    <div class="valor-row" style="color: #b91c1c;">
+                        <span>(+) Multa:</span>
+                        <span>R$ {{ number_format($financeiro->multa, 2, ',', '.') }}</span>
+                    </div>
+                    @endif
+                    @if($financeiro->desconto > 0)
+                    <div class="valor-row" style="color: #15803d;">
+                        <span>(-) Desconto:</span>
+                        <span>R$ {{ number_format($financeiro->desconto, 2, ',', '.') }}</span>
+                    </div>
+                    @endif
+                    
+                    <div class="valor-total">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>TOTAL:</span>
+                            <span>R$ {{ number_format($financeiro->valor_total ?? $financeiro->valor, 2, ',', '.') }}</span>
+                        </div>
+                    </div>
+
+                    @if($financeiro->valor_pago > 0)
+                    <div style="margin-top: 8px; border-top: 1px dashed #bfdbfe; padding-top: 8px; font-size: 11px;">
+                        <div style="display: flex; justify-content: space-between; color: #166534; font-weight: bold;">
+                            <span>PAGO:</span>
+                            <span>R$ {{ number_format($financeiro->valor_pago, 2, ',', '.') }}</span>
+                        </div>
+                    </div>
                     @endif
                 </div>
             </div>
         </div>
 
-        <div class="field">
-            <div class="field-label">Descrição</div>
-            <div class="field-value">{{ $financeiro->descricao }}</div>
+        <!-- OBSERVAÇÕES -->
+        @if($financeiro->observacoes)
+        <div class="section-header">OBSERVAÇÕES</div>
+        <div class="info-box">
+            <div style="font-size: 10px; color: #374151; white-space: pre-wrap;">{{ $financeiro->observacoes }}</div>
         </div>
+        @endif
 
-        @if ($financeiro->forma_pagamento)
-            <div class="field">
-                <div class="field-label">Forma de Pagamento</div>
-                <div class="field-value">
-                    @php
-                        $formaPagamentoLabel = match($financeiro->forma_pagamento) {
-                            'pix' => '💳 PIX',
-                            'dinheiro' => '💵 Dinheiro',
-                            'cartao_credito' => '💳 Cartão de Crédito',
-                            'cartao_debito' => '💳 Cartão de Débito',
-                            'boleto' => '📄 Boleto',
-                            'transferencia' => '🏦 Transferência',
-                            default => $financeiro->forma_pagamento
-                        };
-                    @endphp
-                    {{ $formaPagamentoLabel }}
-                </div>
-            </div>
+        <!-- VINCULAÇÕES -->
+        @if($financeiro->ordemServico || $financeiro->orcamento)
+        <div style="margin-top: 20px; font-size: 9px; color: #6b7280; text-align: center;">
+            @if($financeiro->ordemServico)
+                Vinculado à OS #{{ $financeiro->ordemServico->numero_os }}
+            @endif
+            @if($financeiro->ordemServico && $financeiro->orcamento) | @endif
+            @if($financeiro->orcamento)
+                Vinculado ao Orçamento #{{ $financeiro->orcamento->numero }}
+            @endif
+        </div>
         @endif
     </div>
-
-    <!-- DATAS -->
-    <div class="section-header">📅 DATAS</div>
-    <div class="section-content">
-        <div class="grid-3">
-            <div class="field">
-                <div class="field-label">Data do Lançamento</div>
-                <div class="field-value">{{ $financeiro->data->format('d/m/Y') }}</div>
-            </div>
-            <div class="field">
-                <div class="field-label">Data de Vencimento</div>
-                <div class="field-value" style="color: {{ $financeiro->status === 'vencido' ? '#dc2626' : 'inherit' }};">
-                    {{ $financeiro->data_vencimento ? $financeiro->data_vencimento->format('d/m/Y') : 'Não definido' }}
-                </div>
-            </div>
-            <div class="field">
-                <div class="field-label">Data do Pagamento</div>
-                <div class="field-value" style="color: #10b981;">
-                    {{ $financeiro->data_pagamento ? $financeiro->data_pagamento->format('d/m/Y H:i') : 'Não pago' }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- VALORES -->
-    <div class="section-header">💵 DETALHAMENTO DE VALORES</div>
-    <div class="section-content">
-        <div class="grid-2">
-            <div class="field">
-                <div class="field-label">Valor Original</div>
-                <div class="field-value large">R$ {{ number_format($financeiro->valor, 2, ',', '.') }}</div>
-            </div>
-            @if ($financeiro->desconto > 0)
-                <div class="field">
-                    <div class="field-label">Desconto</div>
-                    <div class="field-value" style="color: #10b981;">- R$ {{ number_format($financeiro->desconto, 2, ',', '.') }}</div>
-                </div>
-            @endif
-            @if ($financeiro->juros > 0)
-                <div class="field">
-                    <div class="field-label">Juros</div>
-                    <div class="field-value" style="color: #f59e0b;">+ R$ {{ number_format($financeiro->juros, 2, ',', '.') }}</div>
-                </div>
-            @endif
-            @if ($financeiro->multa > 0)
-                <div class="field">
-                    <div class="field-label">Multa</div>
-                    <div class="field-value" style="color: #ef4444;">+ R$ {{ number_format($financeiro->multa, 2, ',', '.') }}</div>
-                </div>
-            @endif
-        </div>
-
-        <div class="valor-total">
-            <div class="grid-2">
-                <div class="field" style="margin-bottom: 0;">
-                    <div class="field-label">Valor Total</div>
-                    <div class="field-value large" style="color: {{ $tipoCor }};">
-                        R$ {{ number_format($financeiro->valor_total, 2, ',', '.') }}
-                    </div>
-                </div>
-                @if ($financeiro->valor_pago > 0)
-                    <div class="field" style="margin-bottom: 0;">
-                        <div class="field-label">Valor Pago</div>
-                        <div class="field-value large" style="color: #10b981;">
-                            R$ {{ number_format($financeiro->valor_pago, 2, ',', '.') }}
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <!-- VINCULAÇÕES -->
-    @if ($financeiro->cadastro || $financeiro->ordem_servico_id || $financeiro->orcamento_id)
-        <div class="section-header">🔗 VINCULAÇÕES</div>
-        <div class="section-content">
-            <div class="grid-3">
-                @if ($financeiro->cadastro)
-                    <div class="field">
-                        <div class="field-label">Cliente/Fornecedor</div>
-                        <div class="field-value">
-                            {{ $financeiro->cadastro->nome }}<br>
-                            @if ($financeiro->cadastro->celular)
-                                <span style="font-size: 9px; color: #6b7280;">{{ $financeiro->cadastro->celular }}</span>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-                @if ($financeiro->ordemServico)
-                    <div class="field">
-                        <div class="field-label">Ordem de Serviço</div>
-                        <div class="field-value">OS #{{ $financeiro->ordemServico->numero_os }}</div>
-                    </div>
-                @endif
-                @if ($financeiro->orcamento)
-                    <div class="field">
-                        <div class="field-label">Orçamento</div>
-                        <div class="field-value">{{ $financeiro->orcamento->numero }}</div>
-                    </div>
-                @endif
-            </div>
-        </div>
-    @endif
-
-    <!-- OBSERVAÇÕES -->
-    @if ($financeiro->observacoes)
-        <div class="section-header">📝 OBSERVAÇÕES</div>
-        <div class="section-content">
-            <div class="observacoes">
-                {{ $financeiro->observacoes }}
-            </div>
-        </div>
-    @endif
-
 </body>
-
 </html>

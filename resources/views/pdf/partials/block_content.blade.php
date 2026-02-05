@@ -17,8 +17,10 @@
             $percentual = $config->financeiro_desconto_avista ?? 10;
             $descontoPix = 0;
             if ($orcamento->aplicar_desconto_pix && $percentual > 0) {
-                $descontoPix = ($valorFinal * $percentual) / 100;
-                // If paying with PIX, it subtracts. But here we just show the calculation.
+                // If manually edited, do NOT apply extra discount
+                if (!$orcamento->valor_final_editado) {
+                    $descontoPix = ($valorFinal * $percentual) / 100;
+                }
             }
         @endphp
 
@@ -77,32 +79,36 @@
                 }
                 $percentual = $config->financeiro_desconto_avista ?? 10;
                 if ($orcamento->aplicar_desconto_pix && $percentual > 0) {
-                    $valorFinal -= ($valorFinal * $percentual / 100);
+                    if (!$orcamento->valor_final_editado) {
+                        $valorFinal -= ($valorFinal * $percentual / 100);
+                    }
                 }
              @endphp
 
             <div class="pix-valor" style="font-size: 1.1em; font-weight: bold;">R$ {{ number_format($valorFinal, 2, ',', '.') }}
             </div>
 
-            <div class="pix-desconto" style="font-size: 8px; margin-top:2px;">
-                (Já com {{ $config->financeiro_desconto_avista ?? 10 }}% de desconto)
-            </div>
+            @if(!$orcamento->valor_final_editado && $orcamento->aplicar_desconto_pix)
+                <div class="pix-desconto" style="font-size: 8px; margin-top:2px;">
+                    (Já com {{ $config->financeiro_desconto_avista ?? 10 }}% de desconto)
+                </div>
+            @endif
 
             @if($orcamento->pix_copia_cola)
                 <div style="margin-top: 8px; position: relative;">
                     <!-- Label discreto -->
                     <div style="font-size: 7px; color: #777; margin-bottom: 2px;">PIX COPIA E COLA:</div>
                     <div class="pix-code" style="
-                                                word-break: break-all; 
-                                                font-size: 8px; 
-                                                text-align: left; 
-                                                color: #333; 
-                                                padding: 6px; 
-                                                background: #fdfdfd; 
-                                                border: 1px dashed #a7f3d0; 
-                                                border-radius: 4px;
-                                                line-height: 1.25;
-                                             ">
+                                                                                    word-break: break-all; 
+                                                                                    font-size: 8px; 
+                                                                                    text-align: left; 
+                                                                                    color: #333; 
+                                                                                    padding: 6px; 
+                                                                                    background: #fdfdfd; 
+                                                                                    border: 1px dashed #a7f3d0; 
+                                                                                    border-radius: 4px;
+                                                                                    line-height: 1.25;
+                                                                                 ">
                         {{ $orcamento->pix_copia_cola }}
                     </div>
                 </div>

@@ -294,6 +294,30 @@
         </tbody>
     </table>
 
+    <!-- PRODUTOS DO ESTOQUE UTILIZADOS -->
+    @if($record->produtosUtilizados && $record->produtosUtilizados->isNotEmpty())
+        <div class="section-header">📦 PRODUTOS DO ESTOQUE UTILIZADOS</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Produto</th>
+                    <th style="width: 20%;">Quantidade</th>
+                    <th style="width: 30%;">Observação</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($record->produtosUtilizados as $produto)
+                    <tr>
+                        <td>{{ $produto->item }}</td>
+                        <td>{{ number_format($produto->pivot->quantidade_utilizada, 2, ',', '.') }}
+                            {{ $produto->pivot->unidade }}</td>
+                        <td style="font-size: 8px; color: #6b7280;">{{ $produto->pivot->observacao ?? '—' }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
     <!-- VALORES -->
     <div class="section-header">VALORES</div>
     <div class="valores-box">

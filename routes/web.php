@@ -114,6 +114,7 @@ Route::middleware(['auth'])->group(function () {
     // Rota para visualizar PDF do Financeiro
     Route::get('/financeiro/{financeiro}/pdf', [\App\Http\Controllers\FinanceiroPdfController::class, 'gerarPdf'])
         ->name('financeiro.pdf');
+    Route::get('/extrato/pdf', [\App\Http\Controllers\ExtratoPdfController::class, 'gerarExtrato'])->name('extrato.pdf');
 
     // Rota para visualizar PDF da Nota Fiscal
     Route::get('/nota-fiscal/{notaFiscal}/pdf', [\App\Http\Controllers\NotaFiscalPdfController::class, 'gerarPdf'])

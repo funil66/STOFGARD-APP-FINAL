@@ -20,13 +20,13 @@ class ListFinanceiros extends ListRecords
             Actions\Action::make('categorias')
                 ->label('Categorias')
                 ->icon('heroicon-o-tag')
-                ->color('gray')
+                ->color('info')
                 ->url(url('/admin/categorias')),
 
             Actions\Action::make('notas_fiscais')
                 ->label('Notas Fiscais')
                 ->icon('heroicon-o-document-currency-dollar')
-                ->color('gray')
+                ->color('info')
                 ->url(url('/admin/notas-fiscais')),
         ];
     }

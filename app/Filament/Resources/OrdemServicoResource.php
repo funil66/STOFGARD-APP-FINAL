@@ -16,6 +16,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Group;
@@ -216,6 +217,82 @@ class OrdemServicoResource extends Resource
                                 SpatieMediaLibraryFileUpload::make('fotos_depois')->label('Depois')->multiple()->disk('public')->directory('os-fotos'),
                             ]),
                     ])->columnSpanFull(),
+
+                // --- PRODUTOS DO ESTOQUE ---
+                Section::make('📦 Produtos do Estoque')
+                    ->description('Selecione produtos do estoque que serão utilizados nesta OS (opcional)')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Repeater::make('produtosUtilizados')
+                            ->relationship('produtosUtilizados')
+                            ->label('')
+                            ->schema([
+                                Select::make('estoque_id')
+                                    ->label('Produto')
+                                    ->options(
+                                        fn() => \App\Models\Estoque::query()
+                                            ->orderBy('item')
+                                            ->get()
+                                            ->mapWithKeys(fn($e) => [
+                                                $e->id => $e->item . ' (Disponível: ' . number_format($e->quantidade, 2, ',', '.') . ' ' . $e->unidade . ')'
+                                            ])
+                                    )
+                                    ->required()
+                                    ->searchable()
+                                    ->preload()
+                                    ->distinct()
+                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                        if ($state) {
+                                            $estoque = \App\Models\Estoque::find($state);
+                                            if ($estoque) {
+                                                $set('unidade', $estoque->unidade);
+                                                $set('disponivel', $estoque->quantidade);
+                                            }
+                                        }
+                                    })
+                                    ->columnSpan(3),
+
+                                TextInput::make('disponivel')
+                                    ->label('Disponível')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->suffix(fn(Forms\Get $get) => $get('unidade') ?? '')
+                                    ->columnSpan(1),
+
+                                TextInput::make('quantidade_utilizada')
+                                    ->label('Quantidade a Utilizar')
+                                    ->numeric()
+                                    ->required()
+                                    ->minValue(0.01)
+                                    ->step(0.01)
+                                    ->default(1)
+                                    ->suffix(fn(Forms\Get $get) => $get('unidade') ?? '')
+                                    ->helperText('Quantidade que será deduzida do estoque')
+                                    ->columnSpan(2),
+
+                                Hidden::make('unidade'),
+
+                                Textarea::make('observacao')
+                                    ->label('Observação')
+                                    ->placeholder('Ex: Produto aplicado na peça X')
+                                    ->maxLength(500)
+                                    ->columnSpanFull()
+                                    ->rows(2),
+                            ])
+                            ->columns(6)
+                            ->defaultItems(0)
+                            ->addActionLabel('➕ Adicionar Produto do Estoque')
+                            ->reorderable(false)
+                            ->collapsible()
+                            ->itemLabel(
+                                fn(array $state): ?string =>
+                                \App\Models\Estoque::find($state['estoque_id'] ?? 0)?->item ?? 'Produto'
+                            ),
+                    ]),
+
                 Section::make('Central de Arquivos')
                     ->description('Envie fotos, documentos e comprovantes (Máx: 20MB).')
                     ->collapsible()
@@ -619,6 +696,36 @@ class OrdemServicoResource extends Resource
                     ->collapsible()
                     ->collapsed()
                     ->visible(fn($record) => !empty($record->extra_attributes)),
+
+                // ===== PRODUTOS DO ESTOQUE UTILIZADOS =====
+                InfolistSection::make('📦 Produtos Utilizados')
+                    ->schema([
+                        RepeatableEntry::make('produtosUtilizados')
+                            ->label('')
+                            ->schema([
+                                TextEntry::make('item')
+                                    ->label('Produto')
+                                    ->weight('bold')
+                                    ->icon('heroicon-m-cube'),
+                                TextEntry::make('pivot.quantidade_utilizada')
+                                    ->label('Quantidade')
+                                    ->formatStateUsing(
+                                        fn($state, $record) =>
+                                        number_format($state, 2, ',', '.') . ' ' . ($record->pivot->unidade ?? '')
+                                    )
+                                    ->badge()
+                                    ->color('warning'),
+                                TextEntry::make('pivot.observacao')
+                                    ->label('Observação')
+                                    ->placeholder('—')
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(2)
+                            ->contained(false),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->visible(fn($record) => $record->produtosUtilizados->isNotEmpty()),
 
                 // ===== IMAGENS DO ORÇAMENTO =====
                 InfolistSection::make('📸 Imagens do Orçamento')

@@ -18,6 +18,9 @@ class Financeiro extends Model implements HasMedia
         'orcamento_id',
         'ordem_servico_id',
         'tipo',
+        'is_comissao',
+        'comissao_paga',
+        'comissao_data_pagamento',
         'descricao',
         'observacoes',
         'categoria_id',
@@ -57,6 +60,9 @@ class Financeiro extends Model implements HasMedia
         'data' => 'date',
         'data_vencimento' => 'date',
         'data_pagamento' => 'datetime',
+        'is_comissao' => 'boolean',
+        'comissao_paga' => 'boolean',
+        'comissao_data_pagamento' => 'datetime',
         'pix_expiracao' => 'datetime',
         'pix_data_pagamento' => 'datetime',
         'valor' => 'decimal:2',
@@ -71,7 +77,7 @@ class Financeiro extends Model implements HasMedia
     ];
 
     // Relacionamentos
-    
+
     /**
      * Cadastro relacionado (Cliente, Loja, Vendedor ou Parceiro).
      */
@@ -141,6 +147,18 @@ class Financeiro extends Model implements HasMedia
         return $query->where('status', 'pendente')
             ->whereNotNull('data_vencimento')
             ->whereDate('data_vencimento', '<', now());
+    }
+
+    public function scopeComissaoPendente($query)
+    {
+        return $query->where('is_comissao', true)
+            ->where('comissao_paga', false);
+    }
+
+    public function scopeComissaoPaga($query)
+    {
+        return $query->where('is_comissao', true)
+            ->where('comissao_paga', true);
     }
 
     /**

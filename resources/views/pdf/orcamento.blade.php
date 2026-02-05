@@ -25,8 +25,8 @@
             line-height: 1.4;
             
             /* Define content safe area via padding - AUMENTADO para evitar sobreposição */
-            padding-top: 5.5cm;    /* Aumentado de 4.5cm para 5.5cm */
-            padding-bottom: 3cm;   /* Aumentado de 2.5cm para 3cm */
+            padding-top: 6.2cm;    /* Ajustado para 6.2cm (Era 5.5cm) */
+            padding-bottom: 3cm;
             padding-left: 1cm;
             padding-right: 1cm;
             margin: 0;
@@ -38,7 +38,7 @@
             top: 0;
             left: 1cm;
             right: 1cm; 
-            height: 4.5cm;  /* Aumentado de 4cm para 4.5cm */
+            height: 3.8cm;  /* Reduzido levemente de 4.5cm para 3.8cm para subir a régua */
             padding-top: 0.5cm;
             border-bottom: 3px solid {{ $primary }};
             display: flex;

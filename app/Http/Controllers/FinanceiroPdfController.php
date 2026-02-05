@@ -23,7 +23,7 @@ class FinanceiroPdfController extends Controller
         }
 
         return Pdf::view('pdf.financeiro', [
-            'financeiro' => $financeiro,
+            'financeiro' => $financeiro->load(['categoria', 'cadastro', 'ordemServico', 'orcamento']),
             'config' => Configuracao::first()
         ])
             ->format('a4')

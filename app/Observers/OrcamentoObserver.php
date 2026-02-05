@@ -54,10 +54,18 @@ class OrcamentoObserver
         $pixService = app(PixMasterService::class);
 
         // Get the correct amount (with PIX discount if applicable)
-        $valor = $orcamento->valor_total;
-        if ($orcamento->aplicar_desconto_pix && $config->percentual_desconto_pix > 0) {
-            $desconto = ($valor * $config->percentual_desconto_pix) / 100;
-            $valor = $valor - $desconto;
+        // PRIORITY 1: Manually edited final value (Already agreed upon, NO EXTRA DISCOUNT)
+        if ($orcamento->valor_final_editado && $orcamento->valor_final_editado > 0) {
+            $valor = $orcamento->valor_final_editado;
+        }
+        // PRIORITY 2: Calculated total with PIX discount (If enabled)
+        elseif ($orcamento->aplicar_desconto_pix && $config->percentual_desconto_pix > 0) {
+            $desconto = ($orcamento->valor_total * $config->percentual_desconto_pix) / 100;
+            $valor = $orcamento->valor_total - $desconto;
+        }
+        // PRIORITY 3: Standard total (No discount)
+        else {
+            $valor = $orcamento->valor_total;
         }
 
         // Generate unique transaction ID

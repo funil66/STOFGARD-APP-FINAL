@@ -40,20 +40,29 @@ class FinanceiroOverview extends BaseWidget
                 ->description('Total acumulado (Entradas - Saídas)')
                 ->descriptionIcon($saldo >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($saldo >= 0 ? 'success' : 'danger')
-                ->chart([$saldo - 100, $saldo - 50, $saldo, $saldo + 50, $saldo + 100]) // Fake chart visual effect
-                ->extraAttributes([
-                    'class' => 'cursor-pointer hover:shadow-lg transition-all',
-                    // Redirecionar para lista filtrada? (Complexo sem usar query string, mas ok)
-                ]),
+                ->chart([$saldo - 100, $saldo - 50, $saldo, $saldo + 50, $saldo + 100])
+                ->url(FinanceiroResource::getUrl('index', [
+                    'tableFilters' => [
+                        'status' => ['value' => 'pago'],
+                        'data_range' => [
+                            'data_de' => $inicioMes->format('Y-m-d'),
+                            'data_ate' => $fimMes->format('Y-m-d'),
+                        ],
+                    ],
+                ])),
 
             Stat::make('Receitas (Mês)', Number::currency($receitasMes, 'BRL'))
                 ->description('Vencimento neste mês')
                 ->descriptionIcon('heroicon-m-arrow-up-circle')
                 ->color('success')
                 ->url(FinanceiroResource::getUrl('index', [
-                    'tableFilters[data_vencimento][from]' => $inicioMes->format('Y-m-d'),
-                    'tableFilters[data_vencimento][to]' => $fimMes->format('Y-m-d'),
-                    'tableFilters[tipo][value]' => 'entrada',
+                    'tableFilters' => [
+                        'vencimento' => [
+                            'vencimento_de' => $inicioMes->format('Y-m-d'),
+                            'vencimento_ate' => $fimMes->format('Y-m-d'),
+                        ],
+                        'tipo' => ['value' => 'entrada'],
+                    ],
                 ])),
 
             Stat::make('Despesas (Mês)', Number::currency($despesasMes, 'BRL'))
@@ -61,9 +70,13 @@ class FinanceiroOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-arrow-down-circle')
                 ->color('danger')
                 ->url(FinanceiroResource::getUrl('index', [
-                    'tableFilters[data_vencimento][from]' => $inicioMes->format('Y-m-d'),
-                    'tableFilters[data_vencimento][to]' => $fimMes->format('Y-m-d'),
-                    'tableFilters[tipo][value]' => 'saida',
+                    'tableFilters' => [
+                        'vencimento' => [
+                            'vencimento_de' => $inicioMes->format('Y-m-d'),
+                            'vencimento_ate' => $fimMes->format('Y-m-d'),
+                        ],
+                        'tipo' => ['value' => 'saida'],
+                    ],
                 ])),
 
             Stat::make('Pendentes a Receber', Number::currency($pendentesReceber, 'BRL'))
@@ -71,8 +84,10 @@ class FinanceiroOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('warning')
                 ->url(FinanceiroResource::getUrl('index', [
-                    'tableFilters[status][value]' => 'pendente',
-                    'tableFilters[tipo][value]' => 'entrada',
+                    'tableFilters' => [
+                        'status' => ['value' => 'pendente'],
+                        'tipo' => ['value' => 'entrada'],
+                    ],
                 ])),
         ];
     }

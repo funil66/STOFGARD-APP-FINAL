@@ -140,6 +140,14 @@ class OrdemServico extends Model implements HasMedia
         return $this->belongsTo(Cadastro::class, 'vendedor_id');
     }
 
+    // Relacionamento com produtos do estoque utilizados na OS
+    public function produtosUtilizados(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Estoque::class, 'ordem_servico_estoque')
+            ->withPivot(['quantidade_utilizada', 'unidade', 'observacao'])
+            ->withTimestamps();
+    }
+
     protected static function booted()
     {
         static::creating(function ($model) {

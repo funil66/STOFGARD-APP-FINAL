@@ -45,4 +45,41 @@ class Estoque extends Model
         }
         return 'success';
     }
+
+    // Relacionamento com Ordens de Serviço
+    public function ordensServico(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(OrdemServico::class, 'ordem_servico_estoque')
+            ->withPivot(['quantidade_utilizada', 'unidade', 'observacao'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Reduz a quantidade do estoque (baixa).
+     * 
+     * @param float $quantidade
+     * @throws \Exception se quantidade insuficiente
+     */
+    public function darBaixa(float $quantidade): void
+    {
+        if ($this->quantidade < $quantidade) {
+            throw new \Exception(
+                "Estoque insuficiente para '{$this->item}'. " .
+                "Disponível: {$this->quantidade} {$this->unidade}, " .
+                "Solicitado: {$quantidade} {$this->unidade}"
+            );
+        }
+
+        $this->decrement('quantidade', $quantidade);
+    }
+
+    /**
+     * Aumenta a quantidade do estoque (estorno).
+     * 
+     * @param float $quantidade
+     */
+    public function estornar(float $quantidade): void
+    {
+        $this->increment('quantidade', $quantidade);
+    }
 }
