@@ -6,7 +6,7 @@
 
     {{-- Tabela de Agendamentos --}}
     <div class="filament-tables-container">
-        <div class="filament-tables-table-container">
+        <div class="responsive-table-container">
             <table class="filament-tables-table w-full text-left">
                 <thead>
                     <tr class="bg-gray-50 dark:bg-white/5">

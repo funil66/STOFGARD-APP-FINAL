@@ -136,7 +136,8 @@ class EquipamentoResource extends Resource
                     ->label('Patrimônio')
                     ->searchable()
                     ->badge()
-                    ->color('gray'),
+                    ->color('gray')
+                    ->visibleFrom('md'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
@@ -157,13 +158,15 @@ class EquipamentoResource extends Resource
                 Tables\Columns\TextColumn::make('localizacao')
                     ->label('Local')
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('lg'),
 
                 Tables\Columns\TextColumn::make('valor_aquisicao')
                     ->label('Valor')
                     ->money('BRL')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->visibleFrom('xl'),
 
                 Tables\Columns\TextColumn::make('data_aquisicao')
                     ->label('Aquisição')
@@ -181,22 +184,26 @@ class EquipamentoResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar')->iconButton(),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar')->iconButton(),
+                Tables\Actions\ViewAction::make()
+                    ->iconButton()
+                    ->tooltip('Visualizar'),
+                Tables\Actions\EditAction::make()
+                    ->iconButton()
+                    ->tooltip('Editar'),
 
                 Tables\Actions\Action::make('download')
-                    ->label('')
                     ->tooltip('Baixar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
+                    ->iconButton()
                     ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\Action::make('enviar_lista_desejos')
-                    ->label('')
                     ->tooltip('Enviar para Lista de Desejos')
                     ->icon('heroicon-o-gift')
                     ->color('info')
+                    ->iconButton()
                     ->action(function (Equipamento $record) {
                         \App\Models\ListaDesejo::create([
                             'nome' => $record->nome,

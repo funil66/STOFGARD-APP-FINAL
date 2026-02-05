@@ -122,18 +122,21 @@ class GarantiaResource extends Resource
                     ->label('Cliente')
                     ->searchable()
                     ->sortable()
-                    ->limit(30),
+                    ->limit(30)
+                    ->visibleFrom('md'),
 
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->badge()
                     ->color(fn(string $state): string => \App\Services\ServiceTypeManager::getColor($state))
-                    ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state)),
+                    ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
+                    ->visibleFrom('lg'),
 
                 Tables\Columns\TextColumn::make('data_inicio')
                     ->label('Início')
                     ->date('d/m/Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->visibleFrom('xl'),
 
                 Tables\Columns\TextColumn::make('data_fim')
                     ->label('Vencimento')
