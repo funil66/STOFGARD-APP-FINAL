@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\CadastroResource\Pages;
 
 use App\Filament\Resources\CadastroResource;
+use App\Filament\Pages\FunilVendas;
+use App\Filament\Pages\BuscaUniversal;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -13,6 +15,18 @@ class ListCadastros extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('funilVendas')
+                ->label('Funil de Vendas')
+                ->icon('heroicon-o-funnel')
+                ->color('warning')
+                ->url(FunilVendas::getUrl()),
+
+            Actions\Action::make('buscaUniversal')
+                ->label('Busca Universal')
+                ->icon('heroicon-o-magnifying-glass-circle')
+                ->color('gray')
+                ->url(BuscaUniversal::getUrl()),
+
             Actions\CreateAction::make(),
             Actions\Action::make('importar')
                 ->label('Importar Contatos')

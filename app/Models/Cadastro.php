@@ -121,11 +121,6 @@ class Cadastro extends Model implements HasMedia
         return $this->hasMany(OrdemServico::class, 'cadastro_id');
     }
 
-    public function arquivos(): HasMany
-    {
-        return $this->hasMany(Arquivo::class, 'cadastro_id');
-    }
-
     // Relacionamento: Cadastro tem muitos registros Financeiros
     public function financeiros(): HasMany
     {

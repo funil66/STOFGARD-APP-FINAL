@@ -12,3 +12,24 @@
 
 # Ignore scripts containing credentials
 /scripts/
+
+# SQL backups
+*.sql
+backup_*.sql
+
+# Local test config
+phpunit.xml
+
+# Vite HMR file
+public/hot
+
+# Debug and test files
+public/debug-*.html
+public/test-*.html
+
+# Credentials
+DEV_CREDENTIALS.md
+
+# Local artifacts
+storage/serve.pid
+storage/*.pid

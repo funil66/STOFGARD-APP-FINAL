@@ -5,24 +5,30 @@ use App\Http\Controllers\OrcamentoPdfController;
 use App\Http\Controllers\CadastroPdfController;
 use App\Http\Controllers\PagamentoController;
 use App\Http\Controllers\PixWebhookController;
+use App\Http\Controllers\LeadController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+/*
+|--------------------------------------------------------------------------
+| Web Routes - LIMPO E ORGANIZADO
+|--------------------------------------------------------------------------
+| Arquivo de rotas sem lógica de negócio - apenas definições de rotas
+| apontando para Controllers. Toda lógica está em Services.
+|--------------------------------------------------------------------------
+*/
+
+// Página inicial
+Route::view('/', 'welcome');
 
 // Rota de login (redireciona para Filament)
-Route::get('/login', function () {
-    return redirect('/admin/login');
-})->name('login');
+Route::redirect('/login', '/admin/login')->name('login');
 
-// --- ROTA PÚBLICA DE CAPTAÇÃO DE LEADS ---
+// --- DESENVOLVIMENTO LOCAL ---
 if (app()->isLocal()) {
     Route::get('/dev-login', function () {
-        $user = \App\Models\User::where('is_admin', true)->first();
-        if (!$user) {
-            $user = \App\Models\User::first();
-        }
+        $user = \App\Models\User::where('is_admin', true)->first()
+            ?? \App\Models\User::first();
 
         if ($user) {
             auth()->login($user);
@@ -33,55 +39,12 @@ if (app()->isLocal()) {
     });
 }
 
-Route::get('/solicitar-orcamento', function () {
-    return view('landing.solicitar-orcamento');
-})->name('solicitar.orcamento');
+// --- CAPTAÇÃO DE LEADS (Público) ---
+Route::get('/solicitar-orcamento', [LeadController::class, 'create'])
+    ->name('solicitar.orcamento');
 
-Route::post('/solicitar-orcamento', function (\Illuminate\Http\Request $request) {
-    // 1. Validação Simples
-    $dados = $request->validate([
-        'nome' => 'required|string|max:255',
-        'celular' => 'required|string|max:20',
-        'servico' => 'required|string',
-        'cidade' => 'required|string',
-    ]);
-
-    // 2. Busca ou Cria Cliente (Pelo Celular)
-    // Limpa caracteres do celular para busca
-    $celularLimpo = preg_replace('/\D/', '', $dados['celular']);
-
-    // Tenta achar cliente existente (busca flexível)
-    $cliente = \App\Models\Cadastro::where('celular', 'LIKE', "%{$celularLimpo}%")
-        ->orWhere('celular', $dados['celular'])
-        ->first();
-
-    if (!$cliente) {
-        $cliente = \App\Models\Cadastro::create([
-            'nome' => $dados['nome'],
-            'celular' => $dados['celular'],
-            'cidade' => $dados['cidade'], // Campo simples ou observação
-            'tipo' => 'cliente',
-            // Campos obrigatórios podem precisar de default
-            'email' => 'lead.' . time() . '@temp.com', // Placeholder se email for unique/required
-        ]);
-    }
-
-    // 3. Cria Orçamento na etapa "Novo Lead" do Funil
-    $orcamento = \App\Models\Orcamento::create([
-        'cadastro_id' => $cliente->id,
-        'data_orcamento' => now(),
-        'data_validade' => now()->addDays(7),
-        'status' => 'rascunho', // Status técnico
-        'etapa_funil' => 'novo', // Status do Kanban
-        'tipo_servico' => $dados['servico'],
-        'criado_por' => 'Sistema (Lead Page)',
-        'valor_total' => 0.00, // Inicializa com 0.00
-        'observacoes' => "Solicitação via Site.\nCidade: {$dados['cidade']}\nInteresse: {$dados['servico']}",
-    ]);
-
-    // 4. Retorno visual
-    return back()->with('success', 'Sua solicitação foi enviada! Em breve entraremos em contato.');
-})->name('solicitar.orcamento.post');
+Route::post('/solicitar-orcamento', [LeadController::class, 'store'])
+    ->name('solicitar.orcamento.post');
 
 // Rota pública para visualizar PDF do orçamento via link assinado (WhatsApp)
 Route::get('/orcamento/{orcamento}/compartilhar', [OrcamentoPdfController::class, 'stream'])

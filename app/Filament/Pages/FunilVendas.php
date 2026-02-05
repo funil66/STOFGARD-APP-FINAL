@@ -18,7 +18,7 @@ class FunilVendas extends Page
 
     protected static ?string $title = 'Funil de Vendas';
 
-    protected static ?string $navigationGroup = 'Comercial';
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 1;
 

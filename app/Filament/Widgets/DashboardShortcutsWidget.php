@@ -10,7 +10,7 @@ use App\Filament\Resources\OrdemServicoResource;
 use App\Filament\Resources\OrcamentoResource;
 use App\Filament\Resources\AgendaResource;
 use App\Filament\Resources\FinanceiroResource;
-use App\Filament\Resources\EstoqueResource;
+use App\Filament\Pages\Almoxarifado;
 use App\Filament\Pages\Configuracoes;
 
 class DashboardShortcutsWidget extends Widget
@@ -54,7 +54,7 @@ class DashboardShortcutsWidget extends Widget
             ['label' => 'Orçamentos', 'icon' => 'heroicon-o-document-plus', 'url' => OrcamentoResource::getUrl('index'), 'color' => '#16A34A'],
             ['label' => 'Agenda', 'icon' => 'heroicon-o-calendar', 'url' => AgendaResource::getUrl('index'), 'color' => '#F59E0B'],
             ['label' => 'Financeiro', 'icon' => 'heroicon-o-banknotes', 'url' => FinanceiroResource::getUrl('index'), 'color' => '#059669'],
-            ['label' => 'Almoxarifado', 'icon' => 'heroicon-o-archive-box', 'url' => EstoqueResource::getUrl('index'), 'color' => '#EA580C'],
+            ['label' => 'Almoxarifado', 'icon' => 'heroicon-o-archive-box', 'url' => Almoxarifado::getUrl(), 'color' => '#EA580C'],
             ['label' => 'Configurações', 'icon' => 'heroicon-o-cog-6-tooth', 'url' => Configuracoes::getUrl(), 'color' => '#475569'],
         ];
     }

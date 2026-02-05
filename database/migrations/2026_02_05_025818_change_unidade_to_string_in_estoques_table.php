@@ -29,7 +29,8 @@ return new class extends Migration {
 
         // 2. Copiar dados (SE a tabela antiga existir)
         if (Schema::hasTable('estoques')) {
-            $colunas = implode(',', ['id', 'created_at', 'updated_at', 'item', 'quantidade', 'unidade', 'minimo_alerta', 'tipo', 'observacoes']);
+            // Apenas copia as colunas que realmente existem na tabela
+            $colunas = implode(',', ['id', 'created_at', 'updated_at', 'item', 'quantidade', 'unidade', 'minimo_alerta']);
             \Illuminate\Support\Facades\DB::statement("INSERT INTO estoques_new ($colunas) SELECT $colunas FROM estoques");
 
             // 3. Dropar tabela antiga

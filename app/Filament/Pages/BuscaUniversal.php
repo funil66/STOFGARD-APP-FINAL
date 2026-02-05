@@ -28,6 +28,8 @@ class BuscaUniversal extends Page implements HasForms
 
     protected static ?string $title = 'Busca Universal';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.busca-universal';

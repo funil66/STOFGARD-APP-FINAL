@@ -31,6 +31,21 @@ class DashboardFinanceiro extends Page
         return [
             FinanceiroResource\Widgets\FinanceiroStatsWidget::class,
             FinanceiroResource\Widgets\FinanceiroChartWidget::class,
+            FinanceiroResource\Widgets\FluxoCaixaChart::class,
+            FinanceiroResource\Widgets\DespesasCategoriaChart::class,
+            FinanceiroResource\Widgets\FinanceiroOverview::class,
+        ];
+    }
+
+    /**
+     * Define a quantidade de colunas do grid (suporta collapse)
+     */
+    public function getHeaderWidgetsColumns(): int|array
+    {
+        return [
+            'sm' => 1,
+            'md' => 2,
+            'lg' => 3,
         ];
     }
 

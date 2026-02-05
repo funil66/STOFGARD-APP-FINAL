@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
 
+/**
+ * Model Financeiro - Transações Financeiras
+ *
+ * Representa entradas (receitas) e saídas (despesas) do sistema financeiro.
+ * Suporta PIX, boletos, e integração com orçamentos e ordens de serviço.
+ */
 class Financeiro extends Model implements HasMedia
 {
     use HasArquivos;
@@ -48,14 +54,6 @@ class Financeiro extends Model implements HasMedia
         'extra_attributes',
     ];
 
-    /**
-     * Atributos que devem ser escondidos para evitar conflito
-     * A coluna 'categoria' (string) conflita com o relacionamento categoria()
-     */
-    protected $hidden = [
-        'categoria', // Campo legacy que conflita com relacionamento
-    ];
-
     protected $casts = [
         'data' => 'date',
         'data_vencimento' => 'date',
@@ -76,7 +74,9 @@ class Financeiro extends Model implements HasMedia
         'extra_attributes' => 'array',
     ];
 
-    // Relacionamentos
+    // ==========================================
+    // RELACIONAMENTOS
+    // ==========================================
 
     /**
      * Cadastro relacionado (Cliente, Loja, Vendedor ou Parceiro).
@@ -101,17 +101,31 @@ class Financeiro extends Model implements HasMedia
         return $this->belongsTo(Categoria::class, 'categoria_id');
     }
 
-    // Accessors
+    // ==========================================
+    // ACCESSORS
+    // ==========================================
+
+    /**
+     * Valor total considerando juros, multa e desconto
+     */
     public function getValorTotalAttribute(): float
     {
         return $this->valor + $this->juros + $this->multa - $this->desconto;
     }
 
+    /**
+     * Verifica se tem PIX ativo
+     */
     public function getPixAtivoAttribute(): bool
     {
-        return !empty($this->pix_txid) && $this->pix_status !== 'expirado' && $this->pix_status !== 'cancelado';
+        return !empty($this->pix_txid)
+            && $this->pix_status !== 'expirado'
+            && $this->pix_status !== 'cancelado';
     }
 
+    /**
+     * Verifica se está vencido
+     */
     public function getEstaVencidoAttribute(): bool
     {
         if (!$this->data_vencimento || $this->status === 'pago') {
@@ -121,7 +135,26 @@ class Financeiro extends Model implements HasMedia
         return \Carbon\Carbon::parse($this->data_vencimento)->isPast();
     }
 
-    // Scopes
+    /**
+     * Nome do cliente/cadastro para exibição
+     */
+    public function getNomeCadastroAttribute(): ?string
+    {
+        return $this->cadastro?->nome;
+    }
+
+    /**
+     * Nome da categoria para exibição
+     */
+    public function getNomeCategoriaAttribute(): ?string
+    {
+        return $this->categoria?->nome;
+    }
+
+    // ==========================================
+    // SCOPES
+    // ==========================================
+
     public function scopePendente($query)
     {
         return $query->where('status', 'pendente');
@@ -161,21 +194,16 @@ class Financeiro extends Model implements HasMedia
             ->where('comissao_paga', true);
     }
 
-    /**
-     * Força o acesso ao relacionamento categoria ao invés do atributo
-     * Necessário por causa do conflito com campo legacy 'categoria' (string)
-     */
-    public function getCategoriaRelacionamento()
+    public function scopeDoMes($query, ?int $mes = null, ?int $ano = null)
     {
-        return $this->getRelationValue('categoria');
+        $mes = $mes ?? now()->month;
+        $ano = $ano ?? now()->year;
+
+        return $query->whereMonth('data', $mes)->whereYear('data', $ano);
     }
 
-    /**
-     * Override do accessor categoria para sempre retornar o relacionamento
-     * ao invés da string da coluna
-     */
-    public function getCategoriaAttribute()
+    public function scopeDoAno($query, ?int $ano = null)
     {
-        return $this->getRelationValue('categoria');
+        return $query->whereYear('data', $ano ?? now()->year);
     }
 }

@@ -188,26 +188,18 @@
         
         function initWeatherWidget() {
             if (window.weatherWidgetInitialized) {
-                console.log('[Weather] Já inicializado, pulando...');
                 return;
             }
-            
-            console.log('[Weather] 🚀 Iniciando...');
             
             const widget = document.getElementById('weather-widget');
             if (!widget) {
-                console.log('[Weather] ❌ Widget não encontrado');
                 return;
             }
-            
-            console.log('[Weather] ✅ Widget encontrado');
             
             const loading = document.getElementById('weather-loading');
             const content = document.getElementById('weather-content');
             const error = document.getElementById('weather-error');
             const city = widget.getAttribute('data-city') || 'São Paulo';
-            
-            console.log('[Weather] 🌤️ Cidade:', city);
             
             fetch(`/api/widget/weather?city=${encodeURIComponent(city)}`, {
                 method: 'GET',
@@ -217,12 +209,10 @@
                 }
             })
             .then(response => {
-                console.log('[Weather] 📥 Status:', response.status);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return response.json();
             })
             .then(result => {
-                console.log('[Weather] ✅ Dados:', result);
                 if (result.success && result.data) {
                     document.getElementById('weather-icon').src = result.data.icon_url;
                     document.getElementById('weather-temp').textContent = result.data.temperature;
@@ -233,7 +223,6 @@
                     loading.classList.add('hidden');
                     content.classList.remove('hidden');
                     window.weatherWidgetInitialized = true;
-                    console.log('[Weather] ✅ Sucesso!');
                 }
             })
             .catch(err => {

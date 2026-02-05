@@ -14,7 +14,7 @@ class RelatoriosAvancados extends Page
 
     protected static ?string $title = 'Relatórios Gerenciais';
 
-    protected static ?string $navigationGroup = 'Gestão';
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 5;
 

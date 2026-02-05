@@ -26,11 +26,8 @@ class NotaFiscalResource extends Resource
     // Slug direto para acesso
     protected static ?string $slug = 'notas-fiscais';
 
-    // Grupo de navegação
-    protected static ?string $navigationGroup = 'Financeiro';
-
-    // Exibir na navegação
-    protected static bool $shouldRegisterNavigation = true;
+    // Acessado via Financeiro > Notas Fiscais
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 8;
 

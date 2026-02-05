@@ -17,7 +17,7 @@ class GoogleCalendarSettings extends Page
 
     protected static ?string $title = 'Integração Google Calendar';
 
-    protected static ?string $navigationGroup = 'Configurações';
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 99;
 

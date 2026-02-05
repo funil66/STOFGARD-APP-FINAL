@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\FinanceiroResource\Pages;
 
 use App\Filament\Resources\FinanceiroResource;
+use App\Filament\Pages\Relatorios;
+use App\Filament\Pages\RelatoriosAvancados;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -28,6 +30,21 @@ class ListFinanceiros extends ListRecords
                 ->icon('heroicon-o-document-currency-dollar')
                 ->color('info')
                 ->url(url('/admin/notas-fiscais')),
+
+            Actions\ActionGroup::make([
+                Actions\Action::make('relatorioSimples')
+                    ->label('Relatórios')
+                    ->icon('heroicon-o-chart-bar')
+                    ->url(Relatorios::getUrl()),
+                Actions\Action::make('relatorioAvancado')
+                    ->label('Relatórios Gerenciais')
+                    ->icon('heroicon-o-chart-bar-square')
+                    ->url(RelatoriosAvancados::getUrl()),
+            ])
+            ->label('Relatórios')
+            ->icon('heroicon-m-document-chart-bar')
+            ->color('success')
+            ->button(),
         ];
     }
 

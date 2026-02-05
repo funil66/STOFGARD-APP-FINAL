@@ -18,8 +18,8 @@ class PdfService
             $html = view($view, $data)->render();
 
             $browsershot = Browsershot::html($html)
-                ->setNodeBinary(config('app.node_binary', '/usr/bin/node')) // Pega do .env ou padrão Linux
-                ->setNpmBinary(config('app.npm_binary', '/usr/bin/npm'))
+                ->setNodeBinary(config('app.node_binary'))
+                ->setNpmBinary(config('app.npm_binary'))
                 ->noSandbox()
                 ->margins(10, 10, 10, 10)
                 ->format('A4')

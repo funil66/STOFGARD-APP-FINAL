@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\CalendarioWidget;
+use App\Filament\Widgets\AgendaCalendarWidget;
 use Filament\Pages\Page;
 
 class Calendario extends Page
@@ -15,14 +15,14 @@ class Calendario extends Page
 
     protected static ?string $navigationLabel = 'Calendário';
 
-    protected static ?string $navigationGroup = 'Gestão';
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 4;
 
     protected function getHeaderWidgets(): array
     {
         return [
-            CalendarioWidget::class,
+            AgendaCalendarWidget::class,
         ];
     }
 }

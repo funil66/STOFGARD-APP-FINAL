@@ -27,7 +27,7 @@ return [
     */
 
     'chrome_args' => [
-        '--disable-web-security',
+        // '--disable-web-security' removed for security (allows CORS bypass)
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',

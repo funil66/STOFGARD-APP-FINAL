@@ -99,6 +99,24 @@ return [
 
     'key' => env('APP_KEY'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Credentials
+    |--------------------------------------------------------------------------
+    */
+
+    'admin_email' => env('FILAMENT_ADMIN_EMAIL', 'allisson@stofgard.com.br'),
+    'admin_password' => env('FILAMENT_ADMIN_PASSWORD', 'Swordfish'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | PDF Generation
+    |--------------------------------------------------------------------------
+    */
+
+    'node_binary' => env('NODE_BINARY', '/usr/bin/node'),
+    'npm_binary' => env('NPM_BINARY', '/usr/bin/npm'),
+
     'previous_keys' => [
         ...array_filter(
             explode(',', (string) env('APP_PREVIOUS_KEYS', ''))

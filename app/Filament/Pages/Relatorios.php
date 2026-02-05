@@ -24,7 +24,7 @@ class Relatorios extends Page implements HasForms
 
     protected static ?string $title = 'Relatórios e Análises';
 
-    protected static ?string $navigationGroup = 'Gestão';
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 10;
 

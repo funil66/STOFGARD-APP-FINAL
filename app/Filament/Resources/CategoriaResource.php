@@ -29,11 +29,8 @@ class CategoriaResource extends Resource
     // Slug direto para acesso
     protected static ?string $slug = 'categorias';
 
-    // Grupo de navegação
-    protected static ?string $navigationGroup = 'Financeiro';
-
-    // Exibir na navegação
-    protected static bool $shouldRegisterNavigation = true;
+    // Acessado via Financeiro > Categorias ou Configurações hub
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 10;
 
