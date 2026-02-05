@@ -105,6 +105,7 @@ class AgendaResource extends Resource
                 Forms\Components\Section::make('🔗 Vínculos e Relacionamentos')
                     ->description('Associe este agendamento a um cliente, OS ou orçamento')
                     ->collapsible()
+                    ->collapsed()
                     ->schema([
                         Forms\Components\Select::make('cadastro_id')
                             ->label('Cliente')
@@ -134,6 +135,9 @@ class AgendaResource extends Resource
                     ])->columns(2),
 
                 Forms\Components\Section::make('📍 Localização e Descrição')
+                    ->description('Endereço e detalhes do agendamento')
+                    ->collapsible()
+                    ->collapsed()
                     ->description('Informe onde e o que será realizado')
                     ->collapsible()
                     ->schema([
@@ -165,6 +169,9 @@ class AgendaResource extends Resource
                     ]),
 
                 Forms\Components\Section::make('✅ Checklist de Tarefas')
+                    ->description('Lista de verificação para este agendamento')
+                    ->collapsible()
+                    ->collapsed()
                     ->description('Crie uma lista de tarefas para organizar este agendamento')
                     ->collapsible()
                     ->schema([
@@ -191,6 +198,9 @@ class AgendaResource extends Resource
                     ]),
 
                 Forms\Components\Section::make('🔔 Lembretes e Notificações')
+                    ->description('Configure alertas para este agendamento')
+                    ->collapsible()
+                    ->collapsed()
                     ->description('Receba um lembrete antes do agendamento acontecer')
                     ->collapsible()
                     ->schema([
@@ -217,6 +227,9 @@ class AgendaResource extends Resource
                     ]),
 
                 Forms\Components\Section::make('Central de Arquivos')
+                    ->description('Anexe documentos, fotos e arquivos')
+                    ->collapsible()
+                    ->collapsed()
                     ->description('Envie fotos, documentos e comprovantes (Máx: 20MB).')
                     ->collapsible()
                     ->collapsed()

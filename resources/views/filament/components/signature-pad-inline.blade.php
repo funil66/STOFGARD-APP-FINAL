@@ -1,6 +1,6 @@
 <div style="border:1px solid #e5e7eb;border-radius:8px;padding:8px;">
     @php $id = 'signature-canvas-'.uniqid(); @endphp
-    <canvas id="{{ $id }}" width="800" height="240" style="width:100%;height:120px;background:#fff;border-radius:4px;display:block;"></canvas>
+    <canvas id="{{ $id }}" width="800" height="240" style="width:100%;height:min(120px, 25vh);background:#fff;border-radius:4px;display:block;"></canvas>
     <div style="display:flex;justify-content:space-between;margin-top:6px;">
         <button type="button" class="px-2 py-1 signature-clear-btn" data-canvas-id="{{ $id }}" style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;">Limpar</button>
         <small style="color:#666;font-size:11px;">Use mouse ou toque para assinar.</small>

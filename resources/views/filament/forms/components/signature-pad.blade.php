@@ -44,7 +44,7 @@
         }"
         class="border border-gray-300 rounded-lg p-2 bg-white"
     >
-        <canvas x-ref="canvas" style="width: 100%; height: 180px; touch-action: none;" class="border rounded cursor-crosshair"></canvas>
+        <canvas x-ref="canvas" style="width: 100%; height: min(180px, 40vh); touch-action: none;" class="border rounded cursor-crosshair"></canvas>
         <div class="flex justify-between mt-2">
             <button type="button" @click="clear()" class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">Limpar</button>
             <span class="text-xs text-gray-500">Assine no quadro acima</span>
