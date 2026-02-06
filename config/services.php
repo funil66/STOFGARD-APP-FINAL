@@ -45,6 +45,7 @@ return [
         'chrome_path' => env('BROWSERSHOT_CHROME_PATH', '/home/sail/.cache/puppeteer/chrome/linux-144.0.7559.96/chrome-linux64/chrome'),
         'node_path' => env('BROWSERSHOT_NODE_PATH', '/usr/bin/node'),
         'npm_path' => env('BROWSERSHOT_NPM_PATH', '/usr/bin/npm'),
+        'timeout' => env('BROWSERSHOT_TIMEOUT', 60),
     ],
 
     'openweather' => [

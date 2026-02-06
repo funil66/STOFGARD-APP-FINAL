@@ -171,9 +171,14 @@ class OrdemServico extends Model implements HasMedia
                 $model->data_abertura = now();
             }
 
-            // CORREÇÃO: Define o usuário criador
+            // CORREÇÃO: Define o usuário criador (obrigatório para auditoria)
             if (empty($model->criado_por)) {
-                $model->criado_por = auth()->id() ?? 1; // Fallback para ID 1 se for job/cli
+                if (auth()->id()) {
+                    $model->criado_por = auth()->id();
+                } else {
+                    // Em ambiente CLI/Job sem usuário, não deve criar sem responsabilidade
+                    throw new \Exception('Não é possível criar Ordem de Serviço sem usuário responsável. Defina criado_por explicitamente.');
+                }
             }
         });
     }

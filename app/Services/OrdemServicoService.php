@@ -4,6 +4,10 @@ namespace App\Services;
 
 use App\Models\Orcamento;
 use App\Models\OrdemServico;
+use App\Enums\OrcamentoStatus;
+use App\Enums\OrdemServicoStatus;
+use App\Enums\AgendaStatus;
+use App\Enums\AgendaTipo;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -24,16 +28,27 @@ class OrdemServicoService
     /**
      * Transforma um Orçamento Aprovado em uma Ordem de Serviço completa.
      * Transaction Atômica: Ou cria tudo, ou não cria nada.
+     * 
+     * @param Orcamento $orcamento
+     * @param int|null $userId ID do usuário responsável (obrigatório para auditoria)
+     * @throws Exception
      */
-    public function aprovarOrcamento(Orcamento $orcamento): OrdemServico
+    public function aprovarOrcamento(Orcamento $orcamento, ?int $userId = null): OrdemServico
     {
-        if ($orcamento->status === 'aprovado') {
+        // CORREÇÃO CRÍTICA: Não permitir operações sem usuário responsável
+        if (!$userId && !auth()->id()) {
+            throw new Exception('Não é possível aprovar orçamento sem um usuário responsável. Operação rejeitada por questão de auditoria.');
+        }
+
+        $userId = $userId ?? auth()->id();
+
+        if ($orcamento->status === OrcamentoStatus::Aprovado->value) {
             throw new Exception('Este orçamento já foi aprovado anteriormente.');
         }
 
-        return DB::transaction(function () use ($orcamento) {
+        return DB::transaction(function () use ($orcamento, $userId) {
             // 1. Cria a OS
-            $os = $this->criarAPartirDeOrcamento($orcamento);
+            $os = $this->criarAPartirDeOrcamento($orcamento, $userId);
 
             // 2. Aciona o Financeiro (Gera Contas a Receber)
             $this->financeiroService->gerarPreviaReceita($os);
@@ -42,11 +57,11 @@ class OrdemServicoService
             $this->estoqueService->baixarItensDeOrcamento($orcamento);
 
             // 4. Cria Agenda (Agendamento do Serviço)
-            $this->criarAgendaParaOS($os, $orcamento);
+            $this->criarAgendaParaOS($os, $orcamento, $userId);
 
             // 5. Atualiza o Orçamento original
             $orcamento->update([
-                'status' => 'aprovado',
+                'status' => OrcamentoStatus::Aprovado->value,
                 'aprovado_em' => now(),
             ]);
 
@@ -57,7 +72,7 @@ class OrdemServicoService
     /**
      * Cria uma entrada na Agenda vinculada à OS.
      */
-    protected function criarAgendaParaOS(OrdemServico $os, Orcamento $orcamento): \App\Models\Agenda
+    protected function criarAgendaParaOS(OrdemServico $os, Orcamento $orcamento, int $userId): \App\Models\Agenda
     {
         $cliente = $os->cliente;
         $endereco = $cliente->endereco_completo ?? $cliente->endereco ?? null;
@@ -68,15 +83,15 @@ class OrdemServicoService
             'cadastro_id' => $os->cadastro_id,
             'ordem_servico_id' => $os->id,
             'orcamento_id' => $orcamento->id,
-            'tipo' => 'servico',
+            'tipo' => AgendaTipo::Servico->value,
             'data_hora_inicio' => $orcamento->data_prevista ?? now()->addDays(1)->setHour(9),
             'data_hora_fim' => $orcamento->data_prevista
                 ? $orcamento->data_prevista->copy()->addHours(2)
                 : now()->addDays(1)->setHour(11),
-            'status' => 'agendado',
+            'status' => AgendaStatus::Agendado->value,
             'local' => $endereco ?? 'A definir',
             'endereco_completo' => $endereco,
-            'criado_por' => auth()->id() ?? 1,
+            'criado_por' => $userId,
         ]);
     }
 
@@ -84,9 +99,9 @@ class OrdemServicoService
     /**
      * Cria uma Ordem de Serviço a partir de um Orçamento.
      */
-    public function criarAPartirDeOrcamento(Orcamento $orcamento)
+    public function criarAPartirDeOrcamento(Orcamento $orcamento, int $userId)
     {
-        return DB::transaction(function () use ($orcamento) {
+        return DB::transaction(function () use ($orcamento, $userId) {
             // BLINDAGEM: Verifica se os IDs do orçamento ainda existem no banco atual
             // Se não existirem, define como NULL para evitar o erro de Foreign Key
             // UNIFICADO: Agora tudo é Cadastro
@@ -99,12 +114,12 @@ class OrdemServicoService
                 'loja_id' => $lojaId,      // ID Validado
                 'vendedor_id' => $vendedorId,  // ID Validado
                 'origem' => 'orcamento',
-                'status' => 'aberta',
+                'status' => OrdemServicoStatus::Aberta->value,
                 'valor_total' => $orcamento->valor_total,
                 'data_abertura' => now(),
                 'tipo_servico' => 'servico',
                 'descricao_servico' => "Serviço aprovado via Orçamento #{$orcamento->numero}",
-                'criado_por' => auth()->id() ?? 1,
+                'criado_por' => $userId,
             ]);
 
             // Copia Itens (Lógica mantida)

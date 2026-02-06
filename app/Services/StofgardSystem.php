@@ -5,39 +5,66 @@ namespace App\Services;
 use App\Models\Orcamento;
 use App\Models\OrdemServico;
 use App\Models\Financeiro;
-use App\Models\Estoque;
 use App\Models\Agenda;
+use App\Enums\OrdemServicoStatus;
+use App\Enums\OrcamentoStatus;
+use App\Enums\FinanceiroStatus;
+use App\Enums\FinanceiroTipo;
+use App\Enums\FinanceiroCategoria;
+use App\Enums\AgendaStatus;
+use App\Enums\AgendaTipo;
 use Illuminate\Support\Facades\DB;
 use Filament\Notifications\Notification;
-use App\Models\Categoria;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class StofgardSystem
 {
+    public function __construct(
+        private EstoqueService $estoqueService
+    ) {}
+
     /**
      * Aprova um orçamento, gerando OS e previsão financeira de forma atômica.
      * Iron Code Refactoring: Remoção de magic numbers e race conditions.
+     * 
+     * @param Orcamento $orcamento
+     * @param int|null $userId ID do usuário que está aprovando (obrigatório para auditoria)
+     * @param int $prazoVencimentoDias Prazo em dias para vencimento (padrão: 30)
+     * @param int $diasAteAgendamento Dias até o agendamento (padrão: 1)
+     * @param int $horaAgendamento Hora do agendamento (padrão: 9)
+     * @throws \Exception Se o orçamento já foi aprovado ou se userId não for fornecido
      */
-    public function aprovarOrcamento(Orcamento $orcamento): OrdemServico
-    {
+    public function aprovarOrcamento(
+        Orcamento $orcamento,
+        ?int $userId = null,
+        int $prazoVencimentoDias = 30,
+        int $diasAteAgendamento = 1,
+        int $horaAgendamento = 9
+    ): OrdemServico {
+        // CORREÇÃO CRÍTICA: Não permitir operações sem usuário responsável
+        if (!$userId && !auth()->id()) {
+            throw new \Exception('Não é possível aprovar orçamento sem um usuário responsável. Operação rejeitada por questão de auditoria.');
+        }
+
+        $userId = $userId ?? auth()->id();
+
         // 1. Validação prévia para evitar duplicidade lógica
-        if ($orcamento->status === 'aprovado') {
+        if ($orcamento->status === OrcamentoStatus::Aprovado->value) {
             throw new \Exception('Este orçamento já foi aprovado anteriormente.');
         }
 
-        return DB::transaction(function () use ($orcamento) {
+        return DB::transaction(function () use ($orcamento, $userId, $prazoVencimentoDias, $diasAteAgendamento, $horaAgendamento) {
             // A. Criação da OS (Usando cadastro_id unificado)
             $os = OrdemServico::create([
                 'orcamento_id' => $orcamento->id,
                 'cadastro_id' => $orcamento->cadastro_id,
                 'loja_id' => $orcamento->loja_id,
                 'vendedor_id' => $orcamento->vendedor_id,
-                'status' => 'aberta',
+                'status' => OrdemServicoStatus::Aberta->value,
                 'data_abertura' => now(),
-                'tipo_servico' => $orcamento->tipo_servico ?? 'servico',
+                'tipo_servico' => $orcamento->tipo_servico ?? FinanceiroCategoria::Servico->value,
                 'descricao_servico' => "Gerado a partir do Orçamento #{$orcamento->numero}",
                 'valor_total' => $orcamento->valor_total,
-                'criado_por' => auth()->id() ?? 1,
+                'criado_por' => $userId,
             ]);
 
             // B. Criação do Financeiro (Receita Prevista) - Usando Financeiro model com cadastro_id
@@ -47,10 +74,10 @@ class StofgardSystem
                 'orcamento_id' => $orcamento->id,
                 'cadastro_id' => $orcamento->cadastro_id,
                 'valor' => $orcamento->valor_total,
-                'data_vencimento' => now()->addDays(30),
-                'status' => 'pendente',
-                'tipo' => 'entrada',
-                'categoria' => 'servico',
+                'data_vencimento' => now()->addDays($prazoVencimentoDias),
+                'status' => FinanceiroStatus::Pendente->value,
+                'tipo' => FinanceiroTipo::Entrada->value,
+                'categoria' => FinanceiroCategoria::Servico->value,
             ]);
 
             // C. Cria Agenda (Serviço Agendado)
@@ -60,17 +87,17 @@ class StofgardSystem
                 'cadastro_id' => $orcamento->cadastro_id,
                 'ordem_servico_id' => $os->id,
                 'orcamento_id' => $orcamento->id,
-                'tipo' => 'servico',
-                'data_hora_inicio' => now()->addDays(1)->setHour(9),
-                'data_hora_fim' => now()->addDays(1)->setHour(11),
-                'status' => 'agendado',
+                'tipo' => AgendaTipo::Servico->value,
+                'data_hora_inicio' => now()->addDays($diasAteAgendamento)->setHour($horaAgendamento)->setMinute(0),
+                'data_hora_fim' => now()->addDays($diasAteAgendamento)->setHour($horaAgendamento + 2)->setMinute(0),
+                'status' => AgendaStatus::Agendado->value,
                 'local' => $orcamento->cliente->endereco ?? 'A definir',
-                'criado_por' => auth()->id() ?? 1,
+                'criado_por' => $userId,
             ]);
 
             // D. Atualiza o Orçamento
             $orcamento->update([
-                'status' => 'aprovado',
+                'status' => OrcamentoStatus::Aprovado->value,
                 'aprovado_em' => now(),
             ]);
 
@@ -80,23 +107,26 @@ class StofgardSystem
 
     /**
      * Confirma pagamento e libera a OS
+     * 
+     * @param Financeiro $lancamento
+     * @return void
      */
-    public function confirmarPagamento(Financeiro $lancamento)
+    public function confirmarPagamento(Financeiro $lancamento): void
     {
-        if ($lancamento->status === 'pago')
+        if ($lancamento->status === FinanceiroStatus::Pago->value)
             return;
 
         DB::transaction(function () use ($lancamento) {
             // 1. Baixa Financeira
             $lancamento->update([
-                'status' => 'pago',
+                'status' => FinanceiroStatus::Pago->value,
                 'data_pagamento' => now(),
             ]);
 
             // 2. Se tiver OS vinculada (pela ordem_servico_id), avança status
             if ($lancamento->ordemServico) {
                 $os = $lancamento->ordemServico;
-                $os->update(['status' => 'em_execucao']);
+                $os->update(['status' => OrdemServicoStatus::EmExecucao->value]);
             }
 
             Notification::make()->title('Pagamento confirmado')->success()->send();
@@ -105,51 +135,20 @@ class StofgardSystem
 
     /**
      * Finaliza OS e Baixa Estoque
+     * 
+     * @param OrdemServico $os
+     * @return void
      */
-    public function finalizarOS(OrdemServico $os)
+    public function finalizarOS(OrdemServico $os): void
     {
         DB::transaction(function () use ($os) {
-            $os->update(['status' => 'concluido', 'data_fim' => now()]);
+            $os->update([
+                'status' => OrdemServicoStatus::Concluida->value,
+                'data_fim' => now()
+            ]);
 
-            // Baixa estoque dos produtos usados (se houver)
-            foreach ($os->itens as $item) {
-                if ($item->produto_id) {
-                    Estoque::create([
-                        'produto_id' => $item->produto_id,
-                        'tipo' => 'saida',
-                        'quantidade' => $item->quantidade,
-                        'motivo' => "OS #{$os->id} Concluída",
-                        'data_movimento' => now(),
-                    ]);
-                }
-            }
+            // Delega a baixa de estoque para o serviço especializado
+            $this->estoqueService->baixarEstoquePorOS($os);
         });
-    }
-
-    /**
-     * Renderiza o PDF do orçamento.
-     *
-     * @param Orcamento $orcamento
-     * @return \Barryvdh\DomPDF\PDF
-     */
-    private function renderPdf(Orcamento $orcamento)
-    {
-        // Garante diretório temporário
-        $tempPath = storage_path('app/temp');
-        if (!file_exists($tempPath)) {
-            mkdir($tempPath, 0755, true);
-        }
-
-        return Pdf::view('pdf.orcamento', ['orcamento' => $orcamento])
-            ->format('a4')
-            ->name("Orcamento-{$orcamento->id}.pdf")
-            ->withBrowsershot(function ($browsershot) {
-                $browsershot->noSandbox()
-                    ->setNodeBinary('/usr/bin/node') // Caminho padrão no Sail/Alpine
-                    ->setNpmBinary('/usr/bin/npm')
-                    ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
-                    ->timeout(60); // Aumenta timeout para 60s
-            })
-            ->inline();
     }
 }

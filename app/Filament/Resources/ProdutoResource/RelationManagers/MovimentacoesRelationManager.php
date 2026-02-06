@@ -79,7 +79,11 @@ class MovimentacoesRelationManager extends RelationManager
                     ->label('Ajuste Manual')
                     // Garante que o ID do produto seja preenchido automaticamente pelo relacionamento
                     ->mutateFormDataUsing(function (array $data) {
-                        $data['criado_por'] = auth()->id() ?? 1;
+                        // Garante auditoria correta - nunca deve ser executado sem usuário
+                        if (!auth()->id()) {
+                            throw new \Exception('Operação não permitida sem usuário autenticado.');
+                        }
+                        $data['criado_por'] = auth()->id();
                         return $data;
                     }),
             ])
