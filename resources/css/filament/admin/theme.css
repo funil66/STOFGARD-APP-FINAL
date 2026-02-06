@@ -141,3 +141,59 @@
   color: rgb(147, 197, 253) !important;
   /* blue-300 */
 }
+
+/* FIX DEFINITIVO: Forçar visibilidade e dimensões corretas dos SVG icons */
+svg {
+  display: inline-block !important;
+  min-width: 1.25rem !important;
+  min-height: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  flex-shrink: 0 !important;
+}
+
+svg * {
+  color: currentColor !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure icon containers display properly */
+.fi-btn svg,
+.fi-btn-icon,
+button svg,
+a svg,
+.fi-icon svg,
+[data-slot="icon"] {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  min-width: 1.25rem !important;
+  min-height: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  flex-shrink: 0 !important;
+}
+
+/* Action buttons specifically */
+.fi-ac-btn svg,
+.fi-ac-btn-icon,
+.fi-ac-action svg,
+.fi-header-actions svg {
+  display: inline-block !important;
+  min-width: 1.25rem !important;
+  min-height: 1.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  flex-shrink: 0 !important;
+}
+
+/* Force all paths to be visible */
+svg path {
+  display: inline !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}

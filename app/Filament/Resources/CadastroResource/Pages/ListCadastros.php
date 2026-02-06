@@ -24,7 +24,7 @@ class ListCadastros extends ListRecords
             Actions\Action::make('buscaUniversal')
                 ->label('Busca Universal')
                 ->icon('heroicon-o-magnifying-glass-circle')
-                ->color('gray')
+                ->color('primary')
                 ->url(BuscaUniversal::getUrl()),
 
             Actions\CreateAction::make(),

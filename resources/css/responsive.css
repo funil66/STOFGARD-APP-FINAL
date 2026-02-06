@@ -452,10 +452,30 @@ a.fi-btn,
     scroll-snap-type: x mandatory;
 }
 
+/* Custom scrollbar para kanban */
+.responsive-kanban::-webkit-scrollbar {
+    height: 8px;
+}
+
+.responsive-kanban::-webkit-scrollbar-track {
+    background: rgba(243, 244, 246, 0.5);
+    border-radius: 4px;
+}
+
+.responsive-kanban::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
+}
+
+.responsive-kanban::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
+}
+
 .responsive-kanban-column {
     flex-shrink: 0;
     width: 280px;
     scroll-snap-align: start;
+    max-height: calc(100vh - 16rem);
 }
 
 @media (min-width: 640px) {
@@ -467,6 +487,12 @@ a.fi-btn,
 @media (min-width: 1024px) {
     .responsive-kanban-column {
         width: 320px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .responsive-kanban-column {
+        width: 350px;
     }
 }
 
