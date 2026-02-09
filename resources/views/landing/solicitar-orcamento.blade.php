@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,6 +8,7 @@
     <title>Solicitar Orçamento | StofGard</title>
     <link href="/css/app.css" rel="stylesheet">
 </head>
+
 <body class="bg-gray-50 min-h-screen">
     <div class="min-h-screen flex items-center justify-center p-4">
         <div class="max-w-md w-full">
@@ -26,7 +28,8 @@
 
                     {{-- Mensagem de Sucesso --}}
                     @if(session('success'))
-                        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-r-lg" role="alert">
+                        <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-r-lg"
+                            role="alert">
                             <p class="font-bold">Recebido!</p>
                             <p>{{ session('success') }}</p>
                         </div>
@@ -50,7 +53,8 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('solicitar.orcamento.post') }}" method="POST" class="space-y-5">
+                    <form action="{{ route('solicitar.orcamento.post') }}" method="POST" class="space-y-5"
+                        enctype="multipart/form-data">
                         @csrf
 
                         {{-- Nome --}}
@@ -58,15 +62,9 @@
                             <label for="nome" class="block text-sm font-medium text-gray-700 mb-1">
                                 Seu Nome
                             </label>
-                            <input 
-                                type="text" 
-                                name="nome" 
-                                id="nome" 
-                                value="{{ old('nome') }}"
-                                required
+                            <input type="text" name="nome" id="nome" value="{{ old('nome') }}" required
                                 class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                                placeholder="Como podemos te chamar?"
-                            >
+                                placeholder="Como podemos te chamar?">
                         </div>
 
                         {{-- WhatsApp --}}
@@ -74,15 +72,9 @@
                             <label for="celular" class="block text-sm font-medium text-gray-700 mb-1">
                                 WhatsApp
                             </label>
-                            <input 
-                                type="tel" 
-                                name="celular" 
-                                id="celular" 
-                                value="{{ old('celular') }}"
-                                required
+                            <input type="tel" name="celular" id="celular" value="{{ old('celular') }}" required
                                 class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                                placeholder="(DDD) 99999-9999"
-                            >
+                                placeholder="(DDD) 99999-9999">
                         </div>
 
                         {{-- Serviço --}}
@@ -90,14 +82,13 @@
                             <label for="servico" class="block text-sm font-medium text-gray-700 mb-1">
                                 Serviço de Interesse
                             </label>
-                            <select 
-                                name="servico" 
-                                id="servico"
-                                class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                            >
-                                <option value="higienizacao" {{ old('servico') == 'higienizacao' ? 'selected' : '' }}>Limpeza / Higienização</option>
+                            <select name="servico" id="servico"
+                                class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+                                <option value="higienizacao" {{ old('servico') == 'higienizacao' ? 'selected' : '' }}>
+                                    Limpeza / Higienização</option>
                                 <option value="impermeabilizacao" {{ old('servico') == 'impermeabilizacao' ? 'selected' : '' }}>Impermeabilização</option>
-                                <option value="combo" {{ old('servico') == 'combo' ? 'selected' : '' }}>Combo (Limpeza + Imper)</option>
+                                <option value="combo" {{ old('servico') == 'combo' ? 'selected' : '' }}>Combo (Limpeza +
+                                    Imper)</option>
                                 <option value="outro" {{ old('servico') == 'outro' ? 'selected' : '' }}>Outro</option>
                             </select>
                         </div>
@@ -107,22 +98,22 @@
                             <label for="cidade" class="block text-sm font-medium text-gray-700 mb-1">
                                 Cidade / Bairro
                             </label>
-                            <input 
-                                type="text" 
-                                name="cidade" 
-                                id="cidade" 
-                                value="{{ old('cidade') }}"
-                                required
-                                class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
-                                placeholder="Ex: Curitiba - Batel"
-                            >
+                            <input type="text" name="cidade" id="cidade" value="{{ old('cidade') }}" required {{--
+                                Arquivos / Fotos --}} <div>
+                            <label for="arquivos" class="block text-sm font-medium text-gray-700 mb-1">
+                                Fotos / Arquivos (Opcional)
+                            </label>
+                            <input type="file" name="arquivos[]" id="arquivos" multiple accept="image/*,application/pdf"
+                                class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+                            <p class="text-xs text-gray-500 mt-1">
+                                Envie fotos do estofado para agilizar o orçamento.
+                            </p>
                         </div>
 
+
                         {{-- Botão Submit --}}
-                        <button 
-                            type="submit"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all"
-                        >
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-xl transition-all">
                             Solicitar Contato
                         </button>
 
@@ -140,4 +131,5 @@
         </div>
     </div>
 </body>
+
 </html>

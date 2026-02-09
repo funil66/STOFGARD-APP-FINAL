@@ -49,6 +49,9 @@ class CategoriaResource extends Resource
                                 'servico' => '🧹 Serviço',
                                 'cliente' => '👥 Cliente',
                                 'fornecedor' => '🏭 Fornecedor',
+                                'estoque_unidade' => '📏 Estoque - Unidade',
+                                'cadastro_tipo' => '👤 Cadastro - Tipo',
+                                'servico_tipo' => '🛠️ Serviço - Tipo',
                             ])
                             ->required()
                             ->native(false)
@@ -62,7 +65,7 @@ class CategoriaResource extends Resource
                                     ->required()
                                     ->maxLength(255)
                                     ->live(onBlur: true)
-                                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
+                                    ->afterStateUpdated(fn($state, Forms\Set $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
 
                                 Forms\Components\TextInput::make('slug')
                                     ->label('Slug')
@@ -123,20 +126,23 @@ class CategoriaResource extends Resource
                 Tables\Columns\TextColumn::make('tipo')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'financeiro_receita' => 'success',
                         'financeiro_despesa' => 'danger',
                         'produto' => 'info',
                         'servico' => 'warning',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'financeiro_receita' => 'Receita',
                         'financeiro_despesa' => 'Despesa',
                         'produto' => 'Produto',
                         'servico' => 'Serviço',
                         'cliente' => 'Cliente',
                         'fornecedor' => 'Fornecedor',
+                        'estoque_unidade' => 'Unidade (Estoque)',
+                        'cadastro_tipo' => 'Tipo de Cadastro',
+                        'servico_tipo' => 'Tipo de Serviço',
                         default => $state,
                     })
                     ->sortable(),
@@ -182,7 +188,7 @@ class CategoriaResource extends Resource
                     ->tooltip('Abrir PDF')
                     ->icon('heroicon-o-document-text')
                     ->color('info')
-                    ->url(fn (Categoria $record) => route('categoria.pdf', $record))
+                    ->url(fn(Categoria $record) => route('categoria.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\ViewAction::make()
@@ -200,7 +206,7 @@ class CategoriaResource extends Resource
                     ->tooltip('Baixar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->url(fn (Categoria $record) => route('categoria.pdf', $record))
+                    ->url(fn(Categoria $record) => route('categoria.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\DeleteAction::make()
@@ -229,8 +235,8 @@ class CategoriaResource extends Resource
                                 ->columnSpan(2),
                             TextEntry::make('ativo')
                                 ->badge()
-                                ->color(fn ($state) => $state ? 'success' : 'danger')
-                                ->formatStateUsing(fn ($state) => $state ? '✅ Ativo' : '❌ Inativo'),
+                                ->color(fn($state) => $state ? 'success' : 'danger')
+                                ->formatStateUsing(fn($state) => $state ? '✅ Ativo' : '❌ Inativo'),
                         ]),
                     ]),
 
@@ -241,7 +247,7 @@ class CategoriaResource extends Resource
                                 ->label('Tipo')
                                 ->badge()
                                 ->color('info')
-                                ->formatStateUsing(fn ($state) => match ($state) {
+                                ->formatStateUsing(fn($state) => match ($state) {
                                     'financeiro_receita' => '💰 Receita',
                                     'financeiro_despesa' => '💸 Despesa',
                                     'produto' => '📦 Produto',
@@ -258,11 +264,11 @@ class CategoriaResource extends Resource
                         InfolistGrid::make(2)->schema([
                             TextEntry::make('icone')
                                 ->label('Ícone')
-                                ->formatStateUsing(fn ($state) => $state ?? '📌')
+                                ->formatStateUsing(fn($state) => $state ?? '📌')
                                 ->size(TextEntry\TextEntrySize::Large),
                             TextEntry::make('cor')
                                 ->label('Cor')
-                                ->color(fn ($record) => $record->cor ?? 'gray')
+                                ->color(fn($record) => $record->cor ?? 'gray')
                                 ->badge(),
                         ]),
                         TextEntry::make('descricao')

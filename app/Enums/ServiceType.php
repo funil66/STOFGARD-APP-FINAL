@@ -61,4 +61,9 @@ enum ServiceType: string implements HasColor, HasLabel
             self::Outro => 'OUTRO',
         };
     }
+
+    public function getDescricaoPdf(): ?string
+    {
+        return null;
+    }
 }

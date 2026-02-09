@@ -40,12 +40,20 @@ class LeadService
         // 1. Validação robusta dos dados
         $dados = $this->validarDados($request);
 
-        return DB::transaction(function () use ($dados) {
+        return DB::transaction(function () use ($dados, $request) {
             // 2. Busca ou cria o cliente
             $cliente = $this->buscarOuCriarCliente($dados);
 
             // 3. Cria o orçamento inicial
             $orcamento = $this->criarOrcamentoInicial($cliente, $dados);
+
+            // 4. Processa uploads (Novo)
+            if ($request->hasFile('arquivos')) {
+                foreach ($request->file('arquivos') as $arquivo) {
+                    $orcamento->addMedia($arquivo)
+                        ->toMediaCollection('arquivos');
+                }
+            }
 
             return [
                 'success' => true,
@@ -105,6 +113,12 @@ class LeadService
                 'string',
                 'max:2000',
             ],
+            'arquivos.*' => [
+                'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:10240', // 10MB
+            ],
         ], [
             'nome.required' => 'Por favor, informe seu nome.',
             'nome.min' => 'O nome deve ter pelo menos 3 caracteres.',
@@ -116,12 +130,15 @@ class LeadService
             'cidade.required' => 'Por favor, informe sua cidade.',
             'cidade.min' => 'A cidade deve ter pelo menos 2 caracteres.',
             'email.email' => 'Informe um e-mail válido.',
+            'arquivos.*.mimes' => 'Apenas arquivos JPG, PNG e PDF são permitidos.',
+            'arquivos.*.max' => 'O arquivo não pode exceder 10MB.',
         ]);
 
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
 
+        // Retorna validado, incluindo arquivos se existirem
         return $validator->validated();
     }
 
@@ -139,7 +156,7 @@ class LeadService
                 ->orWhere('celular', $dados['celular']);
 
             // Se email foi informado, também busca por email
-            if (! empty($dados['email'])) {
+            if (!empty($dados['email'])) {
                 $query->orWhere('email', $dados['email']);
             }
         })->first();
@@ -152,11 +169,11 @@ class LeadService
                 $atualizacoes['nome'] = $dados['nome'];
             }
 
-            if (empty($cliente->email) && ! empty($dados['email'])) {
+            if (empty($cliente->email) && !empty($dados['email'])) {
                 $atualizacoes['email'] = $dados['email'];
             }
 
-            if (! empty($atualizacoes)) {
+            if (!empty($atualizacoes)) {
                 $cliente->update($atualizacoes);
             }
 
@@ -207,7 +224,7 @@ class LeadService
         $resultado = [];
 
         foreach ($palavras as $index => $palavra) {
-            if ($index === 0 || ! in_array($palavra, $excecoes)) {
+            if ($index === 0 || !in_array($palavra, $excecoes)) {
                 $resultado[] = mb_convert_case($palavra, MB_CASE_TITLE);
             } else {
                 $resultado[] = $palavra;
@@ -222,7 +239,7 @@ class LeadService
      */
     protected function gerarEmailPlaceholder(): string
     {
-        return 'lead.'.uniqid().'@placeholder.local';
+        return 'lead.' . uniqid() . '@placeholder.local';
     }
 
     /**
@@ -236,18 +253,18 @@ class LeadService
             "🔧 Interesse: {$dados['servico']}",
         ];
 
-        if (! empty($dados['endereco'])) {
+        if (!empty($dados['endereco'])) {
             $linhas[] = "📫 Endereço: {$dados['endereco']}";
         }
 
-        if (! empty($dados['mensagem'])) {
+        if (!empty($dados['mensagem'])) {
             $linhas[] = '';
             $linhas[] = '💬 Mensagem do cliente:';
             $linhas[] = $dados['mensagem'];
         }
 
         $linhas[] = '';
-        $linhas[] = '⏰ Recebido em: '.now()->format('d/m/Y H:i');
+        $linhas[] = '⏰ Recebido em: ' . now()->format('d/m/Y H:i');
 
         return implode("\n", $linhas);
     }

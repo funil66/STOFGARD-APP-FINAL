@@ -13,34 +13,31 @@ class ServiceTypeManager
      */
     public static function getAll(): Collection
     {
-        // 1. Carrega personalizações do banco
-        $customSettings = settings()->get('system_service_types', []);
+        // 1. Carrega tipos do banco (Categoria where tipo = 'servico_tipo')
+        $dbTypes = \App\Models\Categoria::where('tipo', 'servico_tipo')
+            ->where('ativo', true)
+            ->get()
+            ->keyBy('slug');
 
-        // Se vier como array json decode (caso não tenha sido castado)
-        if (is_string($customSettings)) {
-            $customSettings = json_decode($customSettings, true) ?? [];
-        }
+        // 2. Carrega Enum padrão
+        $enumTypes = collect(ServiceType::cases())->keyBy(fn($e) => $e->value);
 
-        // 2. Transforma em Collection key-based para facilitar merge
-        $customized = collect($customSettings)->keyBy('slug');
+        // 3. Mescla: Banco tem prioridade sobre Enum e adiciona novos
+        $allSlugs = $dbTypes->keys()->merge($enumTypes->keys())->unique();
 
-        // 3. Itera sobre o Enum padrão para garantir que todos existam
-        $defaults = collect(ServiceType::cases())->map(function ($enum) use ($customized) {
-            $slug = $enum->value;
+        return $allSlugs->map(function ($slug) use ($dbTypes, $enumTypes) {
+            $dbItem = $dbTypes->get($slug);
+            $enumItem = $enumTypes->get($slug);
 
-            // Pega customização ou usa default do Enum
-            $custom = $customized->get($slug);
-
+            // Prioridade: DB > Enum
             return [
                 'slug' => $slug,
-                'label' => $custom['label'] ?? $enum->getLabel(),
-                'color' => $custom['color'] ?? $enum->getColor(),
-                'icon' => $custom['icon'] ?? $enum->getIcon(),
-                'descricao_pdf' => $custom['descricao_pdf'] ?? null,
+                'label' => $dbItem->nome ?? $enumItem?->getLabel() ?? ucfirst($slug),
+                'color' => $dbItem->cor ?? $enumItem?->getColor() ?? 'gray',
+                'icon' => $dbItem->icone ?? $enumItem?->getIcon() ?? 'heroicon-o-sparkles',
+                'descricao_pdf' => $dbItem->descricao ?? $enumItem?->getDescricaoPdf() ?? null,
             ];
         });
-
-        return $defaults;
     }
 
     /**

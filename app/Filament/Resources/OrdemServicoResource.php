@@ -24,6 +24,7 @@ use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use App\Services\OrdemServicoFormService;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -111,16 +112,7 @@ class OrdemServicoResource extends Resource
                                         ->options(\App\Services\ServiceTypeManager::getOptions())
                                         ->required()
                                         ->live()
-                                        ->afterStateUpdated(function ($state, callable $set) {
-                                            $servico = \App\Models\TabelaPreco::where('tipo_servico', $state)
-                                                ->whereNotNull('descricao_tecnica')
-                                                ->first();
-
-                                            if ($servico) {
-                                                $set('descricao_servico', $servico->descricao_tecnica);
-                                                $set('dias_garantia', $servico->dias_garantia);
-                                            }
-                                        }),
+                                        ->afterStateUpdated(fn(Forms\Set $set, $state) => OrdemServicoFormService::atualizarDadosServico($set, $state)),
 
                                     Select::make('status')
                                         ->options([
@@ -156,15 +148,7 @@ class OrdemServicoResource extends Resource
                                             ->required()
                                             ->live()
                                             ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
-                                                $item = \App\Models\TabelaPreco::where('nome_item', $state)->first();
-                                                if ($item) {
-                                                    $set('unidade_medida', $item->unidade_medida);
-                                                    $set('valor_unitario', $item->preco_vista);
-                                                }
-                                                $qtd = (float) $get('quantidade') ?: 1;
-                                                $unit = (float) $get('valor_unitario') ?: 0;
-                                                $set('subtotal', $qtd * $unit);
-
+                                                OrdemServicoFormService::atualizarItem($set, $get, $state);
                                                 self::recalcularTotal($set, $get);
                                             })
                                             ->columnSpan(4),
@@ -175,7 +159,7 @@ class OrdemServicoResource extends Resource
                                             ->label('Qtd')
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
-                                                $set('subtotal', (float) $get('quantidade') * (float) $get('valor_unitario'));
+                                                OrdemServicoFormService::recalcularSubtotal($set, $get);
                                                 self::recalcularTotal($set, $get);
                                             })
                                             ->columnSpan(1),
@@ -186,7 +170,7 @@ class OrdemServicoResource extends Resource
                                             ->label('Unit.')
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
-                                                $set('subtotal', (float) $get('quantidade') * (float) $get('valor_unitario'));
+                                                OrdemServicoFormService::recalcularSubtotal($set, $get);
                                                 self::recalcularTotal($set, $get);
                                             })
                                             ->columnSpan(1),
@@ -256,15 +240,7 @@ class OrdemServicoResource extends Resource
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->live()
-                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                        if ($state) {
-                                            $estoque = \App\Models\Estoque::find($state);
-                                            if ($estoque) {
-                                                $set('unidade', $estoque->unidade);
-                                                $set('disponivel', $estoque->quantidade);
-                                            }
-                                        }
-                                    })
+                                    ->afterStateUpdated(fn($state, Forms\Set $set) => OrdemServicoFormService::atualizarEstoque($set, $state))
                                     ->columnSpan(3),
 
                                 TextInput::make('disponivel')
@@ -328,20 +304,7 @@ class OrdemServicoResource extends Resource
     // --- FUNÇÃO DE CÁLCULO ---
     public static function recalcularTotal(Forms\Set $set, Forms\Get $get): void
     {
-        $itens = $get('itens') ?? $get('../../itens') ?? [];
-        if (!is_array($itens)) {
-            $itens = [];
-        }
-
-        $total = collect($itens)->sum(function ($item) {
-            return floatval($item['subtotal'] ?? 0);
-        });
-
-        // Adiciona valores de "extra_attributes" se houver lógica para isso
-        // ... (Mantendo lógica original se houver)
-
-        $set('valor_total', $total);
-        $set('../../valor_total', $total);
+        OrdemServicoFormService::recalcularTotal($set, $get);
     }
 
     public static function table(Table $table): Table

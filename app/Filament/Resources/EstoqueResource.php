@@ -89,14 +89,9 @@ class EstoqueResource extends Resource
 
                                 Forms\Components\Select::make('unidade')
                                     ->label('Unidade de Medida')
-                                    ->options([
-                                        'unidade' => 'Unidade (un)',
-                                        'litros' => 'Litros (L)',
-                                        'caixa' => 'Caixa (cx)',
-                                        'metro' => 'Metro (m)',
-                                        'kg' => 'Quilograma (kg)',
-                                        'pacote' => 'Pacote (pct)',
-                                    ])
+                                    ->options(fn() => \App\Models\Categoria::where('tipo', 'estoque_unidade')
+                                        ->where('ativo', true)
+                                        ->pluck('nome', 'slug'))
                                     ->default('unidade')
                                     ->required()
                                     ->native(false),
@@ -121,14 +116,14 @@ class EstoqueResource extends Resource
                     ->sortable()
                     ->weight('bold')
                     ->icon('heroicon-o-cube')
-                    ->description(fn (Estoque $record) => $record->observacoes ? \Illuminate\Support\Str::limit($record->observacoes, 30) : null),
+                    ->description(fn(Estoque $record) => $record->observacoes ? \Illuminate\Support\Str::limit($record->observacoes, 30) : null),
 
                 Tables\Columns\TextColumn::make('quantidade')
                     ->label('Estoque')
                     ->sortable()
                     ->badge()
-                    ->color(fn (Estoque $record): string => $record->cor)
-                    ->formatStateUsing(fn ($state, Estoque $record) => $state.' '.($record->unidade == 'litros' ? 'L' : $record->unidade)),
+                    ->color(fn(Estoque $record): string => $record->cor)
+                    ->formatStateUsing(fn($state, Estoque $record) => $state . ' ' . $record->unidade),
 
                 Tables\Columns\TextColumn::make('preco_interno')
                     ->label('Custo')
@@ -145,13 +140,13 @@ class EstoqueResource extends Resource
                 // Valor Total em Estoque (Quantidade * Custo)
                 Tables\Columns\TextColumn::make('total_custo')
                     ->label('Total Custo')
-                    ->state(fn (Estoque $record) => $record->quantidade * $record->preco_interno)
+                    ->state(fn(Estoque $record) => $record->quantidade * $record->preco_interno)
                     ->money('BRL')
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\IconColumn::make('status')
                     ->label('Situação')
-                    ->state(fn (Estoque $record): bool => ! $record->isAbaixoDoMinimo())
+                    ->state(fn(Estoque $record): bool => !$record->isAbaixoDoMinimo())
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-exclamation-triangle')
@@ -167,7 +162,7 @@ class EstoqueResource extends Resource
                         ->label('PDF')
                         ->icon('heroicon-o-document-text')
                         ->color('success')
-                        ->url(fn (Estoque $record) => route('estoque.pdf', $record))
+                        ->url(fn(Estoque $record) => route('estoque.pdf', $record))
                         ->openUrlInNewTab(),
                     Tables\Actions\DeleteAction::make(),
                 ]),
@@ -186,8 +181,7 @@ class EstoqueResource extends Resource
                             ->minValue(1),
                     ])
                     ->action(function (Estoque $record, array $data) {
-                        $record->increment('quantidade', $data['qtd']);
-                        Notification::make()->title('Estoque Atualizado')->body("+{$data['qtd']} {$record->unidade}")->success()->send();
+                        \App\Services\EstoqueService::adicionarEstoque($record, $data['qtd']);
                     }),
 
                 Tables\Actions\Action::make('consumir')
@@ -203,12 +197,7 @@ class EstoqueResource extends Resource
                             ->minValue(1),
                     ])
                     ->action(function (Estoque $record, array $data) {
-                        if ($record->quantidade >= $data['qtd']) {
-                            $record->decrement('quantidade', $data['qtd']);
-                            Notification::make()->title('Saída Registrada')->body("-{$data['qtd']} {$record->unidade}")->success()->send();
-                        } else {
-                            Notification::make()->title('Estoque Insuficiente')->danger()->send();
-                        }
+                        \App\Services\EstoqueService::consumirEstoque($record, $data['qtd']);
                     }),
             ]);
     }
@@ -231,8 +220,8 @@ class EstoqueResource extends Resource
                             TextEntry::make('status')
                                 ->label('Situação')
                                 ->badge()
-                                ->color(fn (Estoque $record) => $record->cor)
-                                ->formatStateUsing(fn (Estoque $record) => $record->isAbaixoDoMinimo() ? 'BAIXO ESTOQUE' : 'NORMAL'),
+                                ->color(fn(Estoque $record) => $record->cor)
+                                ->formatStateUsing(fn(Estoque $record) => $record->isAbaixoDoMinimo() ? 'BAIXO ESTOQUE' : 'NORMAL'),
 
                             TextEntry::make('unidade')
                                 ->label('Unidade')
@@ -249,8 +238,8 @@ class EstoqueResource extends Resource
                                 ->label('Estoque Atual')
                                 ->size(TextEntry\TextEntrySize::Large)
                                 ->weight('bold')
-                                ->color(fn (Estoque $record) => $record->cor)
-                                ->formatStateUsing(fn ($state, $record) => $state.' '.$record->unidade),
+                                ->color(fn(Estoque $record) => $record->cor)
+                                ->formatStateUsing(fn($state, $record) => $state . ' ' . $record->unidade),
 
                             TextEntry::make('preco_interno')
                                 ->label('Custo Unitário')
@@ -262,7 +251,7 @@ class EstoqueResource extends Resource
                                 ->money('BRL')
                                 ->color('success')
                                 ->weight('bold')
-                                ->state(fn (Estoque $record) => $record->quantidade * $record->preco_interno),
+                                ->state(fn(Estoque $record) => $record->quantidade * $record->preco_interno),
                         ]),
                     ])
                     ->collapsible(),
@@ -277,7 +266,7 @@ class EstoqueResource extends Resource
                                     TextEntry::make('minimo_alerta')
                                         ->label('Estoque Mínimo')
                                         ->icon('heroicon-m-bell-alert')
-                                        ->suffix(fn ($record) => ' '.$record->unidade),
+                                        ->suffix(fn($record) => ' ' . $record->unidade),
 
                                     TextEntry::make('preco_venda')
                                         ->label('Preço Venda (Sugerido)')
@@ -296,7 +285,7 @@ class EstoqueResource extends Resource
 
                         // ABA 2: HISTÓRICO DE USO (RELACIONAMENTO)
                         Tabs\Tab::make('🛠️ Histórico de Uso em OS')
-                            ->badge(fn (Estoque $record) => $record->ordensServico()->count())
+                            ->badge(fn(Estoque $record) => $record->ordensServico()->count())
                             ->schema([
                                 \Filament\Infolists\Components\RepeatableEntry::make('ordensServico')
                                     ->label('')
@@ -305,13 +294,13 @@ class EstoqueResource extends Resource
                                             TextEntry::make('numero_os')
                                                 ->label('OS')
                                                 ->weight('bold')
-                                                ->url(fn ($record) => route('filament.admin.resources.ordem-servicos.view', ['record' => $record->id])),
+                                                ->url(fn($record) => route('filament.admin.resources.ordem-servicos.view', ['record' => $record->id])),
 
                                             TextEntry::make('pivot.quantidade_utilizada')
                                                 ->label('Qtd Utilizada')
                                                 ->badge()
                                                 ->color('danger')
-                                                ->formatStateUsing(fn ($state, $record) => $state.' '.($record->pivot->unidade ?? '')),
+                                                ->formatStateUsing(fn($state, $record) => $state . ' ' . ($record->pivot->unidade ?? '')),
 
                                             TextEntry::make('created_at')
                                                 ->label('Data')
@@ -323,12 +312,12 @@ class EstoqueResource extends Resource
                                         ]),
                                     ])
                                     ->grid(1)
-                                    ->hidden(fn (Estoque $record) => $record->ordensServico()->count() === 0),
+                                    ->hidden(fn(Estoque $record) => $record->ordensServico()->count() === 0),
 
                                 TextEntry::make('sem_uso')
                                     ->label('')
                                     ->default('Nenhum uso registrado em Ordens de Serviço.')
-                                    ->visible(fn (Estoque $record) => $record->ordensServico()->count() === 0),
+                                    ->visible(fn(Estoque $record) => $record->ordensServico()->count() === 0),
                             ]),
                     ]),
             ]);

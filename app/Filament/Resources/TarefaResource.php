@@ -23,7 +23,7 @@ class TarefaResource extends Resource
     protected static ?string $navigationLabel = 'Tarefas';
 
     // Submódulo da Agenda
-    protected static ?string $slug = 'agendas/tarefas';
+    protected static ?string $slug = 'tarefas';
 
     protected static bool $shouldRegisterNavigation = false;
 
@@ -93,7 +93,7 @@ class TarefaResource extends Resource
                             ->columnSpanFull(),
 
                         Forms\Components\Hidden::make('criado_por')
-                            ->default(fn () => auth()->id()),
+                            ->default(fn() => auth()->id()),
                     ]),
             ]);
     }
@@ -116,7 +116,7 @@ class TarefaResource extends Resource
 
                 Tables\Columns\TextColumn::make('prioridade')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'urgente' => 'danger',
                         'alta' => 'warning',
                         'media' => 'info',
@@ -127,7 +127,7 @@ class TarefaResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'concluida' => 'success',
                         'cancelada' => 'danger',
                         'em_andamento' => 'info',
@@ -139,7 +139,7 @@ class TarefaResource extends Resource
                     ->label('Vence em')
                     ->date('d/m')
                     ->sortable()
-                    ->description(fn (Tarefa $record) => $record->data_vencimento ? $record->data_vencimento->diffForHumans() : null),
+                    ->description(fn(Tarefa $record) => $record->data_vencimento ? $record->data_vencimento->diffForHumans() : null),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -169,7 +169,7 @@ class TarefaResource extends Resource
                     ->tooltip('Baixar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->url(fn (Tarefa $record) => route('tarefa.pdf', $record))
+                    ->url(fn(Tarefa $record) => route('tarefa.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\DeleteAction::make()
@@ -195,7 +195,7 @@ class TarefaResource extends Resource
                                 ->weight('bold'),
                             TextEntry::make('status')
                                 ->badge()
-                                ->color(fn ($state) => match ($state) {
+                                ->color(fn($state) => match ($state) {
                                     'concluida' => 'success',
                                     'em_andamento' => 'warning',
                                     'pendente' => 'info',
@@ -214,7 +214,7 @@ class TarefaResource extends Resource
                                 ->date('d/m/Y'),
                             TextEntry::make('prioridade')
                                 ->badge()
-                                ->color(fn ($state) => match ($state) {
+                                ->color(fn($state) => match ($state) {
                                     'alta' => 'danger',
                                     'media' => 'warning',
                                     'baixa' => 'success',

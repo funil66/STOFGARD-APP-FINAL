@@ -146,13 +146,13 @@ class EquipamentoResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'ativo' => 'success',
                         'manutencao' => 'warning',
                         'baixado' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'ativo' => '✅ Ativo',
                         'manutencao' => '🔧 Manutenção',
                         'baixado' => '❌ Baixado',
@@ -200,7 +200,7 @@ class EquipamentoResource extends Resource
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
                     ->iconButton()
-                    ->url(fn (Equipamento $record) => route('equipamento.pdf', $record))
+                    ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\Action::make('enviar_lista_desejos')
@@ -209,20 +209,7 @@ class EquipamentoResource extends Resource
                     ->color('info')
                     ->iconButton()
                     ->action(function (Equipamento $record) {
-                        \App\Models\ListaDesejo::create([
-                            'nome' => $record->nome,
-                            'descricao' => 'Cópia de equipamento: '.$record->descricao,
-                            'categoria' => 'equipamento',
-                            'preco_estimado' => $record->valor_aquisicao,
-                            'quantidade_desejada' => 1,
-                            'status' => 'pendente',
-                            'prioridade' => 'media',
-                            'solicitado_por' => auth()->user()->name ?? 'Sistema',
-                        ]);
-                        \Filament\Notifications\Notification::make()
-                            ->title('✅ Enviado para Lista de Desejos!')
-                            ->success()
-                            ->send();
+                        \App\Services\EquipamentoService::enviarParaListaDesejos($record);
                     }),
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir')->iconButton(),
             ])
@@ -239,7 +226,7 @@ class EquipamentoResource extends Resource
             InfolistSection::make()->schema([
                 InfolistGrid::make(2)->schema([
                     TextEntry::make('nome')->label('Nome do Equipamento')->size(TextEntry\TextEntrySize::Large)->weight('bold'),
-                    TextEntry::make('status')->badge()->color(fn ($state) => match ($state) {
+                    TextEntry::make('status')->badge()->color(fn($state) => match ($state) {
                         'ativo' => 'success', 'manutencao' => 'warning', default => 'danger'
                     }),
                 ]),

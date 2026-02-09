@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ConfiguracaoSeeder::class,
             ConfigSeed::class, // Configurações personalizadas do sistema
+            AuxiliaryListsSeeder::class, // Listas auxiliares (unidades, tipos, etc.)
             TabelaPrecosSeeder::class,
             UserSeeder::class, // Create default admin and users
             // CompleteTestDataSeeder::class, // ⚠️ Descomente apenas para desenvolvimento/teste
