@@ -2,42 +2,99 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
-use Spatie\Browsershot\Browsershot;
+use Spatie\LaravelPdf\Facades\Pdf;
+use Illuminate\Support\Facades\File;
 
 class PdfService
 {
     /**
-     * Gera o PDF de uma view e retorna o conteúdo binário.
-     * Iron Code Standard: Robustez para produção (Linux/Contabo).
+     * Gera um PDF a partir de uma View.
+     *
+     * @param string $view Nome da view (ex: 'pdf.orcamento')
+     * @param array $data Dados a serem passados para a view
+     * @param string $filename Nome do arquivo de saída (ex: 'Orcamento-123.pdf')
+     * @param bool $download Se true, retorna download response; se false, retorna inline stream.
+     * @param string $paperSize Tamanho do papel (default: 'a4')
+     * @param string $orientation Orientação (default: 'portrait')
      */
-    public function generatePdfFromView(string $view, array $data): string
+    public function generate(
+        string $view,
+        array $data,
+        string $filename,
+        bool $download = true,
+        string $paperSize = 'a4',
+        string $orientation = 'portrait'
+    ) {
+        $this->ensureTempDirectoryExists();
+
+        $pdf = Pdf::view($view, $data)
+            ->format($paperSize)
+            ->name($filename);
+
+        if ($orientation === 'landscape') {
+            $pdf->landscape();
+        }
+
+        $pdf->withBrowsershot(function ($browsershot) {
+            $this->configureBrowsershot($browsershot);
+        });
+
+        // Limpa buffer de saída para evitar corrupção
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        return $download ? $pdf->download() : $pdf->inline();
+    }
+
+    /**
+     * Configura a instância do Browsershot com caminhos e argumentos corretos.
+     */
+    protected function configureBrowsershot($browsershot)
     {
-        try {
-            // Renderiza o HTML do Blade primeiro
-            $html = view($view, $data)->render();
+        // Prioriza config/browsershot.php, fallback para services.browsershot
+        $chromePath = config('browsershot.chrome_path') ?? config('services.browsershot.chrome_path');
+        $nodePath = config('browsershot.node_path') ?? config('services.browsershot.node_path');
+        $npmPath = config('browsershot.npm_path') ?? config('services.browsershot.npm_path');
 
-            $browsershot = Browsershot::html($html)
-                ->setNodeBinary(config('app.node_binary'))
-                ->setNpmBinary(config('app.npm_binary'))
-                ->noSandbox()
-                ->margins(10, 10, 10, 10)
-                ->format('A4')
-                ->showBackground()
-                ->waitUntilNetworkIdle();
+        // Argumentos padrão robustos
+        $defaultArgs = [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--headless',
+            '--disable-web-security' // Necessário para carregar assets locais em alguns ambientes
+        ];
 
-            // Configuração específica para ambiente Local (Windows/WSL) vs Produção
-            if (app()->environment('local')) {
-                // No Windows/WSL, às vezes o Puppeteer não acha o Chrome sozinho
-                // Se der erro localmente, verifique o caminho do seu Chrome
-                // $browsershot->setChromePath('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe');
-            }
+        $args = config('browsershot.chrome_args', $defaultArgs);
+        $timeout = config('browsershot.timeout', 60);
 
-            return $browsershot->pdf();
+        $browsershot->noSandbox()
+            ->setOption('args', $args)
+            ->timeout($timeout);
 
-        } catch (\Exception $e) {
-            Log::error('Erro crítico na geração de PDF: '.$e->getMessage());
-            throw $e;
+        if ($chromePath) {
+            $browsershot->setChromePath($chromePath);
+        }
+
+        if ($nodePath) {
+            $browsershot->setNodeBinary($nodePath);
+        }
+
+        if ($npmPath) {
+            $browsershot->setNpmBinary($npmPath);
+        }
+    }
+
+    /**
+     * Garante arquivo temporário para escrita (se necessário pelo Spatie PDF)
+     */
+    protected function ensureTempDirectoryExists()
+    {
+        $tempPath = storage_path('app/temp');
+        if (!File::isDirectory($tempPath)) {
+            File::makeDirectory($tempPath, 0755, true);
         }
     }
 }

@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Orcamento;
-use Spatie\LaravelPdf\Facades\Pdf;
+use App\Services\PdfService;
 use Illuminate\Http\Request;
 
 class OrcamentoPdfController extends Controller
 {
+    public function __construct(protected PdfService $pdfService)
+    {
+    }
+
     /**
      * Gera o PDF para download/visualização dentro do Painel (Autenticado).
      */
@@ -30,12 +34,6 @@ class OrcamentoPdfController extends Controller
      */
     private function renderPdf(Orcamento $orcamento, bool $download = true)
     {
-        // Garante que o diretório de arquivos temporários exista e tenha permissão
-        $tempPath = storage_path('app/temp');
-        if (!is_dir($tempPath)) {
-            mkdir($tempPath, 0755, true);
-        }
-
         // --- LÓGICA DE PIX ---
         if ($orcamento->pdf_incluir_pix && $orcamento->pix_chave_selecionada) {
             try {
@@ -122,27 +120,11 @@ class OrcamentoPdfController extends Controller
             $config = (object) $settingsArray;
         }
 
-        $pdf = Pdf::view('pdf.orcamento', [
-            'orcamento' => $orcamento,
-            'config' => $config
-        ])
-            ->format('a4')
-            ->name("Orcamento-{$orcamento->id}.pdf")
-            ->withBrowsershot(function ($browsershot) {
-                $browsershot->noSandbox()
-                    ->setChromePath(config('browsershot.chrome_path'))
-                    ->setNodeBinary(config('browsershot.node_path'))
-                    ->setNpmBinary(config('browsershot.npm_path'))
-                    ->setOption('args', config('browsershot.chrome_args'))
-                    ->timeout(config('browsershot.timeout'));
-            });
-
-        // Limpa qualquer saída anterior (espaços em branco, logs) para evitar corromper o PDF
-        if (ob_get_length()) {
-            ob_end_clean();
-        }
-
-        // Retorna inline (visualização) ou download
-        return $download ? $pdf->download() : $pdf->inline();
+        return $this->pdfService->generate(
+            'pdf.orcamento',
+            ['orcamento' => $orcamento, 'config' => $config],
+            "Orcamento-{$orcamento->id}.pdf",
+            $download
+        );
     }
 }

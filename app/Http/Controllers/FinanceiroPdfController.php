@@ -4,39 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Financeiro;
 use App\Models\Configuracao;
-use Spatie\LaravelPdf\Facades\Pdf;
+use App\Services\PdfService;
 use Illuminate\Http\Request;
 
 class FinanceiroPdfController extends Controller
 {
-    public function gerarPdf(Financeiro $financeiro)
+    public function __construct(protected PdfService $pdfService)
     {
-        return $this->renderPdf($financeiro);
     }
 
-    private function renderPdf(Financeiro $financeiro)
+    public function gerarPdf(Financeiro $financeiro)
     {
-        // Garante diretório temporário
-        $tempPath = storage_path('app/temp');
-        if (!is_dir($tempPath)) {
-            mkdir($tempPath, 0755, true);
-        }
-
-        return Pdf::view('pdf.financeiro', [
-            'financeiro' => $financeiro->load(['categoria', 'cadastro', 'ordemServico', 'orcamento']),
-            'config' => Configuracao::first()
-        ])
-            ->format('a4')
-            ->name("Financeiro-{$financeiro->id}.pdf")
-            ->withBrowsershot(function ($browsershot) {
-                $browsershot->noSandbox()
-                    ->setChromePath(config('services.browsershot.chrome_path', '/usr/bin/google-chrome'))
-                    ->setNodeBinary(config('services.browsershot.node_path', '/usr/bin/node'))
-                    ->setNpmBinary(config('services.browsershot.npm_path', '/usr/bin/npm'))
-                    ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
-                    ->timeout(60);
-            })
-            ->download();
+        return $this->pdfService->generate(
+            'pdf.financeiro',
+            [
+                'financeiro' => $financeiro->load(['categoria', 'cadastro', 'ordemServico', 'orcamento']),
+                'config' => Configuracao::first()
+            ],
+            "Financeiro-{$financeiro->id}.pdf"
+        );
     }
 
     public function gerarRelatorioMensal(Request $request)
@@ -75,26 +61,19 @@ class FinanceiroPdfController extends Controller
 
         $config = Configuracao::first();
 
-        return Pdf::view('pdf.financeiro_mensal', [
-            'mes' => $mes,
-            'ano' => $ano,
-            'entradas' => $entradas,
-            'saidas' => $saidas,
-            'saldo' => $saldo,
-            'porCategoria' => $porCategoria,
-            'transacoes' => $transacoes,
-            'config' => $config
-        ])
-            ->format('a4')
-            ->name("Relatorio-Financeiro-{$mes}-{$ano}.pdf")
-            ->withBrowsershot(function ($browsershot) {
-                $browsershot->noSandbox()
-                    ->setChromePath(config('services.browsershot.chrome_path', '/usr/bin/google-chrome'))
-                    ->setNodeBinary(config('services.browsershot.node_path', '/usr/bin/node'))
-                    ->setNpmBinary(config('services.browsershot.npm_path', '/usr/bin/npm'))
-                    ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
-                    ->timeout(60);
-            })
-            ->download();
+        return $this->pdfService->generate(
+            'pdf.financeiro_mensal',
+            [
+                'mes' => $mes,
+                'ano' => $ano,
+                'entradas' => $entradas,
+                'saidas' => $saidas,
+                'saldo' => $saldo,
+                'porCategoria' => $porCategoria,
+                'transacoes' => $transacoes,
+                'config' => $config
+            ],
+            "Relatorio-Financeiro-{$mes}-{$ano}.pdf"
+        );
     }
 }
