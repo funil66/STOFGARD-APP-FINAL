@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Filament\Models\Contracts\FilamentUser;
 use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
+use App\Traits\HasAuditTrail;
 
 class Agenda extends Model implements HasMedia
 {
-    use HasArquivos;
+    use HasArquivos, HasAuditTrail;
 
     protected $table = 'agendas';
 

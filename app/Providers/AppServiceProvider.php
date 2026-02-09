@@ -60,5 +60,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Agenda Calendar Widget manually for Livewire (since it's not in AdminPanelProvider widgets list)
         \Livewire\Livewire::component('app.filament.widgets.agenda-calendar-widget', \App\Filament\Widgets\AgendaCalendarWidget::class);
+        \Livewire\Livewire::component('financeiro-chart', \App\Filament\Widgets\FinanceiroChart::class);
+        \Livewire\Livewire::component('despesas-por-categoria-chart', \App\Filament\Widgets\DespesasPorCategoriaChart::class);
+        \Livewire\Livewire::component('fluxo-caixa-chart', \App\Filament\Widgets\FluxoCaixaChart::class);
     }
 }

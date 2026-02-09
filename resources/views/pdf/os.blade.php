@@ -246,6 +246,9 @@
             <div class="header-right">
                 <div class="numero-orcamento">OS #{{ $record->numero_os ?? $record->id }}</div>
                 <div class="datas">
+                    @if(!empty($record->id_parceiro))
+                        <span style="font-weight: bold; color: yellow;">ID Parceiro: {{ $record->id_parceiro }}</span><br>
+                    @endif
                     <div><strong>Data:</strong> {{ $record->created_at->format('d/m/Y H:i') }}</div>
                     <div><strong>Status:</strong> {{ strtoupper($record->status) }}</div>
                 </div>

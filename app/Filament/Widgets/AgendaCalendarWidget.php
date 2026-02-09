@@ -40,10 +40,10 @@ class AgendaCalendarWidget extends FullCalendarWidget
 
         // Ícone ou Prefixo curto baseada no Tipo
         $prefix = match ($agenda->tipo) {
-            'servico' => '🔧',
-            'visita' => '👁️',
-            'reuniao' => '🤝',
-            default => '📌',
+            'servico' => '[S]',
+            'visita' => '[V]',
+            'reuniao' => '[R]',
+            default => '[O]',
         };
 
         $cliente = $agenda->cliente ? explode(' ', $agenda->cliente->nome)[0] : 'S/ Cliente';

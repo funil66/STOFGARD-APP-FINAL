@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Orcamento;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\Seeder;
 
 class OrcamentoSampleSeeder extends Seeder
 {

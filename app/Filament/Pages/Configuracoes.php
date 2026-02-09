@@ -30,13 +30,22 @@ class Configuracoes extends Page implements HasForms
     protected static ?string $title = 'Central de Comando Stofgard';
     protected static ?string $slug = 'configuracoes';
     public ?array $data = [];
+
+    /**
+     * Restrição de acesso: apenas administradores podem acessar esta página.
+     */
+    public static function canAccess(): bool
+    {
+        return settings()->isAdmin(auth()->user());
+    }
+
     public function mount(): void
     {
         // Carrega configurações do banco
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
         // chaves que são Arrays/Repeaters e precisam ser decodificadas do JSON
-        $jsonFields = ['financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento', 'system_service_types', 'admin_emails', 'pdf_layout'];
+        $jsonFields = ['financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento', 'system_service_types', 'admin_emails', 'pdf_layout', 'backup_tables'];
         foreach ($jsonFields as $key) {
             if (isset($settings[$key]) && is_string($settings[$key])) {
                 $decoded = json_decode($settings[$key], true);
@@ -54,6 +63,11 @@ class Configuracoes extends Page implements HasForms
         // AUTO-SEED: Tipos de Serviço (Carga inicial baseada no Enum)
         if (empty($settings['system_service_types'])) {
             $settings['system_service_types'] = \App\Services\ServiceTypeManager::getAll()->values()->toArray();
+        }
+
+        // Ensure default backup tables
+        if (empty($settings['backup_tables'])) {
+            $settings['backup_tables'] = ['users', 'cadastros', 'financeiros', 'orcamentos', 'ordem_servicos', 'estoques'];
         }
 
         $this->form->fill($settings);
@@ -109,7 +123,31 @@ class Configuracoes extends Page implements HasForms
                                     ])->columns(2),
                             ]),
 
-                        // 2. DASHBOARD
+                        // 2. FINANCEIRO & PRÓ-LABORE
+                        Tabs\Tab::make('Financeiro & Sócios')
+                            ->icon('heroicon-m-banknotes')
+                            ->schema([
+                                Section::make('Pró-Labore e Sócios')
+                                    ->description('Configurações de distribuição de lucros')
+                                    ->schema([
+                                        TextInput::make('prolabore_dia_pagamento')
+                                            ->label('Dia do Pagamento')
+                                            ->numeric()
+                                            ->default(5)
+                                            ->minValue(1)
+                                            ->maxValue(31)
+                                            ->suffix('de cada mês'),
+
+                                        TextInput::make('prolabore_percentual_reserva')
+                                            ->label('Percentual de Reserva (Caixa)')
+                                            ->numeric()
+                                            ->default(20)
+                                            ->suffix('%')
+                                            ->helperText('Quanto do lucro líquido fica na empresa antes da distribuição'),
+                                    ])->columns(2),
+                            ]),
+
+                        // 3. DASHBOARD
                         Tabs\Tab::make('Dashboard')
                             ->icon('heroicon-m-home')
                             ->schema([
@@ -187,7 +225,7 @@ class Configuracoes extends Page implements HasForms
                                     ]),
                             ]),
 
-                        // 3. SERVIÇOS E ITENS (UNIFICADO)
+                        // 4. SERVIÇOS E ITENS (UNIFICADO)
                         Tabs\Tab::make('Serviços e Itens')
                             ->icon('heroicon-m-squares-plus')
                             ->schema([
@@ -265,7 +303,7 @@ class Configuracoes extends Page implements HasForms
                                     ]),
                             ]),
 
-                        // 4. SISTEMA
+                        // 5. SISTEMA
                         Tabs\Tab::make('Sistema')
                             ->icon('heroicon-m-cog')
                             ->schema([
@@ -438,7 +476,37 @@ class Configuracoes extends Page implements HasForms
                                     ]),
                             ]),
 
-                        // 5. FINANCEIRO (Reordenado)
+                        // 7. DADOS & BACKUP [NEW TAB]
+                        Tabs\Tab::make('Dados & Backup')
+                            ->icon('heroicon-m-server-stack')
+                            ->schema([
+                                Section::make('Exportação de Dados')
+                                    ->description('Selecione quais dados deseja incluir no arquivo de backup. O download será iniciado imediatamente.')
+                                    ->schema([
+                                        Select::make('backup_tables')
+                                            ->label('Tabelas para Exportar')
+                                            ->multiple()
+                                            ->options([
+                                                'users' => 'Usuários',
+                                                'cadastros' => 'Cadastros (Clientes/Lojas/Vendedores)',
+                                                'financeiros' => 'Financeiro',
+                                                'orcamentos' => 'Orçamentos',
+                                                'ordem_servicos' => 'Ordens de Serviço',
+                                                'estoques' => 'Estoque',
+                                                'agendas' => 'Agenda',
+                                                'tabela_precos' => 'Tabela de Preços',
+                                            ])
+                                            ->default(['users', 'cadastros', 'financeiros', 'orcamentos', 'ordem_servicos', 'estoques'])
+                                            ->required(),
+
+                                        Toggle::make('backup_include_files')
+                                            ->label('Incluir Arquivos (Storage)')
+                                            ->helperText('Inclui fotos de OS e Orçamentos. Atenção: O arquivo pode ficar muito grande.')
+                                            ->default(false),
+                                    ]),
+                            ]),
+
+                        // 8. FINANCEIRO (Reordenado)
                         Tabs\Tab::make('Financeiro')
                             ->icon('heroicon-m-banknotes')
                             ->schema([
@@ -458,16 +526,16 @@ class Configuracoes extends Page implements HasForms
                                                     ])
                                                     ->required()
                                                     ->reactive()
-                                                    ->afterStateUpdated(fn (callable $set) => $set('validada', false)),
-                                                
+                                                    ->afterStateUpdated(fn(callable $set) => $set('validada', false)),
+
                                                 TextInput::make('chave')
                                                     ->label('Chave PIX')
                                                     ->required()
                                                     ->reactive()
-                                                    ->afterStateUpdated(fn (callable $set) => $set('validada', false))
+                                                    ->afterStateUpdated(fn(callable $set) => $set('validada', false))
                                                     ->rules(function (callable $get) {
                                                         $tipo = $get('tipo');
-                                                        
+
                                                         switch ($tipo) {
                                                             case 'cpf':
                                                                 return ['regex:/^[0-9]{11}$|^[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}$/'];
@@ -482,69 +550,43 @@ class Configuracoes extends Page implements HasForms
                                                             default:
                                                                 return [];
                                                         }
-                                                    })
-                                                    ->helperText(function (callable $get) {
-                                                        $tipo = $get('tipo');
-                                                        
-                                                        switch ($tipo) {
-                                                            case 'cpf':
-                                                                return 'Ex: 01234567890 ou 012.345.678-90';
-                                                            case 'cnpj':
-                                                                return 'Ex: 12345678000190 ou 12.345.678/0001-90';
-                                                            case 'telefone':
-                                                                return 'Ex: +5516981017879, 5516981017879, 16981017879 ou 1634567890';
-                                                            case 'email':
-                                                                return 'Ex: nome@dominio.com';
-                                                            case 'aleatoria':
-                                                                return 'Ex: 12345678-1234-1234-1234-123456789012';
-                                                            default:
-                                                                return 'Selecione o tipo da chave primeiro';
-                                                        }
                                                     }),
-                                                
+
                                                 TextInput::make('titular')
                                                     ->label('Titular')
                                                     ->required()
                                                     ->maxLength(25)
                                                     ->helperText('Máximo 25 caracteres (limitação PIX)'),
-                                                
+
                                                 TextInput::make('codigo_pais')
                                                     ->label('Código do País')
                                                     ->default('55')
-                                                    ->visible(fn (callable $get) => $get('tipo') === 'telefone')
-                                                    ->required(fn (callable $get) => $get('tipo') === 'telefone')
+                                                    ->visible(fn(callable $get) => $get('tipo') === 'telefone')
+                                                    ->required(fn(callable $get) => $get('tipo') === 'telefone')
                                                     ->numeric()
                                                     ->helperText('Ex: 55 para Brasil'),
-                                                
+
                                                 Toggle::make('validada')
                                                     ->label('Chave Validada')
                                                     ->disabled()
                                                     ->helperText('Indica se a chave passou pela validação automática'),
                                             ])->columns(2)
-                                            ->itemLabel(fn (array $state): ?string => 
+                                            ->itemLabel(
+                                                fn(array $state): ?string =>
                                                 ($state['tipo'] ?? 'Novo') . ': ' . ($state['chave'] ?? 'Não definido')
                                             )
                                             ->afterStateUpdated(function (callable $get, callable $set, $state) {
-                                                // Validação automática quando chaves são adicionadas/editadas
                                                 if (is_array($state)) {
                                                     foreach ($state as $index => $chaveData) {
                                                         if (isset($chaveData['chave']) && isset($chaveData['tipo']) && !empty($chaveData['chave'])) {
                                                             $validacao = \App\Services\Pix\PixKeyValidatorService::validate(
-                                                                $chaveData['chave'], 
+                                                                $chaveData['chave'],
                                                                 $chaveData['tipo'],
                                                                 $chaveData['codigo_pais'] ?? '55'
                                                             );
-                                                            
+
                                                             $state[$index]['validada'] = $validacao['valida'];
                                                             $state[$index]['chave'] = $validacao['chave_formatada'];
-                                                            
-                                                            if (!$validacao['valida']) {
-                                                                \Filament\Notifications\Notification::make()
-                                                                    ->title('Chave PIX Inválida')
-                                                                    ->body($validacao['erro'] ?? 'Formato inválido')
-                                                                    ->warning()
-                                                                    ->send();
-                                                            }
                                                         }
                                                     }
                                                     $set('financeiro_pix_keys', $state);
@@ -605,9 +647,93 @@ class Configuracoes extends Page implements HasForms
         $this->redirect(route('filament.admin.pages.dashboard'));
     }
 
+    // --- EXPORT DATA LOGIC ---
+    public function exportData()
+    {
+        $tables = $this->data['backup_tables'] ?? [];
+        $includeFiles = $this->data['backup_include_files'] ?? false;
+
+        if (empty($tables)) {
+            Notification::make()->title('Selecione pelo menos uma tabela!')->warning()->send();
+            return;
+        }
+
+        // Ensure settings are saved first? 
+        // Optional: $this->save(); 
+
+        $zipFileName = 'backup-' . now()->format('Y-m-d-His') . '.zip';
+        // Ensure directory exists
+        if (!is_dir(storage_path('app/public/backups'))) {
+            mkdir(storage_path('app/public/backups'), 0755, true);
+        }
+        $zipPath = storage_path('app/public/backups/' . $zipFileName);
+
+        $zip = new \ZipArchive;
+        if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
+
+            // Export Tables to JSON
+            foreach ($tables as $table) {
+                $modelClass = 'App\\Models\\' . \Illuminate\Support\Str::studly(\Illuminate\Support\Str::singular($table));
+
+                // Handle specific table mappings correctly
+                if ($table === 'ordem_servicos')
+                    $modelClass = \App\Models\OrdemServico::class;
+                if ($table === 'users')
+                    $modelClass = \App\Models\User::class;
+                if ($table === 'cadastros')
+                    $modelClass = \App\Models\Cadastro::class;
+                if ($table === 'financeiros')
+                    $modelClass = \App\Models\Financeiro::class;
+                if ($table === 'orcamentos')
+                    $modelClass = \App\Models\Orcamento::class;
+                if ($table === 'estoques')
+                    $modelClass = \App\Models\Estoque::class;
+                if ($table === 'agendas')
+                    $modelClass = \App\Models\Agenda::class;
+                if ($table === 'tabela_precos')
+                    $modelClass = \App\Models\TabelaPreco::class;
+
+                if (class_exists($modelClass)) {
+                    $data = $modelClass::all(); // Warning: Heavy load for large tables
+                } else {
+                    // Fallback 
+                    if (\Illuminate\Support\Facades\Schema::hasTable($table)) {
+                        $data = \Illuminate\Support\Facades\DB::table($table)->get();
+                    } else {
+                        continue;
+                    }
+                }
+                $zip->addFromString("{$table}.json", $data->toJson(JSON_PRETTY_PRINT));
+            }
+
+            // Include Files
+            if ($includeFiles) {
+                $files = \Illuminate\Support\Facades\File::allFiles(storage_path('app/public'));
+                foreach ($files as $file) {
+                    $relativePath = $file->getRelativePathname();
+                    // Exclude backups folder and the zip itself
+                    if (strpos($relativePath, 'backups/') === 0 || $relativePath === $zipFileName) {
+                        continue;
+                    }
+                    $zip->addFile($file->getRealPath(), 'storage/' . $relativePath);
+                }
+            }
+
+            $zip->close();
+        }
+
+        return response()->download($zipPath)->deleteFileAfterSend();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('exportData')
+                ->label('Baixar Backup')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
+                ->action(fn() => $this->exportData()),
+
             Action::make('limpar_cache')
                 ->label('Resetar Cache')
                 ->color('danger')
@@ -682,4 +808,3 @@ class Configuracoes extends Page implements HasForms
 
 
 }
-

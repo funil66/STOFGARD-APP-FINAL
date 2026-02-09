@@ -21,14 +21,14 @@ class FinanceiroFilamentAccessTest extends TestCase
         ]);
 
         // Testar se a página carrega sem o erro "Attempt to read property tipo on string"
-        $response = $this->actingAs($user)->get('/admin/financeiros/transacoes');
-        
+        $response = $this->actingAs($user)->get('/admin/financeiros');
+
         $response->assertStatus(200);
-        
+
         // Verificar que não há erro interno
         $response->assertDontSee('Attempt to read property');
         $response->assertDontSee('Internal Server Error');
-        
+
         // Verificar que a página Filament carregou corretamente
         $response->assertSee('Financeiro'); // Título da página
     }
@@ -38,12 +38,12 @@ class FinanceiroFilamentAccessTest extends TestCase
     {
         // Este teste verifica se o accessor categoria funciona corretamente
         // quando há dados reais no banco
-        
+
         $financeiro = Financeiro::with('categoria')->first();
-        
+
         if ($financeiro) {
             $categoria = $financeiro->categoria;
-            
+
             // Se há categoria, deve ser um objeto, não uma string
             if ($categoria) {
                 $this->assertTrue(is_object($categoria), 'Categoria deve ser um objeto');

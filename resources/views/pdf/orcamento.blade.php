@@ -205,6 +205,9 @@
                     <div style="font-size: 10px; opacity: 0.9;">ORÇAMENTO</div>
                     <div class="numero-orcamento">{{ $orcamento->numero ?? $orcamento->numero_orcamento }}</div>
                     <div class="datas">
+                        @if(!empty($orcamento->id_parceiro))
+                            <span style="font-weight: bold; color: yellow;">ID Parceiro: {{ $orcamento->id_parceiro }}</span><br>
+                        @endif
                         Emissão: {{ $orcamento->data_orcamento ? \Carbon\Carbon::parse($orcamento->data_orcamento)->format('d/m/Y') : now()->format('d/m/Y') }}<br>
                         Validade: {{ $orcamento->data_validade ? \Carbon\Carbon::parse($orcamento->data_validade)->format('d/m/Y') : '' }}
                     </div>

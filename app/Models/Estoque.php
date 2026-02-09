@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasAuditTrail;
 
 class Estoque extends Model
 {
+    use HasAuditTrail;
     protected $table = 'estoques';
 
     protected $fillable = [
@@ -14,12 +16,16 @@ class Estoque extends Model
         'unidade',
         'minimo_alerta',
         'tipo',
+        'preco_interno',
+        'preco_venda',
         'observacoes',
     ];
 
     protected $casts = [
         'quantidade' => 'decimal:2',
         'minimo_alerta' => 'decimal:2',
+        'preco_interno' => 'decimal:2',
+        'preco_venda' => 'decimal:2',
     ];
 
     // Verifica se está abaixo do mínimo

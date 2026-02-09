@@ -20,16 +20,16 @@ class FinanceiroRoutingTest extends TestCase
         ]);
 
         // Testar se a nova rota de listagem funciona
-        $response = $this->actingAs($user)->get('/admin/financeiros/transacoes');
+        $response = $this->actingAs($user)->get('/admin/financeiros');
         $response->assertStatus(200);
-        
+
         // Verificar que é a página correta (lista de transações financeiras)
         $response->assertSee('Transações Financeiras');
 
         // Testar se a rota de criação funciona  
-        $response = $this->actingAs($user)->get('/admin/financeiros/transacoes/create');
+        $response = $this->actingAs($user)->get('/admin/financeiros/create');
         $response->assertStatus(200);
-        
+
         // Verificar que não há rotas legacy disponíveis
         $this->assertFalse(class_exists('App\Models\TransacaoFinanceira'));
         $this->assertFalse(class_exists('App\Filament\Resources\TransacaoFinanceiraResource'));
@@ -42,7 +42,7 @@ class FinanceiroRoutingTest extends TestCase
         $this->assertFalse(file_exists(app_path('Models/TransacaoFinanceira.php')));
         $this->assertFalse(file_exists(app_path('Filament/Resources/TransacaoFinanceiraResource.php')));
         $this->assertFalse(file_exists(app_path('Filament/Resources/TransacaoFinanceiraResource')));
-        
+
         // Verificar que a tabela foi removida
         $this->assertFalse(\Schema::hasTable('transacoes_financeiras'));
     }

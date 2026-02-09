@@ -2,12 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\TabelaPreco;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Seeder;
 
-class TabelaPrecosSeeder extends Seeder {
-    public function run(): void {
+class TabelaPrecosSeeder extends Seeder
+{
+    public function run(): void
+    {
         // Limpa tabela antes de popular (sem FK checks para SQLite)
         TabelaPreco::truncate();
 
@@ -18,7 +19,7 @@ class TabelaPrecosSeeder extends Seeder {
             ['nome' => 'Sofá Retrátil 3 Lugares (Até 2.50m)', 'higi' => 280.00, 'imper' => 500.00],
             ['nome' => 'Sofá Retrátil 3 Lugares (Grande/2.90m)', 'higi' => 320.00, 'imper' => 550.00],
             ['nome' => 'Sofá Retrátil 4 Lugares / Big (3m+)', 'higi' => 380.00, 'imper' => 650.00],
-            
+
             // --- SOFÁS DE CANTO (L) ---
             ['nome' => 'Sofá de Canto (Pequeno 4 Lug)', 'higi' => 300.00, 'imper' => 500.00],
             ['nome' => 'Sofá de Canto (Médio 5 Lug)', 'higi' => 380.00, 'imper' => 600.00],

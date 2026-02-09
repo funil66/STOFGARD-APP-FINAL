@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
 use App\Traits\HasSequentialNumber;
+use App\Traits\HasAuditTrail;
 
 class Orcamento extends Model implements HasMedia
 {
@@ -18,6 +19,7 @@ class Orcamento extends Model implements HasMedia
     use HasArquivos;
     use SoftDeletes;
     use HasSequentialNumber;
+    use HasAuditTrail;
 
     // Configuração para HasSequentialNumber trait
     protected string $sequenceType = 'orcamento';
@@ -40,6 +42,7 @@ class Orcamento extends Model implements HasMedia
         'cadastro_id',
         'vendedor_id',
         'loja_id',
+        'id_parceiro',
         'data_orcamento',
         'data_validade',
         'status',
@@ -115,7 +118,7 @@ class Orcamento extends Model implements HasMedia
     {
         static::creating(function ($model) {
             // Número é gerado automaticamente pelo HasSequentialNumber trait
-            
+
             $model->comissao_vendedor = $model->comissao_vendedor ?? 0;
             $model->comissao_loja = $model->comissao_loja ?? 0;
 

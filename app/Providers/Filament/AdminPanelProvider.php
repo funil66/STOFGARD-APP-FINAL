@@ -99,7 +99,7 @@ class AdminPanelProvider extends PanelProvider
                         // Fallback for environments without vite manifest
                         return '<link rel="preload" as="style" href="/build/assets/stofgard.css" /><link rel="stylesheet" href="/build/assets/stofgard.css" /><script type="module" src="/build/assets/app.js"></script>';
                     }
-                })() . (str_contains(request()->getPathInfo(), '/admin/login') ? '<script src="/vendor/livewire/livewire.js"></script>' : '')
+                })()
             )
             ->renderHook(
                 'panels::body.start',
@@ -111,18 +111,35 @@ class AdminPanelProvider extends PanelProvider
                         background-color: #f5f5f5 !important;
                     }
                     
-                    /* Ocultar sidebar completamente */
-                    .fi-sidebar {
-                        display: none !important;
+                    /* Ocultar sidebar APENAS NO DESKTOP */
+                    @media (min-width: 1024px) {
+                        .fi-sidebar {
+                            display: none !important;
+                        }
+                        
+                        .fi-main {
+                            margin-left: 0 !important;
+                        }
+                        
+                        /* Ocultar topbar padrão do Filament com avatar apenas no desktop se desejado, 
+                           mas o header customizado já substitui. Vamos manter oculto sempre pois usamos header customizado. */
+                        .fi-topbar {
+                            display: none !important;
+                        }
                     }
                     
-                    .fi-main {
-                        margin-left: 0 !important;
-                    }
-                    
-                    /* Ocultar topbar padrão do Filament com avatar */
-                    .fi-topbar {
-                        display: none !important;
+                    /* No mobile, a sidebar deve funcionar (off-canvas). 
+                       O Filament controla isso via Alpine. 
+                       Precisamos garantir que a topbar nativa não apareça duplicada se o header customizado estiver lá. */
+                    @media (max-width: 1023px) {
+                        .fi-topbar {
+                            display: none !important; /* Mantemos oculta pois temos nosso header */
+                        }
+                        
+                        /* Ajuste de margem para o header customizado */
+                        .fi-main {
+                            padding-top: 0 !important;
+                        }
                     }
                     
                     /* Ocultar avatar do usuário */

@@ -109,7 +109,7 @@ class AgendaResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('cadastro_id')
                             ->label('Cliente')
-                            ->relationship('cliente', 'nome', fn(Builder $query) => $query->where('tipo', 'cliente'))
+                            ->relationship('cliente', 'nome')
                             ->searchable()
                             ->preload()
                             ->createOptionForm([
@@ -123,14 +123,12 @@ class AgendaResource extends Resource
                             ->label('Ordem de Serviço')
                             ->relationship('ordemServico', 'numero_os')
                             ->searchable()
-                            ->preload()
                             ->columnSpan(1),
 
                         Forms\Components\Select::make('orcamento_id')
                             ->label('Orçamento')
                             ->relationship('orcamento', 'numero')
                             ->searchable()
-                            ->preload()
                             ->columnSpan(1),
                     ])->columns(2),
 
@@ -188,7 +186,7 @@ class AgendaResource extends Resource
                                     ->default(false)
                                     ->inline(false),
                             ])
-                            ->columns(3)
+                            ->columns(['default' => 1, 'sm' => 3])
                             ->defaultItems(0)
                             ->addActionLabel('➕ Adicionar Nova Tarefa')
                             ->reorderable()

@@ -24,7 +24,7 @@ class FinanceiroResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationGroup = 'Financeiro';
     protected static ?string $navigationLabel = 'Transações Financeiras';
-    protected static ?string $slug = 'financeiros/transacoes';
+    protected static ?string $slug = 'financeiros';
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -79,7 +79,7 @@ class FinanceiroResource extends Resource
                             ->maxLength(255)
                             ->columnSpanFull(),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 Forms\Components\TextInput::make('valor')
                                     ->label('Valor (R$)')
@@ -114,7 +114,7 @@ class FinanceiroResource extends Resource
                                     ->required(),
                             ]),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 Forms\Components\DatePicker::make('data')
                                     ->label('Data da Transação')
@@ -275,17 +275,19 @@ class FinanceiroResource extends Resource
                         'cancelado' => 'gray',
                     }),
             ])
-            ->defaultSort('data', 'desc')
             ->filters([
-                // Filtro de Período (Atalhos)
+                // ========================================
+                // GRUPO 1: PERÍODO
+                // ========================================
                 Tables\Filters\SelectFilter::make('periodo')
-                    ->label('Período Rápido')
+                    ->label('⏰ Período')
                     ->options([
                         'hoje' => 'Hoje',
                         'ontem' => 'Ontem',
                         'esta_semana' => 'Esta Semana',
                         'este_mes' => 'Este Mês',
                         'mes_passado' => 'Mês Passado',
+                        'ultimos_90_dias' => 'Últimos 90 Dias',
                         'este_ano' => 'Este Ano',
                     ])
                     ->query(function ($query, array $data) {
@@ -295,13 +297,14 @@ class FinanceiroResource extends Resource
                             'esta_semana' => $query->whereBetween('data', [now()->startOfWeek(), now()->endOfWeek()]),
                             'este_mes' => $query->whereMonth('data', now()->month)->whereYear('data', now()->year),
                             'mes_passado' => $query->whereMonth('data', now()->subMonth()->month)->whereYear('data', now()->subMonth()->year),
+                            'ultimos_90_dias' => $query->whereDate('data', '>=', now()->subDays(90)),
                             'este_ano' => $query->whereYear('data', now()->year),
                             default => $query,
                         };
                     }),
 
-                // Filtro por Data Personalizada
                 Tables\Filters\Filter::make('data_range')
+                    ->label('📅 Período Personalizado')
                     ->form([
                         Forms\Components\DatePicker::make('data_de')->label('De'),
                         Forms\Components\DatePicker::make('data_ate')->label('Até'),
@@ -310,96 +313,146 @@ class FinanceiroResource extends Resource
                         return $query
                             ->when($data['data_de'], fn($q, $d) => $q->whereDate('data', '>=', $d))
                             ->when($data['data_ate'], fn($q, $d) => $q->whereDate('data', '<=', $d));
+                    })
+                    ->indicateUsing(function (array $data): ?string {
+                        if ($data['data_de'] && $data['data_ate']) {
+                            return 'Período: ' . \Carbon\Carbon::parse($data['data_de'])->format('d/m') . ' - ' . \Carbon\Carbon::parse($data['data_ate'])->format('d/m');
+                        }
+                        return null;
                     }),
 
-                // Filtro por Data de Vencimento
-                Tables\Filters\Filter::make('vencimento')
-                    ->form([
-                        Forms\Components\DatePicker::make('vencimento_de')->label('Vencimento De'),
-                        Forms\Components\DatePicker::make('vencimento_ate')->label('Vencimento Até'),
+                // ========================================
+                // GRUPO 2: TIPO E STATUS
+                // ========================================
+                Tables\Filters\SelectFilter::make('tipo')
+                    ->label('💰 Tipo')
+                    ->options([
+                        'entrada' => '↓ Receitas (Entradas)',
+                        'saida' => '↑ Despesas (Saídas)',
+                    ]),
+
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('📊 Status')
+                    ->options([
+                        'pendente' => '⏳ Pendente',
+                        'pago' => '✅ Pago',
+                        'atrasado' => '🔴 Atrasado',
+                        'cancelado' => '❌ Cancelado',
+                    ])
+                    ->multiple(),
+
+                // ========================================
+                // GRUPO 3: PESSOAS E RELACIONAMENTOS
+                // ========================================
+                Tables\Filters\SelectFilter::make('tipo_cadastro')
+                    ->label('👥 Tipo de Pessoa')
+                    ->options([
+                        'cliente' => '👤 Clientes',
+                        'loja' => '🏪 Lojas',
+                        'vendedor' => '👔 Vendedores',
+                        'arquiteto' => '📐 Arquitetos',
+                        'parceiro' => '🤝 Parceiros',
+                        'funcionario' => '👷 Funcionários',
                     ])
                     ->query(function ($query, array $data) {
-                        return $query
-                            ->when($data['vencimento_de'], fn($q, $d) => $q->whereDate('data_vencimento', '>=', $d))
-                            ->when($data['vencimento_ate'], fn($q, $d) => $q->whereDate('data_vencimento', '<=', $d));
+                        if (!$data['value'])
+                            return $query;
+                        return $query->whereHas('cadastro', fn($q) => $q->where('tipo', $data['value']));
                     }),
 
-                // Tipo (Entrada/Saída)
-                Tables\Filters\SelectFilter::make('tipo')
-                    ->options([
-                        'entrada' => 'Entradas (Receitas)',
-                        'saida' => 'Saídas (Despesas)',
-                    ]),
-
-                // Status
-                Tables\Filters\SelectFilter::make('status')
-                    ->options([
-                        'pendente' => 'Pendente',
-                        'pago' => 'Pago',
-                        'atrasado' => 'Atrasado',
-                        'cancelado' => 'Cancelado',
-                    ]),
-
-                // Categoria
-                Tables\Filters\SelectFilter::make('categoria_id')
-                    ->label('Categoria')
-                    ->relationship('categoria', 'nome')
-                    ->searchable()
-                    ->preload(),
-
-                // Forma de Pagamento
-                Tables\Filters\SelectFilter::make('forma_pagamento')
-                    ->label('Forma de Pagamento')
-                    ->options([
-                        'pix' => 'PIX',
-                        'dinheiro' => 'Dinheiro',
-                        'cartao_credito' => 'Cartão de Crédito',
-                        'cartao_debito' => 'Cartão de Débito',
-                        'boleto' => 'Boleto',
-                        'transferencia' => 'Transferência',
-                    ]),
-
-                // Cliente/Fornecedor
                 Tables\Filters\SelectFilter::make('cadastro_id')
-                    ->label('Cliente/Fornecedor')
+                    ->label('🔍 Cliente/Fornecedor')
                     ->relationship('cadastro', 'nome')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->getOptionLabelFromRecordUsing(fn($record) => match ($record->tipo) {
+                        'cliente' => "👤 {$record->nome}",
+                        'loja' => "🏪 {$record->nome}",
+                        'vendedor' => "👔 {$record->nome}",
+                        'arquiteto' => "📐 {$record->nome}",
+                        default => $record->nome,
+                    }),
 
-                // Loja (Store)
-                Tables\Filters\SelectFilter::make('loja_id')
-                    ->label('Loja')
-                    ->relationship(
-                        'ordemServico.loja',
-                        'nome',
-                        fn($query) => $query->where('tipo', 'loja')
-                    )
+                Tables\Filters\SelectFilter::make('loja_direto')
+                    ->label('🏪 Loja (Direto ou via OS)')
+                    ->options(fn() => \App\Models\Cadastro::where('tipo', 'loja')->pluck('nome', 'id'))
                     ->searchable()
-                    ->preload(),
+                    ->query(function ($query, array $data) {
+                        if (!$data['value'])
+                            return $query;
+                        return $query->where(function ($q) use ($data) {
+                            $q->where('cadastro_id', $data['value'])
+                                ->orWhereHas('ordemServico', fn($os) => $os->where('loja_id', $data['value']));
+                        });
+                    }),
 
-                // Vendedor (Salesperson)
-                Tables\Filters\SelectFilter::make('vendedor_id')
-                    ->label('Vendedor')
-                    ->relationship(
-                        'ordemServico.vendedor',
-                        'nome',
-                        fn($query) => $query->where('tipo', 'vendedor')
-                    )
+                Tables\Filters\SelectFilter::make('vendedor_direto')
+                    ->label('👔 Vendedor (Direto ou via OS)')
+                    ->options(fn() => \App\Models\Cadastro::where('tipo', 'vendedor')->pluck('nome', 'id'))
                     ->searchable()
-                    ->preload(),
+                    ->query(function ($query, array $data) {
+                        if (!$data['value'])
+                            return $query;
+                        return $query->where(function ($q) use ($data) {
+                            $q->where('cadastro_id', $data['value'])
+                                ->orWhereHas('ordemServico', fn($os) => $os->where('vendedor_id', $data['value']));
+                        });
+                    }),
 
-                // Status de Comissão
-                Tables\Filters\SelectFilter::make('comissao_status')
-                    ->label('Status de Comissão')
+                // ========================================
+                // GRUPO 4: CATEGORIZAÇÃO
+                // ========================================
+                Tables\Filters\SelectFilter::make('categoria_id')
+                    ->label('🏷️ Categoria')
+                    ->relationship('categoria', 'nome')
+                    ->searchable()
+                    ->preload()
+                    ->multiple(),
+
+                Tables\Filters\SelectFilter::make('forma_pagamento')
+                    ->label('💳 Forma de Pagamento')
                     ->options([
-                        'pendente' => 'Comissões Pendentes',
-                        'paga' => 'Comissões Pagas',
-                        'todas' => 'Todas as Comissões',
+                        'pix' => '📱 PIX',
+                        'dinheiro' => '💵 Dinheiro',
+                        'cartao_credito' => '💳 Cartão de Crédito',
+                        'cartao_debito' => '💳 Cartão de Débito',
+                        'boleto' => '📄 Boleto',
+                        'transferencia' => '🏦 Transferência',
+                    ])
+                    ->multiple(),
+
+                // ========================================
+                // GRUPO 5: VINCULAÇÃO
+                // ========================================
+                Tables\Filters\SelectFilter::make('vinculacao')
+                    ->label('🔗 Vinculação')
+                    ->options([
+                        'com_os' => '📋 Com Ordem de Serviço',
+                        'com_orcamento' => '📝 Com Orçamento',
+                        'avulso' => '📌 Avulso (Sem Vínculo)',
                     ])
                     ->query(function ($query, array $data) {
-                        if (!isset($data['value'])) {
+                        return match ($data['value']) {
+                            'com_os' => $query->whereNotNull('ordem_servico_id'),
+                            'com_orcamento' => $query->whereNotNull('orcamento_id'),
+                            'avulso' => $query->whereNull('ordem_servico_id')->whereNull('orcamento_id'),
+                            default => $query,
+                        };
+                    }),
+
+                // ========================================
+                // GRUPO 6: COMISSÕES
+                // ========================================
+                Tables\Filters\SelectFilter::make('comissao_status')
+                    ->label('💼 Comissões')
+                    ->options([
+                        'pendente' => '⏳ Comissões Pendentes',
+                        'paga' => '✅ Comissões Pagas',
+                        'todas' => '📋 Todas as Comissões',
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (!isset($data['value']))
                             return $query;
-                        }
 
                         return match ($data['value']) {
                             'pendente' => $query->comissaoPendente(),
@@ -408,6 +461,31 @@ class FinanceiroResource extends Resource
                             default => $query,
                         };
                     }),
+
+                // ========================================
+                // GRUPO 7: VENCIMENTO
+                // ========================================
+                Tables\Filters\Filter::make('vencimento')
+                    ->label('📆 Vencimento')
+                    ->form([
+                        Forms\Components\DatePicker::make('vencimento_de')->label('Vence a partir de'),
+                        Forms\Components\DatePicker::make('vencimento_ate')->label('Vence até'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['vencimento_de'], fn($q, $d) => $q->whereDate('data_vencimento', '>=', $d))
+                            ->when($data['vencimento_ate'], fn($q, $d) => $q->whereDate('data_vencimento', '<=', $d));
+                    }),
+
+                Tables\Filters\TernaryFilter::make('vencido')
+                    ->label('⚠️ Vencidos')
+                    ->placeholder('Todos')
+                    ->trueLabel('Apenas Vencidos')
+                    ->falseLabel('Não Vencidos')
+                    ->queries(
+                        true: fn($query) => $query->where('status', '!=', 'pago')->whereDate('data_vencimento', '<', now()),
+                        false: fn($query) => $query->where(fn($q) => $q->where('status', 'pago')->orWhereDate('data_vencimento', '>=', now())),
+                    ),
             ])
             ->actions([
                 // Baixar pagamento
@@ -631,7 +709,7 @@ class FinanceiroResource extends Resource
                                 ->label('Categoria')
                                 ->badge()
                                 ->color('info')
-                                ->icon(fn($record) => $record->categoria?->icone ?? '📌'),
+                                ->icon(fn($record) => $record->categoria?->icone ?? 'heroicon-o-tag'),
                             TextEntry::make('forma_pagamento')
                                 ->label('Forma de Pagamento')
                                 ->formatStateUsing(fn($state) => match ($state) {
@@ -756,27 +834,35 @@ class FinanceiroResource extends Resource
     public static function getPages(): array
     {
         return [
+            // Core CRUD
             'index' => Pages\ListFinanceiros::route('/'),
             'create' => Pages\CreateFinanceiro::route('/create'),
-            'edit' => Pages\EditFinanceiro::route('/{record}/edit'),
-            'view' => Pages\ViewFinanceiro::route('/{record}'),
-            'dashboard' => Pages\DashboardFinanceiro::route('/dashboard'),
+
+            // Dashboard e Relatórios (ANTES de {record})
             'extratos' => Pages\Extratos::route('/extratos'),
 
-            // Filtered views
+            // Visualizações por Status (ANTES de {record})
             'receitas' => Pages\ListReceitas::route('/receitas'),
             'despesas' => Pages\ListDespesas::route('/despesas'),
             'pendentes' => Pages\ListPendentes::route('/pendentes'),
             'atrasadas' => Pages\ListAtrasadas::route('/atrasadas'),
 
+            // Páginas Analíticas (ANTES de {record})
+            'analise-vendedores' => Pages\AnaliseVendedores::route('/analise/vendedores'),
+            'analise-lojas' => Pages\AnaliseLojas::route('/analise/lojas'),
+            'analise-categorias' => Pages\AnaliseCategorias::route('/analise/categorias'),
+            'comissoes' => Pages\Comissoes::route('/comissoes'),
+
+            // Rotas com parâmetros dinâmicos (DEVEM VIR POR ÚLTIMO)
+            'edit' => Pages\EditFinanceiro::route('/{record}/edit'),
+            'view' => Pages\ViewFinanceiro::route('/{record}'),
         ];
     }
 
     public static function getWidgets(): array
     {
         return [
-            FinanceiroResource\Widgets\FinanceiroStatsWidget::class,
-            FinanceiroResource\Widgets\FinanceiroChartWidget::class,
+
         ];
     }
 }

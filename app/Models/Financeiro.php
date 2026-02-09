@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
+use App\Traits\HasAuditTrail;
 
 /**
  * Model Financeiro - Transações Financeiras
@@ -15,7 +16,7 @@ use App\Traits\HasArquivos;
  */
 class Financeiro extends Model implements HasMedia
 {
-    use HasArquivos;
+    use HasArquivos, HasAuditTrail;
 
     protected $table = 'financeiros';
 

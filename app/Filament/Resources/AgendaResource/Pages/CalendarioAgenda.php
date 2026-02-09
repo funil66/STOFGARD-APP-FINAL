@@ -42,10 +42,10 @@ class CalendarioAgenda extends ListRecords
                     ->icon('heroicon-o-arrow-path')
                     ->url(GoogleCalendarSettings::getUrl()),
             ])
-            ->label('Mais')
-            ->icon('heroicon-m-ellipsis-vertical')
-            ->color('gray')
-            ->button(),
+                ->label('Mais')
+                ->icon('heroicon-m-ellipsis-vertical')
+                ->color('gray')
+                ->button(),
         ];
     }
 

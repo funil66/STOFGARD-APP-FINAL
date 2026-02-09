@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
+use App\Traits\HasAuditTrail;
 
 class OrdemServico extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, HasArquivos;
+    use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail;
 
     // --- CORREÇÃO DO ERRO DE FK ---
     // Define explicitamente o nome da tabela no banco
@@ -34,6 +35,8 @@ class OrdemServico extends Model implements HasMedia
         'dias_garantia',
         'loja_id',
         'vendedor_id',
+        'funcionario_id',
+        'id_parceiro',
         'origem',
         'extra_attributes',
     ];
@@ -138,6 +141,11 @@ class OrdemServico extends Model implements HasMedia
     public function vendedor(): BelongsTo
     {
         return $this->belongsTo(Cadastro::class, 'vendedor_id');
+    }
+
+    public function funcionario(): BelongsTo
+    {
+        return $this->belongsTo(Cadastro::class, 'funcionario_id');
     }
 
     // Relacionamento com produtos do estoque utilizados na OS

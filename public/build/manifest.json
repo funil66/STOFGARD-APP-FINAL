@@ -6,8 +6,13 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-D17M1P7S.css",
+    "file": "assets/app-kTK6ah9Z.css",
     "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/filament/admin/theme.css": {
+    "file": "assets/theme-CiRGnJZ3.css",
+    "src": "resources/css/filament/admin/theme.css",
     "isEntry": true
   },
   "resources/js/app.js": {

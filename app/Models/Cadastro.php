@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasArquivos;
+use App\Traits\HasAuditTrail;
 use Spatie\MediaLibrary\HasMedia;
 
 class Cadastro extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, HasArquivos;
+    use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail;
 
     protected static function boot()
     {
@@ -53,7 +54,7 @@ class Cadastro extends Model implements HasMedia
 
     protected $fillable = [
         'nome',
-        'tipo', // cliente, loja, vendedor, arquiteto
+        'tipo', // cliente, loja, vendedor, arquiteto, funcionario
         'parent_id', // Para vincular vendedor a loja
         'documento', // CPF/CNPJ
         'rg_ie',
@@ -70,11 +71,23 @@ class Cadastro extends Model implements HasMedia
         'complemento',
         'comissao_percentual',
         'pdf_mostrar_documentos',
+        // Campos de funcionário
+        'cargo',
+        'salario_base',
+        'data_admissao',
+        'data_demissao',
+        'is_socio',
+        'percentual_prolabore',
     ];
 
     protected $casts = [
         'comissao_percentual' => 'decimal:2',
         'pdf_mostrar_documentos' => 'boolean',
+        'salario_base' => 'decimal:2',
+        'data_admissao' => 'date',
+        'data_demissao' => 'date',
+        'is_socio' => 'boolean',
+        'percentual_prolabore' => 'decimal:2',
     ];
 
     // Relacionamento: Vendedor pertence a uma Loja
@@ -243,6 +256,22 @@ class Cadastro extends Model implements HasMedia
     public function scopeParceiros($query)
     {
         return $query->whereIn('tipo', ['loja', 'vendedor', 'arquiteto']);
+    }
+
+    /**
+     * Escopo: Apenas Funcionários
+     */
+    public function scopeFuncionarios($query)
+    {
+        return $query->where('tipo', 'funcionario');
+    }
+
+    /**
+     * Escopo: Apenas Sócios (funcionários com flag is_socio)
+     */
+    public function scopeSocios($query)
+    {
+        return $query->where('tipo', 'funcionario')->where('is_socio', true);
     }
 
     protected static function booted(): void

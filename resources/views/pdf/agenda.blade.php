@@ -283,6 +283,9 @@
             <div style="font-size: 10px; opacity: 0.9;">FICHA DE AGENDAMENTO</div>
             <div class="doc-number">#{{ str_pad($agenda->id, 5, '0', STR_PAD_LEFT) }}</div>
             <div class="doc-meta">
+                @if(!empty($agenda->id_parceiro))
+                    <span style="font-weight: bold; color: yellow;">ID Parceiro: {{ $agenda->id_parceiro }}</span><br>
+                @endif
                 Data: {{ \Carbon\Carbon::now()->format('d/m/Y') }}<br>
                 Tipo: {{ strtoupper($agenda->tipo ?? 'SERVIÇO') }}
             </div>

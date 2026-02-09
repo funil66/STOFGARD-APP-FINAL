@@ -22,7 +22,8 @@
             font-size: 10px;
             color: {{ $text }};
             line-height: 1.4;
-            padding-top: 5cm;
+            /* Match Orcamento Padding */
+            padding-top: 6.2cm;
             padding-bottom: 3cm;
             padding-left: 1cm;
             padding-right: 1cm;
@@ -196,6 +197,17 @@
             text-align: center;
             line-height: 1.5;
         }
+        
+        .footer-warning { 
+            background: #fef2f2; 
+            border: 1px solid #fecaca; 
+            border-radius: 4px; 
+            padding: 8px 10px; 
+            font-size: 8px; 
+            color: #dc2626; 
+            text-align: center; 
+            margin-bottom: 8px; 
+        }
     </style>
 </head>
 
@@ -232,6 +244,9 @@
 
     <!-- FOOTER -->
     <div class="footer">
+        <div class="footer-warning">
+             Este documento comprova o lançamento financeiro no sistema, mas não substitui Nota Fiscal para fins tributários.
+        </div>
         <div class="footer-legal">
             Documento gerado automaticamente pelo sistema.<br>
             <strong>Data da Geração:</strong> {{ now()->format('d/m/Y H:i:s') }}

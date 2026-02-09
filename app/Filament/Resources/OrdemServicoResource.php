@@ -43,14 +43,14 @@ class OrdemServicoResource extends Resource
             ->schema([
                 Section::make('Identificação e Origem')
                     ->description('Defina o cliente tomador e a origem comercial da venda.')
+                    ->icon('heroicon-o-user')
                     ->schema([
                         TextInput::make('numero_os')
                             ->label('Nº OS (Prévia)')
                             ->default(fn() => OrdemServico::gerarNumeroOS())
                             ->disabled()
-                            ->dehydrated(false) // Don't include in form data - will be generated server-side
+                            ->dehydrated(false)
                             ->helperText('O número final será gerado automaticamente ao salvar')
-                            ->required(false) // Not required since it won't be submitted
                             ->columnSpan(1),
 
                         Select::make('cadastro_id')
@@ -60,11 +60,7 @@ class OrdemServicoResource extends Resource
                             ->preload()
                             ->required()
                             ->columnSpan(3)
-                            ->createOptionForm([
-                                TextInput::make('nome')->required(),
-                                TextInput::make('celular')->mask('(99) 99999-9999'),
-                                Select::make('tipo')->options(['cliente' => 'Cliente'])->default('cliente')->hidden(),
-                            ]),
+                            ->createOptionForm(\App\Filament\Resources\CadastroResource::getFormSchema()),
 
                         Select::make('loja_id')
                             ->label('Loja / Parceiro Indicador')
@@ -83,7 +79,21 @@ class OrdemServicoResource extends Resource
                             ->required()
                             ->default(fn() => \App\Models\Cadastro::where('tipo', 'vendedor')->where('email', auth()->user()->email)->first()?->id)
                             ->columnSpan(2),
-                    ])->columns(4),
+
+                        Select::make('funcionario_id')
+                            ->label('Funcionário Técnico/Executor')
+                            ->options(\App\Models\Cadastro::where('tipo', 'funcionario')->pluck('nome', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->helperText('Quem realizou o serviço?')
+                            ->columnSpan(2),
+
+                        Forms\Components\TextInput::make('id_parceiro')
+                            ->label('ID Parceiro')
+                            ->placeholder('Identificação da loja/vendedor')
+                            ->maxLength(255)
+                            ->columnSpan(2),
+                    ])->columns(['default' => 1, 'sm' => 2, 'lg' => 4]),
 
                 Tabs::make('Detalhes da Operação')
                     ->tabs([
@@ -97,7 +107,6 @@ class OrdemServicoResource extends Resource
                                         ->required()
                                         ->live()
                                         ->afterStateUpdated(function ($state, callable $set) {
-                                            // Busca dados dinamicamente da tabela de preços
                                             $servico = \App\Models\TabelaPreco::where('tipo_servico', $state)
                                                 ->whereNotNull('descricao_tecnica')
                                                 ->first();
@@ -145,10 +154,8 @@ class OrdemServicoResource extends Resource
                                                 $item = \App\Models\TabelaPreco::where('nome_item', $state)->first();
                                                 if ($item) {
                                                     $set('unidade_medida', $item->unidade_medida);
-                                                    // Define preço padrão se houver (Preço Base ou Higienização como padrão)
                                                     $set('valor_unitario', $item->preco_vista);
                                                 }
-                                                // Recalcula linha
                                                 $qtd = (float) $get('quantidade') ?: 1;
                                                 $unit = (float) $get('valor_unitario') ?: 0;
                                                 $set('subtotal', $qtd * $unit);
@@ -189,7 +196,7 @@ class OrdemServicoResource extends Resource
 
                                         Forms\Components\Hidden::make('unidade_medida'),
                                     ])
-                                    ->columns(7)
+                                    ->columns(['default' => 1, 'md' => 7])
                                     ->live()
                                     ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get)),
 
@@ -208,7 +215,7 @@ class OrdemServicoResource extends Resource
                                 DatePicker::make('data_prevista')->label('Data Agendada'),
                                 DatePicker::make('data_conclusao')->label('Conclusão'),
                                 TextInput::make('dias_garantia')->label('Garantia (Dias)')->numeric(),
-                            ])->columns(4),
+                            ])->columns(['default' => 1, 'sm' => 2, 'lg' => 4]),
 
                         Tab::make('Evidências')
                             ->icon('heroicon-o-camera')
@@ -218,9 +225,9 @@ class OrdemServicoResource extends Resource
                             ]),
                     ])->columnSpanFull(),
 
-                // --- PRODUTOS DO ESTOQUE ---
                 Section::make('📦 Produtos do Estoque')
                     ->description('Selecione produtos do estoque que serão utilizados nesta OS (opcional)')
+                    ->icon('heroicon-o-beaker')
                     ->collapsible()
                     ->collapsed()
                     ->schema([
@@ -282,7 +289,7 @@ class OrdemServicoResource extends Resource
                                     ->columnSpanFull()
                                     ->rows(2),
                             ])
-                            ->columns(6)
+                            ->columns(['default' => 1, 'md' => 6])
                             ->defaultItems(0)
                             ->addActionLabel('➕ Adicionar Produto do Estoque')
                             ->reorderable(false)
@@ -295,6 +302,7 @@ class OrdemServicoResource extends Resource
 
                 Section::make('Central de Arquivos')
                     ->description('Envie fotos, documentos e comprovantes (Máx: 20MB).')
+                    ->icon('heroicon-o-paper-clip')
                     ->collapsible()
                     ->collapsed()
                     ->schema([
@@ -313,11 +321,28 @@ class OrdemServicoResource extends Resource
             ]);
     }
 
+    // --- FUNÇÃO DE CÁLCULO ---
+    public static function recalcularTotal(Forms\Set $set, Forms\Get $get): void
+    {
+        $itens = $get('itens') ?? $get('../../itens') ?? [];
+        if (!is_array($itens))
+            $itens = [];
+
+        $total = collect($itens)->sum(function ($item) {
+            return floatval($item['subtotal'] ?? 0);
+        });
+
+        // Adiciona valores de "extra_attributes" se houver lógica para isso
+        // ... (Mantendo lógica original se houver)
+
+        $set('valor_total', $total);
+        $set('../../valor_total', $total);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                // MOBILE: OS + Cliente combinados
                 Tables\Columns\TextColumn::make('numero_os')
                     ->label('OS')
                     ->sortable()
@@ -327,7 +352,6 @@ class OrdemServicoResource extends Resource
                     ->description(fn($record) => $record->cliente?->nome ?? '-')
                     ->icon('heroicon-o-clipboard-document-check'),
 
-                // DESKTOP ONLY: Cliente separado
                 Tables\Columns\TextColumn::make('cliente.nome')
                     ->label('Cliente')
                     ->searchable()
@@ -335,7 +359,6 @@ class OrdemServicoResource extends Resource
                     ->limit(20)
                     ->visibleFrom('md'),
 
-                // DESKTOP ONLY: Loja
                 Tables\Columns\TextColumn::make('loja.nome')
                     ->label('Loja')
                     ->badge()
@@ -343,7 +366,6 @@ class OrdemServicoResource extends Resource
                     ->sortable()
                     ->visibleFrom('lg'),
 
-                // SEMPRE VISÍVEL: Status com ícone
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->formatStateUsing(fn(string $state): string => match ($state) {
@@ -351,13 +373,6 @@ class OrdemServicoResource extends Resource
                         'agendada' => '📅',
                         'concluida' => '✓',
                         'cancelada' => '✗',
-                        default => $state,
-                    })
-                    ->tooltip(fn(string $state): string => match ($state) {
-                        'aberta' => 'Aberta',
-                        'agendada' => 'Agendada',
-                        'concluida' => 'Concluída',
-                        'cancelada' => 'Cancelada',
                         default => $state,
                     })
                     ->color(fn(string $state): string => match ($state) {
@@ -369,7 +384,6 @@ class OrdemServicoResource extends Resource
                     })
                     ->sortable(),
 
-                // MOBILE: Garantia compacta
                 Tables\Columns\IconColumn::make('tem_garantia')
                     ->label('')
                     ->tooltip(fn(?OrdemServico $record): string => $record?->status_garantia === 'ativa'
@@ -382,7 +396,6 @@ class OrdemServicoResource extends Resource
                     ->falseColor('danger')
                     ->getStateUsing(fn(?OrdemServico $record): bool => $record?->status_garantia === 'ativa'),
 
-                // SEMPRE VISÍVEL: Valor em destaque
                 Tables\Columns\TextColumn::make('valor_total')
                     ->money('BRL')
                     ->label('Total')
@@ -390,7 +403,6 @@ class OrdemServicoResource extends Resource
                     ->weight('bold')
                     ->color('success'),
 
-                // DESKTOP ONLY: Data criacao
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Criado')
                     ->date('d/m')
@@ -414,65 +426,38 @@ class OrdemServicoResource extends Resource
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label('Criado de'),
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label('Criado até'),
+                        Forms\Components\DatePicker::make('created_from')->label('Criado de'),
+                        Forms\Components\DatePicker::make('created_until')->label('Criado até'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
+                            ->when($data['created_from'], fn(Builder $query, $date) => $query->whereDate('created_at', '>=', $date))
+                            ->when($data['created_until'], fn(Builder $query, $date) => $query->whereDate('created_at', '<=', $date));
                     }),
             ])
             ->actions([
-                // View apenas ícone
-                Tables\Actions\ViewAction::make()
-                    ->label('')
-                    ->tooltip('Ver Detalhes')
-                    ->iconButton(),
-
-                // Edit apenas ícone
-                Tables\Actions\EditAction::make()
-                    ->label('')
-                    ->tooltip('Editar')
-                    ->iconButton(),
-
-                // Receber - compacto
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\Action::make('download')
+                        ->label('Baixar PDF')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->url(fn(?OrdemServico $record) => $record ? route('os.pdf', $record) : null)
+                        ->openUrlInNewTab(),
+                    Tables\Actions\DeleteAction::make(),
+                ]),
+                // Botões de Ação Rápida
                 Tables\Actions\Action::make('receber')
                     ->label('')
-                    ->tooltip('Receber Pagamento')
+                    ->tooltip('Receber')
                     ->icon('heroicon-o-currency-dollar')
                     ->color('success')
                     ->iconButton()
                     ->visible(fn(OrdemServico $record) => $record->status !== 'cancelada' && ($record->financeiro?->status !== 'pago'))
                     ->form([
-                        Forms\Components\DatePicker::make('data_pagamento')
-                            ->label('Data')
-                            ->default(now())
-                            ->required(),
-                        Forms\Components\TextInput::make('valor_pago')
-                            ->label('Valor (R$)')
-                            ->default(fn(OrdemServico $record) => $record->valor_total)
-                            ->numeric()
-                            ->prefix('R$')
-                            ->required(),
-                        Forms\Components\Select::make('forma_pagamento')
-                            ->label('Forma')
-                            ->options([
-                                'pix' => 'PIX',
-                                'dinheiro' => 'Dinheiro',
-                                'cartao_credito' => 'Cartão Créd.',
-                                'cartao_debito' => 'Cartão Déb.',
-                                'boleto' => 'Boleto',
-                            ])
-                            ->required(),
+                        Forms\Components\DatePicker::make('data_pagamento')->default(now())->required(),
+                        Forms\Components\TextInput::make('valor_pago')->default(fn(OrdemServico $record) => $record->valor_total)->numeric()->prefix('R$')->required(),
+                        Forms\Components\Select::make('forma_pagamento')->options(['pix' => 'PIX', 'dinheiro' => 'Dinheiro', 'cartao_credito' => 'Crédito', 'cartao_debito' => 'Débito'])->required(),
                     ])
                     ->action(function (OrdemServico $record, array $data) {
                         $financeiro = $record->financeiro;
@@ -493,60 +478,23 @@ class OrdemServicoResource extends Resource
                             'data_pagamento' => $data['data_pagamento'],
                             'forma_pagamento' => $data['forma_pagamento'],
                         ]);
-                        \Filament\Notifications\Notification::make()
-                            ->title('Pagamento Registrado!')
-                            ->success()
-                            ->send();
+                        \Filament\Notifications\Notification::make()->title('Pagamento Registrado!')->success()->send();
                     }),
 
-                // Concluir - compacto
                 Tables\Actions\Action::make('concluir')
                     ->label('')
-                    ->tooltip('Marcar Concluída')
+                    ->tooltip('Concluir')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->iconButton()
                     ->visible(fn(?OrdemServico $record) => $record && $record->status !== 'concluida')
                     ->requiresConfirmation()
-                    ->action(function (OrdemServico $record) {
-                        $record->update(['status' => 'concluida']);
-                        \Filament\Notifications\Notification::make()
-                            ->success()
-                            ->title('OS Concluída!')
-                            ->send();
-                    }),
-
-                // PDF
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('info')
-                    ->iconButton()
-                    ->url(fn(?OrdemServico $record) => $record ? route('os.pdf', $record) : null)
-                    ->openUrlInNewTab(),
-
-                // Excluir
-                Tables\Actions\DeleteAction::make()
-                    ->label('')
-                    ->tooltip('Excluir')
-                    ->iconButton(),
+                    ->action(fn(OrdemServico $record) => $record->update(['status' => 'concluida'])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('marcar_agendada')
-                        ->label('Marcar como Agendada')
-                        ->icon('heroicon-o-calendar')
-                        ->color('warning')
-                        ->action(fn($records) => $records->each->update(['status' => 'agendada'])),
-
-                    Tables\Actions\BulkAction::make('marcar_concluida')
-                        ->label('Marcar como Concluída')
-                        ->icon('heroicon-o-check-circle')
-                        ->color('success')
-                        ->requiresConfirmation()
-                        ->action(fn($records) => $records->each->update(['status' => 'concluida'])),
-
+                    Tables\Actions\BulkAction::make('marcar_agendada')->action(fn($records) => $records->each->update(['status' => 'agendada'])),
+                    Tables\Actions\BulkAction::make('marcar_concluida')->action(fn($records) => $records->each->update(['status' => 'concluida'])),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
@@ -592,7 +540,8 @@ class OrdemServicoResource extends Resource
                             TextEntry::make('cliente.nome')
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
-                                ->weight('bold'),
+                                ->weight('bold')
+                                ->url(fn($record) => \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cliente_id])),
                             TextEntry::make('cliente.telefone')
                                 ->label('WhatsApp')
                                 ->icon('heroicon-m-chat-bubble-left-right')
@@ -645,161 +594,64 @@ class OrdemServicoResource extends Resource
                     ])
                     ->collapsible(),
 
-                // ===== ITENS DO SERVIÇO =====
-                InfolistSection::make('🛠️ Itens do Serviço')
-                    ->schema([
-                        RepeatableEntry::make('itens')
-                            ->label('')
-                            ->schema([
-                                InfolistGrid::make(5)->schema([
-                                    TextEntry::make('descricao')
-                                        ->label('Item')
-                                        ->weight('bold')
-                                        ->columnSpan(2),
-                                    TextEntry::make('quantidade')
-                                        ->label('Qtd')
-                                        ->alignCenter(),
-                                    TextEntry::make('valor_unitario')
-                                        ->label('Unit.')
-                                        ->money('BRL'),
-                                    TextEntry::make('subtotal')
-                                        ->label('Subtotal')
-                                        ->money('BRL')
-                                        ->weight('bold')
-                                        ->color('success'),
-                                ]),
-                            ])
-                            ->grid(1),
-                    ])
-                    ->collapsible(),
-
-                // ===== DESCRIÇÃO E OBSERVAÇÕES =====
-                InfolistSection::make('📝 Descrição do Serviço')
-                    ->schema([
-                        TextEntry::make('descricao_servico')
-                            ->label('')
-                            ->markdown()
-                            ->columnSpanFull(),
-                    ])
-                    ->collapsible()
-                    ->collapsed(),
-
-                // ===== DADOS PERSONALIZADOS =====
-                InfolistSection::make('🏷️ Dados Personalizados')
-                    ->schema([
-                        Infolists\Components\KeyValueEntry::make('extra_attributes')
-                            ->label('')
-                            ->keyLabel('Campo')
-                            ->valueLabel('Valor')
-                            ->columnSpanFull(),
-                    ])
-                    ->collapsible()
-                    ->collapsed()
-                    ->visible(fn($record) => !empty($record->extra_attributes)),
-
-                // ===== PRODUTOS DO ESTOQUE UTILIZADOS =====
-                InfolistSection::make('📦 Produtos Utilizados')
-                    ->schema([
-                        RepeatableEntry::make('produtosUtilizados')
-                            ->label('')
-                            ->schema([
-                                TextEntry::make('item')
-                                    ->label('Produto')
-                                    ->weight('bold')
-                                    ->icon('heroicon-m-cube'),
-                                TextEntry::make('pivot.quantidade_utilizada')
-                                    ->label('Quantidade')
-                                    ->formatStateUsing(
-                                        fn($state, $record) =>
-                                        number_format($state, 2, ',', '.') . ' ' . ($record->pivot->unidade ?? '')
-                                    )
-                                    ->badge()
-                                    ->color('warning'),
-                                TextEntry::make('pivot.observacao')
-                                    ->label('Observação')
-                                    ->placeholder('—')
-                                    ->columnSpanFull(),
-                            ])
-                            ->columns(2)
-                            ->contained(false),
-                    ])
-                    ->collapsible()
-                    ->collapsed()
-                    ->visible(fn($record) => $record->produtosUtilizados->isNotEmpty()),
-
-                // ===== IMAGENS DO ORÇAMENTO =====
-                InfolistSection::make('📸 Imagens do Orçamento')
-                    ->schema([
-                        Infolists\Components\ImageEntry::make('orcamento_fotos')
-                            ->label('')
-                            ->getStateUsing(function ($record) {
-                                if (!$record->orcamento)
-                                    return [];
-                                return $record->orcamento->getMedia('orcamento_fotos')->map(fn($media) => $media->getUrl())->toArray();
-                            })
-                            ->disk('public')
-                            ->height(200)
-                            ->columnSpanFull(),
-                        Infolists\Components\TextEntry::make('sem_imagens')
-                            ->label('')
-                            ->default('Nenhuma imagem anexada ao orçamento.')
-                            ->visible(fn($record) => !$record->orcamento || $record->orcamento->getMedia('orcamento_fotos')->isEmpty()),
-                    ])
-                    ->collapsible()
-                    ->collapsed(),
-
-                // ===== ABAS DE HISTÓRICO =====
-                Infolists\Components\Tabs::make('Informações Adicionais')
+                // ===== ABAS DE DETALHES =====
+                Infolists\Components\Tabs::make('Detalhes')
                     ->tabs([
-                        // ABA: FINANCEIRO
+                        Infolists\Components\Tabs\Tab::make('🛠️ Serviços e Itens')
+                            ->schema([
+                                RepeatableEntry::make('itens')
+                                    ->label('')
+                                    ->schema([
+                                        InfolistGrid::make(4)->schema([
+                                            TextEntry::make('descricao')->label('Item')->weight('bold'),
+                                            TextEntry::make('quantidade')->label('Qtd')->alignCenter(),
+                                            TextEntry::make('valor_unitario')->label('Unit.')->money('BRL'),
+                                            TextEntry::make('subtotal')->label('Total')->money('BRL')->weight('bold')->color('success'),
+                                        ]),
+                                    ])
+                                    ->grid(1),
+                                TextEntry::make('descricao_servico')
+                                    ->label('Descrição Técnica')
+                                    ->markdown()
+                                    ->columnSpanFull(),
+                            ]),
+
+                        Infolists\Components\Tabs\Tab::make('📦 Produtos Utilizados')
+                            ->badge(fn(OrdemServico $record) => $record->produtosUtilizados()->count())
+                            ->schema([
+                                RepeatableEntry::make('produtosUtilizados')
+                                    ->label('')
+                                    ->schema([
+                                        InfolistGrid::make(3)->schema([
+                                            TextEntry::make('item')->label('Produto')->weight('bold'),
+                                            TextEntry::make('pivot.quantidade_utilizada')
+                                                ->label('Qtd')
+                                                ->formatStateUsing(fn($state, $record) => number_format($state, 2) . ' ' . $record->pivot->unidade),
+                                            TextEntry::make('pivot.observacao')->label('Obs'),
+                                        ]),
+                                    ])
+                                    ->grid(1),
+                            ]),
+
+                        Infolists\Components\Tabs\Tab::make('📸 Evidências')
+                            ->schema([
+                                Infolists\Components\ImageEntry::make('fotos_antes')
+                                    ->label('Fotos Antes')
+                                    ->collection('os-fotos') // Check collection name
+                                    ->disk('public'),
+                                // Add logic for separate before/after if collections differ, otherwise just show all
+                            ]),
+
                         Infolists\Components\Tabs\Tab::make('💰 Financeiro')
                             ->schema([
                                 InfolistGrid::make(3)->schema([
                                     TextEntry::make('financeiro.status')
-                                        ->label('Status Pagamento')
+                                        ->label('Status')
                                         ->badge()
-                                        ->color(fn($state) => match ($state) {
-                                            'pago' => 'success',
-                                            'cancelado' => 'danger',
-                                            default => 'warning',
-                                        }),
-                                    TextEntry::make('financeiro.data')
-                                        ->label('Data Pagamento')
-                                        ->date('d/m/Y'),
-                                    TextEntry::make('financeiro.valor')
-                                        ->label('Valor')
-                                        ->money('BRL')
-                                        ->weight('bold'),
+                                        ->color(fn($state) => $state === 'pago' ? 'success' : 'warning'),
+                                    TextEntry::make('financeiro.data_pagamento')->label('Data Pagto')->date('d/m/Y'),
+                                    TextEntry::make('financeiro.valor_pago')->label('Valor Pago')->money('BRL'),
                                 ]),
-                                Infolists\Components\TextEntry::make('empty_financeiro')
-                                    ->label('')
-                                    ->default('Nenhum registro financeiro vinculado.')
-                                    ->visible(fn($record) => !$record->financeiro),
-                            ]),
-
-                        // ABA: AGENDA
-                        Infolists\Components\Tabs\Tab::make('📅 Agendamento')
-                            ->schema([
-                                InfolistGrid::make(3)->schema([
-                                    TextEntry::make('data_prevista')
-                                        ->label('Data/Hora Prevista')
-                                        ->dateTime('d/m/Y H:i'),
-                                    TextEntry::make('data_conclusao')
-                                        ->label('Conclusão')
-                                        ->date('d/m/Y'),
-                                    TextEntry::make('dias_garantia')
-                                        ->label('Garantia (dias)')
-                                        ->suffix(' dias'),
-                                ]),
-                            ]),
-
-                        // ABA: ARQUIVOS
-                        Infolists\Components\Tabs\Tab::make('📎 Arquivos')
-                            ->schema([
-                                Infolists\Components\TextEntry::make('arquivos_info')
-                                    ->label('')
-                                    ->default('Para gerenciar arquivos, use o modo de edição.')
-                                    ->helperText('Clique em "Editar" para adicionar ou remover arquivos.'),
                             ]),
                     ]),
             ]);
@@ -810,24 +662,8 @@ class OrdemServicoResource extends Resource
         return [
             'index' => Pages\ListOrdemServicos::route('/'),
             'create' => Pages\CreateOrdemServico::route('/create'),
-            'edit' => Pages\EditOrdemServico::route('/{record}/edit'),
             'view' => Pages\ViewOrdemServico::route('/{record}'),
+            'edit' => Pages\EditOrdemServico::route('/{record}/edit'),
         ];
-    }
-
-    public static function recalcularTotal(Forms\Set $set, Forms\Get $get): void
-    {
-        // Soma os subtotais do Repeater
-        $itens = $get('itens');
-        $total = 0;
-
-        if (is_array($itens)) {
-            foreach ($itens as $item) {
-                $subtotal = isset($item['subtotal']) ? (float) $item['subtotal'] : 0;
-                $total += $subtotal;
-            }
-        }
-
-        $set('valor_total', $total);
     }
 }
