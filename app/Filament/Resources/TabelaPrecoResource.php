@@ -6,10 +6,10 @@ use App\Filament\Resources\TabelaPrecoResource\Pages;
 use App\Models\TabelaPreco;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Section as InfolistSection;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -118,8 +118,8 @@ class TabelaPrecoResource extends Resource
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn(string $state): string => \App\Services\ServiceTypeManager::getColor($state))
-                    ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
+                    ->color(fn (string $state): string => \App\Services\ServiceTypeManager::getColor($state))
+                    ->formatStateUsing(fn (string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
                     ->sortable()
                     ->searchable(),
 
@@ -138,7 +138,7 @@ class TabelaPrecoResource extends Resource
                 Tables\Columns\TextColumn::make('unidade_medida')
                     ->label('Unidade')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'unidade' => 'UN',
                         'm2' => 'M²',
                         default => $state,
@@ -203,7 +203,7 @@ class TabelaPrecoResource extends Resource
                     ->tooltip('Abrir PDF')
                     ->icon('heroicon-o-document-text')
                     ->color('info')
-                    ->url(fn(TabelaPreco $record) => route('tabelapreco.pdf', $record))
+                    ->url(fn (TabelaPreco $record) => route('tabelapreco.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\ViewAction::make()
@@ -221,7 +221,7 @@ class TabelaPrecoResource extends Resource
                     ->tooltip('Baixar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->url(fn(TabelaPreco $record) => route('tabelapreco.pdf', $record))
+                    ->url(fn (TabelaPreco $record) => route('tabelapreco.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\DeleteAction::make()
@@ -253,7 +253,7 @@ class TabelaPrecoResource extends Resource
                                 TextEntry::make('preco_base')->label('Preço Base')->money('BRL'),
                                 TextEntry::make('preco_adicional')->label('Preço Adicional')->money('BRL'),
                                 TextEntry::make('unidade')->label('Unidade'),
-                                TextEntry::make('ativo')->label('Status')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
+                                TextEntry::make('ativo')->label('Status')->badge()->color(fn ($state) => $state ? 'success' : 'danger'),
                             ]),
                     ]),
             ]);

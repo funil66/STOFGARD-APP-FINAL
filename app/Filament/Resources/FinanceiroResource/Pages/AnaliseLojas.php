@@ -3,19 +3,18 @@
 namespace App\Filament\Resources\FinanceiroResource\Pages;
 
 use App\Filament\Resources\FinanceiroResource;
-use App\Models\Financeiro;
 use App\Models\Cadastro;
+use Filament\Forms;
 use Filament\Resources\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Filament\Forms;
 use Illuminate\Contracts\Support\Htmlable;
 
 /**
  * Página de Análise por Loja
- * 
+ *
  * Mostra a performance financeira de cada loja,
  * incluindo receitas, despesas e ticket médio.
  */
@@ -24,9 +23,13 @@ class AnaliseLojas extends Page implements HasTable
     use InteractsWithTable;
 
     protected static string $resource = FinanceiroResource::class;
+
     protected static string $view = 'filament.resources.financeiro-resource.pages.analise-lojas';
+
     protected static ?string $title = '🏪 Análise por Loja';
+
     protected static ?string $navigationLabel = 'Por Loja';
+
     protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
 
     public function getTitle(): string|Htmlable
@@ -41,8 +44,8 @@ class AnaliseLojas extends Page implements HasTable
                 Cadastro::query()
                     ->where('tipo', 'loja')
                     ->withCount(['financeiros as total_transacoes'])
-                    ->withSum(['financeiros as receitas' => fn($q) => $q->where('tipo', 'entrada')->where('status', 'pago')], 'valor')
-                    ->withSum(['financeiros as despesas' => fn($q) => $q->where('tipo', 'saida')->where('status', 'pago')], 'valor')
+                    ->withSum(['financeiros as receitas' => fn ($q) => $q->where('tipo', 'entrada')->where('status', 'pago')], 'valor')
+                    ->withSum(['financeiros as despesas' => fn ($q) => $q->where('tipo', 'saida')->where('status', 'pago')], 'valor')
                     ->withCount(['vendedores'])
             )
             ->columns([
@@ -83,14 +86,14 @@ class AnaliseLojas extends Page implements HasTable
 
                 Tables\Columns\TextColumn::make('saldo')
                     ->label('📊 Saldo')
-                    ->getStateUsing(fn($record) => ($record->receitas ?? 0) - ($record->despesas ?? 0))
+                    ->getStateUsing(fn ($record) => ($record->receitas ?? 0) - ($record->despesas ?? 0))
                     ->money('BRL')
-                    ->color(fn($state) => $state >= 0 ? 'success' : 'danger')
+                    ->color(fn ($state) => $state >= 0 ? 'success' : 'danger')
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('ticket_medio')
                     ->label('🎫 Ticket Médio')
-                    ->getStateUsing(fn($record) => $record->total_transacoes > 0
+                    ->getStateUsing(fn ($record) => $record->total_transacoes > 0
                         ? ($record->receitas ?? 0) / $record->total_transacoes
                         : 0)
                     ->money('BRL')
@@ -108,7 +111,7 @@ class AnaliseLojas extends Page implements HasTable
                 Tables\Actions\Action::make('ver_transacoes')
                     ->label('Ver Transações')
                     ->icon('heroicon-o-eye')
-                    ->url(fn(Cadastro $record) => FinanceiroResource::getUrl('index', [
+                    ->url(fn (Cadastro $record) => FinanceiroResource::getUrl('index', [
                         'tableFilters[loja_direto][value]' => $record->id,
                     ]))
                     ->openUrlInNewTab(),
@@ -116,7 +119,7 @@ class AnaliseLojas extends Page implements HasTable
                 Tables\Actions\Action::make('ver_vendedores')
                     ->label('Vendedores')
                     ->icon('heroicon-o-user-group')
-                    ->url(fn(Cadastro $record) => FinanceiroResource::getUrl('analise-vendedores', [
+                    ->url(fn (Cadastro $record) => FinanceiroResource::getUrl('analise-vendedores', [
                         'tableFilters[loja_id][value]' => $record->id,
                     ])),
             ])

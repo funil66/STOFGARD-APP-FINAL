@@ -15,7 +15,7 @@ class CreateOrcamento extends CreateRecord
     {
         // Gera o número sequencial (Ex: 2026.0001)
         $data['numero'] = Orcamento::gerarNumeroOrcamento();
-        
+
         // CORREÇÃO DO ERRO 1364: Define a data de emissão como HOJE se não vier do form
         if (! isset($data['data_orcamento'])) {
             $data['data_orcamento'] = now();

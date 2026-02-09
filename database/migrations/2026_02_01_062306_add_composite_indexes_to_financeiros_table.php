@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Adiciona índices compostos para otimizar queries frequentes no sistema financeiro.
      */
     public function up(): void

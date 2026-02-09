@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Cadastro;
 use App\Models\Orcamento;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

@@ -29,7 +29,7 @@ class ListaDesejoObserver
      */
     protected function verificarDataPrevista(ListaDesejo $listaDesejo): void
     {
-        if (!$listaDesejo->data_prevista_compra) {
+        if (! $listaDesejo->data_prevista_compra) {
             return;
         }
 
@@ -46,7 +46,7 @@ class ListaDesejoObserver
         if ($diasRestantes < 0) {
             Notification::make()
                 ->title('⚠️ DATA DE COMPRA VENCIDA!')
-                ->body("{$listaDesejo->nome} - Previsão: " . \Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->format('d/m/Y'))
+                ->body("{$listaDesejo->nome} - Previsão: ".\Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->format('d/m/Y'))
                 ->danger()
                 ->persistent()
                 ->sendToDatabase(auth()->user());
@@ -55,7 +55,7 @@ class ListaDesejoObserver
         elseif ($diasRestantes <= 1) {
             Notification::make()
                 ->title('📅 COMPRA URGENTE!')
-                ->body("{$listaDesejo->nome} - Previsão: " . \Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->format('d/m/Y'))
+                ->body("{$listaDesejo->nome} - Previsão: ".\Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->format('d/m/Y'))
                 ->warning()
                 ->persistent()
                 ->sendToDatabase(auth()->user());

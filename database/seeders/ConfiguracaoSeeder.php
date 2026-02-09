@@ -2,11 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Configuracao;
+use Illuminate\Database\Seeder;
 
-class ConfiguracaoSeeder extends Seeder {
-    public function run(): void {
+class ConfiguracaoSeeder extends Seeder
+{
+    public function run(): void
+    {
         $payload = [
             'empresa_nome' => 'Stofgard - Higienização e Impermeabilização',
             'empresa_cnpj' => '00.000.000/0001-00',
@@ -40,7 +42,7 @@ class ConfiguracaoSeeder extends Seeder {
                 'primaria' => '#1e3a8a', // Azul Stofgard
                 'secundaria' => '#475569', // Cinza
             ],
-            
+
             'termos_garantia' => '<p>1. Garantia de 1 ano para impermeabilização.</p><p>2. Manchas de urina e tintas não são cobertas.</p>',
         ];
 

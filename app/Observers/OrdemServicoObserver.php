@@ -2,9 +2,9 @@
 
 namespace App\Observers;
 
-use App\Models\OrdemServico;
 use App\Models\Agenda;
 use App\Models\Estoque;
+use App\Models\OrdemServico;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +18,7 @@ class OrdemServicoObserver
     {
         // Cria agendamento automático ao criar a OS
         Agenda::create([
-            'titulo' => 'Serviço - ' . ($os->cliente->nome ?? 'Cliente'),
+            'titulo' => 'Serviço - '.($os->cliente->nome ?? 'Cliente'),
             'descricao' => "Ordem de Serviço {$os->numero_os}",
             'cliente_id' => $os->cliente_id ?? null,
             'cadastro_id' => $os->cadastro_id,
@@ -41,7 +41,7 @@ class OrdemServicoObserver
     public function saved(OrdemServico $ordemServico): void
     {
         // Verifica se há dados de produtos no request
-        if (!request()->has('produtosUtilizados') && !request()->has('data.produtosUtilizados')) {
+        if (! request()->has('produtosUtilizados') && ! request()->has('data.produtosUtilizados')) {
             return;
         }
 
@@ -59,7 +59,7 @@ class OrdemServicoObserver
 
                 // ESTORNAR produtos removidos
                 foreach ($produtosAtuais as $produtoAtual) {
-                    if (!$produtosNovos->has($produtoAtual->id)) {
+                    if (! $produtosNovos->has($produtoAtual->id)) {
                         Log::info("Estornando produto {$produtoAtual->item}: {$produtoAtual->pivot->quantidade_utilizada}");
                         $produtoAtual->estornar($produtoAtual->pivot->quantidade_utilizada);
                     }
@@ -79,7 +79,7 @@ class OrdemServicoObserver
                             Log::info("Aumentando baixa do produto {$estoque->item}: diferença de {$diferenca}");
                             $estoque->darBaixa($diferenca);
                         } elseif ($diferenca < 0) {
-                            Log::info("Estornando parcialmente produto {$estoque->item}: {" . abs($diferenca) . "}");
+                            Log::info("Estornando parcialmente produto {$estoque->item}: {".abs($diferenca).'}');
                             $estoque->estornar(abs($diferenca));
                         }
                     } else {
@@ -91,7 +91,7 @@ class OrdemServicoObserver
             });
         } catch (\Exception $e) {
             // Log do erro mas não interrompe o salvamento da OS
-            Log::error("Erro ao processar estoque da OS {$ordemServico->numero_os}: " . $e->getMessage());
+            Log::error("Erro ao processar estoque da OS {$ordemServico->numero_os}: ".$e->getMessage());
 
             // Re-lança a exception para que o usuário saiba do problema
             throw $e;
@@ -117,7 +117,7 @@ class OrdemServicoObserver
                 }
             });
         } catch (\Exception $e) {
-            Log::error("Erro ao estornar produtos da OS {$ordemServico->numero_os} ao deletar: " . $e->getMessage());
+            Log::error("Erro ao estornar produtos da OS {$ordemServico->numero_os} ao deletar: ".$e->getMessage());
             throw $e;
         }
     }

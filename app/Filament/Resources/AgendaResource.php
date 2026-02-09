@@ -4,19 +4,18 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AgendaResource\Pages;
 use App\Models\Agenda;
-use App\Models\Cadastro;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\Grid as InfolistGrid;
 
 class AgendaResource extends Resource
 {
@@ -191,7 +190,7 @@ class AgendaResource extends Resource
                             ->addActionLabel('➕ Adicionar Nova Tarefa')
                             ->reorderable()
                             ->collapsible()
-                            ->itemLabel(fn(array $state): ?string => $state['descricao'] ?? null)
+                            ->itemLabel(fn (array $state): ?string => $state['descricao'] ?? null)
                             ->columnSpanFull(),
                     ]),
 
@@ -220,7 +219,7 @@ class AgendaResource extends Resource
                                 ->label('✅ Status do Lembrete')
                                 ->disabled()
                                 ->helperText('Marcado automaticamente pelo sistema após envio')
-                                ->visible(fn($record) => $record?->lembrete_enviado ?? false),
+                                ->visible(fn ($record) => $record?->lembrete_enviado ?? false),
                         ]),
                     ]),
 
@@ -246,7 +245,7 @@ class AgendaResource extends Resource
                     ]),
 
                 Forms\Components\Hidden::make('criado_por')
-                    ->default(fn() => Auth::id() ?? 1),
+                    ->default(fn () => Auth::id() ?? 1),
             ]);
     }
 
@@ -261,7 +260,7 @@ class AgendaResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->weight('bold')
-                    ->description(fn($record) => $record->titulo ? mb_substr($record->titulo, 0, 25) . (mb_strlen($record->titulo) > 25 ? '...' : '') : '-')
+                    ->description(fn ($record) => $record->titulo ? mb_substr($record->titulo, 0, 25).(mb_strlen($record->titulo) > 25 ? '...' : '') : '-')
                     ->icon('heroicon-o-calendar-days'),
 
                 // DESKTOP ONLY: Título separado
@@ -282,19 +281,19 @@ class AgendaResource extends Resource
                 // SEMPRE VISÍVEL: Tipo com ícone
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'servico' => '🧼',
                         'visita' => '👁️',
                         'reuniao' => '🤝',
                         default => '📌',
                     })
-                    ->tooltip(fn(string $state): string => match ($state) {
+                    ->tooltip(fn (string $state): string => match ($state) {
                         'servico' => 'Serviço',
                         'visita' => 'Visita',
                         'reuniao' => 'Reunião',
                         default => 'Outro',
                     })
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'servico' => 'info',
                         'visita' => 'warning',
                         'reuniao' => 'success',
@@ -304,20 +303,20 @@ class AgendaResource extends Resource
                 // SEMPRE VISÍVEL: Status com ícone
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'concluido' => '✓',
                         'em_andamento' => '⏳',
                         'cancelado' => '✗',
                         default => '📅',
                     })
-                    ->tooltip(fn(string $state): string => match ($state) {
+                    ->tooltip(fn (string $state): string => match ($state) {
                         'agendado' => 'Agendado',
                         'em_andamento' => 'Em Andamento',
                         'concluido' => 'Concluído',
                         'cancelado' => 'Cancelado',
                         default => $state,
                     })
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'concluido' => 'success',
                         'em_andamento' => 'warning',
                         'cancelado' => 'danger',
@@ -366,11 +365,11 @@ class AgendaResource extends Resource
                         return $query
                             ->when(
                                 $data['data_de'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('data_hora_inicio', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('data_hora_inicio', '>=', $date),
                             )
                             ->when(
                                 $data['data_ate'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('data_hora_inicio', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('data_hora_inicio', '<=', $date),
                             );
                     }),
             ])
@@ -394,7 +393,7 @@ class AgendaResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->iconButton()
-                    ->visible(fn(Agenda $record) => !in_array($record->status, ['concluido', 'cancelado']))
+                    ->visible(fn (Agenda $record) => ! in_array($record->status, ['concluido', 'cancelado']))
                     ->requiresConfirmation()
                     ->action(function (Agenda $record) {
                         $record->update(['status' => 'concluido']);
@@ -411,7 +410,7 @@ class AgendaResource extends Resource
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->iconButton()
-                    ->visible(fn(Agenda $record) => $record->status === 'agendado')
+                    ->visible(fn (Agenda $record) => $record->status === 'agendado')
                     ->requiresConfirmation()
                     ->action(function (Agenda $record) {
                         $record->update(['status' => 'cancelado']);
@@ -434,14 +433,14 @@ class AgendaResource extends Resource
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn($records) => $records->each->update(['status' => 'concluido'])),
+                        ->action(fn ($records) => $records->each->update(['status' => 'concluido'])),
 
                     Tables\Actions\BulkAction::make('marcar_cancelado')
                         ->label('Marcar como Cancelado')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn($records) => $records->each->update(['status' => 'cancelado'])),
+                        ->action(fn ($records) => $records->each->update(['status' => 'cancelado'])),
 
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
@@ -473,13 +472,13 @@ class AgendaResource extends Resource
                                 ->size(TextEntry\TextEntrySize::Large),
                             TextEntry::make('status')
                                 ->badge()
-                                ->color(fn(string $state): string => match ($state) {
+                                ->color(fn (string $state): string => match ($state) {
                                     'concluido' => 'success',
                                     'cancelado' => 'danger',
                                     'em_andamento' => 'warning',
                                     default => 'info',
                                 })
-                                ->formatStateUsing(fn($state) => match ($state) {
+                                ->formatStateUsing(fn ($state) => match ($state) {
                                     'agendado' => '📅 Agendado',
                                     'em_andamento' => '🔄 Em Andamento',
                                     'concluido' => '✅ Concluído',
@@ -491,13 +490,13 @@ class AgendaResource extends Resource
                             TextEntry::make('tipo')
                                 ->label('Tipo')
                                 ->badge()
-                                ->color(fn($state) => match ($state) {
+                                ->color(fn ($state) => match ($state) {
                                     'servico' => 'info',
                                     'visita' => 'warning',
                                     'reuniao' => 'success',
                                     default => 'gray',
                                 })
-                                ->formatStateUsing(fn($state) => match ($state) {
+                                ->formatStateUsing(fn ($state) => match ($state) {
                                     'servico' => '🧼 Serviço',
                                     'visita' => '👁️ Visita Técnica',
                                     'reuniao' => '🤝 Reunião',
@@ -515,8 +514,8 @@ class AgendaResource extends Resource
                             TextEntry::make('dia_inteiro')
                                 ->label('Dia Inteiro')
                                 ->badge()
-                                ->color(fn($state) => $state ? 'success' : 'gray')
-                                ->formatStateUsing(fn($state) => $state ? 'Sim' : 'Não'),
+                                ->color(fn ($state) => $state ? 'success' : 'gray')
+                                ->formatStateUsing(fn ($state) => $state ? 'Sim' : 'Não'),
                         ]),
                     ]),
 
@@ -527,7 +526,7 @@ class AgendaResource extends Resource
                             TextEntry::make('cadastro.nome')
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
-                                ->url(fn($record) => $record->cadastro_url)
+                                ->url(fn ($record) => $record->cadastro_url)
                                 ->color('primary')
                                 ->placeholder('Não vinculado'),
                             TextEntry::make('tipo_servico_exibicao')
@@ -543,13 +542,14 @@ class AgendaResource extends Resource
                                     if ($record->orcamento_id && $record->orcamento) {
                                         return \App\Services\ServiceTypeManager::getLabel($record->orcamento->tipo_servico ?? 'servico');
                                     }
+
                                     return null;
                                 })
                                 ->placeholder('Não vinculado'),
                             TextEntry::make('orcamento.numero')
                                 ->label('Orçamento')
                                 ->icon('heroicon-m-document-text')
-                                ->url(fn($record) => $record->orcamento_id
+                                ->url(fn ($record) => $record->orcamento_id
                                     ? \App\Filament\Resources\OrcamentoResource::getUrl('view', ['record' => $record->orcamento_id])
                                     : null)
                                 ->color('primary')
@@ -559,7 +559,7 @@ class AgendaResource extends Resource
                             TextEntry::make('ordemServico.numero_os')
                                 ->label('Ordem de Serviço')
                                 ->icon('heroicon-m-clipboard-document-check')
-                                ->url(fn($record) => $record->ordem_servico_id
+                                ->url(fn ($record) => $record->ordem_servico_id
                                     ? \App\Filament\Resources\OrdemServicoResource::getUrl('view', ['record' => $record->ordem_servico_id])
                                     : null)
                                 ->color('primary')
@@ -575,12 +575,12 @@ class AgendaResource extends Resource
                             TextEntry::make('local')
                                 ->label('')
                                 ->icon('heroicon-m-map-pin')
-                                ->url(fn($record) => $record->endereco_maps, true)
+                                ->url(fn ($record) => $record->endereco_maps, true)
                                 ->placeholder('Local não informado'),
                             TextEntry::make('endereco_completo')
                                 ->label('Endereço Completo')
                                 ->placeholder('Endereço não informado')
-                                ->visible(fn($record) => $record->endereco_completo && $record->endereco_completo !== $record->local),
+                                ->visible(fn ($record) => $record->endereco_completo && $record->endereco_completo !== $record->local),
                         ]),
                     ])
                     ->collapsible(),
@@ -617,19 +617,19 @@ class AgendaResource extends Resource
                                     ->falseColor('gray'),
                                 TextEntry::make('descricao')
                                     ->label('Tarefa')
-                                    ->weight(fn($record) => $record['concluida'] ?? false ? 'normal' : 'bold')
-                                    ->color(fn($record) => $record['concluida'] ?? false ? 'gray' : 'primary'),
+                                    ->weight(fn ($record) => $record['concluida'] ?? false ? 'normal' : 'bold')
+                                    ->color(fn ($record) => $record['concluida'] ?? false ? 'gray' : 'primary'),
                             ])
                             ->columns(2)
                             ->columnSpanFull(),
                         TextEntry::make('tarefas_vazio')
                             ->label('')
                             ->default('Nenhuma tarefa cadastrada')
-                            ->visible(fn($record) => empty($record->extra_attributes['tarefas'] ?? [])),
+                            ->visible(fn ($record) => empty($record->extra_attributes['tarefas'] ?? [])),
                     ])
                     ->collapsible()
                     ->collapsed()
-                    ->visible(fn($record) => !empty($record->extra_attributes['tarefas'] ?? []) || true),
+                    ->visible(fn ($record) => ! empty($record->extra_attributes['tarefas'] ?? []) || true),
 
                 // ===== LEMBRETES E NOTIFICAÇÕES =====
                 InfolistSection::make('🔔 Lembretes')
@@ -638,20 +638,20 @@ class AgendaResource extends Resource
                             TextEntry::make('minutos_antes_lembrete')
                                 ->label('Lembrete Configurado')
                                 ->badge()
-                                ->formatStateUsing(fn($state) => match ((int) $state) {
+                                ->formatStateUsing(fn ($state) => match ((int) $state) {
                                     15 => '15 min antes',
                                     30 => '30 min antes',
                                     60 => '1h antes',
                                     120 => '2h antes',
                                     1440 => '1 dia antes',
                                     2880 => '2 dias antes',
-                                    default => $state . ' min antes',
+                                    default => $state.' min antes',
                                 }),
                             TextEntry::make('lembrete_enviado')
                                 ->label('Status do Lembrete')
                                 ->badge()
-                                ->color(fn($state) => $state ? 'success' : 'warning')
-                                ->formatStateUsing(fn($state) => $state ? '✅ Enviado' : '⏳ Pendente'),
+                                ->color(fn ($state) => $state ? 'success' : 'warning')
+                                ->formatStateUsing(fn ($state) => $state ? '✅ Enviado' : '⏳ Pendente'),
                         ]),
                     ])
                     ->collapsible()
@@ -670,7 +670,7 @@ class AgendaResource extends Resource
                             TextEntry::make('cor')
                                 ->label('Cor no Calendário')
                                 ->badge()
-                                ->color(fn($state) => $state ?? 'gray'),
+                                ->color(fn ($state) => $state ?? 'gray'),
                         ]),
                     ])
                     ->collapsible()

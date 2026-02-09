@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\ProdutoResource\Widgets;
 
 use App\Models\Estoque;
-use Filament\Widgets\Widget;
 use Filament\Notifications\Notification;
+use Filament\Widgets\Widget;
 
 class EstoqueVisualWidget extends Widget
 {
@@ -55,8 +55,8 @@ class EstoqueVisualWidget extends Widget
     protected function notificarEscassez(string $nomeProduto, float $volume): void
     {
         // Evita múltiplas notificações (cache por 1 hora)
-        $cacheKey = "estoque_alerta_" . str_replace(' ', '_', $nomeProduto);
-        if (!cache()->has($cacheKey)) {
+        $cacheKey = 'estoque_alerta_'.str_replace(' ', '_', $nomeProduto);
+        if (! cache()->has($cacheKey)) {
             Notification::make()
                 ->title('⚠️ ESTOQUE BAIXO!')
                 ->body("Apenas {$volume}L de {$nomeProduto} restantes!")

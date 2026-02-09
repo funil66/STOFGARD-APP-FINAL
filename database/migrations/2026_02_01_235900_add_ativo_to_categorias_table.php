@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('categorias', function (Blueprint $table) {
-            if (!Schema::hasColumn('categorias', 'ativo')) {
+            if (! Schema::hasColumn('categorias', 'ativo')) {
                 $table->boolean('ativo')->default(true)->after('descricao');
             }
         });

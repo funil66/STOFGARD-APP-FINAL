@@ -2,18 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\Orcamento;
-use App\Models\OrdemServico;
-use App\Enums\OrcamentoStatus;
-use App\Enums\OrdemServicoStatus;
 use App\Enums\AgendaStatus;
 use App\Enums\AgendaTipo;
-use Illuminate\Support\Facades\DB;
+use App\Enums\OrcamentoStatus;
+use App\Enums\OrdemServicoStatus;
+use App\Models\Orcamento;
+use App\Models\OrdemServico;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class OrdemServicoService
 {
     protected FinanceiroService $financeiroService;
+
     protected EstoqueService $estoqueService;
 
     // Injeção de Dependência automática do Laravel
@@ -28,15 +29,15 @@ class OrdemServicoService
     /**
      * Transforma um Orçamento Aprovado em uma Ordem de Serviço completa.
      * Transaction Atômica: Ou cria tudo, ou não cria nada.
-     * 
-     * @param Orcamento $orcamento
-     * @param int|null $userId ID do usuário responsável (obrigatório para auditoria)
+     *
+     * @param  int|null  $userId  ID do usuário responsável (obrigatório para auditoria)
+     *
      * @throws Exception
      */
     public function aprovarOrcamento(Orcamento $orcamento, ?int $userId = null): OrdemServico
     {
         // CORREÇÃO CRÍTICA: Não permitir operações sem usuário responsável
-        if (!$userId && !auth()->id()) {
+        if (! $userId && ! auth()->id()) {
             throw new Exception('Não é possível aprovar orçamento sem um usuário responsável. Operação rejeitada por questão de auditoria.');
         }
 
@@ -78,7 +79,7 @@ class OrdemServicoService
         $endereco = $cliente->endereco_completo ?? $cliente->endereco ?? null;
 
         return \App\Models\Agenda::create([
-            'titulo' => "Serviço - " . ($cliente->nome ?? 'Cliente'),
+            'titulo' => 'Serviço - '.($cliente->nome ?? 'Cliente'),
             'descricao' => "OS #{$os->numero_os} gerada via Orçamento #{$orcamento->numero}",
             'cadastro_id' => $os->cadastro_id,
             'ordem_servico_id' => $os->id,
@@ -94,7 +95,6 @@ class OrdemServicoService
             'criado_por' => $userId,
         ]);
     }
-
 
     /**
      * Cria uma Ordem de Serviço a partir de um Orçamento.

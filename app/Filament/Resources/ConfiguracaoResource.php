@@ -3,16 +3,11 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ConfiguracaoResource\Pages;
+use App\Filament\Resources\ConfiguracaoResource\RelationManagers\TabelaPrecosRelationManager;
 use App\Models\Configuracao;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use App\Filament\Resources\ConfiguracaoResource\RelationManagers\TabelaPrecosRelationManager;
-
-use Filament\Forms\Get;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 
 class ConfiguracaoResource extends Resource
 {
@@ -83,7 +78,7 @@ class ConfiguracaoResource extends Resource
                                 Forms\Components\RichEditor::make('pdf_header')->label('Cabeçalho'),
                                 Forms\Components\RichEditor::make('termos_garantia')->label('Termos de Garantia'),
                             ]),
-                    ])->columnSpanFull()
+                    ])->columnSpanFull(),
             ]);
     }
 

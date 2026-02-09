@@ -1,31 +1,28 @@
 <?php
+
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CadastroResource\Pages;
 use App\Models\Cadastro;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Grid;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Filament\Support\RawJs;
-use Illuminate\Support\Facades\Http;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 
 class CadastroResource extends Resource
 {
     protected static ?string $model = Cadastro::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
     protected static ?string $label = 'Cadastro';
+
     protected static ?string $pluralLabel = 'Cadastros';
 
     // --- INFOLIST PREMIUM (CLIENTE 360) ---
@@ -44,7 +41,7 @@ class CadastroResource extends Resource
                                 ->size(TextEntry\TextEntrySize::Large),
                             TextEntry::make('tipo')
                                 ->badge()
-                                ->color(fn(string $state): string => match ($state) {
+                                ->color(fn (string $state): string => match ($state) {
                                     'cliente' => 'info',
                                     'loja' => 'success',
                                     'vendedor' => 'warning',
@@ -60,7 +57,7 @@ class CadastroResource extends Resource
                             TextEntry::make('telefone')
                                 ->label('WhatsApp')
                                 ->icon('heroicon-m-chat-bubble-left-right')
-                                ->url(fn($state) => 'https://wa.me/55' . preg_replace('/\D/', '', $state), true)
+                                ->url(fn ($state) => 'https://wa.me/55'.preg_replace('/\D/', '', $state), true)
                                 ->visibleFrom('md'),
                             TextEntry::make('email')
                                 ->label('E-mail')
@@ -68,7 +65,7 @@ class CadastroResource extends Resource
                                 ->copyable(),
                             TextEntry::make('cidade')
                                 ->label('Localização')
-                                ->formatStateUsing(fn($record) => "{$record->cidade}/{$record->estado}")
+                                ->formatStateUsing(fn ($record) => "{$record->cidade}/{$record->estado}")
                                 ->visibleFrom('lg'),
                             TextEntry::make('created_at')
                                 ->label('Cliente desde')
@@ -102,7 +99,7 @@ class CadastroResource extends Resource
                             TextEntry::make('saldo')
                                 ->label('📊 Saldo')
                                 ->money('BRL')
-                                ->color(fn($state) => $state >= 0 ? 'success' : 'danger')
+                                ->color(fn ($state) => $state >= 0 ? 'success' : 'danger')
                                 ->weight('bold'),
                         ]),
                     ])
@@ -113,7 +110,7 @@ class CadastroResource extends Resource
                     ->tabs([
                         // ABA 1: ORÇAMENTOS
                         Infolists\Components\Tabs\Tab::make('📋 Orçamentos')
-                            ->badge(fn($record) => $record->orcamentos()->count())
+                            ->badge(fn ($record) => $record->orcamentos()->count())
                             ->schema([
                                 Infolists\Components\RepeatableEntry::make('orcamentos')
                                     ->label('')
@@ -122,7 +119,7 @@ class CadastroResource extends Resource
                                             TextEntry::make('numero')->label('Nº')->weight('bold'),
                                             TextEntry::make('status')
                                                 ->badge()
-                                                ->color(fn($state) => match ($state) {
+                                                ->color(fn ($state) => match ($state) {
                                                     'aprovado' => 'success',
                                                     'cancelado', 'rejeitado' => 'danger',
                                                     'enviado' => 'warning',
@@ -133,23 +130,23 @@ class CadastroResource extends Resource
                                             TextEntry::make('valor_total')->label('Valor')->money('BRL')->color('success')->weight('bold'),
                                             TextEntry::make('id')
                                                 ->label('')
-                                                ->formatStateUsing(fn() => 'Ver PDF')
-                                                ->url(fn($record) => route('orcamento.pdf', $record), true)
+                                                ->formatStateUsing(fn () => 'Ver PDF')
+                                                ->url(fn ($record) => route('orcamento.pdf', $record), true)
                                                 ->icon('heroicon-o-document-arrow-down')
                                                 ->color('primary'),
                                         ]),
                                     ])
                                     ->grid(1)
-                                    ->hidden(fn($record) => $record->orcamentos()->count() === 0),
+                                    ->hidden(fn ($record) => $record->orcamentos()->count() === 0),
                                 Infolists\Components\TextEntry::make('empty_orcamentos')
                                     ->label('')
                                     ->default('Nenhum orçamento encontrado.')
-                                    ->visible(fn($record) => $record->orcamentos()->count() === 0),
+                                    ->visible(fn ($record) => $record->orcamentos()->count() === 0),
                             ]),
 
                         // ABA 2: ORDENS DE SERVIÇO
                         Infolists\Components\Tabs\Tab::make('🛠️ Ordens de Serviço')
-                            ->badge(fn($record) => $record->ordensServico()->count())
+                            ->badge(fn ($record) => $record->ordensServico()->count())
                             ->schema([
                                 Infolists\Components\RepeatableEntry::make('ordensServico')
                                     ->label('')
@@ -159,7 +156,7 @@ class CadastroResource extends Resource
                                             TextEntry::make('tipo_servico')->label('Tipo'),
                                             TextEntry::make('status')
                                                 ->badge()
-                                                ->color(fn($state) => match ($state) {
+                                                ->color(fn ($state) => match ($state) {
                                                     'concluida', 'finalizada' => 'success',
                                                     'cancelada' => 'danger',
                                                     'em_andamento' => 'warning',
@@ -169,23 +166,23 @@ class CadastroResource extends Resource
                                             TextEntry::make('valor_total')->label('Total')->money('BRL'),
                                             TextEntry::make('id')
                                                 ->label('')
-                                                ->formatStateUsing(fn() => 'Ver PDF')
-                                                ->url(fn($record) => route('os.pdf', $record), true)
+                                                ->formatStateUsing(fn () => 'Ver PDF')
+                                                ->url(fn ($record) => route('os.pdf', $record), true)
                                                 ->icon('heroicon-o-document-arrow-down')
                                                 ->color('primary'),
                                         ]),
                                     ])
                                     ->grid(1)
-                                    ->hidden(fn($record) => $record->ordensServico()->count() === 0),
+                                    ->hidden(fn ($record) => $record->ordensServico()->count() === 0),
                                 Infolists\Components\TextEntry::make('empty_os')
                                     ->label('')
                                     ->default('Nenhuma ordem de serviço encontrada.')
-                                    ->visible(fn($record) => $record->ordensServico()->count() === 0),
+                                    ->visible(fn ($record) => $record->ordensServico()->count() === 0),
                             ]),
 
                         // ABA 3: FINANCEIRO
                         Infolists\Components\Tabs\Tab::make('💰 Financeiro')
-                            ->badge(fn($record) => $record->financeiros()->count())
+                            ->badge(fn ($record) => $record->financeiros()->count())
                             ->schema([
                                 Infolists\Components\RepeatableEntry::make('financeiros')
                                     ->label('')
@@ -193,12 +190,12 @@ class CadastroResource extends Resource
                                         Grid::make(6)->schema([
                                             TextEntry::make('tipo')
                                                 ->badge()
-                                                ->color(fn($state) => $state === 'entrada' ? 'success' : 'danger')
-                                                ->formatStateUsing(fn($state) => $state === 'entrada' ? '💵 Entrada' : '💸 Saída'),
+                                                ->color(fn ($state) => $state === 'entrada' ? 'success' : 'danger')
+                                                ->formatStateUsing(fn ($state) => $state === 'entrada' ? '💵 Entrada' : '💸 Saída'),
                                             TextEntry::make('descricao')->label('Descrição')->limit(40),
                                             TextEntry::make('status')
                                                 ->badge()
-                                                ->color(fn($state) => match ($state) {
+                                                ->color(fn ($state) => match ($state) {
                                                     'pago' => 'success',
                                                     'cancelado' => 'danger',
                                                     default => 'warning',
@@ -209,16 +206,16 @@ class CadastroResource extends Resource
                                         ]),
                                     ])
                                     ->grid(1)
-                                    ->hidden(fn($record) => $record->financeiros()->count() === 0),
+                                    ->hidden(fn ($record) => $record->financeiros()->count() === 0),
                                 Infolists\Components\TextEntry::make('empty_financeiro')
                                     ->label('')
                                     ->default('Nenhum lançamento financeiro encontrado.')
-                                    ->visible(fn($record) => $record->financeiros()->count() === 0),
+                                    ->visible(fn ($record) => $record->financeiros()->count() === 0),
                             ]),
 
                         // ABA 4: AGENDA
                         Infolists\Components\Tabs\Tab::make('📅 Agenda')
-                            ->badge(fn($record) => $record->agendas()->count())
+                            ->badge(fn ($record) => $record->agendas()->count())
                             ->schema([
                                 Infolists\Components\RepeatableEntry::make('agendas')
                                     ->label('')
@@ -227,7 +224,7 @@ class CadastroResource extends Resource
                                             TextEntry::make('titulo')->label('Evento')->weight('bold'),
                                             TextEntry::make('status')
                                                 ->badge()
-                                                ->color(fn($state) => match ($state) {
+                                                ->color(fn ($state) => match ($state) {
                                                     'concluido' => 'success',
                                                     'cancelado' => 'danger',
                                                     'em_andamento' => 'warning',
@@ -239,17 +236,17 @@ class CadastroResource extends Resource
                                         ]),
                                     ])
                                     ->grid(1)
-                                    ->hidden(fn($record) => $record->agendas()->count() === 0),
+                                    ->hidden(fn ($record) => $record->agendas()->count() === 0),
                                 Infolists\Components\TextEntry::make('empty_agenda')
                                     ->label('')
                                     ->default('Nenhum agendamento encontrado.')
-                                    ->visible(fn($record) => $record->agendas()->count() === 0),
+                                    ->visible(fn ($record) => $record->agendas()->count() === 0),
                             ]),
 
                         // ABA 5: VENDEDORES (apenas para Lojas)
                         Infolists\Components\Tabs\Tab::make('🧑‍💼 Vendedores')
-                            ->badge(fn($record) => $record->vendedores()->count())
-                            ->visible(fn($record) => $record->tipo === 'loja')
+                            ->badge(fn ($record) => $record->vendedores()->count())
+                            ->visible(fn ($record) => $record->tipo === 'loja')
                             ->schema([
                                 Infolists\Components\RepeatableEntry::make('vendedores')
                                     ->label('')
@@ -264,11 +261,11 @@ class CadastroResource extends Resource
                                         ]),
                                     ])
                                     ->grid(1)
-                                    ->hidden(fn($record) => $record->vendedores()->count() === 0),
+                                    ->hidden(fn ($record) => $record->vendedores()->count() === 0),
                                 Infolists\Components\TextEntry::make('empty_vendedores')
                                     ->label('')
                                     ->default('Nenhum vendedor vinculado a esta loja.')
-                                    ->visible(fn($record) => $record->vendedores()->count() === 0),
+                                    ->visible(fn ($record) => $record->vendedores()->count() === 0),
                             ]),
 
                         // ABA 6: ARQUIVOS
@@ -306,18 +303,18 @@ class CadastroResource extends Resource
                         ])
                         ->required()
                         ->live()
-                        ->afterStateUpdated(fn($state, Forms\Set $set) => $state === 'parceiro' ? $set('especialidade', 'Arquiteto') : null),
+                        ->afterStateUpdated(fn ($state, Forms\Set $set) => $state === 'parceiro' ? $set('especialidade', 'Arquiteto') : null),
 
                     Forms\Components\TextInput::make('especialidade')
                         ->label('Ramo de Atividade / Profissão')
                         ->placeholder('Ex: Arquiteto, Advogado, Zelador')
-                        ->visible(fn(Forms\Get $get) => in_array($get('tipo'), ['parceiro', 'loja']))
+                        ->visible(fn (Forms\Get $get) => in_array($get('tipo'), ['parceiro', 'loja']))
                         ->columnSpan(1),
 
                     Forms\Components\Select::make('parent_id')
                         ->label('Loja Vinculada')
-                        ->relationship('loja', 'nome', fn(\Illuminate\Database\Eloquent\Builder $query) => $query->where('tipo', 'loja'))
-                        ->visible(fn(Forms\Get $get) => $get('tipo') === 'vendedor')
+                        ->relationship('loja', 'nome', fn (\Illuminate\Database\Eloquent\Builder $query) => $query->where('tipo', 'loja'))
+                        ->visible(fn (Forms\Get $get) => $get('tipo') === 'vendedor')
                         ->searchable(),
 
                     // CAMPO DE COMISSÃO
@@ -326,7 +323,7 @@ class CadastroResource extends Resource
                         ->numeric()
                         ->suffix('%')
                         ->default(0)
-                        ->visible(fn(Forms\Get $get) => in_array($get('tipo'), ['vendedor', 'loja', 'parceiro']))
+                        ->visible(fn (Forms\Get $get) => in_array($get('tipo'), ['vendedor', 'loja', 'parceiro']))
                         ->helperText('Porcentagem que será aplicada automaticamente nos orçamentos.'),
                 ])->columns(3),
             Forms\Components\Section::make('Dados Principais')
@@ -348,7 +345,7 @@ class CadastroResource extends Resource
                         ->afterStateUpdated(function ($state, Forms\Set $set) {
                             if (strlen(preg_replace('/[^0-9]/', '', $state)) === 8) {
                                 $data = \Illuminate\Support\Facades\Http::get("https://viacep.com.br/ws/{$state}/json/")->json();
-                                if (!isset($data['erro'])) {
+                                if (! isset($data['erro'])) {
                                     $set('logradouro', $data['logradouro']);
                                     $set('bairro', $data['bairro']);
                                     $set('cidade', $data['localidade']);
@@ -371,7 +368,7 @@ class CadastroResource extends Resource
                     Forms\Components\Toggle::make('pdf_mostrar_documentos')
                         ->label('Exibir Documentos no PDF?')
                         ->helperText('Se marcado, os documentos anexados aparecerão no PDF da ficha cadastral.')
-                        ->default(fn() => \App\Models\Setting::get('pdf_mostrar_documentos_global', true))
+                        ->default(fn () => \App\Models\Setting::get('pdf_mostrar_documentos_global', true))
                         ->columnSpanFull(),
 
                     Forms\Components\SpatieMediaLibraryFileUpload::make('arquivos')
@@ -399,7 +396,7 @@ class CadastroResource extends Resource
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'cliente' => 'info',
                         'loja' => 'success',
                         'vendedor' => 'warning',
@@ -420,7 +417,7 @@ class CadastroResource extends Resource
                     ->icon('heroicon-o-document-text')
                     ->color('success')
                     ->iconButton() // Mobile-friendly
-                    ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
+                    ->url(fn (Cadastro $record) => route('cadastro.pdf', $record))
                     ->openUrlInNewTab(),
                 // 2. VISUALIZAR
                 Tables\Actions\ViewAction::make()

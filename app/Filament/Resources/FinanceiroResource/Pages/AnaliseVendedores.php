@@ -3,19 +3,18 @@
 namespace App\Filament\Resources\FinanceiroResource\Pages;
 
 use App\Filament\Resources\FinanceiroResource;
-use App\Models\Financeiro;
 use App\Models\Cadastro;
+use Filament\Forms;
 use Filament\Resources\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Filament\Forms;
 use Illuminate\Contracts\Support\Htmlable;
 
 /**
  * Página de Análise por Vendedor
- * 
+ *
  * Mostra o ranking de vendedores por receita gerada,
  * comissões pendentes e pagas, e performance geral.
  */
@@ -24,9 +23,13 @@ class AnaliseVendedores extends Page implements HasTable
     use InteractsWithTable;
 
     protected static string $resource = FinanceiroResource::class;
+
     protected static string $view = 'filament.resources.financeiro-resource.pages.analise-vendedores';
+
     protected static ?string $title = '👔 Análise por Vendedor';
+
     protected static ?string $navigationLabel = 'Por Vendedor';
+
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
     public function getTitle(): string|Htmlable
@@ -41,9 +44,9 @@ class AnaliseVendedores extends Page implements HasTable
                 Cadastro::query()
                     ->where('tipo', 'vendedor')
                     ->withCount(['financeiros as total_transacoes'])
-                    ->withSum(['financeiros as receitas_geradas' => fn($q) => $q->where('tipo', 'entrada')->where('status', 'pago')], 'valor')
-                    ->withSum(['financeiros as comissoes_pendentes' => fn($q) => $q->where('is_comissao', true)->where('comissao_paga', false)], 'valor')
-                    ->withSum(['financeiros as comissoes_pagas' => fn($q) => $q->where('is_comissao', true)->where('comissao_paga', true)], 'valor')
+                    ->withSum(['financeiros as receitas_geradas' => fn ($q) => $q->where('tipo', 'entrada')->where('status', 'pago')], 'valor')
+                    ->withSum(['financeiros as comissoes_pendentes' => fn ($q) => $q->where('is_comissao', true)->where('comissao_paga', false)], 'valor')
+                    ->withSum(['financeiros as comissoes_pagas' => fn ($q) => $q->where('is_comissao', true)->where('comissao_paga', true)], 'valor')
             )
             ->columns([
                 Tables\Columns\TextColumn::make('nome')
@@ -115,7 +118,7 @@ class AnaliseVendedores extends Page implements HasTable
                 Tables\Actions\Action::make('ver_transacoes')
                     ->label('Ver Transações')
                     ->icon('heroicon-o-eye')
-                    ->url(fn(Cadastro $record) => FinanceiroResource::getUrl('index', [
+                    ->url(fn (Cadastro $record) => FinanceiroResource::getUrl('index', [
                         'tableFilters[vendedor_direto][value]' => $record->id,
                     ]))
                     ->openUrlInNewTab(),
@@ -124,8 +127,8 @@ class AnaliseVendedores extends Page implements HasTable
                     ->label('Pagar Comissões')
                     ->icon('heroicon-o-banknotes')
                     ->color('success')
-                    ->visible(fn(Cadastro $record) => ($record->comissoes_pendentes ?? 0) > 0)
-                    ->url(fn(Cadastro $record) => FinanceiroResource::getUrl('comissoes', [
+                    ->visible(fn (Cadastro $record) => ($record->comissoes_pendentes ?? 0) > 0)
+                    ->url(fn (Cadastro $record) => FinanceiroResource::getUrl('comissoes', [
                         'tableFilters[vendedor_direto][value]' => $record->id,
                     ])),
             ])

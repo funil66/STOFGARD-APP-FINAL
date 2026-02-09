@@ -19,7 +19,7 @@ class ListAgendas extends ListRecords
                 ->label('Ver Calendário')
                 ->icon('heroicon-o-calendar')
                 ->color('info')
-                ->url(fn() => AgendaResource::getUrl('index')),
+                ->url(fn () => AgendaResource::getUrl('index')),
 
             Actions\Action::make('tarefas')
                 ->label('Tarefas')

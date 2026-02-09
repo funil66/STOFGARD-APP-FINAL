@@ -6,14 +6,13 @@ use App\Filament\Resources\TarefaResource\Pages;
 use App\Models\Tarefa;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\Grid as InfolistGrid;
-use Filament\Infolists\Components\TextEntry;
 
 class TarefaResource extends Resource
 {
@@ -94,7 +93,7 @@ class TarefaResource extends Resource
                             ->columnSpanFull(),
 
                         Forms\Components\Hidden::make('criado_por')
-                            ->default(fn() => auth()->id()),
+                            ->default(fn () => auth()->id()),
                     ]),
             ]);
     }
@@ -117,7 +116,7 @@ class TarefaResource extends Resource
 
                 Tables\Columns\TextColumn::make('prioridade')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'urgente' => 'danger',
                         'alta' => 'warning',
                         'media' => 'info',
@@ -128,7 +127,7 @@ class TarefaResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'concluida' => 'success',
                         'cancelada' => 'danger',
                         'em_andamento' => 'info',
@@ -140,7 +139,7 @@ class TarefaResource extends Resource
                     ->label('Vence em')
                     ->date('d/m')
                     ->sortable()
-                    ->description(fn(Tarefa $record) => $record->data_vencimento ? $record->data_vencimento->diffForHumans() : null),
+                    ->description(fn (Tarefa $record) => $record->data_vencimento ? $record->data_vencimento->diffForHumans() : null),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
@@ -170,7 +169,7 @@ class TarefaResource extends Resource
                     ->tooltip('Baixar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->url(fn(Tarefa $record) => route('tarefa.pdf', $record))
+                    ->url(fn (Tarefa $record) => route('tarefa.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\DeleteAction::make()
@@ -196,7 +195,7 @@ class TarefaResource extends Resource
                                 ->weight('bold'),
                             TextEntry::make('status')
                                 ->badge()
-                                ->color(fn($state) => match ($state) {
+                                ->color(fn ($state) => match ($state) {
                                     'concluida' => 'success',
                                     'em_andamento' => 'warning',
                                     'pendente' => 'info',
@@ -215,7 +214,7 @@ class TarefaResource extends Resource
                                 ->date('d/m/Y'),
                             TextEntry::make('prioridade')
                                 ->badge()
-                                ->color(fn($state) => match ($state) {
+                                ->color(fn ($state) => match ($state) {
                                     'alta' => 'danger',
                                     'media' => 'warning',
                                     'baixa' => 'success',

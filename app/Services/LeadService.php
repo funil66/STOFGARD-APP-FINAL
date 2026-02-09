@@ -139,7 +139,7 @@ class LeadService
                 ->orWhere('celular', $dados['celular']);
 
             // Se email foi informado, também busca por email
-            if (!empty($dados['email'])) {
+            if (! empty($dados['email'])) {
                 $query->orWhere('email', $dados['email']);
             }
         })->first();
@@ -152,11 +152,11 @@ class LeadService
                 $atualizacoes['nome'] = $dados['nome'];
             }
 
-            if (empty($cliente->email) && !empty($dados['email'])) {
+            if (empty($cliente->email) && ! empty($dados['email'])) {
                 $atualizacoes['email'] = $dados['email'];
             }
 
-            if (!empty($atualizacoes)) {
+            if (! empty($atualizacoes)) {
                 $cliente->update($atualizacoes);
             }
 
@@ -207,7 +207,7 @@ class LeadService
         $resultado = [];
 
         foreach ($palavras as $index => $palavra) {
-            if ($index === 0 || !in_array($palavra, $excecoes)) {
+            if ($index === 0 || ! in_array($palavra, $excecoes)) {
                 $resultado[] = mb_convert_case($palavra, MB_CASE_TITLE);
             } else {
                 $resultado[] = $palavra;
@@ -222,7 +222,7 @@ class LeadService
      */
     protected function gerarEmailPlaceholder(): string
     {
-        return 'lead.' . uniqid() . '@placeholder.local';
+        return 'lead.'.uniqid().'@placeholder.local';
     }
 
     /**
@@ -236,18 +236,18 @@ class LeadService
             "🔧 Interesse: {$dados['servico']}",
         ];
 
-        if (!empty($dados['endereco'])) {
+        if (! empty($dados['endereco'])) {
             $linhas[] = "📫 Endereço: {$dados['endereco']}";
         }
 
-        if (!empty($dados['mensagem'])) {
-            $linhas[] = "";
-            $linhas[] = "💬 Mensagem do cliente:";
+        if (! empty($dados['mensagem'])) {
+            $linhas[] = '';
+            $linhas[] = '💬 Mensagem do cliente:';
             $linhas[] = $dados['mensagem'];
         }
 
-        $linhas[] = "";
-        $linhas[] = "⏰ Recebido em: " . now()->format('d/m/Y H:i');
+        $linhas[] = '';
+        $linhas[] = '⏰ Recebido em: '.now()->format('d/m/Y H:i');
 
         return implode("\n", $linhas);
     }

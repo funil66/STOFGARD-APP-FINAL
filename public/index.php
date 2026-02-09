@@ -32,7 +32,7 @@ if (str_contains($request->path(), 'debug/upload-test')) {
         ]);
     } catch (\Throwable $e) {
         // Best-effort logging only
-        error_log('Failed to log entry-point request: ' . $e->getMessage());
+        error_log('Failed to log entry-point request: '.$e->getMessage());
     }
 }
 
@@ -48,7 +48,7 @@ try {
                 'headers' => $request->headers->all(),
             ]);
         } catch (\Throwable $logErr) {
-            error_log('Failed to log handleRequest exception: ' . $logErr->getMessage());
+            error_log('Failed to log handleRequest exception: '.$logErr->getMessage());
         }
     }
 

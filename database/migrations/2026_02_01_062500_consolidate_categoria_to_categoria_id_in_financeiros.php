@@ -2,17 +2,17 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Consolida o campo 'categoria' (string) para 'categoria_id' (FK).
-     * 
+     *
      * Estratégia:
      * 1. Criar registros faltantes na tabela categorias
      * 2. Atualizar financeiros.categoria_id baseado na string
@@ -29,6 +29,7 @@ return new class extends Migration
 
         if (! $table) {
             $this->log('Nenhuma tabela financeira encontrada; pulando migração.');
+
             return;
         }
 
@@ -50,14 +51,14 @@ return new class extends Migration
                 }
 
                 $slug = Str::slug($nomeCategoria);
-                
+
                 // Verificar se já existe
                 $exists = DB::table('categorias')
                     ->where('slug', $slug)
                     ->orWhere('nome', $nomeCategoria)
                     ->exists();
 
-                if (!$exists) {
+                if (! $exists) {
                     DB::table('categorias')->insert([
                         'nome' => $nomeCategoria,
                         'slug' => $slug,
@@ -103,7 +104,7 @@ return new class extends Migration
                     Schema::table($table, function (Blueprint $tbl) {
                         $tbl->dropIndex(['categoria']); // remover índice se existir
                     });
-                    
+
                     Schema::table($table, function (Blueprint $tbl) {
                         $tbl->dropColumn('categoria');
                     });
@@ -133,6 +134,7 @@ return new class extends Migration
 
         if (! $table) {
             $this->log('Nenhuma tabela financeira encontrada; pulando rollback.');
+
             return;
         }
 
@@ -164,9 +166,6 @@ return new class extends Migration
 
     /**
      * Infere o tipo de categoria baseado no nome.
-     * 
-     * @param string $nome
-     * @return string
      */
     private function inferirTipoCategoria(string $nome): string
     {
@@ -196,7 +195,7 @@ return new class extends Migration
     private function log(string $message): void
     {
         if (app()->runningInConsole()) {
-            echo $message . PHP_EOL;
+            echo $message.PHP_EOL;
         }
     }
 };

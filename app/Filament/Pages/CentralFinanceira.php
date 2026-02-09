@@ -3,22 +3,26 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\FinanceiroResource;
-use App\Models\Financeiro;
-use Filament\Pages\Page;
-use Filament\Actions\Action;
-use Filament\Support\Enums\ActionSize;
 use App\Filament\Resources\FinanceiroResource\Widgets\FinanceiroStatWidget;
 use App\Filament\Resources\FinanceiroResource\Widgets\RecentTransactionsWidget;
-use App\Filament\Widgets\FinanceiroChart;
+use Filament\Actions\Action;
+use Filament\Pages\Page;
+use Filament\Support\Enums\ActionSize;
 
 class CentralFinanceira extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
     protected static string $view = 'filament.pages.central-financeira';
+
     protected static ?string $navigationLabel = 'Central Financeira';
+
     protected static ?string $navigationGroup = 'Financeiro';
+
     protected static ?int $navigationSort = 0;
+
     protected static ?string $slug = 'financeiro';
+
     protected static ?string $title = 'Central Financeira';
 
     protected function getHeaderWidgets(): array
@@ -39,7 +43,7 @@ class CentralFinanceira extends Page
                 ->modalHeading('Análise Financeira Avançada')
                 ->modalContent(view('filament.pages.partials.financeiro-charts-overlay'))
                 ->modalSubmitAction(false)
-                ->modalCancelAction(fn($action) => $action->label('Fechar')),
+                ->modalCancelAction(fn ($action) => $action->label('Fechar')),
         ];
     }
 

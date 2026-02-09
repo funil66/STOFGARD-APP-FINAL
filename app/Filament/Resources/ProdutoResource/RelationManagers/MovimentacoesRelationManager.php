@@ -7,8 +7,6 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class MovimentacoesRelationManager extends RelationManager
 {
@@ -25,15 +23,15 @@ class MovimentacoesRelationManager extends RelationManager
                         'saida' => 'Saída',
                     ])
                     ->required(),
-                
+
                 Forms\Components\TextInput::make('quantidade')
                     ->numeric()
                     ->required(),
-                    
+
                 Forms\Components\TextInput::make('motivo')
                     ->required()
                     ->maxLength(255),
-                    
+
                 Forms\Components\DateTimePicker::make('data_movimento')
                     ->default(now())
                     ->required(),
@@ -66,7 +64,7 @@ class MovimentacoesRelationManager extends RelationManager
                     ->label('Data')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
-                    
+
                 Tables\Columns\TextColumn::make('criado_por')
                     ->label('Resp.')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -80,10 +78,11 @@ class MovimentacoesRelationManager extends RelationManager
                     // Garante que o ID do produto seja preenchido automaticamente pelo relacionamento
                     ->mutateFormDataUsing(function (array $data) {
                         // Garante auditoria correta - nunca deve ser executado sem usuário
-                        if (!auth()->id()) {
+                        if (! auth()->id()) {
                             throw new \Exception('Operação não permitida sem usuário autenticado.');
                         }
                         $data['criado_por'] = auth()->id();
+
                         return $data;
                     }),
             ])

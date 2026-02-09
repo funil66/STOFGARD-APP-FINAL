@@ -6,13 +6,13 @@ use App\Filament\Resources\CategoriaResource\Pages;
 use App\Models\Categoria;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\Grid as InfolistGrid;
-use Filament\Infolists\Components\TextEntry;
 
 class CategoriaResource extends Resource
 {
@@ -62,7 +62,7 @@ class CategoriaResource extends Resource
                                     ->required()
                                     ->maxLength(255)
                                     ->live(onBlur: true)
-                                    ->afterStateUpdated(fn($state, Forms\Set $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
+                                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('slug', \Illuminate\Support\Str::slug($state))),
 
                                 Forms\Components\TextInput::make('slug')
                                     ->label('Slug')
@@ -123,14 +123,14 @@ class CategoriaResource extends Resource
                 Tables\Columns\TextColumn::make('tipo')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'financeiro_receita' => 'success',
                         'financeiro_despesa' => 'danger',
                         'produto' => 'info',
                         'servico' => 'warning',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'financeiro_receita' => 'Receita',
                         'financeiro_despesa' => 'Despesa',
                         'produto' => 'Produto',
@@ -182,7 +182,7 @@ class CategoriaResource extends Resource
                     ->tooltip('Abrir PDF')
                     ->icon('heroicon-o-document-text')
                     ->color('info')
-                    ->url(fn(Categoria $record) => route('categoria.pdf', $record))
+                    ->url(fn (Categoria $record) => route('categoria.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\ViewAction::make()
@@ -200,7 +200,7 @@ class CategoriaResource extends Resource
                     ->tooltip('Baixar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->url(fn(Categoria $record) => route('categoria.pdf', $record))
+                    ->url(fn (Categoria $record) => route('categoria.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\DeleteAction::make()
@@ -229,8 +229,8 @@ class CategoriaResource extends Resource
                                 ->columnSpan(2),
                             TextEntry::make('ativo')
                                 ->badge()
-                                ->color(fn($state) => $state ? 'success' : 'danger')
-                                ->formatStateUsing(fn($state) => $state ? '✅ Ativo' : '❌ Inativo'),
+                                ->color(fn ($state) => $state ? 'success' : 'danger')
+                                ->formatStateUsing(fn ($state) => $state ? '✅ Ativo' : '❌ Inativo'),
                         ]),
                     ]),
 
@@ -241,7 +241,7 @@ class CategoriaResource extends Resource
                                 ->label('Tipo')
                                 ->badge()
                                 ->color('info')
-                                ->formatStateUsing(fn($state) => match ($state) {
+                                ->formatStateUsing(fn ($state) => match ($state) {
                                     'financeiro_receita' => '💰 Receita',
                                     'financeiro_despesa' => '💸 Despesa',
                                     'produto' => '📦 Produto',
@@ -258,11 +258,11 @@ class CategoriaResource extends Resource
                         InfolistGrid::make(2)->schema([
                             TextEntry::make('icone')
                                 ->label('Ícone')
-                                ->formatStateUsing(fn($state) => $state ?? '📌')
+                                ->formatStateUsing(fn ($state) => $state ?? '📌')
                                 ->size(TextEntry\TextEntrySize::Large),
                             TextEntry::make('cor')
                                 ->label('Cor')
-                                ->color(fn($record) => $record->cor ?? 'gray')
+                                ->color(fn ($record) => $record->cor ?? 'gray')
                                 ->badge(),
                         ]),
                         TextEntry::make('descricao')

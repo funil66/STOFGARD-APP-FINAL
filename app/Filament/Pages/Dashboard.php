@@ -2,15 +2,15 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Dashboard as BaseDashboard;
 use App\Filament\Widgets\DashboardShortcutsWidget;
+use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
 {
     // Garante que o layout ocupe a tela toda (bom para o seu Monitor Ultrawide)
-    public function getColumns(): int | string | array
+    public function getColumns(): int|string|array
     {
-        return 'full'; 
+        return 'full';
     }
 
     /**
@@ -24,4 +24,3 @@ class Dashboard extends BaseDashboard
         ];
     }
 }
-

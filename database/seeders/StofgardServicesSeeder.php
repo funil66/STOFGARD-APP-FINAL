@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Produto;
+use Illuminate\Database\Seeder;
 
 class StofgardServicesSeeder extends Seeder
 {

@@ -34,7 +34,7 @@ class FinanceiroStatWidget extends BaseWidget
 
         return [
             Stat::make('Saldo em Conta', Number::currency($saldo, 'BRL'))
-                ->description('Receitas Pagas (' . Number::currency($entradasPagas, 'BRL') . ') - Despesas Pagas (' . Number::currency($saidasPagas, 'BRL') . ')')
+                ->description('Receitas Pagas ('.Number::currency($entradasPagas, 'BRL').') - Despesas Pagas ('.Number::currency($saidasPagas, 'BRL').')')
                 ->descriptionIcon($saldo >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($saldo >= 0 ? 'success' : 'danger')
                 ->chart([$saldo - 100, $saldo - 50, $saldo, $saldo + 50, $saldo + 100])

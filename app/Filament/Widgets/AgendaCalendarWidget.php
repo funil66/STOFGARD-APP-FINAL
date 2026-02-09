@@ -14,7 +14,7 @@ class AgendaCalendarWidget extends FullCalendarWidget
             ->with(['cliente', 'ordemServico'])
             ->whereBetween('data_hora_inicio', [$fetchInfo['start'], $fetchInfo['end']])
             ->get()
-            ->map(fn(Agenda $agenda) => [
+            ->map(fn (Agenda $agenda) => [
                 'id' => $agenda->id,
                 'title' => $this->formatEventTitle($agenda), // Título simplificado
                 'start' => $agenda->data_hora_inicio,
@@ -22,7 +22,7 @@ class AgendaCalendarWidget extends FullCalendarWidget
                 'url' => AgendaResource::getUrl('view', ['record' => $agenda]),
                 'backgroundColor' => $this->getColorByStatus($agenda->status), // Mantendo Status como cor principal por enquanto
                 'borderColor' => $this->getColorByStatus($agenda->status),
-                'className' => 'agenda-event-' . $agenda->status, // Classe CSS útil
+                'className' => 'agenda-event-'.$agenda->status, // Classe CSS útil
                 'extendedProps' => [
                     'cliente' => $agenda->cliente?->nome,
                     'local' => $agenda->local,

@@ -18,10 +18,10 @@ class ConfigSeed extends Seeder
 
         // Configurações da tabela 'configuracoes'
         $this->seedConfiguracoes();
-        
+
         // Settings da tabela 'settings'
         $this->seedSettings();
-        
+
         $this->command->info('✅ Configurações populadas com sucesso!');
     }
 
@@ -74,7 +74,7 @@ class ConfigSeed extends Seeder
                 'key' => 'empresa_endereco',
                 'value' => 'Rua Escritor José Mauro de Vasconcelos - nº 155 - Planalto Verde - CEP 14056-150 - Ribeirão Preto - SP',
             ],
-            
+
             // Configurações do Dashboard
             [
                 'key' => 'dashboard_frase',
@@ -88,13 +88,13 @@ class ConfigSeed extends Seeder
                 'key' => 'url_clima',
                 'value' => 'https://www.tempo.com/munique.htm',
             ],
-            
+
             // Catálogo de Serviços V2 (JSON) - OBSOLETO: Migrado para tabela tabela_precos
             [
                 'key' => 'catalogo_servicos_v2',
                 'value' => '[]', // Vazio - dados migrados para tabela_precos
             ],
-            
+
             // Configurações do Sistema
             [
                 'key' => 'sistema_debug',
@@ -108,13 +108,13 @@ class ConfigSeed extends Seeder
                 'key' => 'admin_emails',
                 'value' => '[]',
             ],
-            
+
             // Tipos de Serviço do Sistema
             [
                 'key' => 'system_service_types',
                 'value' => '[{"slug":"higienizacao","label":"Higienização","color":"info","icon":"heroicon-o-sparkles"},{"slug":"impermeabilizacao","label":"Impermeabilização","color":"warning","icon":"heroicon-o-shield-check"},{"slug":"combo","label":"Combo (Higi + Imper)","color":"success","icon":"heroicon-o-squares-plus"},{"slug":"outro","label":"Outro/Personalizado","color":"gray","icon":"heroicon-o-cog"}]',
             ],
-            
+
             // Configurações do PDF
             [
                 'key' => 'pdf_color_primary',
@@ -140,13 +140,13 @@ class ConfigSeed extends Seeder
                 'key' => 'pdf_aplicar_desconto_global',
                 'value' => '1',
             ],
-            
+
             // Layout do PDF (JSON completo)
             [
                 'key' => 'pdf_layout',
                 'value' => '[{"type":"header","data":{"show_logo":true,"show_dates":true,"alignment":"left"}},{"type":"dados_cliente","data":{"titulo":"DADOS DO CLIENTE","show_email":true,"show_phone":true,"show_address":true}},{"type":"tabela_itens","data":{"titulo":"ITENS DO ORÇAMENTO","show_category_colors":true}},{"type":"container_duplo","data":{"coluna_esquerda":"totais","coluna_direita":"pix"}},{"type":"texto_livre","data":{"conteudo":"<ul><li>Orçamento válido por 7 dias.</li><li>Pagamento 50% na aprovação e 50% na entrega.</li></ul>"}},{"type":"galeria_fotos","data":{"titulo":"REGISTROS FOTOGRÁFICOS","columns":"2","show_legend":true}},{"type":"rodape_padrao","data":{"texto_legal":"Este documento não é fiscal."}}]',
             ],
-            
+
             // Configurações Financeiras
             [
                 'key' => 'financeiro_pix_keys',
@@ -169,6 +169,6 @@ class ConfigSeed extends Seeder
             );
         }
 
-        $this->command->info('   💾 ' . count($settings) . ' configurações de settings criadas/atualizadas');
+        $this->command->info('   💾 '.count($settings).' configurações de settings criadas/atualizadas');
     }
 }

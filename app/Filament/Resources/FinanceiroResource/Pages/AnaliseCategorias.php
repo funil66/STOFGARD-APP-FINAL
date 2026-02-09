@@ -3,19 +3,18 @@
 namespace App\Filament\Resources\FinanceiroResource\Pages;
 
 use App\Filament\Resources\FinanceiroResource;
-use App\Models\Financeiro;
 use App\Models\Categoria;
+use Filament\Forms;
 use Filament\Resources\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Filament\Forms;
 use Illuminate\Contracts\Support\Htmlable;
 
 /**
  * Página de Análise por Categoria
- * 
+ *
  * Mostra despesas e receitas agrupadas por categoria,
  * permitindo entender onde o dinheiro está sendo gasto.
  */
@@ -24,9 +23,13 @@ class AnaliseCategorias extends Page implements HasTable
     use InteractsWithTable;
 
     protected static string $resource = FinanceiroResource::class;
+
     protected static string $view = 'filament.resources.financeiro-resource.pages.analise-categorias';
+
     protected static ?string $title = '🏷️ Análise por Categoria';
+
     protected static ?string $navigationLabel = 'Por Categoria';
+
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
     public function getTitle(): string|Htmlable
@@ -41,8 +44,8 @@ class AnaliseCategorias extends Page implements HasTable
                 Categoria::query()
                     ->whereIn('tipo', ['financeiro_receita', 'financeiro_despesa'])
                     ->withCount(['financeiros as total_transacoes'])
-                    ->withSum(['financeiros as valor_total' => fn($q) => $q->where('status', 'pago')], 'valor')
-                    ->withSum(['financeiros as valor_pendente' => fn($q) => $q->where('status', 'pendente')], 'valor')
+                    ->withSum(['financeiros as valor_total' => fn ($q) => $q->where('status', 'pago')], 'valor')
+                    ->withSum(['financeiros as valor_pendente' => fn ($q) => $q->where('status', 'pendente')], 'valor')
             )
             ->columns([
                 Tables\Columns\ColorColumn::make('cor')
@@ -58,12 +61,12 @@ class AnaliseCategorias extends Page implements HasTable
                 Tables\Columns\TextColumn::make('tipo')
                     ->label('Tipo')
                     ->badge()
-                    ->formatStateUsing(fn($state) => match ($state) {
+                    ->formatStateUsing(fn ($state) => match ($state) {
                         'financeiro_receita' => '💰 Receita',
                         'financeiro_despesa' => '💸 Despesa',
                         default => $state,
                     })
-                    ->color(fn($state) => match ($state) {
+                    ->color(fn ($state) => match ($state) {
                         'financeiro_receita' => 'success',
                         'financeiro_despesa' => 'danger',
                         default => 'gray',
@@ -81,7 +84,7 @@ class AnaliseCategorias extends Page implements HasTable
                     ->money('BRL')
                     ->sortable()
                     ->weight('bold')
-                    ->color(fn($record) => $record->tipo === 'financeiro_receita' ? 'success' : 'danger')
+                    ->color(fn ($record) => $record->tipo === 'financeiro_receita' ? 'success' : 'danger')
                     ->summarize(Tables\Columns\Summarizers\Sum::make()->money('BRL')),
 
                 Tables\Columns\TextColumn::make('valor_pendente')
@@ -96,7 +99,7 @@ class AnaliseCategorias extends Page implements HasTable
                     ->getStateUsing(function ($record) {
                         $total = Categoria::query()
                             ->where('tipo', $record->tipo)
-                            ->withSum(['financeiros as valor' => fn($q) => $q->where('status', 'pago')], 'valor')
+                            ->withSum(['financeiros as valor' => fn ($q) => $q->where('status', 'pago')], 'valor')
                             ->get()
                             ->sum('valor');
 
@@ -126,7 +129,7 @@ class AnaliseCategorias extends Page implements HasTable
                 Tables\Actions\Action::make('ver_transacoes')
                     ->label('Ver Transações')
                     ->icon('heroicon-o-eye')
-                    ->url(fn(Categoria $record) => FinanceiroResource::getUrl('index', [
+                    ->url(fn (Categoria $record) => FinanceiroResource::getUrl('index', [
                         'tableFilters[categoria_id][values][]' => $record->id,
                     ]))
                     ->openUrlInNewTab(),

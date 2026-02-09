@@ -2,8 +2,8 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Widgets\ChartWidget;
 use App\Models\Orcamento;
+use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
 
 class VendasPorServicoChart extends ChartWidget
@@ -22,7 +22,7 @@ class VendasPorServicoChart extends ChartWidget
             ->get();
 
         // Mapeia labels e valores
-        $labels = $data->pluck('tipo_servico')->map(fn($type) => match ($type) {
+        $labels = $data->pluck('tipo_servico')->map(fn ($type) => match ($type) {
             'higienizacao' => 'Higienização',
             'impermeabilizacao' => 'Impermeabilização',
             'combo' => 'Combo',

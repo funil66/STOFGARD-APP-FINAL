@@ -2,10 +2,10 @@
 
 namespace App\Enums;
 
-use Filament\Support\Contracts\HasLabel;
 use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
 
-enum OrdemServicoStatus: string implements HasLabel, HasColor
+enum OrdemServicoStatus: string implements HasColor, HasLabel
 {
     case Aberta = 'aberta';
     case EmExecucao = 'em_execucao';

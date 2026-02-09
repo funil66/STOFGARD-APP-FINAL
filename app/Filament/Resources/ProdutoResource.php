@@ -5,31 +5,35 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProdutoResource\Pages;
 use App\Models\Produto;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\Grid as InfolistGrid;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
+use Filament\Tables\Table;
 
 class ProdutoResource extends Resource
 {
     protected static ?string $model = Produto::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
+
     protected static ?string $navigationLabel = 'Produtos';
+
     protected static ?string $modelLabel = 'Produto';
+
     protected static ?string $pluralModelLabel = 'Produtos';
 
     // Submódulo do Almoxarifado
     protected static ?string $slug = 'almoxarifado/produtos';
 
     protected static ?int $navigationSort = 5;
+
     protected static bool $shouldRegisterNavigation = false;
 
     public static function form(Form $form): Form
@@ -128,12 +132,14 @@ class ProdutoResource extends Resource
                     ->state(function (Produto $record) {
                         if ($record->preco_venda > 0 && $record->preco_custo > 0) {
                             $margem = (($record->preco_venda - $record->preco_custo) / $record->preco_custo) * 100;
-                            return number_format($margem, 1) . '%';
+
+                            return number_format($margem, 1).'%';
                         }
+
                         return '-';
                     })
                     ->badge()
-                    ->color(fn($state) => $state === '-' ? 'gray' : 'success'),
+                    ->color(fn ($state) => $state === '-' ? 'gray' : 'success'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Criado em')
@@ -151,7 +157,7 @@ class ProdutoResource extends Resource
                     ->tooltip('Baixar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->url(fn(Produto $record) => route('produto.pdf', $record))
+                    ->url(fn (Produto $record) => route('produto.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir')->iconButton(),
@@ -186,8 +192,10 @@ class ProdutoResource extends Resource
                                 ->state(function (Produto $record) {
                                     if ($record->preco_venda > 0 && $record->preco_custo > 0) {
                                         $margem = (($record->preco_venda - $record->preco_custo) / $record->preco_custo) * 100;
-                                        return number_format($margem, 2) . '%';
+
+                                        return number_format($margem, 2).'%';
                                     }
+
                                     return 'N/A';
                                 })
                                 ->badge()

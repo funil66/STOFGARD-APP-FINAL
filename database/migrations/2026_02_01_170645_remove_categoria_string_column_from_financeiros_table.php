@@ -2,13 +2,13 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     /**
-     * Remove a coluna 'categoria' (string) da tabela financeiros para evitar conflito 
+     * Remove a coluna 'categoria' (string) da tabela financeiros para evitar conflito
      * com o relacionamento categoria() que usa categoria_id.
      */
     public function up(): void
@@ -110,7 +110,7 @@ return new class extends Migration
                         }
 
                         if (! empty($selects)) {
-                            $sql = 'CREATE VIEW financeiro_audit AS ' . implode("\nUNION ALL\n", $selects);
+                            $sql = 'CREATE VIEW financeiro_audit AS '.implode("\nUNION ALL\n", $selects);
                             DB::statement($sql);
                         }
                     }
@@ -120,11 +120,11 @@ return new class extends Migration
                         $table->dropColumn('categoria');
                     });
                 }
-                
+
                 echo "✅ Coluna 'categoria' (string) removida com sucesso!\n";
-                
+
             } catch (\Exception $e) {
-                echo "⚠️  Erro ao remover coluna categoria: " . $e->getMessage() . "\n";
+                echo '⚠️  Erro ao remover coluna categoria: '.$e->getMessage()."\n";
                 echo "ℹ️  O conflito será tratado no nível da aplicação.\n";
             }
         } else {
@@ -137,11 +137,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasTable('financeiros') && !Schema::hasColumn('financeiros', 'categoria')) {
+        if (Schema::hasTable('financeiros') && ! Schema::hasColumn('financeiros', 'categoria')) {
             Schema::table('financeiros', function (Blueprint $table) {
                 $table->string('categoria')->nullable()->after('descricao');
             });
-            
+
             echo "⚠️  Coluna 'categoria' (string) adicionada de volta.\n";
         }
     }

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Financeiro;
-use App\Models\OrdensServico;
 use Carbon\Carbon;
 
 class ProLaboreCalculator
@@ -31,8 +30,10 @@ class ProLaboreCalculator
      */
     public function calcularReserva(float $lucro, float $percentual): float
     {
-        if ($lucro <= 0)
+        if ($lucro <= 0) {
             return 0;
+        }
+
         return $lucro * ($percentual / 100);
     }
 
@@ -49,7 +50,7 @@ class ProLaboreCalculator
             $distribuicao[] = [
                 'nome' => $socio['nome'],
                 'percentual' => $socio['percentual'],
-                'valor' => $valor
+                'valor' => $valor,
             ];
         }
 

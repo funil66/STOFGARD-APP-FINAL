@@ -19,7 +19,7 @@ class EditAgenda extends EditRecord
                 ->label('Concluir')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->visible(fn($record) => $record->status !== 'concluido')
+                ->visible(fn ($record) => $record->status !== 'concluido')
                 ->requiresConfirmation()
                 ->action(function ($record) {
                     $record->update(['status' => 'concluido']);

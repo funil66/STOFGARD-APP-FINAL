@@ -1,22 +1,21 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Cria view de auditoria para monitorar registros nos sistemas financeiros paralelos.
      * Útil para verificar qual tabela está sendo utilizada e planejar consolidação.
      */
     public function up(): void
     {
         // Remover view se já existir (compatível com SQLite)
-        DB::statement("DROP VIEW IF EXISTS financeiro_audit");
+        DB::statement('DROP VIEW IF EXISTS financeiro_audit');
 
         $selects = [];
 
@@ -51,7 +50,7 @@ return new class extends Migration
             return;
         }
 
-        $sql = 'CREATE VIEW financeiro_audit AS ' . implode("\nUNION ALL\n", $selects);
+        $sql = 'CREATE VIEW financeiro_audit AS '.implode("\nUNION ALL\n", $selects);
         DB::statement($sql);
     }
 
@@ -60,6 +59,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("DROP VIEW IF EXISTS financeiro_audit");
+        DB::statement('DROP VIEW IF EXISTS financeiro_audit');
     }
 };

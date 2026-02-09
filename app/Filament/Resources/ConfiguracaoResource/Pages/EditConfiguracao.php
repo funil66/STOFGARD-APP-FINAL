@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ConfiguracaoResource\Pages;
 
 use App\Filament\Resources\ConfiguracaoResource;
-use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditConfiguracao extends EditRecord
@@ -13,7 +12,7 @@ class EditConfiguracao extends EditRecord
     // 1. Remove o "Pão de Migalhas" (Breadcrumbs) que tenta linkar para a listagem inexistente
     public function getBreadcrumbs(): array
     {
-        return []; 
+        return [];
     }
 
     // 2. Sobrescreve a ação de cancelar para não tentar voltar para o index

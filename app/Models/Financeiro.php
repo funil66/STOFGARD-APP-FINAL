@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
@@ -16,7 +17,7 @@ use App\Traits\HasAuditTrail;
  */
 class Financeiro extends Model implements HasMedia
 {
-    use HasArquivos, HasAuditTrail;
+    use HasFactory, HasArquivos, HasAuditTrail;
 
     protected $table = 'financeiros';
 

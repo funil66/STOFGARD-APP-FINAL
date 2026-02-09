@@ -18,7 +18,7 @@ class FinanceiroService
             'ordem_servico_id' => $os->id,
             'tipo' => 'entrada',
             'categoria' => 'servico',
-            'descricao' => "Receita ref. OS #{$os->numero_os} - " . ($os->cliente->nome ?? 'Cliente'),
+            'descricao' => "Receita ref. OS #{$os->numero_os} - ".($os->cliente->nome ?? 'Cliente'),
             'valor' => $os->valor_total,
             'data_vencimento' => now()->addDays(30),
             'status' => 'pendente',

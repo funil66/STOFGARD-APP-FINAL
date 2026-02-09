@@ -22,7 +22,7 @@ class EstoqueService
         // Implementação futura: Iterar sobre $orcamento->itens e reduzir do Estoque
         // Por enquanto, apenas loga a intenção.
         Log::info("Estoque: Baixa solicitada para Orçamento #{$orcamento->id}");
-        
+
         // Exemplo futuro:
         // foreach ($orcamento->itens as $item) {
         //     $item->produto->decrement('estoque_atual', $item->quantidade);
@@ -31,9 +31,6 @@ class EstoqueService
 
     /**
      * Registra saída de produtos ao finalizar uma OS
-     * 
-     * @param OrdemServico $os
-     * @return void
      */
     public function baixarEstoquePorOS(OrdemServico $os): void
     {
@@ -53,12 +50,6 @@ class EstoqueService
 
     /**
      * Registra uma entrada de estoque
-     * 
-     * @param int $produtoId
-     * @param float $quantidade
-     * @param string $motivo
-     * @param int|null $ordemServicoId
-     * @return Estoque
      */
     public function registrarEntrada(
         int $produtoId,
@@ -77,12 +68,6 @@ class EstoqueService
 
     /**
      * Registra uma saída de estoque
-     * 
-     * @param int $produtoId
-     * @param float $quantidade
-     * @param string $motivo
-     * @param int|null $ordemServicoId
-     * @return Estoque
      */
     public function registrarSaida(
         int $produtoId,
@@ -101,13 +86,6 @@ class EstoqueService
 
     /**
      * Registra um movimento de estoque (entrada ou saída)
-     * 
-     * @param string $tipo
-     * @param int $produtoId
-     * @param float $quantidade
-     * @param string $motivo
-     * @param int|null $ordemServicoId
-     * @return Estoque
      */
     private function registrarMovimento(
         string $tipo,
@@ -128,22 +106,16 @@ class EstoqueService
 
     /**
      * Verifica se há estoque disponível para um produto
-     * 
-     * @param int $produtoId
-     * @param float $quantidadeRequerida
-     * @return bool
      */
     public function temEstoqueDisponivel(int $produtoId, float $quantidadeRequerida): bool
     {
         $saldoAtual = $this->calcularSaldoAtual($produtoId);
+
         return $saldoAtual >= $quantidadeRequerida;
     }
 
     /**
      * Calcula o saldo atual de um produto
-     * 
-     * @param int $produtoId
-     * @return float
      */
     public function calcularSaldoAtual(int $produtoId): float
     {

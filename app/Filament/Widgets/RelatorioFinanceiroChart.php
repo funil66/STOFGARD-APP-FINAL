@@ -2,11 +2,11 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Widgets\ChartWidget;
 use App\Models\Financeiro;
+use Carbon\Carbon;
+use Filament\Widgets\ChartWidget;
 use Flowframe\Trend\Trend;
 use Flowframe\Trend\TrendValue;
-use Carbon\Carbon;
 
 class RelatorioFinanceiroChart extends ChartWidget
 {
@@ -44,20 +44,20 @@ class RelatorioFinanceiroChart extends ChartWidget
             'datasets' => [
                 [
                     'label' => 'Receitas',
-                    'data' => $dataEntradas->map(fn(TrendValue $value) => $value->aggregate),
+                    'data' => $dataEntradas->map(fn (TrendValue $value) => $value->aggregate),
                     'borderColor' => '#10b981', // Emerald 500
                     'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                     'fill' => true,
                 ],
                 [
                     'label' => 'Despesas',
-                    'data' => $dataSaidas->map(fn(TrendValue $value) => $value->aggregate),
+                    'data' => $dataSaidas->map(fn (TrendValue $value) => $value->aggregate),
                     'borderColor' => '#ef4444', // Red 500
                     'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
                     'fill' => true,
                 ],
             ],
-            'labels' => $dataEntradas->map(fn(TrendValue $value) => Carbon::parse($value->date)->translatedFormat('M Y')),
+            'labels' => $dataEntradas->map(fn (TrendValue $value) => Carbon::parse($value->date)->translatedFormat('M Y')),
         ];
     }
 

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Cadastro;
+use Illuminate\Database\Seeder;
 
 class CadastroSeeder extends Seeder
 {
@@ -20,7 +20,7 @@ class CadastroSeeder extends Seeder
                 'estado' => 'SP',
                 'logradouro' => 'Av. Independência',
                 'numero' => '1000',
-                'bairro' => 'Alto da Boa Vista'
+                'bairro' => 'Alto da Boa Vista',
             ]
         );
 
@@ -34,7 +34,7 @@ class CadastroSeeder extends Seeder
                 'estado' => 'SP',
                 'logradouro' => 'Rua do Professor',
                 'numero' => '50',
-                'bairro' => 'Centro'
+                'bairro' => 'Centro',
             ]
         );
 
@@ -49,7 +49,7 @@ class CadastroSeeder extends Seeder
                 'estado' => 'SP',
                 'logradouro' => 'Av. Presidente Vargas',
                 'numero' => '2000',
-                'bairro' => 'Jardim Sumaré'
+                'bairro' => 'Jardim Sumaré',
             ]
         );
 
@@ -64,7 +64,7 @@ class CadastroSeeder extends Seeder
                 'estado' => 'SP',
                 'logradouro' => 'Rua Vendedor',
                 'numero' => '10',
-                'bairro' => 'Irajá'
+                'bairro' => 'Irajá',
             ]
         );
 
@@ -78,7 +78,7 @@ class CadastroSeeder extends Seeder
                 'estado' => 'SP',
                 'logradouro' => 'Rua dos Arquitetos',
                 'numero' => '100',
-                'bairro' => 'Fiusa'
+                'bairro' => 'Fiusa',
             ]
         );
     }

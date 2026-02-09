@@ -2,20 +2,19 @@
 
 namespace Tests\Unit;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Policies\CadastroPolicy;
-use App\Models\User;
 use App\Models\Cadastro;
+use App\Models\User;
+use App\Policies\CadastroPolicy;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class CadastroPolicyTest extends TestCase
 {
     use RefreshDatabase;
 
-
     public function test_admin_can_update_and_delete()
     {
-        $policy = new CadastroPolicy();
+        $policy = new CadastroPolicy;
 
         $admin = User::factory()->create(['is_admin' => true]);
         $cadastro = Cadastro::factory()->create();
@@ -26,7 +25,7 @@ class CadastroPolicyTest extends TestCase
 
     public function test_non_admin_cannot_update_or_delete()
     {
-        $policy = new CadastroPolicy();
+        $policy = new CadastroPolicy;
 
         $user = User::factory()->create(['is_admin' => false]);
         $cadastro = Cadastro::factory()->create();
@@ -37,7 +36,7 @@ class CadastroPolicyTest extends TestCase
 
     public function test_authenticated_user_can_download()
     {
-        $policy = new CadastroPolicy();
+        $policy = new CadastroPolicy;
 
         $user = User::factory()->create();
         $cadastro = Cadastro::factory()->create();

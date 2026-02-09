@@ -29,7 +29,7 @@ class CadastroFactory extends Factory
     // Estados específicos por tipo
     public function loja()
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'tipo' => 'loja',
             'comissao_percentual' => 10.00,
         ]);
@@ -37,7 +37,7 @@ class CadastroFactory extends Factory
 
     public function vendedor()
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'tipo' => 'vendedor',
             'comissao_percentual' => 5.00,
         ]);
@@ -45,7 +45,7 @@ class CadastroFactory extends Factory
 
     public function arquiteto()
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'tipo' => 'arquiteto',
             'comissao_percentual' => 7.00,
         ]);

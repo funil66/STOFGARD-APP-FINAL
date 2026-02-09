@@ -15,7 +15,10 @@ return new class extends Migration
         if (Schema::hasTable('financeiros')) {
             Schema::table('financeiros', function (Blueprint $table) {
                 if (Schema::hasColumn('financeiros', 'ordem_servico_id')) {
-                    try { $table->dropForeign(['ordem_servico_id']); } catch (\Exception $e) {}
+                    try {
+                        $table->dropForeign(['ordem_servico_id']);
+                    } catch (\Exception $e) {
+                    }
                     $table->foreign('ordem_servico_id')->references('id')->on('ordens_servico')->onDelete('set null');
                 }
             });

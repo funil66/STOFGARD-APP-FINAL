@@ -2,16 +2,15 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Orcamento;
 use App\Models\Cadastro;
-use Filament\Pages\Page;
+use App\Models\Orcamento;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Collection;
+use Filament\Pages\Page;
 
 class FunilVendas extends Page
 {
@@ -27,7 +26,9 @@ class FunilVendas extends Page
 
     // Filtros públicos
     public ?string $busca = '';
+
     public ?string $filtroVendedor = null;
+
     public ?string $filtroPeriodo = 'todos';
 
     // Definição das colunas do Kanban
@@ -86,10 +87,10 @@ class FunilVendas extends Page
 
         // Aplicar filtros
         if ($this->busca) {
-            $query->where(function($q) {
+            $query->where(function ($q) {
                 $termo = "%{$this->busca}%";
                 $q->where('numero', 'like', $termo)
-                  ->orWhereHas('cliente', fn($q) => $q->where('nome', 'like', $termo));
+                    ->orWhereHas('cliente', fn ($q) => $q->where('nome', 'like', $termo));
             });
         }
 
@@ -98,7 +99,7 @@ class FunilVendas extends Page
         }
 
         if ($this->filtroPeriodo !== 'todos') {
-            $periodo = match($this->filtroPeriodo) {
+            $periodo = match ($this->filtroPeriodo) {
                 'hoje' => now()->startOfDay(),
                 'semana' => now()->startOfWeek(),
                 'mes' => now()->startOfMonth(),

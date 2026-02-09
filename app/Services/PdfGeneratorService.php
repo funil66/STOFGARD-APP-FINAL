@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\Orcamento;
-use Spatie\LaravelPdf\Facades\Pdf;
 use Illuminate\Support\Facades\Storage;
+use Spatie\LaravelPdf\Facades\Pdf;
 
 /**
  * Serviço responsável pela geração de PDFs
@@ -14,15 +14,14 @@ class PdfGeneratorService
 {
     /**
      * Gera PDF de um orçamento
-     * 
-     * @param Orcamento $orcamento
+     *
      * @return \Spatie\LaravelPdf\PdfBuilder
      */
     public function gerarOrcamentoPdf(Orcamento $orcamento)
     {
         // Garante diretório temporário
         $tempPath = storage_path('app/temp');
-        if (!file_exists($tempPath)) {
+        if (! file_exists($tempPath)) {
             mkdir($tempPath, 0755, true);
         }
 
@@ -36,7 +35,7 @@ class PdfGeneratorService
                     ->setOption('args', [
                         '--disable-web-security',
                         '--no-sandbox',
-                        '--disable-setuid-sandbox'
+                        '--disable-setuid-sandbox',
                     ])
                     ->timeout(config('services.browsershot.timeout', 60));
             });
@@ -44,28 +43,24 @@ class PdfGeneratorService
 
     /**
      * Salva o PDF no storage
-     * 
-     * @param \Spatie\LaravelPdf\PdfBuilder $pdf
-     * @param string $path
-     * @return string
+     *
+     * @param  \Spatie\LaravelPdf\PdfBuilder  $pdf
      */
     public function salvarPdf($pdf, string $path): string
     {
         Storage::put($path, $pdf->save());
+
         return $path;
     }
 
     /**
      * Gera e salva o PDF de um orçamento
-     * 
-     * @param Orcamento $orcamento
-     * @return string
      */
     public function gerarESalvarOrcamento(Orcamento $orcamento): string
     {
         $pdf = $this->gerarOrcamentoPdf($orcamento);
-        $path = "orcamentos/orcamento-{$orcamento->id}-" . now()->format('YmdHis') . '.pdf';
-        
+        $path = "orcamentos/orcamento-{$orcamento->id}-".now()->format('YmdHis').'.pdf';
+
         return $this->salvarPdf($pdf, $path);
     }
 }

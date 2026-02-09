@@ -2,10 +2,9 @@
 
 namespace App\Filament\Resources\AgendaResource\Pages;
 
-use App\Filament\Resources\AgendaResource;
-use App\Filament\Resources\TarefaResource;
 use App\Filament\Pages\Calendario;
 use App\Filament\Pages\GoogleCalendarSettings;
+use App\Filament\Resources\AgendaResource;
 use App\Filament\Widgets\AgendaCalendarWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -61,4 +60,3 @@ class CalendarioAgenda extends ListRecords
         return 1;
     }
 }
-

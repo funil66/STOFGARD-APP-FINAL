@@ -1,12 +1,11 @@
 <?php
 
-use App\Http\Controllers\GoogleCalendarController;
-use App\Http\Controllers\OrcamentoPdfController;
 use App\Http\Controllers\CadastroPdfController;
+use App\Http\Controllers\GoogleCalendarController;
+use App\Http\Controllers\LeadController;
+use App\Http\Controllers\OrcamentoPdfController;
 use App\Http\Controllers\PagamentoController;
 use App\Http\Controllers\PixWebhookController;
-use App\Http\Controllers\LeadController;
-use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +31,7 @@ if (app()->isLocal()) {
 
         if ($user) {
             auth()->login($user);
+
             return redirect('/admin');
         }
 
@@ -143,8 +143,6 @@ Route::post('/webhook/pix', [PixWebhookController::class, 'handle'])
 Route::get('/webhook/pix/status', [PixWebhookController::class, 'status'])
     ->name('webhook.pix.status');
 
-
-
 // NOTE: public debug PDF route removed for security. If you need a local-only test, use
 // `scripts/generate-pdf.js` with debug HTML files under `storage/debug` or run the
 // debug helper routes that remain protected by `app()->environment('local')` checks.
@@ -164,5 +162,3 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/financeiro/grafico/categoria', [\App\Http\Controllers\RelatorioFinanceiroController::class, 'graficoPorCategoria'])
         ->name('financeiro.grafico.categoria');
 });
-
-

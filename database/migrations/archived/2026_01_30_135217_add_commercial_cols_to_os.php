@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ordens_servico', function (Blueprint $table) {
-            if (!Schema::hasColumn('ordens_servico', 'loja_id')) {
+            if (! Schema::hasColumn('ordens_servico', 'loja_id')) {
                 $table->foreignId('loja_id')->nullable()->constrained('parceiros')->nullOnDelete();
             }
-            if (!Schema::hasColumn('ordens_servico', 'vendedor_id')) {
+            if (! Schema::hasColumn('ordens_servico', 'vendedor_id')) {
                 $table->foreignId('vendedor_id')->nullable()->constrained('users')->nullOnDelete();
             }
-            if (!Schema::hasColumn('ordens_servico', 'origem')) {
+            if (! Schema::hasColumn('ordens_servico', 'origem')) {
                 $table->string('origem')->default('direta')->nullable();
             }
         });

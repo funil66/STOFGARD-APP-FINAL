@@ -4,12 +4,12 @@ namespace App\Filament\Resources\FinanceiroResource\Pages;
 
 use App\Filament\Resources\FinanceiroResource;
 use App\Models\Financeiro;
+use Filament\Forms;
 use Filament\Resources\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Filament\Forms;
 
 class Extratos extends Page implements HasTable
 {
@@ -20,7 +20,9 @@ class Extratos extends Page implements HasTable
     protected static string $view = 'filament.resources.financeiro-resource.pages.extratos';
 
     protected static ?string $title = 'Extratos Financeiros';
+
     protected static ?string $slug = 'extratos-financeiros';
+
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     public function table(Table $table): Table
@@ -44,7 +46,7 @@ class Extratos extends Page implements HasTable
                         'success' => 'entrada',
                         'danger' => 'saida',
                     ])
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'entrada' => 'Entrada',
                         'saida' => 'Saída',
                     }),
@@ -61,7 +63,7 @@ class Extratos extends Page implements HasTable
                         'danger' => 'atrasado',
                         'gray' => 'cancelado',
                     ])
-                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
 
                 Tables\Columns\TextColumn::make('cadastro.nome')
                     ->label('Cliente/Fornecedor')
@@ -78,8 +80,8 @@ class Extratos extends Page implements HasTable
                     ])
                     ->query(function ($query, array $data) {
                         return $query
-                            ->when($data['data_inicio'], fn($q) => $q->whereDate('data', '>=', $data['data_inicio']))
-                            ->when($data['data_fim'], fn($q) => $q->whereDate('data', '<=', $data['data_fim']));
+                            ->when($data['data_inicio'], fn ($q) => $q->whereDate('data', '>=', $data['data_inicio']))
+                            ->when($data['data_fim'], fn ($q) => $q->whereDate('data', '<=', $data['data_fim']));
                     }),
 
                 Tables\Filters\SelectFilter::make('tipo')
@@ -122,7 +124,7 @@ class Extratos extends Page implements HasTable
                     ->label('Exportar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('primary')
-                    ->url(fn() => route('extrato.pdf', request()->query('tableFilters', [])))
+                    ->url(fn () => route('extrato.pdf', request()->query('tableFilters', [])))
                     ->openUrlInNewTab(),
             ])
             ->defaultSort('data', 'desc');

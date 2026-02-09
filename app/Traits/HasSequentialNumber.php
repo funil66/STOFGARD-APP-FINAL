@@ -6,15 +6,15 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Trait HasSequentialNumber
- * 
+ *
  * Gera números sequenciais únicos para modelos com padrão YYYY.XXXX
  * Usa tabela de controle de sequências com lock de banco para evitar colisões
- * 
+ *
  * Uso:
  * 1. Adicione o trait ao model
  * 2. Defina a propriedade protegida $sequenceType (ex: 'orcamento', 'os', 'nf')
  * 3. Defina a propriedade protegida $sequenceColumn (ex: 'numero', 'numero_os')
- * 
+ *
  * Exemplo:
  * use HasSequentialNumber;
  * protected string $sequenceType = 'orcamento';
@@ -52,39 +52,36 @@ trait HasSequentialNumber
 
     /**
      * Gera número único no formato YYYY.XXXX (aleatório)
-     * 
-     * @return string
      */
     public function generateSequentialNumber(): string
     {
         return DB::transaction(function () {
             $ano = date('Y');
             $tipo = $this->getSequenceType();
-            
+
             // Gera 10 tentativas de número aleatório
             for ($i = 0; $i < 10; $i++) {
                 // Gera 4 dígitos aleatórios (1000-9999)
                 $randomDigits = rand(1000, 9999);
                 $numero = sprintf('%s.%04d', $ano, $randomDigits);
-                
+
                 // Verifica se já existe
                 $existe = static::where($this->getSequenceColumn(), $numero)->exists();
-                
-                if (!$existe) {
+
+                if (! $existe) {
                     return $numero;
                 }
             }
-            
+
             // Fallback: se após 10 tentativas ainda colidiu, usa timestamp
             $timestamp = substr(str_replace('.', '', microtime(true)), -4);
+
             return sprintf('%s.%s', $ano, $timestamp);
         });
     }
 
     /**
      * Método estático para geração manual (retrocompatibilidade)
-     * 
-     * @return string
      */
     public static function gerarNumeroSequencial(): string
     {

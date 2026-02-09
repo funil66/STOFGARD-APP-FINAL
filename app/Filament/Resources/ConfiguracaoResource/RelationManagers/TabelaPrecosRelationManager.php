@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Resources\ConfiguracaoResource\RelationManagers;
 
 use Filament\Forms;
@@ -12,6 +13,7 @@ class TabelaPrecosRelationManager extends RelationManager
     protected static string $relationship = 'tabela_precos';
 
     protected static ?string $title = 'Tabela de Preços (Edição Rápida)';
+
     protected static ?string $icon = 'heroicon-o-currency-dollar';
 
     public function form(Form $form): Form

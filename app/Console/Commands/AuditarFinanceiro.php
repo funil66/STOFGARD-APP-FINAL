@@ -83,7 +83,7 @@ class AuditarFinanceiro extends Command
     private function checkFinanceirosStructure(): array
     {
         $columns = Schema::getColumns('financeiros');
-        
+
         $hasStringCadastroId = false;
         $hasIntegerCadastroId = false;
         $hasClienteId = false;
@@ -97,10 +97,18 @@ class AuditarFinanceiro extends Command
                 $hasIntegerCadastroId = in_array($type, ['bigint', 'int', 'integer']);
                 $hasStringCadastroId = in_array($type, ['varchar', 'string', 'text']);
             }
-            if ($column['name'] === 'cliente_id') $hasClienteId = true;
-            if ($column['name'] === 'parceiro_id') $hasParceiroId = true;
-            if ($column['name'] === 'categoria') $hasCategoria = true;
-            if ($column['name'] === 'categoria_id') $hasCategoriaId = true;
+            if ($column['name'] === 'cliente_id') {
+                $hasClienteId = true;
+            }
+            if ($column['name'] === 'parceiro_id') {
+                $hasParceiroId = true;
+            }
+            if ($column['name'] === 'categoria') {
+                $hasCategoria = true;
+            }
+            if ($column['name'] === 'categoria_id') {
+                $hasCategoriaId = true;
+            }
         }
 
         return [
@@ -118,6 +126,7 @@ class AuditarFinanceiro extends Command
     {
         try {
             $data = DB::select('SELECT * FROM financeiro_audit');
+
             return [
                 'exists' => true,
                 'data' => $data,
@@ -165,7 +174,7 @@ class AuditarFinanceiro extends Command
         // Verificar Models duplicados
         $hasFinanceiroModel = file_exists(app_path('Models/Financeiro.php'));
         $hasTransacaoModel = file_exists(app_path('Models/TransacaoFinanceira.php'));
-        
+
         // Verificar Resources duplicados
         $hasFinanceiroResource = file_exists(app_path('Filament/Resources/FinanceiroResource.php'));
         $hasTransacaoResource = file_exists(app_path('Filament/Resources/TransacaoFinanceiraResource.php'));
@@ -176,7 +185,7 @@ class AuditarFinanceiro extends Command
         // Verificar tabela transacoes_financeiras
         $hasTransacoesTable = Schema::hasTable('transacoes_financeiras');
         $transacoesCount = 0;
-        
+
         if ($hasTransacoesTable) {
             $transacoesCount = DB::table('transacoes_financeiras')->count();
         }
@@ -195,16 +204,16 @@ class AuditarFinanceiro extends Command
     private function checkIndexes(): array
     {
         $driver = DB::connection()->getDriverName();
-        
+
         if ($driver === 'sqlite') {
             // SQLite: usar pragma index_list
             $indexes = DB::select("PRAGMA index_list('financeiros')");
-            
+
             $compositeIndexes = [];
             foreach ($indexes as $index) {
-                if (!str_starts_with($index->name, 'sqlite_autoindex')) {
+                if (! str_starts_with($index->name, 'sqlite_autoindex')) {
                     $columns = DB::select("PRAGMA index_info('{$index->name}')");
-                    $compositeIndexes[$index->name] = array_map(fn($col) => $col->name, $columns);
+                    $compositeIndexes[$index->name] = array_map(fn ($col) => $col->name, $columns);
                 }
             }
         } else {
@@ -253,9 +262,10 @@ class AuditarFinanceiro extends Command
 
     private function displayAuditData(array $auditData): void
     {
-        if (!$auditData['exists']) {
+        if (! $auditData['exists']) {
             $this->error('❌ View financeiro_audit não encontrada!');
             $this->warn('Execute: php artisan migrate --path=database/migrations/2026_02_01_062327_create_financeiro_audit_view.php');
+
             return;
         }
 
@@ -268,8 +278,8 @@ class AuditarFinanceiro extends Command
                 $row->total_registros,
                 $row->pendentes,
                 $row->pagos,
-                'R$ ' . number_format($row->total_entradas, 2, ',', '.'),
-                'R$ ' . number_format($row->total_saidas, 2, ',', '.'),
+                'R$ '.number_format($row->total_entradas, 2, ',', '.'),
+                'R$ '.number_format($row->total_saidas, 2, ',', '.'),
             ];
         }
 
@@ -324,7 +334,7 @@ class AuditarFinanceiro extends Command
 
         $this->table(['Índice', 'Colunas'], $rows);
 
-        if (!$indexes['has_recommended_index']) {
+        if (! $indexes['has_recommended_index']) {
             $this->warn('⚠️  Índice recomendado (cadastro_id, status, tipo) não encontrado!');
             $this->line('   Execute: php artisan migrate --path=database/migrations/2026_02_01_062306_add_composite_indexes_to_financeiros_table.php');
         }
@@ -354,7 +364,7 @@ class AuditarFinanceiro extends Command
         }
 
         // Avaliar integridade
-        if (!$report['integridade']['integridade_ok']) {
+        if (! $report['integridade']['integridade_ok']) {
             $issues++;
             $recommendations[] = "🔴 CRÍTICO: {$report['integridade']['orfaos']} registros órfãos detectados!";
         }
@@ -366,7 +376,7 @@ class AuditarFinanceiro extends Command
         }
 
         // Avaliar performance
-        if (!$report['indices']['has_recommended_index']) {
+        if (! $report['indices']['has_recommended_index']) {
             $warnings++;
             $recommendations[] = '🟡 Índices de performance não criados.';
         }
@@ -396,7 +406,7 @@ class AuditarFinanceiro extends Command
 
     private function exportReport(array $report): void
     {
-        $filename = storage_path('app/financeiro_audit_' . date('Y-m-d_His') . '.json');
+        $filename = storage_path('app/financeiro_audit_'.date('Y-m-d_His').'.json');
         file_put_contents($filename, json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         $this->info("📁 Relatório exportado: {$filename}");
     }
@@ -406,6 +416,7 @@ class AuditarFinanceiro extends Command
         if ($inverse) {
             return $status ? '<fg=red>❌ Sim (LEGADO)</>' : '<fg=green>✅ Não</>';
         }
+
         return $status ? '<fg=green>✅ Sim</>' : '<fg=red>❌ Não</>';
     }
 
@@ -414,12 +425,11 @@ class AuditarFinanceiro extends Command
         if ($value == 0) {
             return "<fg=green>{$value}</>";
         }
-        
+
         if ($level === 'danger') {
             return "<fg=red>{$value}</>";
         }
-        
+
         return "<fg=yellow>{$value}</>";
     }
 }
-

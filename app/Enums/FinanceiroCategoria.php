@@ -2,10 +2,10 @@
 
 namespace App\Enums;
 
-use Filament\Support\Contracts\HasLabel;
 use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
 
-enum FinanceiroCategoria: string implements HasLabel, HasColor
+enum FinanceiroCategoria: string implements HasColor, HasLabel
 {
     case Servico = 'servico';
     case Produto = 'produto';

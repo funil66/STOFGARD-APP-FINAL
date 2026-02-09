@@ -4,19 +4,19 @@ namespace App\Filament\Resources\FinanceiroResource\Pages;
 
 use App\Filament\Resources\FinanceiroResource;
 use App\Models\Financeiro;
+use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Filament\Forms;
-use Filament\Notifications\Notification;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Central de Comissões
- * 
+ *
  * Página dedicada para gerenciar comissões de vendedores e parceiros,
  * com ações em lote para baixa e visualização por status.
  */
@@ -25,9 +25,13 @@ class Comissoes extends Page implements HasTable
     use InteractsWithTable;
 
     protected static string $resource = FinanceiroResource::class;
+
     protected static string $view = 'filament.resources.financeiro-resource.pages.comissoes';
+
     protected static ?string $title = '💼 Central de Comissões';
+
     protected static ?string $navigationLabel = 'Comissões';
+
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
     public function getTitle(): string|Htmlable
@@ -62,7 +66,7 @@ class Comissoes extends Page implements HasTable
                     ->searchable()
                     ->sortable()
                     ->icon('heroicon-o-user')
-                    ->description(fn($record) => match ($record->cadastro?->tipo) {
+                    ->description(fn ($record) => match ($record->cadastro?->tipo) {
                         'vendedor' => '👔 Vendedor',
                         'loja' => '🏪 Loja',
                         'arquiteto' => '📐 Arquiteto',
@@ -73,7 +77,7 @@ class Comissoes extends Page implements HasTable
                     ->label('Descrição')
                     ->searchable()
                     ->limit(30)
-                    ->tooltip(fn($record) => $record->descricao),
+                    ->tooltip(fn ($record) => $record->descricao),
 
                 Tables\Columns\TextColumn::make('ordemServico.numero_os')
                     ->label('OS')
@@ -101,7 +105,7 @@ class Comissoes extends Page implements HasTable
                     ->label('Pago em')
                     ->dateTime('d/m/Y H:i')
                     ->placeholder('Pendente')
-                    ->color(fn($state) => $state ? 'success' : 'gray'),
+                    ->color(fn ($state) => $state ? 'success' : 'gray'),
             ])
             ->defaultSort('comissao_paga', 'asc')
             ->filters([
@@ -128,14 +132,16 @@ class Comissoes extends Page implements HasTable
                         'arquiteto' => '📐 Arquitetos',
                     ])
                     ->query(function ($query, array $data) {
-                        if (!$data['value'])
+                        if (! $data['value']) {
                             return $query;
-                        return $query->whereHas('cadastro', fn($q) => $q->where('tipo', $data['value']));
+                        }
+
+                        return $query->whereHas('cadastro', fn ($q) => $q->where('tipo', $data['value']));
                     }),
 
                 Tables\Filters\SelectFilter::make('cadastro_id')
                     ->label('Beneficiário')
-                    ->options(fn() => \App\Models\Cadastro::whereIn('tipo', ['vendedor', 'loja', 'arquiteto'])->pluck('nome', 'id'))
+                    ->options(fn () => \App\Models\Cadastro::whereIn('tipo', ['vendedor', 'loja', 'arquiteto'])->pluck('nome', 'id'))
                     ->searchable(),
 
                 Tables\Filters\Filter::make('periodo')
@@ -145,8 +151,8 @@ class Comissoes extends Page implements HasTable
                     ])
                     ->query(function ($query, array $data) {
                         return $query
-                            ->when($data['data_de'], fn($q, $d) => $q->whereDate('data', '>=', $d))
-                            ->when($data['data_ate'], fn($q, $d) => $q->whereDate('data', '<=', $d));
+                            ->when($data['data_de'], fn ($q, $d) => $q->whereDate('data', '>=', $d))
+                            ->when($data['data_ate'], fn ($q, $d) => $q->whereDate('data', '<=', $d));
                     }),
             ])
             ->actions([
@@ -154,10 +160,10 @@ class Comissoes extends Page implements HasTable
                     ->label('Pagar')
                     ->icon('heroicon-o-banknotes')
                     ->color('success')
-                    ->visible(fn(Financeiro $record) => !$record->comissao_paga)
+                    ->visible(fn (Financeiro $record) => ! $record->comissao_paga)
                     ->requiresConfirmation()
                     ->modalHeading('Confirmar Pagamento')
-                    ->modalDescription(fn(Financeiro $record) => "Pagar comissão de R$ " . number_format((float) ($record->valor ?? 0), 2, ',', '.') . " para " . ($record->cadastro?->nome ?? 'N/A') . "?")
+                    ->modalDescription(fn (Financeiro $record) => 'Pagar comissão de R$ '.number_format((float) ($record->valor ?? 0), 2, ',', '.').' para '.($record->cadastro?->nome ?? 'N/A').'?')
                     ->action(function (Financeiro $record) {
                         $record->update([
                             'comissao_paga' => true,
@@ -177,7 +183,7 @@ class Comissoes extends Page implements HasTable
                     ->label('Estornar')
                     ->icon('heroicon-o-arrow-path')
                     ->color('warning')
-                    ->visible(fn(Financeiro $record) => $record->comissao_paga)
+                    ->visible(fn (Financeiro $record) => $record->comissao_paga)
                     ->requiresConfirmation()
                     ->action(function (Financeiro $record) {
                         $record->update([
@@ -194,7 +200,7 @@ class Comissoes extends Page implements HasTable
                     }),
 
                 Tables\Actions\ViewAction::make()
-                    ->url(fn(Financeiro $record) => FinanceiroResource::getUrl('view', ['record' => $record])),
+                    ->url(fn (Financeiro $record) => FinanceiroResource::getUrl('view', ['record' => $record])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -204,11 +210,11 @@ class Comissoes extends Page implements HasTable
                         ->color('success')
                         ->requiresConfirmation()
                         ->modalHeading('Pagar Comissões em Lote')
-                        ->modalDescription(fn(Collection $records) => "Pagar " . $records->where('comissao_paga', false)->count() . " comissões pendentes?")
+                        ->modalDescription(fn (Collection $records) => 'Pagar '.$records->where('comissao_paga', false)->count().' comissões pendentes?')
                         ->action(function (Collection $records) {
                             $count = 0;
                             foreach ($records as $record) {
-                                if (!$record->comissao_paga) {
+                                if (! $record->comissao_paga) {
                                     $record->update([
                                         'comissao_paga' => true,
                                         'comissao_data_pagamento' => now(),
@@ -232,8 +238,8 @@ class Comissoes extends Page implements HasTable
                         ->icon('heroicon-o-arrow-down-tray')
                         ->action(function (Collection $records) {
                             $headers = [
-                                "Content-type" => "text/csv",
-                                "Content-Disposition" => "attachment; filename=comissoes.csv",
+                                'Content-type' => 'text/csv',
+                                'Content-Disposition' => 'attachment; filename=comissoes.csv',
                             ];
 
                             $callback = function () use ($records) {

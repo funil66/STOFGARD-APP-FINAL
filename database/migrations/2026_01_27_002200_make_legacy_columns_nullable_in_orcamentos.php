@@ -13,7 +13,7 @@ return new class extends Migration
             $columns = [
                 'criado_por', 'atualizado_por', 'parceiro_id', 'ordem_servico_id', 'area_m2', 'valor_m2', 'valor_desconto', 'forma_pagamento',
                 'pix_chave_tipo', 'pix_chave_valor', 'pix_txid', 'pix_qrcode_base64', 'pix_copia_cola', 'link_pagamento_hash',
-                'aprovado_em', 'reprovado_em', 'motivo_reprovacao', 'data_servico_agendada', 'numero_pedido_parceiro', 'observacoes_internas', 'documentos'
+                'aprovado_em', 'reprovado_em', 'motivo_reprovacao', 'data_servico_agendada', 'numero_pedido_parceiro', 'observacoes_internas', 'documentos',
             ];
 
             // Tratar colunas de relacionamento (dropar FK, ajustar tipo, readicionar FK)
@@ -75,8 +75,12 @@ return new class extends Migration
             }
 
             // Correções específicas de tipo para garantir
-            if (Schema::hasColumn('orcamentos', 'criado_por')) $table->string('criado_por')->nullable()->change();
-            if (Schema::hasColumn('orcamentos', 'valor_desconto')) $table->decimal('valor_desconto', 10, 2)->nullable()->change();
+            if (Schema::hasColumn('orcamentos', 'criado_por')) {
+                $table->string('criado_por')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'valor_desconto')) {
+                $table->decimal('valor_desconto', 10, 2)->nullable()->change();
+            }
         });
     }
 

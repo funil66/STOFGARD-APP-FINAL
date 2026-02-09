@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 class WeatherService
 {
     private const CACHE_TTL = 1800; // 30 minutos (em segundos)
+
     private const API_TIMEOUT = 5; // Timeout de 5 segundos
+
     private const ERROR_CACHE_TTL = 300; // 5 minutos para cachear erros 404
 
     /**
@@ -25,6 +27,7 @@ class WeatherService
         // Se a API key não estiver configurada, retorna null
         if (empty($apiKey)) {
             Log::warning('OpenWeather API key not configured');
+
             return null;
         }
 
@@ -41,7 +44,7 @@ class WeatherService
                 'city' => $city,
                 'error' => $e->getMessage(),
             ]);
-            
+
             // Retorna null silenciosamente para não quebrar a aplicação
             return null;
         }
@@ -65,18 +68,18 @@ class WeatherService
             if ($response->failed()) {
                 if ($response->status() === 404) {
                     Log::info('City not found on OpenWeather', ['city' => $city]);
-                    
+
                     // Cachear erro 404 por menos tempo para evitar requisições repetidas
-                    Cache::put($this->generateCacheKey($city) . '_error', true, self::ERROR_CACHE_TTL);
+                    Cache::put($this->generateCacheKey($city).'_error', true, self::ERROR_CACHE_TTL);
                 }
-                
+
                 return null;
             }
 
             $data = $response->json();
 
             // Valida se os dados essenciais existem
-            if (!isset($data['main']) || !isset($data['weather'][0])) {
+            if (! isset($data['main']) || ! isset($data['weather'][0])) {
                 return null;
             }
 
@@ -88,12 +91,14 @@ class WeatherService
                 'city' => $city,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         } catch (\Exception $e) {
             Log::error('OpenWeather API Unexpected Error', [
                 'city' => $city,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
     }
@@ -129,7 +134,7 @@ class WeatherService
      */
     private function generateCacheKey(string $city): string
     {
-        return 'weather_data_' . Str::slug(strtolower($city));
+        return 'weather_data_'.Str::slug(strtolower($city));
     }
 
     /**
@@ -139,7 +144,7 @@ class WeatherService
     {
         $cacheKey = $this->generateCacheKey($city);
         Cache::forget($cacheKey);
-        Cache::forget($cacheKey . '_error');
+        Cache::forget($cacheKey.'_error');
     }
 
     /**

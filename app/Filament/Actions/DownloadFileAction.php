@@ -13,7 +13,7 @@ class DownloadFileAction
      *      DownloadFileAction::make('arquivos', 'public')->label('Download')->icon('heroicon-m-arrow-down'),
      *  ])
      */
-    public static function make(string $attribute, string $disk = 'public') : Tables\Actions\Action
+    public static function make(string $attribute, string $disk = 'public'): Tables\Actions\Action
     {
         return Tables\Actions\Action::make('download')
             ->label('Download')

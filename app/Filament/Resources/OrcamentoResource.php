@@ -4,31 +4,24 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrcamentoResource\Pages;
 use App\Models\Orcamento;
-use App\Models\Setting;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\Tabs;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Support\RawJs;
-use Illuminate\Database\Eloquent\Builder;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Section;
-use Filament\Infolists\Components\Grid;
-use Filament\Infolists\Components\RepeatableEntry;
-use App\Services\OrdemServicoService;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Infolists\Components\Tabs;
 
 class OrcamentoResource extends Resource
 {
     protected static ?string $model = Orcamento::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-document-plus';
+
     protected static ?string $label = 'Orçamento';
 
     public static function form(Form $form): Form
@@ -67,15 +60,15 @@ class OrcamentoResource extends Resource
 
                         Forms\Components\Toggle::make('aplicar_desconto_pix')
                             ->label('Aplicar Desconto PIX')
-                            ->default(fn() => \App\Models\Setting::get('pdf_aplicar_desconto_global', true))
-                            ->visible(fn(Forms\Get $get) => $get('pdf_incluir_pix')),
+                            ->default(fn () => \App\Models\Setting::get('pdf_aplicar_desconto_global', true))
+                            ->visible(fn (Forms\Get $get) => $get('pdf_incluir_pix')),
 
                         Forms\Components\Select::make('pix_chave_selecionada')
                             ->label('Selecionar Chave PIX')
                             ->options(function () {
                                 $setting = \App\Models\Setting::find('financeiro_pix_keys');
                                 $valor = $setting ? $setting->value : null;
-                                if (!$valor) {
+                                if (! $valor) {
                                     $valor = \Illuminate\Support\Facades\DB::table('settings')->where('key', 'financeiro_pix_keys')->value('value');
                                 }
                                 $dados = [];
@@ -86,22 +79,23 @@ class OrcamentoResource extends Resource
                                 }
                                 $opcoes = [];
                                 foreach ($dados as $item) {
-                                    if (!empty($item['chave'])) {
-                                        $label = ucfirst($item['tipo'] ?? 'N/A') . ": {$item['chave']}";
+                                    if (! empty($item['chave'])) {
+                                        $label = ucfirst($item['tipo'] ?? 'N/A').": {$item['chave']}";
                                         $opcoes[$item['chave']] = $label;
                                     }
                                 }
+
                                 return $opcoes;
                             })
                             ->searchable()
                             ->preload()
-                            ->required(fn(Forms\Get $get) => $get('pdf_incluir_pix'))
-                            ->visible(fn(Forms\Get $get) => $get('pdf_incluir_pix'))
+                            ->required(fn (Forms\Get $get) => $get('pdf_incluir_pix'))
+                            ->visible(fn (Forms\Get $get) => $get('pdf_incluir_pix'))
                             ->columnSpanFull(),
 
                         Forms\Components\Select::make('vendedor_id')
                             ->label('Vendedor')
-                            ->options(fn() => \App\Models\Cadastro::where('tipo', 'vendedor')->pluck('nome', 'id'))
+                            ->options(fn () => \App\Models\Cadastro::where('tipo', 'vendedor')->pluck('nome', 'id'))
                             ->searchable()
                             ->live()
                             ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
@@ -109,8 +103,9 @@ class OrcamentoResource extends Resource
                                 $total = (float) $get('valor_total');
                                 if ($state) {
                                     $vendedor = \App\Models\Cadastro::find($state);
-                                    if ($vendedor)
+                                    if ($vendedor) {
                                         $set('comissao_vendedor', ($total * $vendedor->comissao_percentual) / 100);
+                                    }
                                 }
                             }),
 
@@ -125,29 +120,29 @@ class OrcamentoResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('item_nome')
                                     ->label('Item')
-                                    ->options(fn() => \App\Models\TabelaPreco::where('ativo', true)->pluck('nome_item', 'nome_item'))
+                                    ->options(fn () => \App\Models\TabelaPreco::where('ativo', true)->pluck('nome_item', 'nome_item'))
                                     ->searchable()
                                     ->required()
                                     ->live()
-                                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get, $state) => self::atualizarPrecoItem($set, $get))
+                                    ->afterStateUpdated(fn (Forms\Set $set, Forms\Get $get, $state) => self::atualizarPrecoItem($set, $get))
                                     ->columnSpan(4),
 
                                 Forms\Components\Select::make('servico_tipo')
                                     ->options(\App\Services\ServiceTypeManager::getOptions())
                                     ->default('higienizacao')
                                     ->live()
-                                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::atualizarPrecoItem($set, $get))
+                                    ->afterStateUpdated(fn (Forms\Set $set, Forms\Get $get) => self::atualizarPrecoItem($set, $get))
                                     ->columnSpan(2),
 
                                 Forms\Components\TextInput::make('quantidade')
                                     ->numeric()->default(1)->live(onBlur: true)
-                                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get))
+                                    ->afterStateUpdated(fn (Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get))
                                     ->columnSpan(1),
 
                                 Forms\Components\TextInput::make('valor_unitario')
                                     ->label('Unit.')
                                     ->numeric()->prefix('R$')->live(onBlur: true)
-                                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get))
+                                    ->afterStateUpdated(fn (Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get))
                                     ->columnSpan(2),
 
                                 Forms\Components\TextInput::make('subtotal')
@@ -160,7 +155,7 @@ class OrcamentoResource extends Resource
                             ])
                             ->columns(11)
                             ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get)),
+                            ->afterStateUpdated(fn (Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get)),
                     ]),
 
                 Forms\Components\Section::make()
@@ -190,8 +185,9 @@ class OrcamentoResource extends Resource
     {
         $nomeItem = $get('item_nome');
         $tipoServico = $get('servico_tipo');
-        if (!$nomeItem || !$tipoServico)
+        if (! $nomeItem || ! $tipoServico) {
             return;
+        }
 
         $preco = \App\Models\TabelaPreco::where('nome_item', $nomeItem)
             ->where('tipo_servico', $tipoServico)
@@ -205,7 +201,7 @@ class OrcamentoResource extends Resource
     public static function recalcularTotal(Forms\Set $set, Forms\Get $get): void
     {
         $itens = $get('itens') ?? [];
-        $total = collect($itens)->sum(fn($item) => floatval($item['subtotal'] ?? 0));
+        $total = collect($itens)->sum(fn ($item) => floatval($item['subtotal'] ?? 0));
         $set('valor_total', $total);
         // Add commission logic if needed
     }
@@ -226,7 +222,7 @@ class OrcamentoResource extends Resource
 
                             TextEntry::make('status')
                                 ->badge()
-                                ->color(fn(string $state): string => match ($state) {
+                                ->color(fn (string $state): string => match ($state) {
                                     'aprovado' => 'success',
                                     'rejeitado', 'cancelado' => 'danger',
                                     'enviado' => 'warning',
@@ -241,10 +237,10 @@ class OrcamentoResource extends Resource
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
                                 ->weight('bold')
-                                ->url(fn($record) => \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id])),
+                                ->url(fn ($record) => \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id])),
                             TextEntry::make('cliente.telefone')
                                 ->label('WhatsApp')
-                                ->url(fn($state) => $state ? 'https://wa.me/55' . preg_replace('/\D/', '', $state) : null, true),
+                                ->url(fn ($state) => $state ? 'https://wa.me/55'.preg_replace('/\D/', '', $state) : null, true),
                             TextEntry::make('vendedor.nome')->label('Vendedor'),
                             TextEntry::make('loja.nome')->label('Loja'),
                         ]),
@@ -330,7 +326,7 @@ class OrcamentoResource extends Resource
                     ->color('success'),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'aprovado' => 'success',
                         'rejeitado' => 'danger',
                         'enviado' => 'warning',
@@ -344,10 +340,10 @@ class OrcamentoResource extends Resource
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\Action::make('pdf')
                         ->icon('heroicon-o-document-arrow-down')
-                        ->url(fn(Orcamento $record) => route('orcamento.pdf', $record))
+                        ->url(fn (Orcamento $record) => route('orcamento.pdf', $record))
                         ->openUrlInNewTab(),
                     Tables\Actions\DeleteAction::make(),
-                ])
+                ]),
             ]);
     }
 

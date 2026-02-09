@@ -2,8 +2,8 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
 use Filament\Actions\Action;
+use Filament\Pages\Page;
 
 class Almoxarifado extends Page
 {

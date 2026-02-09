@@ -31,10 +31,10 @@ class EditOrdemServico extends EditRecord
         // Unificar cadastro: preservar cadastro_id e popular campos legacy
         if (isset($data['cadastro_id'])) {
             if (str_starts_with($data['cadastro_id'], 'cliente_')) {
-                $data['cliente_id'] = (int)str_replace('cliente_', '', $data['cadastro_id']);
+                $data['cliente_id'] = (int) str_replace('cliente_', '', $data['cadastro_id']);
                 $data['parceiro_id'] = null;
             } elseif (str_starts_with($data['cadastro_id'], 'parceiro_')) {
-                $data['parceiro_id'] = (int)str_replace('parceiro_', '', $data['cadastro_id']);
+                $data['parceiro_id'] = (int) str_replace('parceiro_', '', $data['cadastro_id']);
                 $data['cliente_id'] = null;
             }
         }
@@ -105,14 +105,14 @@ class EditOrdemServico extends EditRecord
                     'tipo' => 'servico',
                     'status' => 'agendado',
                     'cliente_id' => $cliente->id,
-                    'cadastro_id' => $ordemServico->cadastro_id ?? ($cliente ? 'cliente_' . $cliente->id : null),
+                    'cadastro_id' => $ordemServico->cadastro_id ?? ($cliente ? 'cliente_'.$cliente->id : null),
                     'ordem_servico_id' => $ordemServico->id,
                     'local' => $cliente->cidade ?? null,
                     'endereco_completo' => trim(
                         ($cliente->logradouro ?? '').', '.
                         ($cliente->numero ?? '').' - '.
                         ($cliente->bairro ?? '').' - '.
-                        ($cliente->cidade ?? '').'/' .
+                        ($cliente->cidade ?? '').'/'.
                         ($cliente->estado ?? '')
                     ),
                     'cor' => '#22c55e',

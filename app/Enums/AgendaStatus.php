@@ -2,10 +2,10 @@
 
 namespace App\Enums;
 
-use Filament\Support\Contracts\HasLabel;
 use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
 
-enum AgendaStatus: string implements HasLabel, HasColor
+enum AgendaStatus: string implements HasColor, HasLabel
 {
     case Agendado = 'agendado';
     case EmAndamento = 'em_andamento';

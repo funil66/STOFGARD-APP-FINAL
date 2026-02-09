@@ -25,27 +25,27 @@ class QuickTestDataSeeder extends Seeder
         try {
             // 1. Criar categorias básicas
             $categorias = $this->createCategorias();
-            
+
             // 2. Criar alguns produtos
             $produtos = $this->createProdutos();
-            
+
             // 3. Criar alguns cadastros
             $cadastros = $this->createCadastros();
-            
+
             // 4. Criar alguns orçamentos
             $orcamentos = $this->createOrcamentos($cadastros, $produtos);
-            
+
             // 5. Criar algumas movimentações financeiras
             $this->createFinanceiros($categorias, $cadastros);
 
             DB::commit();
-            
+
             $this->command->info('✅ Dados básicos criados com sucesso!');
             $this->showStatistics();
-            
+
         } catch (\Exception $e) {
             DB::rollback();
-            $this->command->error('❌ Erro: ' . $e->getMessage());
+            $this->command->error('❌ Erro: '.$e->getMessage());
             throw $e;
         }
     }
@@ -53,7 +53,7 @@ class QuickTestDataSeeder extends Seeder
     private function createCategorias(): array
     {
         $this->command->info('📁 Criando categorias...');
-        
+
         $categorias = [];
         $categoriasData = [
             ['nome' => 'Vendas', 'tipo' => 'receita', 'cor' => '#10B981'],
@@ -64,18 +64,18 @@ class QuickTestDataSeeder extends Seeder
 
         foreach ($categoriasData as $categoria) {
             $categorias[] = Categoria::firstOrCreate(
-                ['nome' => $categoria['nome']], 
+                ['nome' => $categoria['nome']],
                 $categoria
             );
         }
-        
+
         return $categorias;
     }
 
     private function createProdutos(): array
     {
         $this->command->info('📦 Criando produtos...');
-        
+
         $produtos = [];
         $produtosData = [
             ['nome' => 'Granito Branco', 'categoria' => 'Granitos', 'preco' => 250.00],
@@ -93,16 +93,16 @@ class QuickTestDataSeeder extends Seeder
                 'ativo' => true,
             ]);
         }
-        
+
         return $produtos;
     }
 
     private function createCadastros(): array
     {
         $this->command->info('👥 Criando cadastros...');
-        
+
         $cadastros = [];
-        
+
         // Clientes
         for ($i = 1; $i <= 10; $i++) {
             $cadastros[] = Cadastro::create([
@@ -119,7 +119,7 @@ class QuickTestDataSeeder extends Seeder
                 'estado' => fake('pt_BR')->stateAbbr,
             ]);
         }
-        
+
         // Vendedores
         for ($i = 1; $i <= 3; $i++) {
             $cadastros[] = Cadastro::create([
@@ -131,29 +131,29 @@ class QuickTestDataSeeder extends Seeder
                 'comissao_percentual' => fake()->randomFloat(2, 5, 10),
             ]);
         }
-        
+
         return $cadastros;
     }
 
     private function createOrcamentos(array $cadastros, array $produtos): array
     {
         $this->command->info('💰 Criando orçamentos...');
-        
+
         $orcamentos = [];
-        $clientes = array_filter($cadastros, fn($c) => $c->tipo === 'cliente');
-        
+        $clientes = array_filter($cadastros, fn ($c) => $c->tipo === 'cliente');
+
         for ($i = 1; $i <= 8; $i++) {
             $cliente = fake()->randomElement($clientes);
-            
+
             $orcamento = Orcamento::create([
-                'numero' => 'ORC-' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                'numero' => 'ORC-'.str_pad($i, 4, '0', STR_PAD_LEFT),
                 'cadastro_id' => $cliente->id,
                 'data_orcamento' => fake()->dateTimeBetween('-2 months', 'now'),
                 'data_validade' => fake()->dateTimeBetween('now', '+1 month'),
                 'status' => fake()->randomElement(['rascunho', 'enviado', 'aprovado']),
                 'valor_total' => 0,
             ]);
-            
+
             // Adicionar itens
             $valorTotal = 0;
             for ($j = 1; $j <= fake()->numberBetween(1, 3); $j++) {
@@ -161,7 +161,7 @@ class QuickTestDataSeeder extends Seeder
                 $quantidade = fake()->randomFloat(2, 1, 10);
                 $valorItem = $quantidade * $produto->preco;
                 $valorTotal += $valorItem;
-                
+
                 OrcamentoItem::create([
                     'orcamento_id' => $orcamento->id,
                     'produto_id' => $produto->id,
@@ -171,32 +171,32 @@ class QuickTestDataSeeder extends Seeder
                     'valor_total' => $valorItem,
                 ]);
             }
-            
+
             $orcamento->update(['valor_total' => $valorTotal]);
             $orcamentos[] = $orcamento;
         }
-        
+
         return $orcamentos;
     }
 
     private function createFinanceiros(array $categorias, array $cadastros): void
     {
         $this->command->info('💳 Criando financeiros...');
-        
+
         $categoriasMap = collect($categorias)->keyBy('nome');
-        
+
         // Receitas
         for ($i = 1; $i <= 10; $i++) {
-            $cliente = fake()->randomElement(array_filter($cadastros, fn($c) => $c->tipo === 'cliente'));
+            $cliente = fake()->randomElement(array_filter($cadastros, fn ($c) => $c->tipo === 'cliente'));
             $valor = fake()->randomFloat(2, 500, 5000);
             $status = fake()->randomElement(['pago', 'pendente']);
-            
+
             Financeiro::create([
                 'cadastro_id' => $cliente->id,
                 'tipo' => 'entrada',
                 'categoria' => 'Vendas',
                 'categoria_id' => $categoriasMap->get('Vendas')?->id,
-                'descricao' => 'Venda - ' . $cliente->nome,
+                'descricao' => 'Venda - '.$cliente->nome,
                 'valor' => $valor,
                 'valor_pago' => $status === 'pago' ? $valor : 0,
                 'data' => fake()->dateTimeBetween('-2 months', 'now'),
@@ -205,12 +205,12 @@ class QuickTestDataSeeder extends Seeder
                 'forma_pagamento' => fake()->randomElement(['pix', 'dinheiro', 'cartao']),
             ]);
         }
-        
+
         // Despesas
         for ($i = 1; $i <= 10; $i++) {
             $valor = fake()->randomFloat(2, 100, 2000);
             $status = fake()->randomElement(['pago', 'pendente']);
-            
+
             Financeiro::create([
                 'tipo' => 'saida',
                 'categoria' => fake()->randomElement(['Materiais', 'Salários']),

@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\ListaDesejoResource\Pages;
 
 use App\Filament\Resources\ListaDesejoResource;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateListaDesejo extends CreateRecord

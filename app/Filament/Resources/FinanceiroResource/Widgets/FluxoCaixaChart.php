@@ -4,7 +4,6 @@ namespace App\Filament\Resources\FinanceiroResource\Widgets;
 
 use App\Models\Financeiro;
 use Filament\Widgets\ChartWidget;
-use Carbon\Carbon;
 
 class FluxoCaixaChart extends ChartWidget
 {

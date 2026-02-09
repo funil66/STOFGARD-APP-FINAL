@@ -24,10 +24,10 @@ class CreateOrdemServico extends CreateRecord
         if (isset($data['cadastro_id'])) {
             // manter o cadastro_id (string) para o novo padrão
             if (str_starts_with($data['cadastro_id'], 'cliente_')) {
-                $data['cliente_id'] = (int)str_replace('cliente_', '', $data['cadastro_id']);
+                $data['cliente_id'] = (int) str_replace('cliente_', '', $data['cadastro_id']);
                 $data['parceiro_id'] = null;
             } elseif (str_starts_with($data['cadastro_id'], 'parceiro_')) {
-                $data['parceiro_id'] = (int)str_replace('parceiro_', '', $data['cadastro_id']);
+                $data['parceiro_id'] = (int) str_replace('parceiro_', '', $data['cadastro_id']);
                 $data['cliente_id'] = null;
             }
         }
@@ -64,14 +64,14 @@ class CreateOrdemServico extends CreateRecord
                 'tipo' => 'servico',
                 'status' => 'agendado',
                 'cliente_id' => $cliente->id,
-                'cadastro_id' => $ordemServico->cadastro_id ?? ($cliente ? 'cliente_' . $cliente->id : null),
+                'cadastro_id' => $ordemServico->cadastro_id ?? ($cliente ? 'cliente_'.$cliente->id : null),
                 'ordem_servico_id' => $ordemServico->id,
                 'local' => $cliente->cidade ?? null,
                 'endereco_completo' => trim(
                     ($cliente->logradouro ?? '').', '.
                     ($cliente->numero ?? '').' - '.
                     ($cliente->bairro ?? '').' - '.
-                    ($cliente->cidade ?? '').'/' .
+                    ($cliente->cidade ?? '').'/'.
                     ($cliente->estado ?? '')
                 ),
                 'cor' => '#22c55e', // Verde para serviços

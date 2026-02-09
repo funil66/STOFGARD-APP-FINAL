@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\FinanceiroResource\Widgets;
 
 use App\Filament\Resources\FinanceiroResource;
-use App\Models\Financeiro;
 use Filament\Forms;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -12,7 +11,9 @@ use Filament\Widgets\TableWidget as BaseWidget;
 class RecentTransactionsWidget extends BaseWidget
 {
     protected static ?int $sort = 2; // Display after stats
+
     protected int|string|array $columnSpan = 'full';
+
     protected static ?string $heading = 'Últimas Transações';
 
     public function table(Table $table): Table
@@ -31,18 +32,18 @@ class RecentTransactionsWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('tipo')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'entrada' => 'success',
                         'saida' => 'danger',
                     })
-                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
                 Tables\Columns\TextColumn::make('valor')
                     ->label('Valor')
                     ->money('BRL')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'pago' => 'success',
                         'pendente' => 'warning',
                         'atrasado' => 'danger',

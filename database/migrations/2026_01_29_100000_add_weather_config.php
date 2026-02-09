@@ -13,7 +13,7 @@ return new class extends Migration
                 'grupo' => 'sistema',
                 'chave' => 'url_clima',
                 'valor' => 'https://wttr.in/Ribeirao+Preto?0QT&lang=pt',
-                'tipo'  => 'text',
+                'tipo' => 'text',
                 'descricao' => 'URL do widget de clima (iframe ou imagem)',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -21,5 +21,5 @@ return new class extends Migration
         }
     }
 
-    public function down(): void { }
+    public function down(): void {}
 };

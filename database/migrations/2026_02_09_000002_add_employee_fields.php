@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Adiciona campos para funcionários na tabela cadastros.
      * Permite tipo 'funcionario' com cargo, salário, data de admissão, e configurações de pró-labore.
@@ -23,7 +24,7 @@ return new class extends Migration {
 
         // Adicionar funcionario_id às ordens de serviço para atribuição de técnico
         Schema::table('ordens_servico', function (Blueprint $table) {
-            if (!Schema::hasColumn('ordens_servico', 'funcionario_id')) {
+            if (! Schema::hasColumn('ordens_servico', 'funcionario_id')) {
                 $table->foreignId('funcionario_id')
                     ->nullable()
                     ->after('vendedor_id')
@@ -34,7 +35,7 @@ return new class extends Migration {
 
         // Adicionar funcionario_id às agendas para atribuição de responsável
         Schema::table('agendas', function (Blueprint $table) {
-            if (!Schema::hasColumn('agendas', 'funcionario_id')) {
+            if (! Schema::hasColumn('agendas', 'funcionario_id')) {
                 $table->foreignId('funcionario_id')
                     ->nullable()
                     ->after('orcamento_id')

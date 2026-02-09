@@ -3,14 +3,15 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Financeiro;
-use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Filament\Widgets\ChartWidget;
 
 class FluxoCaixaChart extends ChartWidget
 {
     protected static ?string $heading = 'Fluxo de Caixa Diário (Mês Atual)';
+
     protected static ?int $sort = 5;
+
     protected int|string|array $columnSpan = 'full';
 
     protected function getData(): array
@@ -30,7 +31,7 @@ class FluxoCaixaChart extends ChartWidget
         // Eager load data
         $transactions = Financeiro::whereBetween('data', [$start, $end])
             ->get()
-            ->groupBy(fn($item) => $item->data->format('Y-m-d'));
+            ->groupBy(fn ($item) => $item->data->format('Y-m-d'));
 
         foreach ($period as $date) {
             $formattedDate = $date->format('Y-m-d');

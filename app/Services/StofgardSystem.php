@@ -2,19 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\Orcamento;
-use App\Models\OrdemServico;
-use App\Models\Financeiro;
-use App\Models\Agenda;
-use App\Enums\OrdemServicoStatus;
-use App\Enums\OrcamentoStatus;
-use App\Enums\FinanceiroStatus;
-use App\Enums\FinanceiroTipo;
-use App\Enums\FinanceiroCategoria;
 use App\Enums\AgendaStatus;
 use App\Enums\AgendaTipo;
-use Illuminate\Support\Facades\DB;
+use App\Enums\FinanceiroCategoria;
+use App\Enums\FinanceiroStatus;
+use App\Enums\FinanceiroTipo;
+use App\Enums\OrcamentoStatus;
+use App\Enums\OrdemServicoStatus;
+use App\Models\Agenda;
+use App\Models\Financeiro;
+use App\Models\Orcamento;
+use App\Models\OrdemServico;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 
 class StofgardSystem
 {
@@ -25,12 +25,12 @@ class StofgardSystem
     /**
      * Aprova um orçamento, gerando OS e previsão financeira de forma atômica.
      * Iron Code Refactoring: Remoção de magic numbers e race conditions.
-     * 
-     * @param Orcamento $orcamento
-     * @param int|null $userId ID do usuário que está aprovando (obrigatório para auditoria)
-     * @param int $prazoVencimentoDias Prazo em dias para vencimento (padrão: 30)
-     * @param int $diasAteAgendamento Dias até o agendamento (padrão: 1)
-     * @param int $horaAgendamento Hora do agendamento (padrão: 9)
+     *
+     * @param  int|null  $userId  ID do usuário que está aprovando (obrigatório para auditoria)
+     * @param  int  $prazoVencimentoDias  Prazo em dias para vencimento (padrão: 30)
+     * @param  int  $diasAteAgendamento  Dias até o agendamento (padrão: 1)
+     * @param  int  $horaAgendamento  Hora do agendamento (padrão: 9)
+     *
      * @throws \Exception Se o orçamento já foi aprovado ou se userId não for fornecido
      */
     public function aprovarOrcamento(
@@ -41,7 +41,7 @@ class StofgardSystem
         int $horaAgendamento = 9
     ): OrdemServico {
         // CORREÇÃO CRÍTICA: Não permitir operações sem usuário responsável
-        if (!$userId && !auth()->id()) {
+        if (! $userId && ! auth()->id()) {
             throw new \Exception('Não é possível aprovar orçamento sem um usuário responsável. Operação rejeitada por questão de auditoria.');
         }
 
@@ -69,7 +69,7 @@ class StofgardSystem
 
             // B. Criação do Financeiro (Receita Prevista) - Usando Financeiro model com cadastro_id
             Financeiro::create([
-                'descricao' => "Receita ref. OS #{$os->numero_os} - " . ($orcamento->cliente->nome ?? 'Cliente'),
+                'descricao' => "Receita ref. OS #{$os->numero_os} - ".($orcamento->cliente->nome ?? 'Cliente'),
                 'ordem_servico_id' => $os->id,
                 'orcamento_id' => $orcamento->id,
                 'cadastro_id' => $orcamento->cadastro_id,
@@ -82,7 +82,7 @@ class StofgardSystem
 
             // C. Cria Agenda (Serviço Agendado)
             Agenda::create([
-                'titulo' => "Serviço - " . ($orcamento->cliente->nome ?? 'Cliente'),
+                'titulo' => 'Serviço - '.($orcamento->cliente->nome ?? 'Cliente'),
                 'descricao' => "OS #{$os->numero_os} via Orçamento #{$orcamento->numero}",
                 'cadastro_id' => $orcamento->cadastro_id,
                 'ordem_servico_id' => $os->id,
@@ -107,14 +107,12 @@ class StofgardSystem
 
     /**
      * Confirma pagamento e libera a OS
-     * 
-     * @param Financeiro $lancamento
-     * @return void
      */
     public function confirmarPagamento(Financeiro $lancamento): void
     {
-        if ($lancamento->status === FinanceiroStatus::Pago->value)
+        if ($lancamento->status === FinanceiroStatus::Pago->value) {
             return;
+        }
 
         DB::transaction(function () use ($lancamento) {
             // 1. Baixa Financeira
@@ -135,16 +133,13 @@ class StofgardSystem
 
     /**
      * Finaliza OS e Baixa Estoque
-     * 
-     * @param OrdemServico $os
-     * @return void
      */
     public function finalizarOS(OrdemServico $os): void
     {
         DB::transaction(function () use ($os) {
             $os->update([
                 'status' => OrdemServicoStatus::Concluida->value,
-                'data_fim' => now()
+                'data_fim' => now(),
             ]);
 
             // Delega a baixa de estoque para o serviço especializado

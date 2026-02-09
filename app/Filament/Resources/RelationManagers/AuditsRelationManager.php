@@ -9,7 +9,9 @@ use Filament\Tables\Table;
 class AuditsRelationManager extends RelationManager
 {
     protected static string $relationship = 'audits';
+
     protected static ?string $title = 'Histórico de Alterações';
+
     protected static ?string $icon = 'heroicon-o-finger-print';
 
     public function table(Table $table): Table

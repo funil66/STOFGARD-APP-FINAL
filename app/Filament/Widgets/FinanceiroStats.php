@@ -2,9 +2,9 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Financeiro;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use App\Models\Financeiro;
 
 class FinanceiroStats extends BaseWidget
 {
@@ -26,14 +26,14 @@ class FinanceiroStats extends BaseWidget
             ->sum('valor');
 
         return [
-            Stat::make('Saldo Mês', 'R$ ' . number_format($saldoMes, 2, ',', '.'))
+            Stat::make('Saldo Mês', 'R$ '.number_format($saldoMes, 2, ',', '.'))
                 ->color($saldoMes >= 0 ? 'success' : 'danger'),
 
-            Stat::make('A Receber', 'R$ ' . number_format($aReceber, 2, ',', '.'))
+            Stat::make('A Receber', 'R$ '.number_format($aReceber, 2, ',', '.'))
                 ->icon('heroicon-m-arrow-trending-up')
                 ->color('warning'),
 
-            Stat::make('A Pagar', 'R$ ' . number_format($aPagar, 2, ',', '.'))
+            Stat::make('A Pagar', 'R$ '.number_format($aPagar, 2, ',', '.'))
                 ->icon('heroicon-m-arrow-trending-down')
                 ->color('danger'),
         ];

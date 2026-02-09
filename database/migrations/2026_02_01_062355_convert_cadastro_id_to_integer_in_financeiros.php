@@ -2,29 +2,30 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * CRÍTICO: Converte cadastro_id de string ("cliente_123") para integer FK.
-     * 
+     *
      * Estratégia:
      * 1. Criar coluna temporária cadastro_id_new (integer)
      * 2. Migrar dados legados de cliente_id/parceiro_id
      * 3. Converter strings "cliente_X" e "parceiro_X" para IDs de Cadastro
      * 4. Substituir coluna antiga pela nova
      * 5. Criar FK para tabela cadastros
-     * 
+     *
      * ATENÇÃO: Requer backup completo antes de executar!
      */
     public function up(): void
     {
         if (! Schema::hasTable('financeiros')) {
             $this->log('Tabela "financeiros" não existe; pulando migração.');
+
             return;
         }
 
@@ -41,7 +42,7 @@ return new class extends Migration
                 ->whereNotNull('cliente_id')
                 ->whereNull('cadastro_id_new')
                 ->update([
-                    'cadastro_id_new' => DB::raw('cliente_id')
+                    'cadastro_id_new' => DB::raw('cliente_id'),
                 ]);
 
             $this->log("✓ Migrados {$clientesMigrados} registros de cliente_id");
@@ -62,7 +63,7 @@ return new class extends Migration
 
             foreach ($financeiroComString as $row) {
                 $cadastroId = $this->parseCadastroId($row->cadastro_id);
-                
+
                 if ($cadastroId) {
                     DB::table('financeiros')
                         ->where('id', $row->id)
@@ -88,14 +89,14 @@ return new class extends Migration
                     ->whereRaw("cadastro_id GLOB '[0-9]*'")
                     ->whereNull('cadastro_id_new')
                     ->update([
-                        'cadastro_id_new' => DB::raw('CAST(cadastro_id AS INTEGER)')
+                        'cadastro_id_new' => DB::raw('CAST(cadastro_id AS INTEGER)'),
                     ]);
             } else {
                 $numericos = DB::table('financeiros')
                     ->whereRaw('cadastro_id REGEXP \'^[0-9]+$\'')
                     ->whereNull('cadastro_id_new')
                     ->update([
-                        'cadastro_id_new' => DB::raw('CAST(cadastro_id AS UNSIGNED)')
+                        'cadastro_id_new' => DB::raw('CAST(cadastro_id AS UNSIGNED)'),
                     ]);
             }
 
@@ -129,7 +130,7 @@ return new class extends Migration
                 } catch (\Exception $e) {
                     // Ignora se não existir
                 }
-                
+
                 $table->dropColumn('cadastro_id');
             });
 
@@ -191,7 +192,7 @@ return new class extends Migration
             }
 
             if (! empty($selects)) {
-                $sql = 'CREATE VIEW financeiro_audit AS ' . implode("\nUNION ALL\n", $selects);
+                $sql = 'CREATE VIEW financeiro_audit AS '.implode("\nUNION ALL\n", $selects);
                 DB::statement($sql);
             }
 
@@ -201,7 +202,7 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     * 
+     *
      * ATENÇÃO: O rollback NÃO recupera os dados originais.
      * Use apenas em ambiente de desenvolvimento.
      */
@@ -209,16 +210,17 @@ return new class extends Migration
     {
         if (! Schema::hasTable('financeiros')) {
             $this->log('Tabela "financeiros" não existe; pulando rollback.');
+
             return;
         }
 
         Schema::table('financeiros', function (Blueprint $table) {
             // Remover FK
             $table->dropForeign(['cadastro_id']);
-            
+
             // Recriar coluna como string
             $table->string('cadastro_id_old', 50)->nullable();
-            
+
             // Recriar colunas legadas
             $table->unsignedBigInteger('cliente_id')->nullable();
             $table->unsignedBigInteger('parceiro_id')->nullable();
@@ -237,19 +239,19 @@ return new class extends Migration
 
     /**
      * Parseia cadastro_id no formato "tipo_id" e retorna o ID do Cadastro correspondente.
-     * 
-     * @param string $cadastroId Ex: "cliente_123", "parceiro_456"
+     *
+     * @param  string  $cadastroId  Ex: "cliente_123", "parceiro_456"
      * @return int|null ID do cadastro na tabela unificada ou null se não encontrado
      */
     private function parseCadastroId(string $cadastroId): ?int
     {
-        if (!str_contains($cadastroId, '_')) {
+        if (! str_contains($cadastroId, '_')) {
             return null;
         }
 
         [$tipo, $legacyId] = explode('_', $cadastroId, 2);
 
-        if (!is_numeric($legacyId)) {
+        if (! is_numeric($legacyId)) {
             return null;
         }
 
@@ -263,7 +265,7 @@ return new class extends Migration
             'vendedor' => 'vendedor',
         ];
 
-        if (!isset($tipoMap[$tipo])) {
+        if (! isset($tipoMap[$tipo])) {
             return null;
         }
 
@@ -293,7 +295,7 @@ return new class extends Migration
     private function log(string $message): void
     {
         if (app()->runningInConsole()) {
-            echo $message . PHP_EOL;
+            echo $message.PHP_EOL;
         }
     }
 };

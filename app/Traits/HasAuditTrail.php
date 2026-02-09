@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Trait HasAuditTrail
- * 
+ *
  * Adiciona automaticamente o ID do usuário logado nos campos created_by e updated_by.
  * Registra quem criou e quem editou cada registro.
  */
@@ -19,7 +19,7 @@ trait HasAuditTrail
     public static function bootHasAuditTrail(): void
     {
         static::creating(function ($model) {
-            if (auth()->check() && !$model->created_by) {
+            if (auth()->check() && ! $model->created_by) {
                 $model->created_by = auth()->id();
             }
         });

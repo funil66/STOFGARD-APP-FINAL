@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\OrcamentoResource\Pages;
 
 use App\Filament\Resources\OrcamentoResource;
+use App\Http\Controllers\OrcamentoPdfController;
 use App\Models\Agenda;
 use App\Models\Orcamento;
 use App\Models\OrdemServico;
@@ -12,9 +13,6 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request as HttpRequest;
-use App\Http\Controllers\OrcamentoPdfController;
-use App\Services\PixService;
 
 class ViewOrcamento extends ViewRecord
 {
@@ -24,8 +22,7 @@ class ViewOrcamento extends ViewRecord
     {
         return [
             Actions\EditAction::make()
-                ->visible(fn($record): bool => $record->status !== 'convertido'),
-
+                ->visible(fn ($record): bool => $record->status !== 'convertido'),
 
             Actions\Action::make('aprovar')
                 ->label('Aprovar e Gerar OS')
@@ -36,7 +33,7 @@ class ViewOrcamento extends ViewRecord
                 ->modalHeading('Aprovar Orçamento e Gerar OS')
                 ->modalDescription('Configure a data e horário do serviço. Após aprovação, será criada a Ordem de Serviço, o agendamento e o lançamento financeiro.')
                 ->modalSubmitActionLabel('✓ Aprovar e Criar Registros')
-                ->visible(fn($record): bool => $record->status === 'pendente')
+                ->visible(fn ($record): bool => $record->status === 'pendente')
                 ->form([
                     Forms\Components\Grid::make(2)
                         ->schema([
@@ -53,14 +50,14 @@ class ViewOrcamento extends ViewRecord
                                 ->default('09:00')
                                 ->native(false)
                                 ->columnSpan(1)
-                                ->visible(fn(\Filament\Forms\Get $get) => filled($get('data_servico'))),
+                                ->visible(fn (\Filament\Forms\Get $get) => filled($get('data_servico'))),
 
                             Forms\Components\TimePicker::make('hora_fim')
                                 ->label('🕐 Hora de Término (estimada)')
                                 ->default('17:00')
                                 ->native(false)
                                 ->columnSpan(1)
-                                ->visible(fn(\Filament\Forms\Get $get) => filled($get('data_servico'))),
+                                ->visible(fn (\Filament\Forms\Get $get) => filled($get('data_servico'))),
                         ]),
 
                     Forms\Components\Textarea::make('local_servico')
@@ -69,6 +66,7 @@ class ViewOrcamento extends ViewRecord
                         ->rows(2)
                         ->default(function ($record) {
                             $cadastro = $record->cliente;
+
                             return $cadastro?->formatEnderecoCompleto() ?? '';
                         })
                         ->helperText('Endereço completo onde o serviço será realizado (pode ser editado)'),
@@ -92,7 +90,7 @@ class ViewOrcamento extends ViewRecord
                             'loja_id' => $record->loja_id,
                             'vendedor_id' => $record->vendedor_id,
                             'tipo_servico' => $record->tipo_servico ?? 'servico',
-                            'descricao_servico' => $record->descricao_servico ?? 'Conforme orçamento ' . $record->numero,
+                            'descricao_servico' => $record->descricao_servico ?? 'Conforme orçamento '.$record->numero,
                             'data_abertura' => now(),
                             'data_prevista' => $data['data_servico'] ?? null,
                             'status' => 'pendente',
@@ -116,7 +114,7 @@ class ViewOrcamento extends ViewRecord
                         }
 
                         // 2. Criar registro na Agenda (APENAS SE TIVER DATA)
-                        if (!empty($data['data_servico'])) {
+                        if (! empty($data['data_servico'])) {
                             $dataServico = \Carbon\Carbon::parse($data['data_servico']);
                             $horaInicio = \Carbon\Carbon::parse($data['hora_inicio'] ?? '09:00');
                             $horaFim = \Carbon\Carbon::parse($data['hora_fim'] ?? '17:00');
@@ -132,7 +130,7 @@ class ViewOrcamento extends ViewRecord
                                     },
                                     $cadastro?->nome ?? 'Cliente'
                                 ),
-                                'descricao' => $record->descricao_servico ?? ('Conforme orçamento ' . $record->numero),
+                                'descricao' => $record->descricao_servico ?? ('Conforme orçamento '.$record->numero),
                                 'cadastro_id' => $record->cadastro_id,
                                 'ordem_servico_id' => $os->id,
                                 'orcamento_id' => $record->id,
@@ -142,7 +140,7 @@ class ViewOrcamento extends ViewRecord
                                 'status' => 'agendado',
                                 'local' => $enderecoCompleto ?: 'Endereço não informado',
                                 'endereco_completo' => $enderecoCompleto,
-                                'observacoes' => $data['observacoes_os'] ?? ('Agendado automaticamente - ' . $record->numero),
+                                'observacoes' => $data['observacoes_os'] ?? ('Agendado automaticamente - '.$record->numero),
                                 'cor' => match ($record->tipo_servico ?? 'servico') {
                                     'higienizacao' => '#3b82f6',
                                     'impermeabilizacao' => '#f59e0b',
@@ -195,7 +193,7 @@ class ViewOrcamento extends ViewRecord
                 ->form([
                     Forms\Components\Toggle::make('include_pix')
                         ->label('Incluir QR Code PIX')
-                        ->default(fn($record) => (bool) ($record->pdf_incluir_pix ?? true)),
+                        ->default(fn ($record) => (bool) ($record->pdf_incluir_pix ?? true)),
 
                     Forms\Components\Toggle::make('persist')
                         ->label('Salvar preferência (persistir)')
@@ -216,6 +214,7 @@ class ViewOrcamento extends ViewRecord
                     // Gerar PDF usando o controller
                     try {
                         $controller = app(OrcamentoPdfController::class);
+
                         return $controller->gerarPdf($record);
                     } catch (\Throwable $e) {
                         Notification::make()
@@ -233,7 +232,7 @@ class ViewOrcamento extends ViewRecord
                 ->label('Enviar WhatsApp')
                 ->icon('heroicon-o-chat-bubble-left-right')
                 ->color('success')
-                ->url(fn(Orcamento $record) => $this->getWhatsappUrl($record))
+                ->url(fn (Orcamento $record) => $this->getWhatsappUrl($record))
                 ->openUrlInNewTab(),
         ];
     }

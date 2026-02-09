@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\ServiceType;
-use App\Models\Setting;
 use Illuminate\Support\Collection;
 
 class ServiceTypeManager
@@ -67,6 +66,7 @@ class ServiceTypeManager
     {
         $all = self::getAll();
         $item = $all->firstWhere('slug', $slug);
+
         return $item['label'] ?? $slug;
     }
 
@@ -77,6 +77,7 @@ class ServiceTypeManager
     {
         $all = self::getAll();
         $item = $all->firstWhere('slug', $slug);
+
         return $item['color'] ?? 'gray';
     }
 
@@ -87,6 +88,7 @@ class ServiceTypeManager
     {
         $all = self::getAll();
         $item = $all->firstWhere('slug', $slug);
+
         return $item['descricao_pdf'] ?? null;
     }
 

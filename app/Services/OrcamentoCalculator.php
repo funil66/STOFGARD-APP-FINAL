@@ -41,7 +41,7 @@ class OrcamentoCalculator
 
         if ($orcamento->aplicar_desconto_pix && $percentualPix > 0) {
             // Se valor foi editado manualmente, NÃO aplica desconto PIX
-            if (!$orcamento->valor_final_editado) {
+            if (! $orcamento->valor_final_editado) {
                 $descontoPix = ($valorAposDescontoPrestador * $percentualPix) / 100;
             }
         }
@@ -73,7 +73,7 @@ class OrcamentoCalculator
     public function calcularSubtotal(Orcamento $orcamento): float
     {
         // Prioridade: valor_total existente ou soma dos itens
-        if ($orcamento->valor_total > 0 && !$orcamento->relationLoaded('itens')) {
+        if ($orcamento->valor_total > 0 && ! $orcamento->relationLoaded('itens')) {
             return (float) $orcamento->valor_total;
         }
 
@@ -131,7 +131,7 @@ class OrcamentoCalculator
      */
     public function prepararDadosPix(Orcamento $orcamento, float $valorFinal): ?array
     {
-        if (!$orcamento->pdf_incluir_pix || !$orcamento->pix_chave_selecionada) {
+        if (! $orcamento->pdf_incluir_pix || ! $orcamento->pix_chave_selecionada) {
             return null;
         }
 
@@ -153,7 +153,7 @@ class OrcamentoCalculator
             }
 
             // Gerar QR Code
-            $pixService = new Pix\PixMasterService();
+            $pixService = new Pix\PixMasterService;
             $pixData = $pixService->gerarQrCode(
                 $orcamento->pix_chave_selecionada,
                 $titular,
@@ -171,7 +171,8 @@ class OrcamentoCalculator
             ];
 
         } catch (\Exception $e) {
-            Log::error("Erro ao gerar dados PIX: " . $e->getMessage());
+            Log::error('Erro ao gerar dados PIX: '.$e->getMessage());
+
             return null;
         }
     }
@@ -229,7 +230,7 @@ class OrcamentoCalculator
      */
     public static function formatarMoeda(float $valor): string
     {
-        return 'R$ ' . number_format($valor, 2, ',', '.');
+        return 'R$ '.number_format($valor, 2, ',', '.');
     }
 }
 

@@ -109,8 +109,9 @@ class Relatorios extends Page implements HasForms
                             ->label('Cadastro')
                             ->searchable()
                             ->options(function () {
-                                $clientes = \App\Models\Cliente::orderBy('nome')->get()->mapWithKeys(fn($c) => ['cliente_'.$c->id => $c->nome]);
-                                $parceiros = \App\Models\Parceiro::orderBy('nome')->get()->mapWithKeys(fn($p) => ['parceiro_'.$p->id => $p->nome]);
+                                $clientes = \App\Models\Cliente::orderBy('nome')->get()->mapWithKeys(fn ($c) => ['cliente_'.$c->id => $c->nome]);
+                                $parceiros = \App\Models\Parceiro::orderBy('nome')->get()->mapWithKeys(fn ($p) => ['parceiro_'.$p->id => $p->nome]);
+
                                 return $clientes->merge($parceiros)->toArray();
                             })
                             ->placeholder('Todos')
@@ -270,7 +271,7 @@ class Relatorios extends Page implements HasForms
         $top_unificados = $clientes->concat($parceiros)
             ->sortByDesc('ordens_servico_count')
             ->take(10)
-            ->map(fn($m) => [
+            ->map(fn ($m) => [
                 'nome' => $m->nome,
                 'tipo' => $m instanceof Cliente ? 'Cliente' : (ucfirst($m->tipo ?? 'Parceiro')),
                 'total_servicos' => $m->ordens_servico_count,

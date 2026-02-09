@@ -2,7 +2,6 @@
 
 namespace Tests\Browser;
 
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -11,7 +10,7 @@ class FinanceiroTest extends DuskTestCase
     /**
      * Test financeiro index page.
      */
-    public function testIndexFinanceiro(): void
+    public function test_index_financeiro(): void
     {
         $this->browse(function (Browser $browser) {
             $user = \App\Models\User::firstOrCreate(
@@ -33,7 +32,7 @@ class FinanceiroTest extends DuskTestCase
     /**
      * Test create financeiro.
      */
-    public function testCreateFinanceiro(): void
+    public function test_create_financeiro(): void
     {
         $this->browse(function (Browser $browser) {
             $user = \App\Models\User::firstOrCreate(
@@ -86,7 +85,6 @@ class FinanceiroTest extends DuskTestCase
 
             // Handle Choices.js for Cadastro
 
-
             // Handle Choices.js for Cadastro
             $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::xpath('//div[contains(@class, "choices") and .//select[@id="data.cadastro_id"]]'))->click();
             $browser->pause(500);
@@ -103,11 +101,11 @@ class FinanceiroTest extends DuskTestCase
 
             // Use precise XPath to avoid clicking hidden Logout button (which is also type=submit)
             // The "Create" button is the primary action in the form
-            $browser->driver->executeScript("arguments[0].scrollIntoView(true);", [
-                $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::xpath('//button[contains(., "Criar") and @type="submit"]'))
+            $browser->driver->executeScript('arguments[0].scrollIntoView(true);', [
+                $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::cssSelector('.fi-form-actions button[type="submit"]')),
             ]);
             $browser->pause(500);
-            $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::xpath('//button[contains(., "Criar") and @type="submit"]'))->click();
+            $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::cssSelector('.fi-form-actions button[type="submit"]'))->click();
 
             $browser->assertDontSee('campo é obrigatório')
                 ->assertDontSee('The field is required')

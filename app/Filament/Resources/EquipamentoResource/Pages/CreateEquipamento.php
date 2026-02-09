@@ -12,6 +12,7 @@ class CreateEquipamento extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['criado_por'] = strtoupper(substr(auth()->user()->name ?? 'SYS', 0, 10));
+
         return $data;
     }
 }

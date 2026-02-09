@@ -1,12 +1,16 @@
 <?php
+
 namespace App\Filament\Resources\CadastroResource\Pages;
 
-use App\Filament\Resources\CadastroResource; use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Resources\CadastroResource;
+use Filament\Resources\Pages\CreateRecord;
 
-class CreateCadastro extends CreateRecord { protected static string $resource = CadastroResource::class;
-
-protected function getRedirectUrl(): string
+class CreateCadastro extends CreateRecord
 {
-    return $this->getResource()::getUrl('index');
-}
+    protected static string $resource = CadastroResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

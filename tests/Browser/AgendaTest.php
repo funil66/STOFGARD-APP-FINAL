@@ -2,10 +2,9 @@
 
 namespace Tests\Browser;
 
-use App\Models\User;
 use App\Models\Agenda;
 use App\Models\Cliente;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
+use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -14,7 +13,7 @@ class AgendaTest extends DuskTestCase
     /**
      * Test the index page of Agenda.
      */
-    public function testIndexAgenda(): void
+    public function test_index_agenda(): void
     {
         // $this->markTestSkipped('Skipping index for debugging create');
         $this->browse(function (Browser $browser) {
@@ -48,7 +47,7 @@ class AgendaTest extends DuskTestCase
     /**
      * Test creating a new Agenda item.
      */
-    public function testCreateAgenda(): void
+    public function test_create_agenda(): void
     {
         $this->markTestSkipped('Skipping due to hang in headless environment dealing with repeater interaction.');
         $this->browse(function (Browser $browser) {
@@ -105,7 +104,7 @@ class AgendaTest extends DuskTestCase
                 "const end = document.getElementById('data.data_hora_fim');",
                 "end.value = '$endDate';",
                 "end.dispatchEvent(new Event('input', { bubbles: true }));",
-                "end.dispatchEvent(new Event('change', { bubbles: true }));"
+                "end.dispatchEvent(new Event('change', { bubbles: true }));",
             ]);
 
             // Handle Choices.js for 'cadastro_id' (Cliente)
@@ -120,15 +119,15 @@ class AgendaTest extends DuskTestCase
 
             // Submit
             $browser->driver->executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", [
-                $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::xpath('//button[contains(., "Create") and @type="submit"]'))
+                $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::xpath('//button[contains(., "Create") and @type="submit"]')),
             ]);
             $browser->pause(500);
 
             $browser->storeSource('debug_agenda_create_before_submit');
 
             try {
-                $browser->driver->executeScript("arguments[0].click();", [
-                    $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::xpath('//button[contains(., "Create") and @type="submit"]'))
+                $browser->driver->executeScript('arguments[0].click();', [
+                    $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::xpath('//button[contains(., "Create") and @type="submit"]')),
                 ]);
 
                 $browser->waitForText('Agendamento criado com sucesso!', 15);

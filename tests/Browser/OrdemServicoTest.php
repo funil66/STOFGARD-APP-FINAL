@@ -2,10 +2,10 @@
 
 namespace Tests\Browser;
 
-use App\Models\User;
-use App\Models\OrdemServico;
 use App\Models\Cadastro;
+use App\Models\OrdemServico;
 use App\Models\TabelaPreco;
+use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -14,7 +14,7 @@ class OrdemServicoTest extends DuskTestCase
     /**
      * Test the index page of OrdemServico.
      */
-    public function testIndexOrdemServico(): void
+    public function test_index_ordem_servico(): void
     {
         $this->browse(function (Browser $browser) {
             $user = User::firstOrCreate(
@@ -52,10 +52,11 @@ class OrdemServicoTest extends DuskTestCase
     /**
      * Test creating a new OrdemServico.
      */
-    public function testCreateOrdemServico(): void
+    public function test_create_ordem_servico(): void
     {
-        $this->markTestSkipped('Skipping due to hang in headless environment dealing with repeater interaction.');
-        return;
+        // $this->markTestSkipped('Skipping due to hang in headless environment dealing with repeater interaction.');
+
+        // return;
 
         $this->browse(function (Browser $browser) {
             $user = User::firstOrCreate(
@@ -79,7 +80,10 @@ class OrdemServicoTest extends DuskTestCase
                     'nome_item' => 'Item Teste OS',
                     'preco_vista' => 100.00,
                     'unidade_medida' => 'unidade',
-                    'ativo' => true
+                    'ativo' => true,
+                    'tipo_servico' => 'higienizacao',
+                    'descricao_tecnica' => 'Higienização Profissional de Estofados',
+                    'dias_garantia' => 90,
                 ]);
             }
 
@@ -127,44 +131,48 @@ class OrdemServicoTest extends DuskTestCase
 
             // Fill Item Descricao (Script interaction for reliability)
             // Use storeSource instead of dump with args
-            $browser->storeSource('debug_step_repeater_start');
-            $browser->script("
-                var newItemSelect = document.querySelector('select[id^=\"data.itens.\"][id$=\".descricao\"]');
-                if(newItemSelect) {
-                  newItemSelect.value = '$item->nome_item'; // Use nome_item as per Resource pluck
-                  newItemSelect.dispatchEvent(new Event('input', { bubbles: true }));
-                  newItemSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                } else {
-                    console.error('Repeater item select not found');
-                }
-            ");
-            $browser->pause(2000); // Wait for live calculation
+            // Repeater Item Interaction
+            $repeaterSelector = '.fi-fo-repeater-item:first-child';
+            $descricaoWrapper = "$repeaterSelector .fi-fo-select";
 
-            $browser->storeSource('debug_step_repeater_end');
+            // Open Choices dropdown for Description
+            $browser->waitFor($descricaoWrapper)
+                ->click("$descricaoWrapper .choices")
+                ->pause(300);
+
+            // Type search term and select
+            $browser->type("$descricaoWrapper .choices__input--cloned", $item->nome_item)
+                ->pause(1000) // Wait for search debounce
+                ->waitFor("$descricaoWrapper .choices__list[role=\"listbox\"] .choices__item--selectable")
+                ->click("$descricaoWrapper .choices__list[role=\"listbox\"] .choices__item--selectable")
+                ->pause(500);
+
+            // Fill Quantity
+            $browser->type("$repeaterSelector input[id*='quantidade']", '2')
+                ->pause(200);
+
+            // Fill Unit Price
+            $browser->type("$repeaterSelector input[id*='valor_unitario']", '150.00')
+                ->pause(200);
+
+
 
             // Quantity and Unit Price should auto-fill or we set them.
             // Just asserting correct calculation would be good, or just submit.
 
             // Scroll to Create button
             $browser->driver->executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'nearest'});", [
-                $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::xpath('//button[contains(., \"Create\") and @type=\"submit\"]'))
+                $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::cssSelector('.fi-form-actions button[type="submit"]')),
             ]);
             $browser->pause(500);
 
             // Submit
-            $browser->driver->executeScript("arguments[0].click();", [
-                $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::xpath('//button[contains(., \"Create\") and @type=\"submit\"]'))
+            $browser->driver->executeScript('arguments[0].click();', [
+                $browser->driver->findElement(\Facebook\WebDriver\WebDriverBy::cssSelector('.fi-form-actions button[type="submit"]')),
             ]);
 
-            try {
-                $browser->waitForText('Criado', 15); // Or whatever success message
-                //->or 'Ordem de Serviço criada' ?
-                // Check CreateOrdemServico.php for notification title?
-                // Resource doesn't specify custom title on Edit page, but Create page might.
-            } catch (\Exception $e) {
-                $browser->storeSource('debug_os_create_fail');
-                throw $e;
-            }
+
+            $browser->waitForText('Criado', 15);
         });
     }
 }

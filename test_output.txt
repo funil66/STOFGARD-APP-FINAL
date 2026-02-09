@@ -1,0 +1,26 @@
+Warning: TTY mode requires /dev/tty to be read/writable.
+
+   FAIL  Tests\Browser\OrdemServicoTest
+  ⨯ create ordem servico                                                27.93s  
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Browser\OrdemServicoTest > create ordem s…  TimeoutException   
+  Waited 15 seconds for text [Criado].
+
+  at vendor/php-webdriver/webdriver/lib/WebDriverWait.php:71
+     67▕         if ($last_exception) {
+     68▕             throw $last_exception;
+     69▕         }
+     70▕ 
+  ➜  71▕         throw new TimeoutException($message);
+     72▕     }
+     73▕ }
+     74▕
+
+      [2m+1 vendor frames [22m
+  2   tests/Browser/OrdemServicoTest.php:172
+  3   tests/Browser/OrdemServicoTest.php:61
+
+
+  Tests:    1 failed (0 assertions)
+  Duration: 28.01s
+

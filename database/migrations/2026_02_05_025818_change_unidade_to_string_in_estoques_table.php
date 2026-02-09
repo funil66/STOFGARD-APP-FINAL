@@ -4,15 +4,16 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         // Limpeza preventiva
-        \Illuminate\Support\Facades\DB::statement("DROP VIEW IF EXISTS financeiro_audit");
-        \Illuminate\Support\Facades\DB::statement("DROP TABLE IF EXISTS __temp__estoques");
+        \Illuminate\Support\Facades\DB::statement('DROP VIEW IF EXISTS financeiro_audit');
+        \Illuminate\Support\Facades\DB::statement('DROP TABLE IF EXISTS __temp__estoques');
         Schema::dropIfExists('estoques_new');
 
         // 1. Criar nova tabela com estrutura correta (unidade como string)

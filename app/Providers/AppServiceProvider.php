@@ -11,8 +11,12 @@ use App\Observers\OrdemServicoObserver;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Policies\CadastroPolicy;
+use App\Policies\FinanceiroPolicy;
+use App\Policies\OrcamentoPolicy;
+use App\Policies\OrdemServicoPolicy;
 use App\Models\Cliente;
 use App\Models\Parceiro;
+use App\Models\Financeiro;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -57,6 +61,11 @@ class AppServiceProvider extends ServiceProvider
         // Register policy for cadastro models (cliente and parceiro)
         Gate::policy(Cliente::class, CadastroPolicy::class);
         Gate::policy(Parceiro::class, CadastroPolicy::class);
+
+        // Register policies for financial security
+        Gate::policy(Financeiro::class, FinanceiroPolicy::class);
+        Gate::policy(Orcamento::class, OrcamentoPolicy::class);
+        Gate::policy(OrdemServico::class, OrdemServicoPolicy::class);
 
         // Register Agenda Calendar Widget manually for Livewire (since it's not in AdminPanelProvider widgets list)
         \Livewire\Livewire::component('app.filament.widgets.agenda-calendar-widget', \App\Filament\Widgets\AgendaCalendarWidget::class);

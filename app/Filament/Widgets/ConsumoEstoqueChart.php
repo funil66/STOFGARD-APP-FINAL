@@ -2,9 +2,8 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Widgets\ChartWidget;
 use App\Models\Estoque;
-use Illuminate\Support\Facades\DB;
+use Filament\Widgets\ChartWidget;
 
 class ConsumoEstoqueChart extends ChartWidget
 {

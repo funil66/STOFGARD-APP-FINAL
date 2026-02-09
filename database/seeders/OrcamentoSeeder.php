@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\Cadastro;
 use App\Models\Orcamento;
 use App\Models\OrcamentoItem;
-use App\Models\Cadastro;
-use App\Models\Setting;
+use Illuminate\Database\Seeder;
 
 class OrcamentoSeeder extends Seeder
 {
@@ -20,6 +19,7 @@ class OrcamentoSeeder extends Seeder
 
         if ($clientes->isEmpty() || $tabelaPrecos->isEmpty()) {
             $this->command->info('Sem clientes ou itens na tabela de preços para gerar orçamentos.');
+
             return;
         }
 

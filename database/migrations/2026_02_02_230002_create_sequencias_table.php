@@ -20,7 +20,7 @@ return new class extends Migration
 
             // Índice único para evitar duplicatas
             $table->unique(['tipo', 'ano']);
-            
+
             // Índice para performance
             $table->index(['tipo', 'ano']);
         });

@@ -42,7 +42,7 @@ class MeusServicosResource extends Resource
                             ->readOnly(),
 
                         Forms\Components\TextInput::make('status')
-                            ->formatStateUsing(fn(string $state): string => ucfirst($state))
+                            ->formatStateUsing(fn (string $state): string => ucfirst($state))
                             ->readOnly(),
 
                         Forms\Components\DatePicker::make('data_prevista')
@@ -103,7 +103,7 @@ class MeusServicosResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'concluida' => 'success',
                         'cancelada' => 'danger',
                         'pendente' => 'warning',
@@ -127,9 +127,9 @@ class MeusServicosResource extends Resource
                     ->label('Certificado')
                     ->icon('heroicon-o-check-badge')
                     ->color('success')
-                    ->url(fn(OrdemServico $record) => route('os.pdf', $record)) // Usando PDF da OS como "certificado" por enquanto
+                    ->url(fn (OrdemServico $record) => route('os.pdf', $record)) // Usando PDF da OS como "certificado" por enquanto
                     ->openUrlInNewTab()
-                    ->visible(fn(OrdemServico $record) => in_array($record->status, ['concluida', 'finalizada'])),
+                    ->visible(fn (OrdemServico $record) => in_array($record->status, ['concluida', 'finalizada'])),
 
                 Tables\Actions\Action::make('whatsapp')
                     ->label('Suporte')

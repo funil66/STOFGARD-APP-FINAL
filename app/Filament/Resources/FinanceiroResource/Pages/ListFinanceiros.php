@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\FinanceiroResource\Pages;
 
-use App\Filament\Resources\FinanceiroResource;
 use App\Filament\Pages\Relatorios;
 use App\Filament\Pages\RelatoriosAvancados;
+use App\Filament\Resources\FinanceiroResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
@@ -124,7 +124,7 @@ class ListFinanceiros extends ListRecords
                                 9 => 'Setembro',
                                 10 => 'Outubro',
                                 11 => 'Novembro',
-                                12 => 'Dezembro'
+                                12 => 'Dezembro',
                             ])
                             ->default(now()->month)
                             ->required(),
@@ -132,7 +132,7 @@ class ListFinanceiros extends ListRecords
                             ->label('Ano')
                             ->options(
                                 collect(range(now()->year - 2, now()->year + 1))
-                                    ->mapWithKeys(fn($year) => [$year => $year])
+                                    ->mapWithKeys(fn ($year) => [$year => $year])
                             )
                             ->default(now()->year)
                             ->required(),
@@ -140,9 +140,9 @@ class ListFinanceiros extends ListRecords
                     ->action(function (array $data) {
                         return redirect()->route('financeiro.relatorio_mensal', [
                             'mes' => $data['mes'],
-                            'ano' => $data['ano']
+                            'ano' => $data['ano'],
                         ]);
-                    })
+                    }),
             ])
                 ->label('Relatórios')
                 ->icon('heroicon-m-document-chart-bar')

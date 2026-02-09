@@ -35,7 +35,7 @@ class DespesasCategoriaChart extends ChartWidget
                 [
                     'label' => 'Despesas',
                     'data' => $dados->pluck('total')->toArray(),
-                    'backgroundColor' => $dados->pluck('cor')->map(fn($cor) => $cor ?? '#6b7280')->toArray(),
+                    'backgroundColor' => $dados->pluck('cor')->map(fn ($cor) => $cor ?? '#6b7280')->toArray(),
                     'hoverOffset' => 4,
                 ],
             ],

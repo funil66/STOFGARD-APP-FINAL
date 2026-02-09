@@ -2,21 +2,21 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Widgets\Widget;
-use App\Models\Configuracao;
-use App\Filament\Pages\BuscaAvancada;
-use App\Filament\Resources\CadastroResource;
-use App\Filament\Resources\OrdemServicoResource;
-use App\Filament\Resources\OrcamentoResource;
-use App\Filament\Resources\AgendaResource;
-use App\Filament\Resources\FinanceiroResource;
 use App\Filament\Pages\Almoxarifado;
+use App\Filament\Pages\BuscaAvancada;
 use App\Filament\Pages\Configuracoes;
+use App\Filament\Resources\AgendaResource;
+use App\Filament\Resources\CadastroResource;
+use App\Filament\Resources\OrcamentoResource;
+use App\Filament\Resources\OrdemServicoResource;
+use Filament\Widgets\Widget;
 
 class DashboardShortcutsWidget extends Widget
 {
     protected static string $view = 'filament.widgets.dashboard-shortcuts-widget';
+
     protected int|string|array $columnSpan = 'full';
+
     protected static ?int $sort = 1;
 
     public function getViewData(): array
@@ -59,4 +59,3 @@ class DashboardShortcutsWidget extends Widget
         ];
     }
 }
-

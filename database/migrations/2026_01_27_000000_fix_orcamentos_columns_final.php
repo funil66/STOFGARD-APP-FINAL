@@ -20,14 +20,14 @@ return new class extends Migration
                     // Tenta dropar chave estrangeira se existir
                     $table->dropForeign(['cliente_id']);
                 } catch (\Throwable $e) {
-                    \Log::warning('Failed to drop foreign key or index for cliente_id: ' . $e->getMessage());
+                    \Log::warning('Failed to drop foreign key or index for cliente_id: '.$e->getMessage());
                 }
 
                 try {
                     // Tenta dropar a coluna se existir
                     $table->dropColumn('cliente_id');
                 } catch (\Throwable $e) {
-                    \Log::warning('Failed to drop column cliente_id: ' . $e->getMessage());
+                    \Log::warning('Failed to drop column cliente_id: '.$e->getMessage());
                 }
             }
 
@@ -36,7 +36,7 @@ return new class extends Migration
                 try {
                     $table->string('status', 50)->change();
                 } catch (\Throwable $e) {
-                    \Log::warning('Failed to change status column: ' . $e->getMessage());
+                    \Log::warning('Failed to change status column: '.$e->getMessage());
                 }
             }
         });

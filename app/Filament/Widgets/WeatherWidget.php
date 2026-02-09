@@ -14,13 +14,19 @@ class WeatherWidget extends Widget
     protected int|string|array $columnSpan = 'full';
 
     public $city = 'Ribeirão Preto';
+
     public $temp;
+
     public $condition;
+
     public $icon;
+
     public $humidity;
+
     public $wind;
 
     public $greeting;
+
     public $userName;
 
     public function mount()

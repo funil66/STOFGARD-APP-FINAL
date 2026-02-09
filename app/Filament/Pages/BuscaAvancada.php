@@ -8,6 +8,7 @@ use App\Models\Financeiro;
 use App\Models\Orcamento;
 use App\Models\OrdemServico;
 use App\Models\Produto;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -17,7 +18,6 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
-use Filament\Actions\Action;
 use Illuminate\Support\Collection;
 
 class BuscaAvancada extends Page implements HasForms
@@ -36,14 +36,20 @@ class BuscaAvancada extends Page implements HasForms
 
     // Propriedades do formulário
     public ?string $termo = '';
+
     public ?string $tipoFiltro = 'todos';
+
     public ?string $statusFiltro = '';
+
     public ?string $ordenacao = 'recente';
+
     public ?string $dataInicio = null;
+
     public ?string $dataFim = null;
 
     // Resultados
     public Collection $resultados;
+
     public int $totalResultados = 0;
 
     public function mount(): void
@@ -124,6 +130,7 @@ class BuscaAvancada extends Page implements HasForms
         if (empty($this->termo) && empty($this->dataInicio) && empty($this->dataFim) && empty($this->statusFiltro)) {
             $this->resultados = collect();
             $this->totalResultados = 0;
+
             return;
         }
 
@@ -223,7 +230,7 @@ class BuscaAvancada extends Page implements HasForms
                 $termo = "%{$this->termo}%";
                 $q->where('numero', 'like', $termo)
                     ->orWhere('descricao_servico', 'like', $termo)
-                    ->orWhereHas('cliente', fn($c) => $c->where('nome', 'like', $termo));
+                    ->orWhereHas('cliente', fn ($c) => $c->where('nome', 'like', $termo));
             });
         }
 
@@ -247,7 +254,7 @@ class BuscaAvancada extends Page implements HasForms
                 'titulo' => "Orçamento #{$orcamento->numero}",
                 'subtitulo' => implode(' • ', array_filter([
                     $orcamento->cliente?->nome,
-                    'R$ ' . number_format($orcamento->valor_total ?? 0, 2, ',', '.'),
+                    'R$ '.number_format($orcamento->valor_total ?? 0, 2, ',', '.'),
                 ])),
                 'descricao' => $orcamento->descricao_servico,
                 'status' => ucfirst($orcamento->status ?? 'pendente'),
@@ -273,7 +280,7 @@ class BuscaAvancada extends Page implements HasForms
                 $termo = "%{$this->termo}%";
                 $q->where('numero_os', 'like', $termo)
                     ->orWhere('descricao_servico', 'like', $termo)
-                    ->orWhereHas('cliente', fn($c) => $c->where('nome', 'like', $termo));
+                    ->orWhereHas('cliente', fn ($c) => $c->where('nome', 'like', $termo));
             });
         }
 
@@ -297,7 +304,7 @@ class BuscaAvancada extends Page implements HasForms
                 'titulo' => "OS #{$os->numero_os}",
                 'subtitulo' => implode(' • ', array_filter([
                     $os->cliente?->nome,
-                    'R$ ' . number_format($os->valor_total ?? 0, 2, ',', '.'),
+                    'R$ '.number_format($os->valor_total ?? 0, 2, ',', '.'),
                 ])),
                 'descricao' => $os->descricao_servico,
                 'status' => ucfirst(str_replace('_', ' ', $os->status ?? 'pendente')),
@@ -344,7 +351,7 @@ class BuscaAvancada extends Page implements HasForms
                 'tipo_color' => $financeiro->tipo === 'entrada' ? 'success' : 'danger',
                 'id' => $financeiro->id,
                 'titulo' => $financeiro->descricao,
-                'subtitulo' => 'R$ ' . number_format($financeiro->valor ?? 0, 2, ',', '.'),
+                'subtitulo' => 'R$ '.number_format($financeiro->valor ?? 0, 2, ',', '.'),
                 'descricao' => $financeiro->categoria,
                 'status' => ucfirst($financeiro->status ?? 'pendente'),
                 'status_color' => match ($financeiro->status) {

@@ -2,14 +2,14 @@
 
 namespace Tests\Unit;
 
-use Tests\TestCase;
 use App\Models\Cadastro;
+use Tests\TestCase;
 
 class CadastroEnderecoTest extends TestCase
 {
     public function test_format_endereco_uses_endereco_completo()
     {
-        $cadastro = new Cadastro();
+        $cadastro = new Cadastro;
         $cadastro->endereco_completo = 'Rua das Flores, 123 - Centro';
 
         $this->assertEquals('Rua das Flores, 123 - Centro', $cadastro->formatEnderecoCompleto());

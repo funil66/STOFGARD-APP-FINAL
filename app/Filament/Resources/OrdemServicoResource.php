@@ -5,36 +5,41 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\OrdemServicoResource\Pages;
 use App\Models\OrdemServico;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Group;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Tabs\Tab;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\Tabs\Tab;
-use Filament\Forms\Components\Group;
 use Illuminate\Database\Eloquent\Builder;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\Grid as InfolistGrid;
-use Filament\Infolists\Components\RepeatableEntry;
 
 class OrdemServicoResource extends Resource
 {
     protected static ?string $model = OrdemServico::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+
     protected static ?string $navigationLabel = 'Ordens de Serviço';
+
     protected static ?string $modelLabel = 'Ordem de Serviço';
+
     protected static ?string $navigationGroup = 'Operacional';
+
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
@@ -214,7 +219,7 @@ class OrdemServicoResource extends Resource
                                 DatePicker::make('data_abertura')->label('Data Venda')->default(now())->required(),
                                 DatePicker::make('data_prevista')->label('Data Agendada'),
                                 DatePicker::make('data_conclusao')->label('Conclusão'),
-                                TextInput::make('dias_garantia')->label('Garantia (Dias)')->numeric(),
+                                TextInput::make('dias_garantia')->label('Garantia (Dias)')->numeric()->default(90),
                             ])->columns(['default' => 1, 'sm' => 2, 'lg' => 4]),
 
                         Tab::make('Evidências')
@@ -242,7 +247,7 @@ class OrdemServicoResource extends Resource
                                             ->orderBy('item')
                                             ->get()
                                             ->mapWithKeys(fn($e) => [
-                                                $e->id => $e->item . ' (Disponível: ' . number_format($e->quantidade, 2, ',', '.') . ' ' . $e->unidade . ')'
+                                                $e->id => $e->item . ' (Disponível: ' . number_format($e->quantidade, 2, ',', '.') . ' ' . $e->unidade . ')',
                                             ])
                                     )
                                     ->required()
@@ -295,8 +300,7 @@ class OrdemServicoResource extends Resource
                             ->reorderable(false)
                             ->collapsible()
                             ->itemLabel(
-                                fn(array $state): ?string =>
-                                \App\Models\Estoque::find($state['estoque_id'] ?? 0)?->item ?? 'Produto'
+                                fn(array $state): ?string => \App\Models\Estoque::find($state['estoque_id'] ?? 0)?->item ?? 'Produto'
                             ),
                     ]),
 
@@ -325,8 +329,9 @@ class OrdemServicoResource extends Resource
     public static function recalcularTotal(Forms\Set $set, Forms\Get $get): void
     {
         $itens = $get('itens') ?? $get('../../itens') ?? [];
-        if (!is_array($itens))
+        if (!is_array($itens)) {
             $itens = [];
+        }
 
         $total = collect($itens)->sum(function ($item) {
             return floatval($item['subtotal'] ?? 0);
@@ -541,7 +546,7 @@ class OrdemServicoResource extends Resource
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
                                 ->weight('bold')
-                                ->url(fn($record) => \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cliente_id])),
+                                ->url(fn($record) => \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id])),
                             TextEntry::make('cliente.telefone')
                                 ->label('WhatsApp')
                                 ->icon('heroicon-m-chat-bubble-left-right')
@@ -635,7 +640,7 @@ class OrdemServicoResource extends Resource
 
                         Infolists\Components\Tabs\Tab::make('📸 Evidências')
                             ->schema([
-                                Infolists\Components\ImageEntry::make('fotos_antes')
+                                Infolists\Components\SpatieMediaLibraryImageEntry::make('fotos_antes')
                                     ->label('Fotos Antes')
                                     ->collection('os-fotos') // Check collection name
                                     ->disk('public'),

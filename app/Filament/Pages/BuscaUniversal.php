@@ -9,9 +9,9 @@ use App\Models\Orcamento;
 use App\Models\OrdemServico;
 use App\Models\Produto;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Grid;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -71,7 +71,7 @@ class BuscaUniversal extends Page implements HasForms
                             ->autofocus()
                             ->columnSpan(4)
                             ->live(debounce: 500)
-                            ->afterStateUpdated(fn() => $this->buscar()),
+                            ->afterStateUpdated(fn () => $this->buscar()),
 
                         Select::make('tipoFiltro')
                             ->label('📁 Módulo')
@@ -87,7 +87,7 @@ class BuscaUniversal extends Page implements HasForms
                             ->default('todos')
                             ->native(false)
                             ->live()
-                            ->afterStateUpdated(fn() => $this->buscar()),
+                            ->afterStateUpdated(fn () => $this->buscar()),
 
                         Select::make('statusFiltro')
                             ->label('📊 Status')
@@ -103,7 +103,7 @@ class BuscaUniversal extends Page implements HasForms
                             ])
                             ->native(false)
                             ->live()
-                            ->afterStateUpdated(fn() => $this->buscar()),
+                            ->afterStateUpdated(fn () => $this->buscar()),
 
                         Select::make('ordenacao')
                             ->label('📶 Ordenar por')
@@ -117,7 +117,7 @@ class BuscaUniversal extends Page implements HasForms
                             ->default('recente')
                             ->native(false)
                             ->live()
-                            ->afterStateUpdated(fn() => $this->buscar()),
+                            ->afterStateUpdated(fn () => $this->buscar()),
 
                         DatePicker::make('dataInicio')
                             ->label('📆 De')
@@ -139,6 +139,7 @@ class BuscaUniversal extends Page implements HasForms
         if (empty($this->termo) && empty($this->dataInicio) && empty($this->dataFim) && empty($this->statusFiltro)) {
             $this->resultados = collect();
             $this->totalResultados = 0;
+
             return;
         }
 
@@ -304,7 +305,7 @@ class BuscaUniversal extends Page implements HasForms
                 'titulo' => "Orçamento #{$orcamento->numero}",
                 'subtitulo' => $this->formatarSubtitulo([
                     $orcamento->cliente?->nome ?? 'Sem cliente',
-                    'R$ ' . number_format($orcamento->valor_total ?? 0, 2, ',', '.'),
+                    'R$ '.number_format($orcamento->valor_total ?? 0, 2, ',', '.'),
                 ]),
                 'descricao' => $orcamento->descricao_servico,
                 'status' => ucfirst($orcamento->status ?? 'pendente'),
@@ -364,7 +365,7 @@ class BuscaUniversal extends Page implements HasForms
                 'titulo' => "OS #{$os->numero_os}",
                 'subtitulo' => $this->formatarSubtitulo([
                     $os->cliente?->nome ?? 'Sem cliente',
-                    'R$ ' . number_format($os->valor_total ?? 0, 2, ',', '.'),
+                    'R$ '.number_format($os->valor_total ?? 0, 2, ',', '.'),
                 ]),
                 'descricao' => $os->descricao_servico,
                 'status' => ucfirst(str_replace('_', ' ', $os->status ?? 'pendente')),
@@ -415,12 +416,12 @@ class BuscaUniversal extends Page implements HasForms
             $this->resultados->push([
                 'tipo' => 'financeiro',
                 'tipo_icon' => $icone,
-                'tipo_label' => "💰 {$icone} " . ucfirst($financeiro->tipo),
+                'tipo_label' => "💰 {$icone} ".ucfirst($financeiro->tipo),
                 'tipo_color' => $financeiro->tipo === 'entrada' ? 'success' : 'danger',
                 'id' => $financeiro->id,
                 'titulo' => $financeiro->descricao,
                 'subtitulo' => $this->formatarSubtitulo([
-                    'R$ ' . number_format($financeiro->valor ?? 0, 2, ',', '.'),
+                    'R$ '.number_format($financeiro->valor ?? 0, 2, ',', '.'),
                     $financeiro->categoria,
                 ]),
                 'descricao' => $financeiro->observacoes,
@@ -538,7 +539,7 @@ class BuscaUniversal extends Page implements HasForms
     private function formatarSubtitulo(array $partes): string
     {
         return collect($partes)
-            ->filter(fn($parte) => !empty($parte))
+            ->filter(fn ($parte) => ! empty($parte))
             ->implode(' • ');
     }
 

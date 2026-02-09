@@ -2,9 +2,9 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
 use App\Filament\Widgets\RelatorioFinanceiroChart;
 use App\Filament\Widgets\VendasPorServicoChart;
+use Filament\Pages\Page;
 
 class RelatoriosAvancados extends Page
 {

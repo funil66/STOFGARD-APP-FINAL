@@ -16,7 +16,7 @@ class CadastroFichaPdfTest extends TestCase
     {
         // Criar um usuário autenticado
         $user = User::factory()->create();
-        
+
         // Criar um cadastro de teste
         $cadastro = Cadastro::factory()->create([
             'nome' => 'João da Silva',
@@ -25,10 +25,10 @@ class CadastroFichaPdfTest extends TestCase
 
         // Testar se a rota do PDF funciona
         $response = $this->actingAs($user)->get("/cadastro/{$cadastro->id}/pdf");
-        
+
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/pdf');
-        
+
         // Verificar se está configurado como attachment (download)
         $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
         $this->assertStringContainsString('Ficha-Cadastral', $response->headers->get('Content-Disposition'));

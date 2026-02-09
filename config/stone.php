@@ -1,4 +1,5 @@
 <?php
+
 return [
     'parcelas' => [
         2 => 1.0459, // Coeficiente 2x (4.59%)

@@ -2,8 +2,8 @@
 
 namespace App\Observers;
 
-use App\Models\Orcamento;
 use App\Models\Configuracao;
+use App\Models\Orcamento;
 use App\Services\Pix\PixMasterService;
 use Illuminate\Support\Facades\Log;
 
@@ -16,14 +16,14 @@ class OrcamentoObserver
     public function saving(Orcamento $orcamento): void
     {
         // Gerar número do orçamento se não existir
-        if (!$orcamento->numero_orcamento) {
+        if (! $orcamento->numero_orcamento) {
             $orcamento->numero_orcamento = Orcamento::gerarNumeroOrcamento();
         }
 
         // Generate PIX QR Code if enabled
         if ($orcamento->pdf_incluir_pix && $orcamento->pix_chave_selecionada) {
             // Skip if already has QR code and value hasn't changed
-            if ($orcamento->pix_qrcode_base64 && !$orcamento->isDirty('valor_total')) {
+            if ($orcamento->pix_qrcode_base64 && ! $orcamento->isDirty('valor_total')) {
                 return;
             }
 
@@ -46,8 +46,9 @@ class OrcamentoObserver
     {
         $config = Configuracao::first();
 
-        if (!$config) {
+        if (! $config) {
             Log::warning('Configuração não encontrada para gerar PIX');
+
             return;
         }
 
@@ -69,7 +70,7 @@ class OrcamentoObserver
         }
 
         // Generate unique transaction ID
-        $txid = 'ORC' . str_pad($orcamento->id ?? 'TEMP' . rand(1000, 9999), 6, '0', STR_PAD_LEFT) . time();
+        $txid = 'ORC'.str_pad($orcamento->id ?? 'TEMP'.rand(1000, 9999), 6, '0', STR_PAD_LEFT).time();
 
         // Generate PIX
         $result = $pixService->gerarPix(

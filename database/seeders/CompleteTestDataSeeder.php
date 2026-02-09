@@ -32,69 +32,70 @@ class CompleteTestDataSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('🚀 Iniciando população completa de dados de teste...');
-        
+
         // Verificar se estamos em ambiente seguro
-        if (!app()->environment(['local', 'testing'])) {
+        if (! app()->environment(['local', 'testing'])) {
             $this->command->error('❌ Este seeder só pode ser executado em ambiente local ou de teste!');
+
             return;
         }
 
         DB::beginTransaction();
-        
+
         try {
             // 1. Limpar dados existentes
             $this->clearExistingData();
-            
+
             // 2. Criar usuários do sistema
             $usuarios = $this->createUsuarios();
-            
+
             // 3. Criar categorias
             $categorias = $this->createCategorias();
-            
+
             // 4. Criar cadastros (clientes, parceiros, etc.)
             $cadastros = $this->createCadastros();
-            
+
             // 5. Criar produtos e tabelas de preço
             $produtos = $this->createProdutos();
             $this->createTabelasPreco($produtos);
-            
+
             // 6. Criar equipamentos
             $equipamentos = $this->createEquipamentos();
-            
+
             // 7. Criar estoques
             $this->createEstoques($produtos);
-            
+
             // 8. Criar lista de desejos
             $this->createListaDesejos($produtos, $cadastros);
-            
+
             // 9. Criar orçamentos
             $orcamentos = $this->createOrcamentos($cadastros, $produtos);
-            
+
             // 10. Criar ordens de serviço
             $ordensServico = $this->createOrdensServico($cadastros, $orcamentos, $produtos);
-            
+
             // 11. Criar agendamentos
             $this->createAgendamentos($cadastros, $ordensServico);
-            
+
             // 12. Criar movimentações financeiras
             $this->createFinanceiros($categorias, $cadastros, $orcamentos, $ordensServico);
-            
+
             // 13. Criar garantias
             $this->createGarantias($cadastros, $produtos, $ordensServico);
-            
+
             // 14. Criar notas fiscais
             $this->createNotasFiscais($orcamentos, $cadastros);
-            
+
             // 16. Criar tarefas
             $this->createTarefas($usuarios, $cadastros, $ordensServico);
-            
+
             DB::commit();
             $this->command->info('✅ Dados de teste criados com sucesso!');
             $this->showStatistics();
-            
+
         } catch (\Exception $e) {
             DB::rollback();
-            $this->command->error('❌ Erro ao criar dados: ' . $e->getMessage());
+            $this->command->error('❌ Erro ao criar dados: '.$e->getMessage());
             throw $e;
         }
     }
@@ -102,7 +103,7 @@ class CompleteTestDataSeeder extends Seeder
     private function clearExistingData(): void
     {
         $this->command->warn('⚠️ Limpando dados existentes...');
-        
+
         // Ordem importante para evitar violação de foreign keys
         NotaFiscal::truncate();
         Garantia::truncate();
@@ -121,7 +122,7 @@ class CompleteTestDataSeeder extends Seeder
         Equipamento::truncate();
         Cadastro::truncate();
         Categoria::where('nome', '!=', 'Padrão')->delete();
-        
+
         // Manter pelo menos 1 usuário admin
         User::where('email', '!=', 'admin@stofgard.com')->delete();
     }
@@ -129,18 +130,18 @@ class CompleteTestDataSeeder extends Seeder
     private function createUsuarios(): array
     {
         $this->command->info('👤 Criando usuários...');
-        
+
         $usuarios = [];
-        
+
         // Admin principal
         $usuarios[] = User::firstOrCreate([
-            'email' => 'admin@stofgard.com'
+            'email' => 'admin@stofgard.com',
         ], [
             'name' => 'Administrador',
             'password' => Hash::make('admin123'),
             'is_admin' => true,
         ]);
-        
+
         // Vendedores
         for ($i = 1; $i <= 5; $i++) {
             $usuarios[] = User::create([
@@ -150,14 +151,14 @@ class CompleteTestDataSeeder extends Seeder
                 'is_admin' => false,
             ]);
         }
-        
+
         return $usuarios;
     }
 
     private function createCategorias(): array
     {
         $this->command->info('📁 Criando categorias...');
-        
+
         $categorias = [];
         $categoriasData = [
             // Receitas
@@ -166,7 +167,7 @@ class CompleteTestDataSeeder extends Seeder
             ['nome' => 'Serviços de Medição', 'tipo' => 'receita', 'cor' => '#6366F1'],
             ['nome' => 'Comissões de Vendas', 'tipo' => 'receita', 'cor' => '#8B5CF6'],
             ['nome' => 'Receitas Diversas', 'tipo' => 'receita', 'cor' => '#06B6D4'],
-            
+
             // Despesas
             ['nome' => 'Compra de Materiais', 'tipo' => 'despesa', 'cor' => '#EF4444'],
             ['nome' => 'Salários e Encargos', 'tipo' => 'despesa', 'cor' => '#F59E0B'],
@@ -181,16 +182,16 @@ class CompleteTestDataSeeder extends Seeder
         foreach ($categoriasData as $categoria) {
             $categorias[] = Categoria::create($categoria);
         }
-        
+
         return $categorias;
     }
 
     private function createCadastros(): array
     {
         $this->command->info('👥 Criando cadastros...');
-        
+
         $cadastros = [];
-        
+
         // Clientes Pessoa Física
         for ($i = 1; $i <= 25; $i++) {
             $cadastros[] = Cadastro::create([
@@ -209,14 +210,14 @@ class CompleteTestDataSeeder extends Seeder
                 'pdf_mostrar_documentos' => fake()->boolean(80),
             ]);
         }
-        
+
         // Clientes Pessoa Jurídica
         for ($i = 1; $i <= 15; $i++) {
             $cadastros[] = Cadastro::create([
                 'nome' => fake('pt_BR')->company,
                 'tipo' => 'cliente',
                 'documento' => fake('pt_BR')->cnpj(false),
-                'razao_social' => fake('pt_BR')->company . ' Ltda',
+                'razao_social' => fake('pt_BR')->company.' Ltda',
                 'email' => fake('pt_BR')->unique()->companyEmail,
                 'telefone' => fake('pt_BR')->phoneNumber,
                 'cep' => fake('pt_BR')->postcode,
@@ -229,11 +230,11 @@ class CompleteTestDataSeeder extends Seeder
                 'pdf_mostrar_documentos' => fake()->boolean(90),
             ]);
         }
-        
+
         // Parceiros - Lojas
         for ($i = 1; $i <= 8; $i++) {
             $cadastros[] = Cadastro::create([
-                'nome' => 'Loja ' . fake('pt_BR')->company,
+                'nome' => 'Loja '.fake('pt_BR')->company,
                 'tipo' => 'loja',
                 'documento' => fake('pt_BR')->cnpj(false),
                 'email' => fake('pt_BR')->unique()->companyEmail,
@@ -247,7 +248,7 @@ class CompleteTestDataSeeder extends Seeder
                 'comissao_percentual' => fake()->randomFloat(2, 5, 15),
             ]);
         }
-        
+
         // Parceiros - Vendedores
         for ($i = 1; $i <= 12; $i++) {
             $cadastros[] = Cadastro::create([
@@ -265,11 +266,11 @@ class CompleteTestDataSeeder extends Seeder
                 'comissao_percentual' => fake()->randomFloat(2, 3, 10),
             ]);
         }
-        
+
         // Parceiros - Arquitetos
         for ($i = 1; $i <= 10; $i++) {
             $cadastros[] = Cadastro::create([
-                'nome' => 'Arq. ' . fake('pt_BR')->name,
+                'nome' => 'Arq. '.fake('pt_BR')->name,
                 'tipo' => 'arquiteto',
                 'documento' => fake('pt_BR')->cpf(false),
                 'email' => fake('pt_BR')->unique()->safeEmail,
@@ -284,16 +285,16 @@ class CompleteTestDataSeeder extends Seeder
                 'especialidade' => fake()->randomElement(['Residencial', 'Comercial', 'Industrial', 'Paisagismo']),
             ]);
         }
-        
+
         return $cadastros;
     }
 
     private function createProdutos(): array
     {
         $this->command->info('📦 Criando produtos...');
-        
+
         $produtos = [];
-        
+
         $categoriasProdutos = [
             'Granitos' => [
                 'Granito Branco Ceará',
@@ -341,7 +342,7 @@ class CompleteTestDataSeeder extends Seeder
                     'Serviços' => fake()->randomFloat(2, 50, 200),
                     default => fake()->randomFloat(2, 100, 300),
                 };
-                
+
                 $produtos[] = Produto::create([
                     'nome' => $item,
                     'categoria' => $categoria,
@@ -352,14 +353,14 @@ class CompleteTestDataSeeder extends Seeder
                 ]);
             }
         }
-        
+
         return $produtos;
     }
 
     private function createTabelasPreco(array $produtos): void
     {
         $this->command->info('💰 Criando tabelas de preço...');
-        
+
         foreach ($produtos as $produto) {
             // Preço padrão
             TabelaPreco::create([
@@ -368,17 +369,17 @@ class CompleteTestDataSeeder extends Seeder
                 'preco' => $produto->preco,
                 'descricao_garantia' => fake('pt_BR')->optional(0.5)->sentence,
             ]);
-            
+
             // Preço promocional (30% dos produtos)
             if (fake()->boolean(30)) {
                 TabelaPreco::create([
                     'produto_id' => $produto->id,
                     'nome_tabela' => 'Promocional',
                     'preco' => $produto->preco * 0.85, // 15% de desconto
-                    'descricao_garantia' => 'Preço promocional válido até ' . fake()->dateTimeBetween('now', '+3 months')->format('d/m/Y'),
+                    'descricao_garantia' => 'Preço promocional válido até '.fake()->dateTimeBetween('now', '+3 months')->format('d/m/Y'),
                 ]);
             }
-            
+
             // Preço para parceiros (50% dos produtos)
             if (fake()->boolean(50)) {
                 TabelaPreco::create([
@@ -394,9 +395,9 @@ class CompleteTestDataSeeder extends Seeder
     private function createEquipamentos(): array
     {
         $this->command->info('🔧 Criando equipamentos...');
-        
+
         $equipamentos = [];
-        
+
         $equipamentosData = [
             ['nome' => 'Serra Ponte Automática', 'modelo' => 'SP-3200A', 'fabricante' => 'Marmotech'],
             ['nome' => 'Politriz Industrial', 'modelo' => 'PI-1800', 'fabricante' => 'StoneMax'],
@@ -405,7 +406,7 @@ class CompleteTestDataSeeder extends Seeder
             ['nome' => 'Guindaste Móvel', 'modelo' => 'GM-500', 'fabricante' => 'LiftStone'],
             ['nome' => 'Compressor de Ar', 'modelo' => 'CA-100', 'fabricante' => 'AirTech'],
         ];
-        
+
         foreach ($equipamentosData as $eq) {
             $equipamentos[] = Equipamento::create([
                 'nome' => $eq['nome'],
@@ -418,16 +419,16 @@ class CompleteTestDataSeeder extends Seeder
                 'observacoes' => fake('pt_BR')->optional(0.4)->sentence,
             ]);
         }
-        
+
         return $equipamentos;
     }
 
     private function createEstoques(array $produtos): void
     {
         $this->command->info('📊 Criando estoques...');
-        
-        $produtosFisicos = array_filter($produtos, fn($p) => $p->categoria !== 'Serviços');
-        
+
+        $produtosFisicos = array_filter($produtos, fn ($p) => $p->categoria !== 'Serviços');
+
         foreach ($produtosFisicos as $produto) {
             if (fake()->boolean(80)) { // 80% dos produtos têm estoque
                 Estoque::create([
@@ -443,13 +444,13 @@ class CompleteTestDataSeeder extends Seeder
     private function createListaDesejos(array $produtos, array $cadastros): void
     {
         $this->command->info('💭 Criando lista de desejos...');
-        
-        $clientes = array_filter($cadastros, fn($c) => $c->tipo === 'cliente');
-        
+
+        $clientes = array_filter($cadastros, fn ($c) => $c->tipo === 'cliente');
+
         for ($i = 1; $i <= 30; $i++) {
             $cliente = fake()->randomElement($clientes);
             $produto = fake()->randomElement($produtos);
-            
+
             ListaDesejo::create([
                 'cadastro_id' => $cliente->id,
                 'produto_id' => $produto->id,
@@ -464,21 +465,21 @@ class CompleteTestDataSeeder extends Seeder
     private function createOrcamentos(array $cadastros, array $produtos): array
     {
         $this->command->info('💰 Criando orçamentos...');
-        
+
         $orcamentos = [];
-        $clientes = array_filter($cadastros, fn($c) => $c->tipo === 'cliente');
-        $vendedores = array_filter($cadastros, fn($c) => $c->tipo === 'vendedor');
-        $arquitetos = array_filter($cadastros, fn($c) => $c->tipo === 'arquiteto');
-        
+        $clientes = array_filter($cadastros, fn ($c) => $c->tipo === 'cliente');
+        $vendedores = array_filter($cadastros, fn ($c) => $c->tipo === 'vendedor');
+        $arquitetos = array_filter($cadastros, fn ($c) => $c->tipo === 'arquiteto');
+
         for ($i = 1; $i <= 50; $i++) {
             $cliente = fake()->randomElement($clientes);
             $vendedor = fake()->optional(0.7)->randomElement($vendedores);
             $arquiteto = fake()->optional(0.3)->randomElement($arquitetos);
-            
+
             $dataOrcamento = fake()->dateTimeBetween('-6 months', 'now');
-            
+
             $orcamento = Orcamento::create([
-                'numero' => 'ORC-' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                'numero' => 'ORC-'.str_pad($i, 4, '0', STR_PAD_LEFT),
                 'cadastro_id' => $cliente->id,
                 'vendedor_id' => $vendedor?->id,
                 'arquiteto_id' => $arquiteto?->id,
@@ -489,13 +490,13 @@ class CompleteTestDataSeeder extends Seeder
                 'observacoes' => fake('pt_BR')->optional(0.5)->sentence,
                 'pdf_mostrar_fotos' => fake()->boolean(60),
             ]);
-            
+
             // Adicionar itens ao orçamento
             $this->createOrcamentoItens($orcamento, $produtos);
-            
+
             $orcamentos[] = $orcamento;
         }
-        
+
         return $orcamentos;
     }
 
@@ -503,7 +504,7 @@ class CompleteTestDataSeeder extends Seeder
     {
         $numItens = fake()->numberBetween(1, 8);
         $valorTotal = 0;
-        
+
         for ($j = 1; $j <= $numItens; $j++) {
             $produto = fake()->randomElement($produtos);
             $quantidade = fake()->randomFloat(2, 1, 25);
@@ -511,7 +512,7 @@ class CompleteTestDataSeeder extends Seeder
             $desconto = fake()->optional(0.3)->randomFloat(2, 0, 10);
             $valorItem = ($quantidade * $valorUnitario) * (1 - ($desconto / 100));
             $valorTotal += $valorItem;
-            
+
             OrcamentoItem::create([
                 'orcamento_id' => $orcamento->id,
                 'produto_id' => $produto->id,
@@ -523,23 +524,23 @@ class CompleteTestDataSeeder extends Seeder
                 'observacoes' => fake('pt_BR')->optional(0.3)->sentence,
             ]);
         }
-        
+
         $orcamento->update(['valor_total' => $valorTotal]);
     }
 
     private function createOrdensServico(array $cadastros, array $orcamentos, array $produtos): array
     {
         $this->command->info('🔧 Criando ordens de serviço...');
-        
+
         $ordensServico = [];
-        $orcamentosAprovados = array_filter($orcamentos, fn($o) => $o->status === 'aprovado');
-        
+        $orcamentosAprovados = array_filter($orcamentos, fn ($o) => $o->status === 'aprovado');
+
         // Para cada orçamento aprovado, criar uma OS
         foreach ($orcamentosAprovados as $orcamento) {
             $dataAbertura = fake()->dateTimeBetween($orcamento->data_orcamento, 'now');
-            
+
             $os = OrdemServico::create([
-                'numero' => 'OS-' . str_pad(count($ordensServico) + 1, 4, '0', STR_PAD_LEFT),
+                'numero' => 'OS-'.str_pad(count($ordensServico) + 1, 4, '0', STR_PAD_LEFT),
                 'cadastro_id' => $orcamento->cadastro_id,
                 'orcamento_id' => $orcamento->id,
                 'data_abertura' => $dataAbertura,
@@ -551,21 +552,21 @@ class CompleteTestDataSeeder extends Seeder
                 'descricao' => fake('pt_BR')->sentence,
                 'observacoes' => fake('pt_BR')->optional(0.6)->sentence,
             ]);
-            
+
             // Criar itens da OS baseados nos itens do orçamento
             $this->createOrdemServicoItens($os, $orcamento);
-            
+
             $ordensServico[] = $os;
         }
-        
+
         // Criar algumas OSs independentes (sem orçamento)
-        $clientes = array_filter($cadastros, fn($c) => $c->tipo === 'cliente');
+        $clientes = array_filter($cadastros, fn ($c) => $c->tipo === 'cliente');
         for ($i = 1; $i <= 15; $i++) {
             $cliente = fake()->randomElement($clientes);
             $dataAbertura = fake()->dateTimeBetween('-3 months', 'now');
-            
+
             $os = OrdemServico::create([
-                'numero' => 'OS-' . str_pad(count($ordensServico) + 1, 4, '0', STR_PAD_LEFT),
+                'numero' => 'OS-'.str_pad(count($ordensServico) + 1, 4, '0', STR_PAD_LEFT),
                 'cadastro_id' => $cliente->id,
                 'data_abertura' => $dataAbertura,
                 'data_prevista' => fake()->dateTimeBetween($dataAbertura, '+1 month'),
@@ -576,13 +577,13 @@ class CompleteTestDataSeeder extends Seeder
                 'descricao' => fake('pt_BR')->sentence,
                 'observacoes' => fake('pt_BR')->optional(0.6)->sentence,
             ]);
-            
+
             // Criar itens simples para OS independente
             $this->createOrdemServicoItensSimples($os, $produtos);
-            
+
             $ordensServico[] = $os;
         }
-        
+
         return $ordensServico;
     }
 
@@ -605,14 +606,14 @@ class CompleteTestDataSeeder extends Seeder
     {
         $numItens = fake()->numberBetween(1, 3);
         $valorTotal = 0;
-        
+
         for ($i = 1; $i <= $numItens; $i++) {
             $produto = fake()->randomElement($produtos);
             $quantidade = fake()->randomFloat(2, 1, 10);
             $valorUnitario = $produto->preco;
             $valorItem = $quantidade * $valorUnitario;
             $valorTotal += $valorItem;
-            
+
             OrdemServicoItem::create([
                 'ordem_servico_id' => $os->id,
                 'produto_id' => $produto->id,
@@ -623,48 +624,48 @@ class CompleteTestDataSeeder extends Seeder
                 'status' => fake()->randomElement(['pendente', 'em_andamento', 'concluido']),
             ]);
         }
-        
+
         $os->update(['valor_total' => $valorTotal]);
     }
 
     private function createAgendamentos(array $cadastros, array $ordensServico): void
     {
         $this->command->info('📅 Criando agendamentos...');
-        
-        $clientes = array_filter($cadastros, fn($c) => $c->tipo === 'cliente');
-        
+
+        $clientes = array_filter($cadastros, fn ($c) => $c->tipo === 'cliente');
+
         // Agendamentos para medições (sem OS)
         for ($i = 1; $i <= 20; $i++) {
             $cliente = fake()->randomElement($clientes);
             $dataAgenda = fake()->dateTimeBetween('now', '+1 month');
-            
+
             Agenda::create([
                 'cadastro_id' => $cliente->id,
-                'titulo' => 'Medição - ' . $cliente->nome,
+                'titulo' => 'Medição - '.$cliente->nome,
                 'descricao' => fake('pt_BR')->sentence,
                 'data_inicio' => $dataAgenda,
                 'data_fim' => $dataAgenda->copy()->addHours(2),
                 'tipo' => 'medicao',
                 'status' => 'agendado',
-                'endereco_completo' => $cliente->logradouro . ', ' . $cliente->numero . ' - ' . $cliente->bairro,
+                'endereco_completo' => $cliente->logradouro.', '.$cliente->numero.' - '.$cliente->bairro,
             ]);
         }
-        
+
         // Agendamentos para instalações (com OS)
         foreach ($ordensServico as $os) {
             if (fake()->boolean(60)) { // 60% das OSs têm agendamento
                 $dataInstalacao = fake()->dateTimeBetween($os->data_abertura, $os->data_prevista);
-                
+
                 Agenda::create([
                     'cadastro_id' => $os->cadastro_id,
                     'ordem_servico_id' => $os->id,
-                    'titulo' => 'Instalação - OS ' . $os->numero,
-                    'descricao' => 'Instalação conforme OS ' . $os->numero,
+                    'titulo' => 'Instalação - OS '.$os->numero,
+                    'descricao' => 'Instalação conforme OS '.$os->numero,
                     'data_inicio' => $dataInstalacao,
                     'data_fim' => $dataInstalacao->copy()->addHours(6),
                     'tipo' => 'instalacao',
                     'status' => $os->status === 'concluida' ? 'concluido' : 'agendado',
-                    'endereco_completo' => $os->cadastro->logradouro . ', ' . $os->cadastro->numero,
+                    'endereco_completo' => $os->cadastro->logradouro.', '.$os->cadastro->numero,
                 ]);
             }
         }
@@ -673,21 +674,21 @@ class CompleteTestDataSeeder extends Seeder
     private function createFinanceiros(array $categorias, array $cadastros, array $orcamentos, array $ordensServico): void
     {
         $this->command->info('💳 Criando movimentações financeiras...');
-        
+
         $categoriasMap = collect($categorias)->keyBy('nome');
-        
+
         // Receitas de orçamentos aprovados
-        $orcamentosAprovados = array_filter($orcamentos, fn($o) => $o->status === 'aprovado');
-        
+        $orcamentosAprovados = array_filter($orcamentos, fn ($o) => $o->status === 'aprovado');
+
         foreach ($orcamentosAprovados as $orcamento) {
             $parcelas = fake()->numberBetween(1, 6);
             $valorParcela = $orcamento->valor_total / $parcelas;
-            
+
             for ($p = 1; $p <= $parcelas; $p++) {
                 $dataVencimento = fake()->dateTimeBetween($orcamento->data_orcamento, '+4 months');
-                $status = $dataVencimento < now() ? 
+                $status = $dataVencimento < now() ?
                     fake()->randomElement(['pago', 'atrasado']) : 'pendente';
-                
+
                 Financeiro::create([
                     'cadastro_id' => $orcamento->cadastro_id,
                     'orcamento_id' => $orcamento->id,
@@ -706,12 +707,12 @@ class CompleteTestDataSeeder extends Seeder
                 ]);
             }
         }
-        
+
         // Receitas de serviços (baseadas em OSs)
         foreach ($ordensServico as $os) {
-            if (fake()->boolean(40) && !$os->orcamento_id) { // 40% das OSs sem orçamento geram receita de serviço
+            if (fake()->boolean(40) && ! $os->orcamento_id) { // 40% das OSs sem orçamento geram receita de serviço
                 $categoria = fake()->randomElement(['Serviços de Instalação', 'Serviços de Medição']);
-                
+
                 Financeiro::create([
                     'cadastro_id' => $os->cadastro_id,
                     'ordem_servico_id' => $os->id,
@@ -728,18 +729,18 @@ class CompleteTestDataSeeder extends Seeder
                 ]);
             }
         }
-        
+
         // Comissões para vendedores/arquitetos
-        $parceiros = array_filter($cadastros, fn($c) => in_array($c->tipo, ['vendedor', 'arquiteto']));
-        
+        $parceiros = array_filter($cadastros, fn ($c) => in_array($c->tipo, ['vendedor', 'arquiteto']));
+
         foreach ($orcamentosAprovados as $orcamento) {
             if ($orcamento->vendedor_id || $orcamento->arquiteto_id) {
                 $vendedor = collect($cadastros)->firstWhere('id', $orcamento->vendedor_id);
                 $arquiteto = collect($cadastros)->firstWhere('id', $orcamento->arquiteto_id);
-                
+
                 if ($vendedor && $vendedor->comissao_percentual) {
                     $valorComissao = $orcamento->valor_total * ($vendedor->comissao_percentual / 100);
-                    
+
                     Financeiro::create([
                         'cadastro_id' => $vendedor->id,
                         'orcamento_id' => $orcamento->id,
@@ -755,10 +756,10 @@ class CompleteTestDataSeeder extends Seeder
                         'forma_pagamento' => fake()->randomElement(['transferencia', 'pix']),
                     ]);
                 }
-                
+
                 if ($arquiteto && $arquiteto->comissao_percentual) {
                     $valorComissao = $orcamento->valor_total * ($arquiteto->comissao_percentual / 100);
-                    
+
                     Financeiro::create([
                         'cadastro_id' => $arquiteto->id,
                         'orcamento_id' => $orcamento->id,
@@ -776,7 +777,7 @@ class CompleteTestDataSeeder extends Seeder
                 }
             }
         }
-        
+
         // Despesas operacionais diversas
         $despesasCategorias = [
             'Compra de Materiais' => 50,
@@ -788,13 +789,13 @@ class CompleteTestDataSeeder extends Seeder
             'Aluguel e Utilidades' => 12,
             'Despesas Administrativas' => 15,
         ];
-        
+
         foreach ($despesasCategorias as $categoria => $quantidade) {
             for ($i = 1; $i <= $quantidade; $i++) {
                 $dataVencimento = fake()->dateTimeBetween('-3 months', '+2 months');
-                $status = $dataVencimento < now() ? 
+                $status = $dataVencimento < now() ?
                     fake()->randomElement(['pago', 'atrasado']) : 'pendente';
-                
+
                 $valorRange = match ($categoria) {
                     'Salários e Encargos' => [2000, 8000],
                     'Aluguel e Utilidades' => [1500, 5000],
@@ -802,9 +803,9 @@ class CompleteTestDataSeeder extends Seeder
                     'Impostos e Taxas' => [300, 3000],
                     default => [100, 2000],
                 };
-                
+
                 $valor = fake()->randomFloat(2, $valorRange[0], $valorRange[1]);
-                
+
                 Financeiro::create([
                     'tipo' => 'saida',
                     'categoria' => $categoria,
@@ -826,17 +827,17 @@ class CompleteTestDataSeeder extends Seeder
     private function createGarantias(array $cadastros, array $produtos, array $ordensServico): void
     {
         $this->command->info('🛡️ Criando garantias...');
-        
-        $clientes = array_filter($cadastros, fn($c) => $c->tipo === 'cliente');
-        $produtosFisicos = array_filter($produtos, fn($p) => $p->categoria !== 'Serviços');
-        
+
+        $clientes = array_filter($cadastros, fn ($c) => $c->tipo === 'cliente');
+        $produtosFisicos = array_filter($produtos, fn ($p) => $p->categoria !== 'Serviços');
+
         // Garantias baseadas em OSs concluídas
-        $osConcluidas = array_filter($ordensServico, fn($os) => $os->status === 'concluida');
-        
+        $osConcluidas = array_filter($ordensServico, fn ($os) => $os->status === 'concluida');
+
         foreach ($osConcluidas as $os) {
             if (fake()->boolean(70)) { // 70% das OSs concluídas têm garantia
                 $dataInicio = $os->data_conclusao ?? fake()->dateTimeBetween('-1 year', 'now');
-                
+
                 Garantia::create([
                     'cadastro_id' => $os->cadastro_id,
                     'ordem_servico_id' => $os->id,
@@ -850,20 +851,20 @@ class CompleteTestDataSeeder extends Seeder
                 ]);
             }
         }
-        
+
         // Garantias independentes
         for ($i = 1; $i <= 15; $i++) {
             $cliente = fake()->randomElement($clientes);
             $produto = fake()->randomElement($produtosFisicos);
             $dataInicio = fake()->dateTimeBetween('-2 years', 'now');
-            
+
             Garantia::create([
                 'cadastro_id' => $cliente->id,
                 'produto_id' => $produto->id,
                 'tipo_garantia' => fake()->randomElement(['produto', 'servico']),
                 'data_inicio' => $dataInicio,
                 'data_fim' => fake()->dateTimeBetween($dataInicio, $dataInicio->copy()->addMonths(18)),
-                'descricao' => 'Garantia ' . $produto->nome,
+                'descricao' => 'Garantia '.$produto->nome,
                 'condicoes' => fake('pt_BR')->paragraph,
                 'ativa' => fake()->boolean(85),
             ]);
@@ -873,13 +874,13 @@ class CompleteTestDataSeeder extends Seeder
     private function createNotasFiscais(array $orcamentos, array $cadastros): void
     {
         $this->command->info('📄 Criando notas fiscais...');
-        
-        $orcamentosAprovados = array_filter($orcamentos, fn($o) => $o->status === 'aprovado');
-        
+
+        $orcamentosAprovados = array_filter($orcamentos, fn ($o) => $o->status === 'aprovado');
+
         foreach ($orcamentosAprovados as $orcamento) {
             if (fake()->boolean(60)) { // 60% dos orçamentos aprovados têm NF
                 $dataEmissao = fake()->dateTimeBetween($orcamento->data_orcamento, 'now');
-                
+
                 NotaFiscal::create([
                     'numero' => fake()->randomNumber(8, true),
                     'serie' => fake()->randomElement(['001', '002', '003']),
@@ -900,15 +901,15 @@ class CompleteTestDataSeeder extends Seeder
     private function createTarefas(array $usuarios, array $cadastros, array $ordensServico): void
     {
         $this->command->info('✅ Criando tarefas...');
-        
+
         // Tarefas relacionadas a OSs
         foreach ($ordensServico as $os) {
             if (fake()->boolean(80)) { // 80% das OSs têm tarefas
                 $numTarefas = fake()->numberBetween(1, 4);
-                
+
                 for ($i = 1; $i <= $numTarefas; $i++) {
                     $dataVencimento = fake()->dateTimeBetween($os->data_abertura, $os->data_prevista);
-                    
+
                     Tarefa::create([
                         'titulo' => fake()->randomElement([
                             'Medição no local',
@@ -916,7 +917,7 @@ class CompleteTestDataSeeder extends Seeder
                             'Instalação',
                             'Acabamento',
                             'Entrega',
-                            'Revisão final'
+                            'Revisão final',
                         ]),
                         'descricao' => fake('pt_BR')->sentence,
                         'cadastro_id' => $os->cadastro_id,
@@ -931,12 +932,12 @@ class CompleteTestDataSeeder extends Seeder
                 }
             }
         }
-        
+
         // Tarefas administrativas
         for ($i = 1; $i <= 25; $i++) {
             $usuario = fake()->randomElement($usuarios);
             $cliente = fake()->optional(0.5)->randomElement($cadastros);
-            
+
             Tarefa::create([
                 'titulo' => fake()->randomElement([
                     'Ligar para cliente',
@@ -944,7 +945,7 @@ class CompleteTestDataSeeder extends Seeder
                     'Acompanhar pagamento',
                     'Atualizar cadastro',
                     'Fazer follow-up',
-                    'Organizar documentos'
+                    'Organizar documentos',
                 ]),
                 'descricao' => fake('pt_BR')->sentence,
                 'cadastro_id' => $cliente?->id,
@@ -982,7 +983,7 @@ class CompleteTestDataSeeder extends Seeder
             ['📄 Notas Fiscais', NotaFiscal::count()],
             ['✅ Tarefas', Tarefa::count()],
         ]);
-        
+
         $this->command->newLine();
         $this->command->info('🎉 População de dados concluída com sucesso!');
         $this->command->warn('💡 Login padrão: admin@stofgard.com / admin123');

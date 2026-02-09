@@ -5,29 +5,33 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\EquipamentoResource\Pages;
 use App\Models\Equipamento;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid as InfolistGrid;
+use Filament\Infolists\Components\Section as InfolistSection;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Infolists\Infolist;
-use Filament\Infolists\Components\Section as InfolistSection;
-use Filament\Infolists\Components\Grid as InfolistGrid;
-use Filament\Infolists\Components\TextEntry;
 
 class EquipamentoResource extends Resource
 {
     protected static ?string $model = Equipamento::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
+
     protected static ?string $navigationLabel = 'Equipamentos';
+
     protected static ?string $modelLabel = 'Equipamento';
+
     protected static ?string $pluralModelLabel = 'Equipamentos';
 
     // Submódulo do Almoxarifado
     protected static ?string $slug = 'almoxarifado/equipamentos';
 
     protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -142,13 +146,13 @@ class EquipamentoResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'ativo' => 'success',
                         'manutencao' => 'warning',
                         'baixado' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
                         'ativo' => '✅ Ativo',
                         'manutencao' => '🔧 Manutenção',
                         'baixado' => '❌ Baixado',
@@ -196,7 +200,7 @@ class EquipamentoResource extends Resource
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
                     ->iconButton()
-                    ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
+                    ->url(fn (Equipamento $record) => route('equipamento.pdf', $record))
                     ->openUrlInNewTab(),
 
                 Tables\Actions\Action::make('enviar_lista_desejos')
@@ -207,7 +211,7 @@ class EquipamentoResource extends Resource
                     ->action(function (Equipamento $record) {
                         \App\Models\ListaDesejo::create([
                             'nome' => $record->nome,
-                            'descricao' => 'Cópia de equipamento: ' . $record->descricao,
+                            'descricao' => 'Cópia de equipamento: '.$record->descricao,
                             'categoria' => 'equipamento',
                             'preco_estimado' => $record->valor_aquisicao,
                             'quantidade_desejada' => 1,
@@ -235,7 +239,9 @@ class EquipamentoResource extends Resource
             InfolistSection::make()->schema([
                 InfolistGrid::make(2)->schema([
                     TextEntry::make('nome')->label('Nome do Equipamento')->size(TextEntry\TextEntrySize::Large)->weight('bold'),
-                    TextEntry::make('status')->badge()->color(fn($state) => match ($state) { 'ativo' => 'success', 'manutencao' => 'warning', default => 'danger'}),
+                    TextEntry::make('status')->badge()->color(fn ($state) => match ($state) {
+                        'ativo' => 'success', 'manutencao' => 'warning', default => 'danger'
+                    }),
                 ]),
             ]),
             InfolistSection::make('Detalhes')->schema([

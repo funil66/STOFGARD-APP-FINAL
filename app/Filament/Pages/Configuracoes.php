@@ -1,24 +1,26 @@
 <?php
+
 namespace App\Filament\Pages;
-use Filament\Pages\Page;
+
+use App\Models\Setting;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Builder;
+use Filament\Forms\Components\Builder\Block;
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
-use Filament\Forms\Components\Tabs;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
-use Filament\Forms\Components\ColorPicker;
-use Filament\Forms\Components\Builder;
-use Filament\Forms\Components\Builder\Block;
-use Filament\Forms\Components\RichEditor;
 use Filament\Notifications\Notification;
-use Filament\Actions\Action;
-use App\Models\Setting;
+use Filament\Pages\Page;
 use Illuminate\Support\Facades\Artisan;
 
 class Configuracoes extends Page implements HasForms
@@ -26,9 +28,13 @@ class Configuracoes extends Page implements HasForms
     use InteractsWithForms;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+
     protected static string $view = 'filament.pages.configuracoes';
+
     protected static ?string $title = 'Central de Comando Stofgard';
+
     protected static ?string $slug = 'configuracoes';
+
     public ?array $data = [];
 
     /**
@@ -72,6 +78,7 @@ class Configuracoes extends Page implements HasForms
 
         $this->form->fill($settings);
     }
+
     public function form(Form $form): Form
     {
         return $form
@@ -275,7 +282,7 @@ class Configuracoes extends Page implements HasForms
                                             ->deletable(false)
                                             ->reorderable(true)
                                             ->collapsible()
-                                            ->itemLabel(fn(array $state): ?string => $state['label'] ?? null),
+                                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? null),
                                     ]),
 
                                 Section::make('Gerenciamento de Itens/Produtos')
@@ -285,19 +292,19 @@ class Configuracoes extends Page implements HasForms
                                         \Filament\Forms\Components\Placeholder::make('link_tabela_precos')
                                             ->label('')
                                             ->content(new \Illuminate\Support\HtmlString(
-                                                '<div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">' .
-                                                '<div class="flex items-center space-x-3">' .
-                                                '<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">' .
-                                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"></path>' .
-                                                '</svg>' .
-                                                '<div>' .
-                                                '<h3 class="font-semibold text-blue-900">Tabela de Preços Unificada</h3>' .
-                                                '<p class="text-sm text-blue-700">Gerencie todos os itens, preços e categorias em um local único.</p>' .
-                                                '<a href="/admin/configuracoes/tabela-precos" class="inline-flex items-center mt-2 text-sm font-medium text-blue-600 hover:text-blue-800">' .
-                                                'Acessar Tabela de Preços →' .
-                                                '</a>' .
-                                                '</div>' .
-                                                '</div>' .
+                                                '<div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">'.
+                                                '<div class="flex items-center space-x-3">'.
+                                                '<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">'.
+                                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"></path>'.
+                                                '</svg>'.
+                                                '<div>'.
+                                                '<h3 class="font-semibold text-blue-900">Tabela de Preços Unificada</h3>'.
+                                                '<p class="text-sm text-blue-700">Gerencie todos os itens, preços e categorias em um local único.</p>'.
+                                                '<a href="/admin/configuracoes/tabela-precos" class="inline-flex items-center mt-2 text-sm font-medium text-blue-600 hover:text-blue-800">'.
+                                                'Acessar Tabela de Preços →'.
+                                                '</a>'.
+                                                '</div>'.
+                                                '</div>'.
                                                 '</div>'
                                             )),
                                     ]),
@@ -330,7 +337,6 @@ class Configuracoes extends Page implements HasForms
                                             ->addActionLabel('Adicionar Email'),
                                     ]),
                             ]),
-
 
                         // 6. CUSTOMIZAÇÃO PDF (BUILDER)
                         Tabs\Tab::make('Personalização de PDF')
@@ -416,7 +422,7 @@ class Configuracoes extends Page implements HasForms
                                                                 'totais' => 'Resumo Total',
                                                                 'pix' => 'QR Code PIX',
                                                                 'texto_garantia' => 'Garantia/Avisos',
-                                                                'vazio' => 'Vazio'
+                                                                'vazio' => 'Vazio',
                                                             ])->default('totais'),
                                                         Select::make('coluna_direita')
                                                             ->label('Coluna Direita')
@@ -424,7 +430,7 @@ class Configuracoes extends Page implements HasForms
                                                                 'totais' => 'Resumo Total',
                                                                 'pix' => 'QR Code PIX',
                                                                 'texto_garantia' => 'Garantia/Avisos',
-                                                                'vazio' => 'Vazio'
+                                                                'vazio' => 'Vazio',
                                                             ])->default('pix'),
                                                     ])->columns(2),
 
@@ -459,7 +465,7 @@ class Configuracoes extends Page implements HasForms
                                                                 '1' => '1 Foto (Grande)',
                                                                 '2' => '2 Fotos (Médio)',
                                                                 '3' => '3 Fotos (Pequeno)',
-                                                                '4' => '4 Fotos (Mini)'
+                                                                '4' => '4 Fotos (Mini)',
                                                             ])->default('2'),
                                                         Toggle::make('show_legend')->label('Mostrar Legenda (Nome do Arquivo)')->default(false),
                                                     ]),
@@ -471,7 +477,7 @@ class Configuracoes extends Page implements HasForms
                                                     ->schema([
                                                         Textarea::make('texto_legal')->label('Texto Legal Pequeno')->rows(2),
                                                     ]),
-                                            ])
+                                            ]),
                                         // ->minItems(1) // Opcional
                                     ]),
                             ]),
@@ -526,13 +532,13 @@ class Configuracoes extends Page implements HasForms
                                                     ])
                                                     ->required()
                                                     ->reactive()
-                                                    ->afterStateUpdated(fn(callable $set) => $set('validada', false)),
+                                                    ->afterStateUpdated(fn (callable $set) => $set('validada', false)),
 
                                                 TextInput::make('chave')
                                                     ->label('Chave PIX')
                                                     ->required()
                                                     ->reactive()
-                                                    ->afterStateUpdated(fn(callable $set) => $set('validada', false))
+                                                    ->afterStateUpdated(fn (callable $set) => $set('validada', false))
                                                     ->rules(function (callable $get) {
                                                         $tipo = $get('tipo');
 
@@ -561,8 +567,8 @@ class Configuracoes extends Page implements HasForms
                                                 TextInput::make('codigo_pais')
                                                     ->label('Código do País')
                                                     ->default('55')
-                                                    ->visible(fn(callable $get) => $get('tipo') === 'telefone')
-                                                    ->required(fn(callable $get) => $get('tipo') === 'telefone')
+                                                    ->visible(fn (callable $get) => $get('tipo') === 'telefone')
+                                                    ->required(fn (callable $get) => $get('tipo') === 'telefone')
                                                     ->numeric()
                                                     ->helperText('Ex: 55 para Brasil'),
 
@@ -572,13 +578,12 @@ class Configuracoes extends Page implements HasForms
                                                     ->helperText('Indica se a chave passou pela validação automática'),
                                             ])->columns(2)
                                             ->itemLabel(
-                                                fn(array $state): ?string =>
-                                                ($state['tipo'] ?? 'Novo') . ': ' . ($state['chave'] ?? 'Não definido')
+                                                fn (array $state): ?string => ($state['tipo'] ?? 'Novo').': '.($state['chave'] ?? 'Não definido')
                                             )
                                             ->afterStateUpdated(function (callable $get, callable $set, $state) {
                                                 if (is_array($state)) {
                                                     foreach ($state as $index => $chaveData) {
-                                                        if (isset($chaveData['chave']) && isset($chaveData['tipo']) && !empty($chaveData['chave'])) {
+                                                        if (isset($chaveData['chave']) && isset($chaveData['tipo']) && ! empty($chaveData['chave'])) {
                                                             $validacao = \App\Services\Pix\PixKeyValidatorService::validate(
                                                                 $chaveData['chave'],
                                                                 $chaveData['tipo'],
@@ -655,48 +660,57 @@ class Configuracoes extends Page implements HasForms
 
         if (empty($tables)) {
             Notification::make()->title('Selecione pelo menos uma tabela!')->warning()->send();
+
             return;
         }
 
-        // Ensure settings are saved first? 
-        // Optional: $this->save(); 
+        // Ensure settings are saved first?
+        // Optional: $this->save();
 
-        $zipFileName = 'backup-' . now()->format('Y-m-d-His') . '.zip';
+        $zipFileName = 'backup-'.now()->format('Y-m-d-His').'.zip';
         // Ensure directory exists
-        if (!is_dir(storage_path('app/public/backups'))) {
+        if (! is_dir(storage_path('app/public/backups'))) {
             mkdir(storage_path('app/public/backups'), 0755, true);
         }
-        $zipPath = storage_path('app/public/backups/' . $zipFileName);
+        $zipPath = storage_path('app/public/backups/'.$zipFileName);
 
         $zip = new \ZipArchive;
-        if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
+        if ($zip->open($zipPath, \ZipArchive::CREATE) === true) {
 
             // Export Tables to JSON
             foreach ($tables as $table) {
-                $modelClass = 'App\\Models\\' . \Illuminate\Support\Str::studly(\Illuminate\Support\Str::singular($table));
+                $modelClass = 'App\\Models\\'.\Illuminate\Support\Str::studly(\Illuminate\Support\Str::singular($table));
 
                 // Handle specific table mappings correctly
-                if ($table === 'ordem_servicos')
+                if ($table === 'ordem_servicos') {
                     $modelClass = \App\Models\OrdemServico::class;
-                if ($table === 'users')
+                }
+                if ($table === 'users') {
                     $modelClass = \App\Models\User::class;
-                if ($table === 'cadastros')
+                }
+                if ($table === 'cadastros') {
                     $modelClass = \App\Models\Cadastro::class;
-                if ($table === 'financeiros')
+                }
+                if ($table === 'financeiros') {
                     $modelClass = \App\Models\Financeiro::class;
-                if ($table === 'orcamentos')
+                }
+                if ($table === 'orcamentos') {
                     $modelClass = \App\Models\Orcamento::class;
-                if ($table === 'estoques')
+                }
+                if ($table === 'estoques') {
                     $modelClass = \App\Models\Estoque::class;
-                if ($table === 'agendas')
+                }
+                if ($table === 'agendas') {
                     $modelClass = \App\Models\Agenda::class;
-                if ($table === 'tabela_precos')
+                }
+                if ($table === 'tabela_precos') {
                     $modelClass = \App\Models\TabelaPreco::class;
+                }
 
                 if (class_exists($modelClass)) {
                     $data = $modelClass::all(); // Warning: Heavy load for large tables
                 } else {
-                    // Fallback 
+                    // Fallback
                     if (\Illuminate\Support\Facades\Schema::hasTable($table)) {
                         $data = \Illuminate\Support\Facades\DB::table($table)->get();
                     } else {
@@ -715,7 +729,7 @@ class Configuracoes extends Page implements HasForms
                     if (strpos($relativePath, 'backups/') === 0 || $relativePath === $zipFileName) {
                         continue;
                     }
-                    $zip->addFile($file->getRealPath(), 'storage/' . $relativePath);
+                    $zip->addFile($file->getRealPath(), 'storage/'.$relativePath);
                 }
             }
 
@@ -732,7 +746,7 @@ class Configuracoes extends Page implements HasForms
                 ->label('Baixar Backup')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
-                ->action(fn() => $this->exportData()),
+                ->action(fn () => $this->exportData()),
 
             Action::make('limpar_cache')
                 ->label('Resetar Cache')
@@ -748,6 +762,7 @@ class Configuracoes extends Page implements HasForms
                 })->requiresConfirmation(),
         ];
     }
+
     // --- LAYOUT PADRÃO (BUILDER) ---
     protected function getLayoutPadrao(): array
     {
@@ -757,8 +772,8 @@ class Configuracoes extends Page implements HasForms
                 'data' => [
                     'show_logo' => true,
                     'show_dates' => true,
-                    'alignment' => 'left'
-                ]
+                    'alignment' => 'left',
+                ],
             ],
             [
                 'type' => 'dados_cliente',
@@ -766,45 +781,43 @@ class Configuracoes extends Page implements HasForms
                     'titulo' => 'DADOS DO CLIENTE',
                     'show_email' => true,
                     'show_phone' => true,
-                    'show_address' => true
-                ]
+                    'show_address' => true,
+                ],
             ],
             [
                 'type' => 'tabela_itens',
                 'data' => [
                     'titulo' => 'ITENS DO ORÇAMENTO',
-                    'show_category_colors' => true
-                ]
+                    'show_category_colors' => true,
+                ],
             ],
             [
                 'type' => 'container_duplo',
                 'data' => [
                     'coluna_esquerda' => 'totais',
-                    'coluna_direita' => 'pix'
-                ]
+                    'coluna_direita' => 'pix',
+                ],
             ],
             [
                 'type' => 'texto_livre',
                 'data' => [
-                    'conteudo' => '<ul><li>Orçamento válido por 7 dias.</li><li>Pagamento 50% na aprovação e 50% na entrega.</li></ul>'
-                ]
+                    'conteudo' => '<ul><li>Orçamento válido por 7 dias.</li><li>Pagamento 50% na aprovação e 50% na entrega.</li></ul>',
+                ],
             ],
             [
                 'type' => 'galeria_fotos',
                 'data' => [
                     'titulo' => 'REGISTROS FOTOGRÁFICOS',
                     'columns' => '2',
-                    'show_legend' => false
-                ]
+                    'show_legend' => false,
+                ],
             ],
             [
                 'type' => 'rodape_padrao',
                 'data' => [
-                    'texto_legal' => 'Este documento não é fiscal.'
-                ]
-            ]
+                    'texto_legal' => 'Este documento não é fiscal.',
+                ],
+            ],
         ];
     }
-
-
 }

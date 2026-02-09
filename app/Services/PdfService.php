@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use Spatie\Browsershot\Browsershot;
 use Illuminate\Support\Facades\Log;
+use Spatie\Browsershot\Browsershot;
 
 class PdfService
 {
@@ -36,7 +36,7 @@ class PdfService
             return $browsershot->pdf();
 
         } catch (\Exception $e) {
-            Log::error("Erro crítico na geração de PDF: " . $e->getMessage());
+            Log::error('Erro crítico na geração de PDF: '.$e->getMessage());
             throw $e;
         }
     }

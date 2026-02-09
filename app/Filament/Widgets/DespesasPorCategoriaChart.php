@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\DB;
 class DespesasPorCategoriaChart extends ChartWidget
 {
     protected static ?string $heading = 'Despesas por Categoria (Este Mês)';
+
     protected static ?int $sort = 4;
+
     protected int|string|array $columnSpan = 'half';
 
     protected function getData(): array
@@ -40,11 +42,11 @@ class DespesasPorCategoriaChart extends ChartWidget
                         '#818cf8',
                         '#a78bfa',
                         '#f472b6',
-                        '#fb7185'
+                        '#fb7185',
                     ],
                 ],
             ],
-            'labels' => $data->map(fn($item) => $item->categoria?->nome ?? 'Sem Categoria')->toArray(),
+            'labels' => $data->map(fn ($item) => $item->categoria?->nome ?? 'Sem Categoria')->toArray(),
         ];
     }
 

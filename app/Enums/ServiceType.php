@@ -2,10 +2,10 @@
 
 namespace App\Enums;
 
-use Filament\Support\Contracts\HasLabel;
 use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasLabel;
 
-enum ServiceType: string implements HasLabel, HasColor
+enum ServiceType: string implements HasColor, HasLabel
 {
     case Higienizacao = 'higienizacao';
     case Impermeabilizacao = 'impermeabilizacao';

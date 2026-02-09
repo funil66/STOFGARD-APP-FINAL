@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::table('ordens_servico', function (Blueprint $table) {
             // Adiciona se não existir
-            if (!Schema::hasColumn('ordens_servico', 'data_inicio')) {
+            if (! Schema::hasColumn('ordens_servico', 'data_inicio')) {
                 $table->dateTime('data_inicio')->nullable();
             }
-            if (!Schema::hasColumn('ordens_servico', 'data_fim')) {
+            if (! Schema::hasColumn('ordens_servico', 'data_fim')) {
                 $table->dateTime('data_fim')->nullable();
             }
         });
