@@ -65,6 +65,10 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
         'pdf_mostrar_fotos',      // Controle de exibição de fotos
         'pix_chave_selecionada',  // Chave escolhida (Crucial)
         'aplicar_desconto_pix',
+        'pdf_mostrar_comissoes',       // #2a: Toggle comissões no PDF
+        'pdf_mostrar_parcelamento',    // #2a: Toggle parcelamento no PDF
+        'pdf_desconto_pix_percentual', // #2b: Alíquota PIX per-orçamento
+        'pdf_parcelamento_custom',     // #2b: Parcelamento customizado per-orçamento
         'etapa_funil',
     ];
 
@@ -80,6 +84,10 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
         'pdf_incluir_pix' => 'boolean',
         'pdf_mostrar_fotos' => 'boolean',
         'aplicar_desconto_pix' => 'boolean',
+        'pdf_mostrar_comissoes' => 'boolean',
+        'pdf_mostrar_parcelamento' => 'boolean',
+        'pdf_desconto_pix_percentual' => 'decimal:2',
+        'pdf_parcelamento_custom' => 'array',
     ];
 
     // --- FUNÇÃO QUE FALTAVA (CORREÇÃO DO ERRO) ---

@@ -109,7 +109,11 @@ class CadastroResource extends Resource
                                     ->label('')
                                     ->schema([
                                         Grid::make(6)->schema([
-                                            TextEntry::make('numero')->label('Nº')->weight('bold'),
+                                            TextEntry::make('numero')
+                                                ->label('Nº')
+                                                ->weight('bold')
+                                                ->url(fn($record) => \App\Filament\Resources\OrcamentoResource::getUrl('view', ['record' => $record->id]))
+                                                ->color('primary'),
                                             TextEntry::make('status')
                                                 ->badge()
                                                 ->color(fn($state) => match ($state) {
@@ -145,7 +149,11 @@ class CadastroResource extends Resource
                                     ->label('')
                                     ->schema([
                                         Grid::make(6)->schema([
-                                            TextEntry::make('numero_os')->label('OS')->weight('bold'),
+                                            TextEntry::make('numero_os')
+                                                ->label('OS')
+                                                ->weight('bold')
+                                                ->url(fn($record) => \App\Filament\Resources\OrdemServicoResource::getUrl('view', ['record' => $record->id]))
+                                                ->color('primary'),
                                             TextEntry::make('tipo_servico')->label('Tipo'),
                                             TextEntry::make('status')
                                                 ->badge()
@@ -155,7 +163,7 @@ class CadastroResource extends Resource
                                                     'em_andamento' => 'warning',
                                                     default => 'info',
                                                 }),
-                                            TextEntry::make('data_prevista')->label('Agendado')->date('d/m/Y'),
+                                            TextEntry::make('data_prevista')->label('Agendado')->dateTime('d/m/Y H:i'),
                                             TextEntry::make('valor_total')->label('Total')->money('BRL'),
                                             TextEntry::make('id')
                                                 ->label('')
@@ -185,7 +193,11 @@ class CadastroResource extends Resource
                                                 ->badge()
                                                 ->color(fn($state) => $state === 'entrada' ? 'success' : 'danger')
                                                 ->formatStateUsing(fn($state) => $state === 'entrada' ? '💵 Entrada' : '💸 Saída'),
-                                            TextEntry::make('descricao')->label('Descrição')->limit(40),
+                                            TextEntry::make('descricao')
+                                                ->label('Descrição')
+                                                ->limit(40)
+                                                ->url(fn($record) => \App\Filament\Resources\FinanceiroResource::getUrl('view', ['record' => $record->id]))
+                                                ->color('primary'),
                                             TextEntry::make('status')
                                                 ->badge()
                                                 ->color(fn($state) => match ($state) {
@@ -263,14 +275,34 @@ class CadastroResource extends Resource
 
                         // ABA 6: ARQUIVOS
                         Infolists\Components\Tabs\Tab::make('📁 Arquivos')
+                            ->badge(fn($record) => $record->getMedia('arquivos')->count())
                             ->schema([
-                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
-                                    ->label('Galeria de Documentos')
+                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos_imagens')
+                                    ->label('Galeria de Imagens')
                                     ->collection('arquivos')
                                     ->size(200)
                                     ->square()
                                     ->extraImgAttributes(['class' => 'rounded-lg shadow-md'])
-                                    ->columnSpanFull(),
+                                    ->disk('public'),
+
+                                \Filament\Infolists\Components\TextEntry::make('arquivos_list')
+                                    ->label('Lista de Documentos')
+                                    ->html()
+                                    ->getStateUsing(function ($record) {
+                                        $files = $record->getMedia('arquivos');
+                                        if ($files->isEmpty())
+                                            return '<span class="text-gray-500 text-sm">Nenhum documento anexado.</span>';
+
+                                        $html = '<ul class="list-disc pl-4 space-y-1">';
+                                        foreach ($files as $file) {
+                                            $url = $file->getUrl();
+                                            $name = $file->file_name;
+                                            $size = $file->human_readable_size;
+                                            $html .= "<li><a href='{$url}' target='_blank' class='text-primary-600 hover:underline'>{$name}</a> <span class='text-xs text-gray-500'>({$size})</span></li>";
+                                        }
+                                        $html .= '</ul>';
+                                        return $html;
+                                    }),
                             ]),
 
                         // ABA 7: HISTÓRICO DE ALTERAÇÕES
@@ -464,6 +496,7 @@ class CadastroResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('telefone')
                     ->label('WhatsApp')
+                    ->searchable()
                     ->icon('heroicon-m-phone')
                     ->visibleFrom('md'),
                 Tables\Columns\TextColumn::make('cidade')

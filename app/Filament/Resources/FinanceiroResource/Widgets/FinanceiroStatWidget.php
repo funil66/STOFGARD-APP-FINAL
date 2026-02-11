@@ -15,8 +15,9 @@ class FinanceiroStatWidget extends BaseWidget
     protected function getStats(): array
     {
         // Totais Gerais (Considerando Pagos)
-        $entradasPagas = Financeiro::where('status', 'pago')->where('tipo', 'entrada')->sum('valor_pago');
-        $saidasPagas = Financeiro::where('status', 'pago')->where('tipo', 'saida')->sum('valor_pago');
+        // Totais Gerais (Considerando Pagos)
+        $entradasPagas = Financeiro::where('status', 'pago')->where('tipo', 'entrada')->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
+        $saidasPagas = Financeiro::where('status', 'pago')->where('tipo', 'saida')->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
         $saldo = $entradasPagas - $saidasPagas;
 
         // Mês Atual (Range para filtros futuros)
@@ -34,7 +35,7 @@ class FinanceiroStatWidget extends BaseWidget
 
         return [
             Stat::make('Saldo em Conta', Number::currency($saldo, 'BRL'))
-                ->description('Receitas Pagas ('.Number::currency($entradasPagas, 'BRL').') - Despesas Pagas ('.Number::currency($saidasPagas, 'BRL').')')
+                ->description('Receitas Pagas (' . Number::currency($entradasPagas, 'BRL') . ') - Despesas Pagas (' . Number::currency($saidasPagas, 'BRL') . ')')
                 ->descriptionIcon($saldo >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($saldo >= 0 ? 'success' : 'danger')
                 ->chart([$saldo - 100, $saldo - 50, $saldo, $saldo + 50, $saldo + 100])

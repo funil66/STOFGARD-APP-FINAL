@@ -52,7 +52,9 @@ class OrcamentoPdfController extends Controller
                 // Cria objeto Config Fake para a View
                 $config = (object) $settingsArray;
 
-                $percentualPix = floatval($settingsArray['financeiro_desconto_avista'] ?? 10);
+                $percentualPix = $orcamento->pdf_desconto_pix_percentual !== null
+                    ? floatval($orcamento->pdf_desconto_pix_percentual)
+                    : floatval($settingsArray['financeiro_desconto_avista'] ?? 10);
 
                 // Usa o método centralizado do model
                 $descontos = $orcamento->getValorComDescontos($percentualPix);

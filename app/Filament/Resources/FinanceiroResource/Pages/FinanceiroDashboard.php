@@ -63,6 +63,7 @@ class FinanceiroDashboard extends Page
                             ->options([
                                 'bar' => 'Barra',
                                 'line' => 'Linha',
+                                'pie' => 'Pizza',
                             ])
                             ->default('bar'),
                     ])

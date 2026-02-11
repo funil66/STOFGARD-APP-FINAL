@@ -341,6 +341,11 @@ class AgendaResource extends Resource
                     ->label('OS')
                     ->icon('heroicon-m-clipboard-document-check')
                     ->visibleFrom('xl'),
+
+                Tables\Columns\TextColumn::make('id_parceiro')
+                    ->label('ID Parceiro')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('data_hora_inicio', 'desc')
             ->filters([
@@ -610,6 +615,35 @@ class AgendaResource extends Resource
                                         })
                                         ->placeholder('Não vinculado'),
                                 ]),
+                            ]),
+
+                        // ABA 3: COMPROVANTES
+                        \Filament\Infolists\Components\Tabs\Tab::make('📁 Arquivos')
+                            ->badge(fn($record) => $record->getMedia('arquivos')->count())
+                            ->schema([
+                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos_imagens')
+                                    ->label('Imagens')
+                                    ->collection('arquivos')
+                                    ->disk('public'),
+
+                                \Filament\Infolists\Components\TextEntry::make('arquivos_list')
+                                    ->label('Lista de Arquivos')
+                                    ->html()
+                                    ->getStateUsing(function ($record) {
+                                        $files = $record->getMedia('arquivos');
+                                        if ($files->isEmpty())
+                                            return '<span class="text-gray-500 text-sm">Nenhum arquivo anexado.</span>';
+
+                                        $html = '<ul class="list-disc pl-4 space-y-1">';
+                                        foreach ($files as $file) {
+                                            $url = $file->getUrl();
+                                            $name = $file->file_name;
+                                            $size = $file->human_readable_size;
+                                            $html .= "<li><a href='{$url}' target='_blank' class='text-primary-600 hover:underline'>{$name}</a> <span class='text-xs text-gray-500'>({$size})</span></li>";
+                                        }
+                                        $html .= '</ul>';
+                                        return $html;
+                                    }),
                             ]),
 
                         // ABA 3: CHECKLIST

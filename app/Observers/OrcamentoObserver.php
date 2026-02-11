@@ -44,41 +44,47 @@ class OrcamentoObserver
      */
     protected function gerarQRCodePix(Orcamento $orcamento): void
     {
-        $config = Configuracao::first();
-
-        if (!$config) {
-            Log::warning('Configuração não encontrada para gerar PIX');
-
-            return;
-        }
-
         $pixService = app(PixMasterService::class);
 
-        // Usa accessor centralizado para valor base
+        // 1. Determine Discount Percentage
+        // Use per-budget setting if set, otherwise global
+        // Note: Setting::get returns string/mixed, cast to float
+        $percentual = $orcamento->pdf_desconto_pix_percentual !== null
+            ? floatval($orcamento->pdf_desconto_pix_percentual)
+            : (float) \App\Models\Setting::get('financeiro_desconto_avista', 10);
+
+        // 2. Determine Base Value
         $valorEfetivo = $orcamento->valor_efetivo;
 
-        // Se NÃO foi editado manualmente, aplica desconto PIX automático
-        if (
-            floatval($orcamento->valor_final_editado) <= 0
-            && $orcamento->aplicar_desconto_pix
-            && $config->percentual_desconto_pix > 0
-        ) {
-            $desconto = ($valorEfetivo * $config->percentual_desconto_pix) / 100;
-            $valor = $valorEfetivo - $desconto;
+        // 3. Determine Final PIX Value
+        // Logic: If manually edited, NO extra discount (user request: "exceto se editado manualmente o valor final")
+        if (floatval($orcamento->valor_final_editado) > 0) {
+            $valorPix = $valorEfetivo;
         } else {
-            $valor = $valorEfetivo;
+            // If NOT edited manually, apply discount if enabled in settings/flag
+            // We use 'aplicar_desconto_pix' flag which usually defaults to true or global setting
+            // Also ensure we don't apply if percentual is 0
+            if ($orcamento->aplicar_desconto_pix && $percentual > 0) {
+                $valorPix = $valorEfetivo * (1 - ($percentual / 100));
+            } else {
+                $valorPix = $valorEfetivo;
+            }
         }
 
         // Generate unique transaction ID
         $txid = 'ORC' . str_pad($orcamento->id ?? 'TEMP' . rand(1000, 9999), 6, '0', STR_PAD_LEFT) . time();
 
         // Generate PIX
+        // Get Company Name/City from Settings
+        $beneficiario = \App\Models\Setting::get('empresa_nome', 'STOFGARD');
+        $cidade = \App\Models\Setting::get('empresa_cidade', 'SAO PAULO');
+
         $result = $pixService->gerarPix(
             chave: $orcamento->pix_chave_selecionada,
-            beneficiario: $config->empresa_nome ?? 'STOFGARD',
-            cidade: $config->empresa_cidade ?? 'SAO PAULO',
+            beneficiario: substr($beneficiario, 0, 25), // Safety limit
+            cidade: substr($cidade, 0, 15), // Safety limit
             identificador: $txid,
-            valor: (float) $valor
+            valor: (float) $valorPix
         );
 
         // Save to model (will be persisted when save() completes)
@@ -89,7 +95,9 @@ class OrcamentoObserver
         Log::info('QR Code PIX gerado com sucesso', [
             'orcamento_id' => $orcamento->id,
             'txid' => $txid,
-            'valor' => $valor,
+            'valor_base' => $valorEfetivo,
+            'percentual' => $percentual,
+            'valor_pix' => $valorPix,
         ]);
     }
 

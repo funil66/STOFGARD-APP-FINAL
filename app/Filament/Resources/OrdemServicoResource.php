@@ -201,7 +201,7 @@ class OrdemServicoResource extends Resource
                             ->icon('heroicon-o-calendar')
                             ->schema([
                                 DatePicker::make('data_abertura')->label('Data Venda')->default(now())->required(),
-                                DatePicker::make('data_prevista')->label('Data Agendada'),
+                                Forms\Components\DateTimePicker::make('data_prevista')->label('Data Agendada')->minDate(now()),
                                 DatePicker::make('data_conclusao')->label('Conclusão'),
                                 TextInput::make('dias_garantia')->label('Garantia (Dias)')->numeric()->default(90),
                             ])->columns(['default' => 1, 'sm' => 2, 'lg' => 4]),
@@ -331,7 +331,18 @@ class OrdemServicoResource extends Resource
                     ->badge()
                     ->color('warning')
                     ->sortable()
+                    ->searchable()
                     ->visibleFrom('lg'),
+
+                Tables\Columns\TextColumn::make('vendedor.nome')
+                    ->label('Vendedor')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('id_parceiro')
+                    ->label('ID Parceiro')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
@@ -448,8 +459,10 @@ class OrdemServicoResource extends Resource
                                 $financeiro = $record->financeiro;
                                 if (!$financeiro) {
                                     $financeiro = \App\Models\Financeiro::create([
-                                        'cadastro_id' => $record->cliente_id ?? null,
+                                        'cadastro_id' => $record->cadastro_id,
                                         'ordem_servico_id' => $record->id,
+                                        'orcamento_id' => $record->orcamento_id,
+                                        'id_parceiro' => $record->id_parceiro,
                                         'tipo' => 'entrada',
                                         'descricao' => "Recebimento OS #{$record->numero_os}",
                                         'valor' => $record->valor_total,
@@ -458,13 +471,8 @@ class OrdemServicoResource extends Resource
                                         'status' => 'pendente',
                                     ]);
                                 }
-                                $financeiro->update([
-                                    'status' => 'pago',
-                                    'valor_pago' => $data['valor_pago'],
-                                    'data_pagamento' => $data['data_pagamento'],
-                                    'forma_pagamento' => $data['forma_pagamento'],
-                                ]);
-                                \Filament\Notifications\Notification::make()->title('Pagamento Registrado!')->success()->send();
+                                // Usa o FinanceiroService para garantir lógica de pagamento (parcial ou total)
+                                \App\Services\FinanceiroService::baixarPagamento($financeiro, $data);
                             }),
 
                         // 3. Concluir OS
@@ -568,7 +576,7 @@ class OrdemServicoResource extends Resource
                                 ->size(TextEntry\TextEntrySize::Large),
                             TextEntry::make('data_prevista')
                                 ->label('📅 Data Agendada')
-                                ->date('d/m/Y')
+                                ->dateTime('d/m/Y H:i')
                                 ->color('warning'),
                             TextEntry::make('data_conclusao')
                                 ->label('✅ Conclusão')
@@ -634,13 +642,44 @@ class OrdemServicoResource extends Resource
                                     ->grid(1),
                             ]),
 
-                        Infolists\Components\Tabs\Tab::make('📸 Evidências')
+                        Infolists\Components\Tabs\Tab::make('📸 Evidências e Arquivos')
                             ->schema([
-                                Infolists\Components\SpatieMediaLibraryImageEntry::make('fotos_antes')
-                                    ->label('Fotos Antes')
-                                    ->collection('os-fotos') // Check collection name
-                                    ->disk('public'),
-                                // Add logic for separate before/after if collections differ, otherwise just show all
+                                InfolistGrid::make(2)->schema([
+                                    Infolists\Components\SpatieMediaLibraryImageEntry::make('fotos_antes')
+                                        ->label('Fotos Antes')
+                                        ->collection('fotos_antes')
+                                        ->disk('public')
+                                        ->columnSpan(1),
+
+                                    Infolists\Components\SpatieMediaLibraryImageEntry::make('fotos_depois')
+                                        ->label('Fotos Depois')
+                                        ->collection('fotos_depois')
+                                        ->disk('public')
+                                        ->columnSpan(1),
+                                ]),
+
+                                InfolistSection::make('Documentos e Arquivos')
+                                    ->schema([
+                                        Infolists\Components\TextEntry::make('arquivos_list')
+                                            ->label('Lista de Arquivos')
+                                            ->html()
+                                            ->getStateUsing(function ($record) {
+                                                $files = $record->getMedia('arquivos');
+                                                if ($files->isEmpty())
+                                                    return '<span class="text-gray-500 text-sm">Nenhum arquivo anexado.</span>';
+
+                                                $html = '<ul class="list-disc pl-4 space-y-1">';
+                                                foreach ($files as $file) {
+                                                    $url = $file->getUrl();
+                                                    $name = $file->file_name;
+                                                    $size = $file->human_readable_size;
+                                                    $html .= "<li><a href='{$url}' target='_blank' class='text-primary-600 hover:underline'>{$name}</a> <span class='text-xs text-gray-500'>({$size})</span></li>";
+                                                }
+                                                $html .= '</ul>';
+                                                return $html;
+                                            }),
+                                    ])
+                                    ->collapsible(),
                             ]),
 
                         Infolists\Components\Tabs\Tab::make('💰 Financeiro')

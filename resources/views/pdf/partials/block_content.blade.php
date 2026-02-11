@@ -8,8 +8,13 @@
 
         @php
             // Usa método centralizado do Model para garantir consistência
+            // MAS para exibição, queremos o Valor Efetivo (Cheio/Editado) no topo, e o desconto abaixo.
+            $valorEfetivo = $orcamento->valor_efetivo;
+
             $percentual = floatval($config->financeiro_desconto_avista ?? 10);
             $descontos = $orcamento->getValorComDescontos($percentual);
+
+            // $valorFinal é usado no cálculo de parcelamento abaixo
             $valorFinal = $descontos['valor_final'];
             $descontoPrestador = $descontos['desconto_prestador'];
             $descontoPix = $descontos['desconto_pix'];
@@ -22,18 +27,11 @@
             </div>
         @endif
 
-        @if($descontoPix > 0)
-            <div class="valor-row desconto">
-                <span>Desconto PIX ({{ $percentual }}%):</span>
-                <span>- R$ {{ number_format($descontoPix, 2, ',', '.') }}</span>
-            </div>
-        @endif
-
         <div class="valor-row-separator"></div>
 
         <div class="valor-total-box">
-            <div class="valor-total-label">VALOR FINAL</div>
-            <div class="valor-total-value">R$ {{ number_format($valorFinal, 2, ',', '.') }}</div>
+            <div class="valor-total-label">VALOR TOTAL</div>
+            <div class="valor-total-value">R$ {{ number_format($valorEfetivo, 2, ',', '.') }}</div>
         </div>
 
         {{-- Comissões (Apenas se houver) --}}
@@ -110,16 +108,16 @@
                     <div style="font-size: 7px; color: #777; margin-bottom: 2px;">PIX COPIA E COLA:</div>
                     <div class="pix-code"
                         style="
-                                                                                                                                                                        word-break: break-all; 
-                                                                                                                                                                        font-size: 8px; 
-                                                                                                                                                                        text-align: left; 
-                                                                                                                                                                        color: #333; 
-                                                                                                                                                                        padding: 6px; 
-                                                                                                                                                                        background: #fdfdfd; 
-                                                                                                                                                                        border: 1px dashed #a7f3d0; 
-                                                                                                                                                                        border-radius: 4px;
-                                                                                                                                                                        line-height: 1.25;
-                                                                                                                                                                     ">
+                                                                                                                                                                                                            word-break: break-all; 
+                                                                                                                                                                                                            font-size: 8px; 
+                                                                                                                                                                                                            text-align: left; 
+                                                                                                                                                                                                            color: #333; 
+                                                                                                                                                                                                            padding: 6px; 
+                                                                                                                                                                                                            background: #fdfdfd; 
+                                                                                                                                                                                                            border: 1px dashed #a7f3d0; 
+                                                                                                                                                                                                            border-radius: 4px;
+                                                                                                                                                                                                            line-height: 1.25;
+                                                                                                                                                                                                         ">
                         {{ $orcamento->pix_copia_cola }}
                     </div>
                 </div>

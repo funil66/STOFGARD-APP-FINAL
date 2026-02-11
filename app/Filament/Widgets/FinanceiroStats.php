@@ -14,7 +14,7 @@ class FinanceiroStats extends BaseWidget
 
         $saldoMes = Financeiro::where('status', 'pago')
             ->where('data_pagamento', '>=', $currentMonth)
-            ->selectRaw("SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE -valor END) as saldo")
+            ->selectRaw("SUM(CASE WHEN tipo = 'entrada' THEN COALESCE(valor_pago, valor) ELSE -COALESCE(valor_pago, valor) END) as saldo")
             ->value('saldo') ?? 0;
 
         $aReceber = Financeiro::where('status', 'pendente')
@@ -26,14 +26,14 @@ class FinanceiroStats extends BaseWidget
             ->sum('valor');
 
         return [
-            Stat::make('Saldo Mês', 'R$ '.number_format($saldoMes, 2, ',', '.'))
+            Stat::make('Saldo Mês', 'R$ ' . number_format($saldoMes, 2, ',', '.'))
                 ->color($saldoMes >= 0 ? 'success' : 'danger'),
 
-            Stat::make('A Receber', 'R$ '.number_format($aReceber, 2, ',', '.'))
+            Stat::make('A Receber', 'R$ ' . number_format($aReceber, 2, ',', '.'))
                 ->icon('heroicon-m-arrow-trending-up')
                 ->color('warning'),
 
-            Stat::make('A Pagar', 'R$ '.number_format($aPagar, 2, ',', '.'))
+            Stat::make('A Pagar', 'R$ ' . number_format($aPagar, 2, ',', '.'))
                 ->icon('heroicon-m-arrow-trending-down')
                 ->color('danger'),
         ];

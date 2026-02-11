@@ -56,20 +56,81 @@ class FinanceiroService
     }
 
     /**
-     * Marca uma transação como paga (Static Wrapper com Notificação).
+     * Marca uma transação como paga (com dados do formulário).
      */
-    public static function baixarPagamento(Financeiro $record): void
+    public static function baixarPagamento(Financeiro $record, ?array $dados = null): void
     {
-        // Reutiliza a lógica existente, criando uma instância temporária se necessário, ou apenas chama o update direto.
-        // Como o método 'baixar' é de instância e pode ser usado via injeção, aqui fazemos a implementação estática para o Resource.
+        $valorPago = floatval($dados['valor_pago'] ?? $record->valor);
+        $valorTotal = floatval($record->valor);
+
+        // Se o valor pago é menor que o total, faz pagamento parcial
+        if ($valorPago > 0 && $valorPago < $valorTotal) {
+            self::baixarParcial($record, $dados);
+            return;
+        }
+
         $record->update([
             'status' => 'pago',
-            'data_pagamento' => now(),
+            'data_pagamento' => $dados['data_pagamento'] ?? now(),
+            'valor_pago' => $valorPago > 0 ? $valorPago : $valorTotal,
+            'forma_pagamento' => $dados['forma_pagamento'] ?? $record->forma_pagamento,
         ]);
 
         Notification::make()
-            ->title('Pago!')
+            ->title('Pagamento confirmado!')
+            ->body('R$ ' . number_format(floatval($record->valor_pago), 2, ',', '.') . ' registrado com sucesso.')
             ->success()
+            ->send();
+    }
+
+    /**
+     * Pagamento parcial: paga parte do valor e gera novo registro com o saldo restante.
+     */
+    public static function baixarParcial(Financeiro $record, array $dados): void
+    {
+        $valorPago = floatval($dados['valor_pago']);
+        $valorOriginal = floatval($record->valor);
+        $saldoRestante = $valorOriginal - $valorPago;
+
+        // 1. Marca o registro atual como pago (parcial)
+        $record->update([
+            'status' => 'pago',
+            'data_pagamento' => $dados['data_pagamento'] ?? now(),
+            'valor_pago' => $valorPago,
+            'forma_pagamento' => $dados['forma_pagamento'] ?? $record->forma_pagamento,
+            'observacoes' => trim(
+                ($record->observacoes ? $record->observacoes . "\n" : '') .
+                '📌 Pagamento parcial: R$ ' . number_format($valorPago, 2, ',', '.') .
+                ' de R$ ' . number_format($valorOriginal, 2, ',', '.')
+            ),
+        ]);
+
+        // 2. Cria novo registro com o saldo restante
+        $novoRegistro = Financeiro::create([
+            'cadastro_id' => $record->cadastro_id,
+            'orcamento_id' => $record->orcamento_id,
+            'ordem_servico_id' => $record->ordem_servico_id,
+            'id_parceiro' => $record->id_parceiro,
+            'tipo' => $record->tipo,
+            'is_comissao' => $record->is_comissao,
+            'descricao' => $record->descricao . ' (Saldo restante)',
+            'observacoes' => '📌 Saldo restante de pagamento parcial (Ref. #' . $record->id . '). Original: R$ ' . number_format($valorOriginal, 2, ',', '.') . ', Pago: R$ ' . number_format($valorPago, 2, ',', '.'),
+            'categoria_id' => $record->categoria_id,
+            'valor' => $saldoRestante,
+            'data' => $record->data ?? now(),
+            'data_vencimento' => $record->data_vencimento ?? now()->addDays(30),
+            'status' => 'pendente',
+            'forma_pagamento' => null,
+        ]);
+
+        Notification::make()
+            ->title('Pagamento parcial registrado!')
+            ->body(
+                'Pago: R$ ' . number_format($valorPago, 2, ',', '.') .
+                ' | Novo registro #' . $novoRegistro->id .
+                ' criado com saldo de R$ ' . number_format($saldoRestante, 2, ',', '.')
+            )
+            ->warning()
             ->send();
     }
 
@@ -78,6 +139,7 @@ class FinanceiroService
         $record->update([
             'status' => 'pendente',
             'data_pagamento' => null,
+            'valor_pago' => null,
         ]);
 
         Notification::make()
@@ -117,7 +179,7 @@ class FinanceiroService
                 'categoria_id' => $categoria->id,
                 'cadastro_id' => $dados['beneficiario_id'] ?? null,
                 'observacoes' => 'Pagamento de comissão gerado automaticamente.',
-                'forma_pagamento' => 'transferencia', // Default
+                'forma_pagamento' => 'transferencia',
             ]);
         }
 
@@ -130,17 +192,20 @@ class FinanceiroService
 
     public static function baixarEmLote(Collection $records): void
     {
-        $records->each(function ($record) {
-            if ($record->status === 'pendente') {
+        $count = 0;
+        $records->each(function ($record) use (&$count) {
+            if ($record->status === 'pendente' || $record->status === 'atrasado') {
                 $record->update([
                     'status' => 'pago',
                     'data_pagamento' => now(),
+                    'valor_pago' => $record->valor,
                 ]);
+                $count++;
             }
         });
 
         Notification::make()
-            ->title('Pagamentos confirmados em lote!')
+            ->title("Pagamentos confirmados em lote! ({$count} registros)")
             ->success()
             ->send();
     }

@@ -120,7 +120,26 @@ class OrcamentoResource extends Resource
                             ->helperText('Identificador fornecido pelo parceiro comercial')
                             ->maxLength(100),
 
-                        // ... other fields from original
+                        // --- #2a: Configurações de exibição do PDF ---
+                        Forms\Components\Fieldset::make('Configurações do PDF')
+                            ->schema([
+                                Forms\Components\Toggle::make('pdf_mostrar_comissoes')
+                                    ->label('Exibir Comissões no PDF')
+                                    ->default(true),
+
+                                Forms\Components\Toggle::make('pdf_mostrar_parcelamento')
+                                    ->label('Exibir Parcelamento no PDF')
+                                    ->default(true),
+
+                                // --- #2b: Alíquotas per-orçamento ---
+                                Forms\Components\TextInput::make('pdf_desconto_pix_percentual')
+                                    ->label('Desconto PIX (%)')
+                                    ->numeric()
+                                    ->suffix('%')
+                                    ->placeholder(fn() => (\App\Models\Setting::get('financeiro_desconto_avista', 10)) . '% (padrão)')
+                                    ->helperText('Deixe vazio para usar o padrão de Configurações'),
+                            ])->columns(3),
+
                     ])->columns(3),
 
                 Forms\Components\Section::make('Detalhamento')
@@ -140,6 +159,8 @@ class OrcamentoResource extends Resource
                                             ->label('Nome do Serviço Customizado')
                                             ->required(),
                                     ])
+                                    ->createOptionModalHeading('Adicionar Item Customizado')
+                                    ->createOptionAction(fn($action) => $action->label('Adicionar Item Customizado'))
                                     ->createOptionUsing(function ($data) {
                                         // Retorna apenas o nome para uso direto
                                         return $data['nome_item'];
@@ -241,6 +262,9 @@ class OrcamentoResource extends Resource
                                 // Calcula o desconto (pode ser negativo se for acréscimo)
                                 $desconto = $valorTotal - $valorEditado;
                                 $set('desconto_prestador', $desconto);
+
+                                // #1: Recalcula comissões baseadas no novo valor final
+                                self::recalcularTotal($set, $get);
                             })
                             ->columnSpan(1),
 
@@ -455,9 +479,29 @@ class OrcamentoResource extends Resource
 
                         Tabs\Tab::make('📁 Arquivos')
                             ->schema([
-                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
+                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos_imagens')
+                                    ->label('Imagens')
                                     ->collection('arquivos')
                                     ->disk('public'),
+
+                                \Filament\Infolists\Components\TextEntry::make('arquivos_list')
+                                    ->label('Lista de Documentos')
+                                    ->html()
+                                    ->getStateUsing(function ($record) {
+                                        $files = $record->getMedia('arquivos');
+                                        if ($files->isEmpty())
+                                            return '<span class="text-gray-500 text-sm">Nenhum arquivo anexado.</span>';
+
+                                        $html = '<ul class="list-disc pl-4 space-y-1">';
+                                        foreach ($files as $file) {
+                                            $url = $file->getUrl();
+                                            $name = $file->file_name;
+                                            $size = $file->human_readable_size;
+                                            $html .= "<li><a href='{$url}' target='_blank' class='text-primary-600 hover:underline'>{$name}</a> <span class='text-xs text-gray-500'>({$size})</span></li>";
+                                        }
+                                        $html .= '</ul>';
+                                        return $html;
+                                    }),
                             ]),
 
                         Tabs\Tab::make('📜 Histórico')
@@ -542,6 +586,18 @@ class OrcamentoResource extends Resource
                         default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('created_at')->date('d/m')->label('Data'),
+                Tables\Columns\TextColumn::make('id_parceiro')
+                    ->label('ID Parceiro')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('vendedor.nome')
+                    ->label('Vendedor')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('loja.nome')
+                    ->label('Loja')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions(
                 \App\Support\Filament\StofgardTable::defaultActions(
@@ -554,9 +610,57 @@ class OrcamentoResource extends Resource
                             ->icon('heroicon-s-document-text')
                             ->color('success')
                             ->tooltip('Gerar PDF')
-                            // ->iconButton()
                             ->url(fn(Orcamento $record) => route('orcamento.pdf', $record))
                             ->openUrlInNewTab(),
+
+                        // #5: Aprovar e Gerar OS direto da lista (Unificado)
+                        \App\Filament\Actions\OrcamentoActions::getAprovarTableAction(),
+
+                        // #5: Enviar WhatsApp direto da lista
+
+                        // #5: Enviar WhatsApp direto da lista
+                        Tables\Actions\Action::make('whatsapp')
+                            ->label('WhatsApp')
+                            ->icon('heroicon-o-chat-bubble-left-right')
+                            ->color('success')
+                            ->tooltip('Enviar por WhatsApp')
+                            ->url(function (Orcamento $record) {
+                                $pdfUrl = \Illuminate\Support\Facades\URL::signedRoute(
+                                    'orcamento.public_stream',
+                                    ['orcamento' => $record->id],
+                                    now()->addDays(7)
+                                );
+                                $phone = preg_replace('/[^0-9]/', '', $record->cliente->telefone ?? '');
+                                $text = urlencode("Olá {$record->cliente->nome}, aqui está o seu orçamento #{$record->id} da Stofgard.\n\nClique para visualizar: {$pdfUrl}");
+                                return $phone
+                                    ? "https://wa.me/55{$phone}?text={$text}"
+                                    : "https://wa.me/?text={$text}";
+                            })
+                            ->openUrlInNewTab(),
+
+                        // #6a: Editar Valor Final direto da lista
+                        Tables\Actions\Action::make('editar_valor')
+                            ->label('Editar Valor Final')
+                            ->icon('heroicon-o-currency-dollar')
+                            ->color('warning')
+                            ->tooltip('Ajustar valor final rapidamente')
+                            ->form([
+                                Forms\Components\TextInput::make('valor_final_editado')
+                                    ->label('Valor Final (R$)')
+                                    ->numeric()->prefix('R$')
+                                    ->default(fn($record) => $record->valor_final_editado > 0 ? $record->valor_final_editado : $record->valor_total)
+                                    ->helperText(fn($record) => 'Valor calculado: R$ ' . number_format($record->valor_total, 2, ',', '.')),
+                            ])
+                            ->action(function ($record, array $data) {
+                                $valorEditado = floatval($data['valor_final_editado'] ?? 0);
+                                $desconto = floatval($record->valor_total) - $valorEditado;
+                                $record->update([
+                                    'valor_final_editado' => $valorEditado > 0 ? $valorEditado : null,
+                                    'desconto_prestador' => $desconto > 0 ? $desconto : 0,
+                                ]);
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Valor atualizado!')->success()->send();
+                            }),
                     ]
                 )
             )

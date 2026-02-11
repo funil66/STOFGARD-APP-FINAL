@@ -285,6 +285,11 @@ class FinanceiroResource extends Resource
                         'atrasado' => 'danger',
                         'cancelado' => 'gray',
                     }),
+
+                Tables\Columns\TextColumn::make('id_parceiro')
+                    ->label('ID Parceiro')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 // ========================================
@@ -512,16 +517,41 @@ class FinanceiroResource extends Resource
                     edit: true,
                     delete: true,
                     extraActions: [
-                        // Baixar pagamento
+                        // Baixar pagamento (com modal de dados)
                         Tables\Actions\Action::make('baixar')
                             ->label('Baixar Pagamento')
-                            ->tooltip('Baixar Pagamento')
+                            ->tooltip('Registrar Pagamento')
                             ->icon('heroicon-s-check-circle')
                             ->color('success')
-                            // ->iconButton()
                             ->visible(fn(Financeiro $record) => $record->status === 'pendente' || $record->status === 'atrasado')
-                            ->requiresConfirmation()
-                            ->action(fn(Financeiro $record) => FinanceiroService::baixarPagamento($record)),
+                            ->modalHeading('Registrar Pagamento')
+                            ->modalDescription(fn(Financeiro $record) => 'Valor total: R$ ' . number_format(floatval($record->valor), 2, ',', '.') . '. Para pagamento parcial, informe um valor menor.')
+                            ->form([
+                                Forms\Components\TextInput::make('valor_pago')
+                                    ->label('Valor Pago (R$)')
+                                    ->numeric()
+                                    ->prefix('R$')
+                                    ->required()
+                                    ->default(fn(Financeiro $record) => $record->valor)
+                                    ->helperText('Informe um valor menor que o total para pagamento parcial (será gerado um novo registro com o saldo restante).'),
+                                Forms\Components\Select::make('forma_pagamento')
+                                    ->label('Forma de Pagamento')
+                                    ->options([
+                                        'pix' => 'PIX',
+                                        'dinheiro' => 'Dinheiro',
+                                        'cartao_credito' => 'Cartão de Crédito',
+                                        'cartao_debito' => 'Cartão de Débito',
+                                        'boleto' => 'Boleto',
+                                        'transferencia' => 'Transferência',
+                                    ])
+                                    ->default(fn(Financeiro $record) => $record->forma_pagamento)
+                                    ->required(),
+                                Forms\Components\DatePicker::make('data_pagamento')
+                                    ->label('Data do Pagamento')
+                                    ->default(now())
+                                    ->required(),
+                            ])
+                            ->action(fn(Financeiro $record, array $data) => FinanceiroService::baixarPagamento($record, $data)),
 
                         // Estornar
                         Tables\Actions\Action::make('estornar')
@@ -643,6 +673,10 @@ class FinanceiroResource extends Resource
                             TextEntry::make('cadastro.nome')
                                 ->label('Cliente/Fornecedor')
                                 ->icon('heroicon-m-user')
+                                ->url(fn($record) => $record->cadastro_id
+                                    ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id])
+                                    : null)
+                                ->color('primary')
                                 ->placeholder('Não vinculado')
                                 ->columnSpan(2),
                             TextEntry::make('forma_pagamento')
@@ -756,14 +790,29 @@ class FinanceiroResource extends Resource
                         \Filament\Infolists\Components\Tabs\Tab::make('📎 Comprovantes')
                             ->badge(fn($record) => $record->getMedia('arquivos')->count())
                             ->schema([
-                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
+                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos_imagens')
+                                    ->label('Imagens')
                                     ->collection('arquivos')
-                                    ->label('')
-                                    ->columnSpanFull(),
-                                TextEntry::make('sem_arquivos')
-                                    ->label('')
-                                    ->default('Nenhum comprovante anexado.')
-                                    ->visible(fn($record) => $record->getMedia('arquivos')->isEmpty()),
+                                    ->disk('public'),
+
+                                \Filament\Infolists\Components\TextEntry::make('arquivos_list')
+                                    ->label('Lista de Comprovantes/Documentos')
+                                    ->html()
+                                    ->getStateUsing(function ($record) {
+                                        $files = $record->getMedia('arquivos');
+                                        if ($files->isEmpty())
+                                            return '<span class="text-gray-500 text-sm">Nenhum arquivo anexado.</span>';
+
+                                        $html = '<ul class="list-disc pl-4 space-y-1">';
+                                        foreach ($files as $file) {
+                                            $url = $file->getUrl();
+                                            $name = $file->file_name;
+                                            $size = $file->human_readable_size;
+                                            $html .= "<li><a href='{$url}' target='_blank' class='text-primary-600 hover:underline'>{$name}</a> <span class='text-xs text-gray-500'>({$size})</span></li>";
+                                        }
+                                        $html .= '</ul>';
+                                        return $html;
+                                    }),
                             ]),
 
                         // ABA 4: HISTÓRICO DE ALTERAÇÕES

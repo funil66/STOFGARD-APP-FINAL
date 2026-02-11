@@ -49,6 +49,17 @@ class StofgardSystem
         }
 
         return DB::transaction(function () use ($orcamento, $userId, $options) {
+            // Prepara Data Prevista com Hora (se disponível)
+            $dataPrevista = $options['data_servico'] ? \Carbon\Carbon::parse($options['data_servico']) : now()->addDays(2);
+
+            if (!empty($options['data_servico']) && !empty($options['hora_inicio'])) {
+                $time = \Carbon\Carbon::parse($options['hora_inicio']);
+                $dataPrevista->setTimeFromTimeString($time->format('H:i:s'));
+            } elseif (!empty($options['data_servico'])) {
+                // Default para 09:00 se tiver data mas sem hora
+                $dataPrevista->setTime(9, 0, 0);
+            }
+
             // A. Criação da OS (Usando cadastro_id unificado)
             // OBS: O OrdemServicoObserver cria uma Agenda automaticamente aqui!
             $os = OrdemServico::create([
@@ -59,7 +70,7 @@ class StofgardSystem
                 'id_parceiro' => $orcamento->id_parceiro,
                 'status' => OrdemServicoStatus::Aberta->value,
                 'data_abertura' => now(),
-                'data_prevista' => $options['data_servico'] ?? now()->addDays(2),
+                'data_prevista' => $dataPrevista,
                 'tipo_servico' => $orcamento->tipo_servico ?? FinanceiroCategoria::Servico->value,
                 'descricao_servico' => $orcamento->descricao_servico ?? "Conforme orçamento {$orcamento->numero}",
                 'valor_total' => $orcamento->valor_efetivo,
@@ -91,17 +102,25 @@ class StofgardSystem
                 : now()->addDays($prazoVencimentoDias);
 
             Financeiro::create([
-                'descricao' => "Receita ref. OS #{$os->numero_os} - " . ($orcamento->cliente->nome ?? 'Cliente'),
+                'descricao' => "Receita OS #{$os->numero_os} - Orç. #{$orcamento->numero} - " . ($orcamento->cliente->nome ?? 'Cliente'),
                 'ordem_servico_id' => $os->id,
                 'orcamento_id' => $orcamento->id,
                 'id_parceiro' => $orcamento->id_parceiro,
                 'cadastro_id' => $orcamento->cadastro_id,
+                'loja_id' => $orcamento->loja_id,
+                'vendedor_id' => $orcamento->vendedor_id,
                 'valor' => $orcamento->valor_efetivo,
+                'desconto' => max(0, floatval($orcamento->valor_total) - floatval($orcamento->valor_efetivo)),
                 'data' => !empty($options['data_servico']) ? $options['data_servico'] : now(),
                 'data_vencimento' => $dataVencimento,
                 'status' => FinanceiroStatus::Pendente->value,
                 'tipo' => FinanceiroTipo::Entrada->value,
                 'categoria' => FinanceiroCategoria::Servico->value,
+                'observacoes' => implode(' | ', array_filter([
+                    $orcamento->vendedor ? "Vendedor: {$orcamento->vendedor->nome}" : null,
+                    $orcamento->loja ? "Loja: {$orcamento->loja->nome}" : null,
+                    $orcamento->id_parceiro ? "Parceiro: {$orcamento->id_parceiro}" : null,
+                ])),
             ]);
 
             // B2. Comissão do Vendedor (Despesa)

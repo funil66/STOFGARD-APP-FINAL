@@ -430,8 +430,8 @@ class BuscaUniversal extends Page implements HasForms
                 'data' => $financeiro->data?->format('d/m/Y'),
                 'data_raw' => $financeiro->data,
                 'valor_raw' => $financeiro->valor ?? 0,
-                'view_url' => route('filament.admin.resources.financeiros.transacoes.view', ['record' => $financeiro->id]),
-                'edit_url' => route('filament.admin.resources.financeiros.transacoes.edit', ['record' => $financeiro->id]),
+                'view_url' => route('filament.admin.resources.financeiros.view', ['record' => $financeiro->id]),
+                'edit_url' => route('filament.admin.resources.financeiros.edit', ['record' => $financeiro->id]),
             ]);
         }
     }

@@ -15,21 +15,23 @@ class FinanceiroOverview extends BaseWidget
     protected function getStats(): array
     {
         // Totais Gerais (Considerando Pagos)
-        $entradasPagas = Financeiro::pago()->entrada()->sum('valor_pago');
-        $saidasPagas = Financeiro::pago()->saida()->sum('valor_pago');
+        // Totais Gerais (Considerando Pagos)
+        $entradasPagas = Financeiro::pago()->entrada()->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
+        $saidasPagas = Financeiro::pago()->saida()->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
         $saldo = $entradasPagas - $saidasPagas;
 
         // Mês Atual
         $inicioMes = now()->startOfMonth();
         $fimMes = now()->endOfMonth();
 
-        $receitasMes = Financeiro::entrada()
-            ->whereBetween('data_vencimento', [$inicioMes, $fimMes])
-            ->sum('valor');
+        // #8: Receitas/Despesas do Mês — SOMENTE PAGOS (não pendentes)
+        $receitasMes = Financeiro::entrada()->pago()
+            ->whereBetween('data_pagamento', [$inicioMes, $fimMes])
+            ->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
 
-        $despesasMes = Financeiro::saida()
-            ->whereBetween('data_vencimento', [$inicioMes, $fimMes])
-            ->sum('valor');
+        $despesasMes = Financeiro::saida()->pago()
+            ->whereBetween('data_pagamento', [$inicioMes, $fimMes])
+            ->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
 
         // Pendentes Gerais (Inclui Atrasados)
         $pendentesReceber = Financeiro::whereIn('status', ['pendente', 'atrasado'])->entrada()->sum('valor');
@@ -51,30 +53,24 @@ class FinanceiroOverview extends BaseWidget
                     ],
                 ])),
 
-            Stat::make('Receitas (Mês)', Number::currency($receitasMes, 'BRL'))
-                ->description('Vencimento neste mês')
+            Stat::make('Receitas Realizadas (Mês)', Number::currency($receitasMes, 'BRL'))
+                ->description('Pagamentos confirmados neste mês')
                 ->descriptionIcon('heroicon-m-arrow-up-circle')
                 ->color('success')
                 ->url(FinanceiroResource::getUrl('index', [
                     'tableFilters' => [
-                        'vencimento' => [
-                            'vencimento_de' => $inicioMes->format('Y-m-d'),
-                            'vencimento_ate' => $fimMes->format('Y-m-d'),
-                        ],
+                        'status' => ['value' => 'pago'],
                         'tipo' => ['value' => 'entrada'],
                     ],
                 ])),
 
-            Stat::make('Despesas (Mês)', Number::currency($despesasMes, 'BRL'))
-                ->description('Vencimento neste mês')
+            Stat::make('Despesas Realizadas (Mês)', Number::currency($despesasMes, 'BRL'))
+                ->description('Pagamentos confirmados neste mês')
                 ->descriptionIcon('heroicon-m-arrow-down-circle')
                 ->color('danger')
                 ->url(FinanceiroResource::getUrl('index', [
                     'tableFilters' => [
-                        'vencimento' => [
-                            'vencimento_de' => $inicioMes->format('Y-m-d'),
-                            'vencimento_ate' => $fimMes->format('Y-m-d'),
-                        ],
+                        'status' => ['value' => 'pago'],
                         'tipo' => ['value' => 'saida'],
                     ],
                 ])),
@@ -87,6 +83,18 @@ class FinanceiroOverview extends BaseWidget
                     'tableFilters' => [
                         'status' => ['value' => 'pendente'],
                         'tipo' => ['value' => 'entrada'],
+                    ],
+                ])),
+
+            // #8: Widget de Pendentes a Pagar
+            Stat::make('Pendentes a Pagar', Number::currency($pendentesPagar, 'BRL'))
+                ->description('Total a pagar (comissões, despesas)')
+                ->descriptionIcon('heroicon-m-clock')
+                ->color('danger')
+                ->url(FinanceiroResource::getUrl('index', [
+                    'tableFilters' => [
+                        'status' => ['value' => 'pendente'],
+                        'tipo' => ['value' => 'saida'],
                     ],
                 ])),
         ];
