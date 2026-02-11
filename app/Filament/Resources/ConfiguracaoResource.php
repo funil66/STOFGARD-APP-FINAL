@@ -73,6 +73,40 @@ class ConfiguracaoResource extends Resource
                                     ->valueLabel('Nome (ex: Aguardando Peça)'),
                             ]),
 
+                        Forms\Components\Tabs\Tab::make('🛡️ Garantias')
+                            ->schema([
+                                Forms\Components\Repeater::make('config_prazo_garantia')
+                                    ->label('Prazos de Garantia por Tipo de Serviço')
+                                    ->schema([
+                                        Forms\Components\Select::make('tipo_servico')
+                                            ->label('Tipo de Serviço')
+                                            ->options(\App\Services\ServiceTypeManager::getOptions())
+                                            ->required()
+                                            ->columnSpan(1),
+
+                                        Forms\Components\TextInput::make('dias')
+                                            ->label('Prazo')
+                                            ->numeric()
+                                            ->suffix('dias')
+                                            ->required()
+                                            ->default(90)
+                                            ->minValue(1)
+                                            ->maxValue(3650)
+                                            ->columnSpan(1),
+
+                                        Forms\Components\Textarea::make('descricao')
+                                            ->label('Descrição da Garantia')
+                                            ->rows(2)
+                                            ->placeholder('Ex: Garantia contra manchas e odores')
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->columns(2)
+                                    ->defaultItems(0)
+                                    ->addActionLabel('Adicionar Tipo de Serviço')
+                                    ->collapsible()
+                                    ->helperText('Configure o prazo de garantia para cada tipo de serviço. Garantias são geradas automaticamente ao concluir uma OS.'),
+                            ]),
+
                         Forms\Components\Tabs\Tab::make('📄 Textos Legais')
                             ->schema([
                                 Forms\Components\RichEditor::make('pdf_header')->label('Cabeçalho'),

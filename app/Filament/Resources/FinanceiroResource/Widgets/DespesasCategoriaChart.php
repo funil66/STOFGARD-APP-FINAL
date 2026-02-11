@@ -8,22 +8,28 @@ use Illuminate\Support\Facades\DB;
 
 class DespesasCategoriaChart extends ChartWidget
 {
-    protected static ?string $heading = 'Despesas por Categoria (Neste Mês)';
+    use \Filament\Widgets\Concerns\InteractsWithPageFilters;
+
+    protected static ?string $heading = 'Despesas por Categoria';
 
     protected static ?int $sort = 3;
 
     protected int|string|array $columnSpan = 1;
 
+    protected static ?string $maxHeight = '300px';
+
     protected function getData(): array
     {
-        // Buscar categorias com maiores despesas no mês atual
-        $inicioMes = now()->startOfMonth();
-        $fimMes = now()->endOfMonth();
+        $startDate = $this->filters['startDate'] ?? now()->subMonths(6)->startOfMonth();
+        $endDate = $this->filters['endDate'] ?? now()->endOfMonth();
+        $status = $this->filters['status'] ?? 'pago';
 
+        // Buscar categorias com maiores despesas no período
         $dados = Financeiro::query()
             ->join('categorias', 'financeiros.categoria_id', '=', 'categorias.id')
             ->where('financeiros.tipo', 'saida')
-            ->whereBetween('financeiros.data_vencimento', [$inicioMes, $fimMes])
+            ->whereBetween($status === 'pago' ? 'financeiros.data_pagamento' : 'financeiros.data_vencimento', [$startDate, $endDate])
+            ->where('financeiros.status', $status === 'pago' ? 'pago' : 'pendente')
             ->select('categorias.nome', 'categorias.cor', DB::raw('SUM(financeiros.valor) as total'))
             ->groupBy('categorias.id', 'categorias.nome', 'categorias.cor')
             ->orderByDesc('total')
@@ -35,7 +41,7 @@ class DespesasCategoriaChart extends ChartWidget
                 [
                     'label' => 'Despesas',
                     'data' => $dados->pluck('total')->toArray(),
-                    'backgroundColor' => $dados->pluck('cor')->map(fn ($cor) => $cor ?? '#6b7280')->toArray(),
+                    'backgroundColor' => $dados->pluck('cor')->map(fn($cor) => $cor ?? '#6b7280')->toArray(),
                     'hoverOffset' => 4,
                 ],
             ],

@@ -23,8 +23,34 @@ class EditOrdemServico extends EditRecord
         ];
     }
 
+    protected array $produtosSelecionados = [];
+    protected bool $shouldSyncProducts = false;
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Carregar produtos selecionados manualmente para o repeater
+        $data['produtos_selecionados'] = $this->record->produtosUtilizados->map(function ($item) {
+            return [
+                'estoque_id' => $item->id,
+                'quantidade_utilizada' => $item->pivot->quantidade_utilizada,
+                'unidade' => $item->pivot->unidade,
+                'observacao' => $item->pivot->observacao,
+                'disponivel' => $item->quantidade,
+            ];
+        })->toArray();
+
+        return $data;
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // Capturar e remover os produtos selecionados para processamento manual
+        if (array_key_exists('produtos_selecionados', $data)) {
+            $this->produtosSelecionados = $data['produtos_selecionados'] ?? [];
+            $this->shouldSyncProducts = true;
+            unset($data['produtos_selecionados']);
+        }
+
         // Registrar quem atualizou
         $data['atualizado_por'] = strtoupper(substr(Auth::user()->name, 0, 2));
 
@@ -40,7 +66,7 @@ class EditOrdemServico extends EditRecord
         }
 
         // Recalcular data fim de garantia quando a OS for concluída
-        if (! empty($data['data_conclusao']) && ! empty($data['dias_garantia'])) {
+        if (!empty($data['data_conclusao']) && !empty($data['dias_garantia'])) {
             $data['data_fim_garantia'] = \Carbon\Carbon::parse($data['data_conclusao'])
                 ->addDays($data['dias_garantia']);
         } elseif (empty($data['data_conclusao'])) {
@@ -54,6 +80,21 @@ class EditOrdemServico extends EditRecord
     protected function afterSave(): void
     {
         $ordemServico = $this->record;
+
+        // Sincronizar produtos do estoque manualmente
+        if ($this->shouldSyncProducts) {
+            $syncData = [];
+            foreach ($this->produtosSelecionados as $item) {
+                if (!empty($item['estoque_id'])) {
+                    $syncData[$item['estoque_id']] = [
+                        'quantidade_utilizada' => $item['quantidade_utilizada'],
+                        'unidade' => $item['unidade'],
+                        'observacao' => $item['observacao'] ?? null,
+                    ];
+                }
+            }
+            $ordemServico->produtosUtilizados()->sync($syncData);
+        }
 
         // Verificar se a data_prevista mudou
         if ($ordemServico->wasChanged('data_prevista')) {
@@ -74,7 +115,7 @@ class EditOrdemServico extends EditRecord
                         ->body("Nova data: {$ordemServico->data_prevista->format('d/m/Y')}")
                         ->icon('heroicon-o-calendar-days')
                         ->send();
-                } elseif (! $ordemServico->data_prevista && $agenda) {
+                } elseif (!$ordemServico->data_prevista && $agenda) {
                     // Se removeu a data, deletar o agendamento
                     $agenda->delete();
                     $ordemServico->update(['agenda_id' => null]);
@@ -105,14 +146,14 @@ class EditOrdemServico extends EditRecord
                     'tipo' => 'servico',
                     'status' => 'agendado',
                     'cliente_id' => $cliente->id,
-                    'cadastro_id' => $ordemServico->cadastro_id ?? ($cliente ? 'cliente_'.$cliente->id : null),
+                    'cadastro_id' => $ordemServico->cadastro_id ?? ($cliente ? 'cliente_' . $cliente->id : null),
                     'ordem_servico_id' => $ordemServico->id,
                     'local' => $cliente->cidade ?? null,
                     'endereco_completo' => trim(
-                        ($cliente->logradouro ?? '').', '.
-                        ($cliente->numero ?? '').' - '.
-                        ($cliente->bairro ?? '').' - '.
-                        ($cliente->cidade ?? '').'/'.
+                        ($cliente->logradouro ?? '') . ', ' .
+                        ($cliente->numero ?? '') . ' - ' .
+                        ($cliente->bairro ?? '') . ' - ' .
+                        ($cliente->cidade ?? '') . '/' .
                         ($cliente->estado ?? '')
                     ),
                     'cor' => '#22c55e',

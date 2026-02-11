@@ -98,8 +98,13 @@
                             <label for="cidade" class="block text-sm font-medium text-gray-700 mb-1">
                                 Cidade / Bairro
                             </label>
-                            <input type="text" name="cidade" id="cidade" value="{{ old('cidade') }}" required {{--
-                                Arquivos / Fotos --}} <div>
+                            <input type="text" name="cidade" id="cidade" value="{{ old('cidade') }}" required
+                                class="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+                                placeholder="Ex: São Paulo, Centro">
+                        </div>
+
+                        {{-- Arquivos / Fotos --}}
+                        <div>
                             <label for="arquivos" class="block text-sm font-medium text-gray-700 mb-1">
                                 Fotos / Arquivos (Opcional)
                             </label>

@@ -12,8 +12,14 @@ class CreateOrdemServico extends CreateRecord
 {
     protected static string $resource = OrdemServicoResource::class;
 
+    protected array $produtosSelecionados = [];
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Capturar e remover os produtos selecionados para processamento manual
+        $this->produtosSelecionados = $data['produtos_selecionados'] ?? [];
+        unset($data['produtos_selecionados']);
+
         // Sempre gerar novo número da OS no momento do salvamento
         $data['numero_os'] = \App\Models\OrdemServico::gerarNumeroOS();
 
@@ -33,7 +39,7 @@ class CreateOrdemServico extends CreateRecord
         }
 
         // Calcular data fim de garantia APENAS se a OS já foi concluída
-        if (! empty($data['data_conclusao']) && ! empty($data['dias_garantia'])) {
+        if (!empty($data['data_conclusao']) && !empty($data['dias_garantia'])) {
             $data['data_fim_garantia'] = \Carbon\Carbon::parse($data['data_conclusao'])
                 ->addDays($data['dias_garantia']);
         }
@@ -44,6 +50,21 @@ class CreateOrdemServico extends CreateRecord
     protected function afterCreate(): void
     {
         $ordemServico = $this->record;
+
+        // Sincronizar produtos do estoque manualmente
+        if (!empty($this->produtosSelecionados)) {
+            $syncData = [];
+            foreach ($this->produtosSelecionados as $item) {
+                if (!empty($item['estoque_id'])) {
+                    $syncData[$item['estoque_id']] = [
+                        'quantidade_utilizada' => $item['quantidade_utilizada'],
+                        'unidade' => $item['unidade'],
+                        'observacao' => $item['observacao'] ?? null,
+                    ];
+                }
+            }
+            $ordemServico->produtosUtilizados()->sync($syncData);
+        }
 
         // Criar agendamento automaticamente se houver data_prevista E o cadastro for um cliente
         if ($ordemServico->data_prevista && $ordemServico->cadastro && str_starts_with($ordemServico->cadastro_id, 'cliente_')) {
@@ -64,14 +85,14 @@ class CreateOrdemServico extends CreateRecord
                 'tipo' => 'servico',
                 'status' => 'agendado',
                 'cliente_id' => $cliente->id,
-                'cadastro_id' => $ordemServico->cadastro_id ?? ($cliente ? 'cliente_'.$cliente->id : null),
+                'cadastro_id' => $ordemServico->cadastro_id ?? ($cliente ? 'cliente_' . $cliente->id : null),
                 'ordem_servico_id' => $ordemServico->id,
                 'local' => $cliente->cidade ?? null,
                 'endereco_completo' => trim(
-                    ($cliente->logradouro ?? '').', '.
-                    ($cliente->numero ?? '').' - '.
-                    ($cliente->bairro ?? '').' - '.
-                    ($cliente->cidade ?? '').'/'.
+                    ($cliente->logradouro ?? '') . ', ' .
+                    ($cliente->numero ?? '') . ' - ' .
+                    ($cliente->bairro ?? '') . ' - ' .
+                    ($cliente->cidade ?? '') . '/' .
                     ($cliente->estado ?? '')
                 ),
                 'cor' => '#22c55e', // Verde para serviços

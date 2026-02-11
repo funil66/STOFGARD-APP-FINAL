@@ -16,6 +16,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use App\Support\Filament\StofgardTable;
 
 class AgendaResource extends Resource
 {
@@ -67,8 +68,13 @@ class AgendaResource extends Resource
                                 'cancelado' => '❌ Cancelado',
                             ])
                             ->default('agendado')
-                            ->required()
                             ->columnSpan(1),
+
+                        Forms\Components\TextInput::make('id_parceiro')
+                            ->label('ID Parceiro')
+                            ->placeholder('Identificação da loja/vendedor')
+                            ->maxLength(255)
+                            ->columnSpan(2),
                     ])->columns(2),
 
                 Forms\Components\Section::make('🕒 Data e Horário')
@@ -190,7 +196,7 @@ class AgendaResource extends Resource
                             ->addActionLabel('➕ Adicionar Nova Tarefa')
                             ->reorderable()
                             ->collapsible()
-                            ->itemLabel(fn (array $state): ?string => $state['descricao'] ?? null)
+                            ->itemLabel(fn(array $state): ?string => $state['descricao'] ?? null)
                             ->columnSpanFull(),
                     ]),
 
@@ -219,7 +225,7 @@ class AgendaResource extends Resource
                                 ->label('✅ Status do Lembrete')
                                 ->disabled()
                                 ->helperText('Marcado automaticamente pelo sistema após envio')
-                                ->visible(fn ($record) => $record?->lembrete_enviado ?? false),
+                                ->visible(fn($record) => $record?->lembrete_enviado ?? false),
                         ]),
                     ]),
 
@@ -245,7 +251,7 @@ class AgendaResource extends Resource
                     ]),
 
                 Forms\Components\Hidden::make('criado_por')
-                    ->default(fn () => Auth::id() ?? 1),
+                    ->default(fn() => Auth::id() ?? 1),
             ]);
     }
 
@@ -260,7 +266,7 @@ class AgendaResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->weight('bold')
-                    ->description(fn ($record) => $record->titulo ? mb_substr($record->titulo, 0, 25).(mb_strlen($record->titulo) > 25 ? '...' : '') : '-')
+                    ->description(fn($record) => $record->titulo ? mb_substr($record->titulo, 0, 25) . (mb_strlen($record->titulo) > 25 ? '...' : '') : '-')
                     ->icon('heroicon-o-calendar-days'),
 
                 // DESKTOP ONLY: Título separado
@@ -281,19 +287,19 @@ class AgendaResource extends Resource
                 // SEMPRE VISÍVEL: Tipo com ícone
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'servico' => '🧼',
                         'visita' => '👁️',
                         'reuniao' => '🤝',
                         default => '📌',
                     })
-                    ->tooltip(fn (string $state): string => match ($state) {
+                    ->tooltip(fn(string $state): string => match ($state) {
                         'servico' => 'Serviço',
                         'visita' => 'Visita',
                         'reuniao' => 'Reunião',
                         default => 'Outro',
                     })
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'servico' => 'info',
                         'visita' => 'warning',
                         'reuniao' => 'success',
@@ -303,20 +309,20 @@ class AgendaResource extends Resource
                 // SEMPRE VISÍVEL: Status com ícone
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'concluido' => '✓',
                         'em_andamento' => '⏳',
                         'cancelado' => '✗',
                         default => '📅',
                     })
-                    ->tooltip(fn (string $state): string => match ($state) {
+                    ->tooltip(fn(string $state): string => match ($state) {
                         'agendado' => 'Agendado',
                         'em_andamento' => 'Em Andamento',
                         'concluido' => 'Concluído',
                         'cancelado' => 'Cancelado',
                         default => $state,
                     })
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'concluido' => 'success',
                         'em_andamento' => 'warning',
                         'cancelado' => 'danger',
@@ -365,86 +371,74 @@ class AgendaResource extends Resource
                         return $query
                             ->when(
                                 $data['data_de'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('data_hora_inicio', '>=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('data_hora_inicio', '>=', $date),
                             )
                             ->when(
                                 $data['data_ate'],
-                                fn (Builder $query, $date): Builder => $query->whereDate('data_hora_inicio', '<=', $date),
+                                fn(Builder $query, $date): Builder => $query->whereDate('data_hora_inicio', '<=', $date),
                             );
                     }),
             ])
-            ->actions([
-                // View
-                Tables\Actions\ViewAction::make()
-                    ->label('')
-                    ->tooltip('Ver Detalhes')
-                    ->iconButton(),
+            ->actions(
+                StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        // Concluir
+                        Tables\Actions\Action::make('concluir')
+                            ->label('Concluir')
+                            ->tooltip('Marcar Concluído')
+                            ->icon('heroicon-o-check-circle')
+                            ->color('success')
+                            // ->iconButton() // Removed iconButton to fit better in dropdown or keep if preferred, but StofgardTable handles basic ones. Custom ones can stay as is.
+                            // Actually, StofgardTable merges extraActions. If we want them in the dropdown, we just pass them.
+                            ->visible(fn(Agenda $record) => !in_array($record->status, ['concluido', 'cancelado']))
+                            ->requiresConfirmation()
+                            ->action(function (Agenda $record) {
+                                $record->update(['status' => 'concluido']);
+                                \Filament\Notifications\Notification::make()
+                                    ->success()
+                                    ->title('Concluído!')
+                                    ->send();
+                            }),
 
-                // Edit
-                Tables\Actions\EditAction::make()
-                    ->label('')
-                    ->tooltip('Editar')
-                    ->iconButton(),
-
-                // Concluir
-                Tables\Actions\Action::make('concluir')
-                    ->label('')
-                    ->tooltip('Marcar Concluído')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->iconButton()
-                    ->visible(fn (Agenda $record) => ! in_array($record->status, ['concluido', 'cancelado']))
-                    ->requiresConfirmation()
-                    ->action(function (Agenda $record) {
-                        $record->update(['status' => 'concluido']);
-                        \Filament\Notifications\Notification::make()
-                            ->success()
-                            ->title('Concluído!')
-                            ->send();
-                    }),
-
-                // Cancelar
-                Tables\Actions\Action::make('cancelar')
-                    ->label('')
-                    ->tooltip('Cancelar')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->iconButton()
-                    ->visible(fn (Agenda $record) => $record->status === 'agendado')
-                    ->requiresConfirmation()
-                    ->action(function (Agenda $record) {
-                        $record->update(['status' => 'cancelado']);
-                        \Filament\Notifications\Notification::make()
-                            ->warning()
-                            ->title('Cancelado')
-                            ->send();
-                    }),
-
-                // Excluir
-                Tables\Actions\DeleteAction::make()
-                    ->label('')
-                    ->tooltip('Excluir')
-                    ->iconButton(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
+                        // Cancelar
+                        Tables\Actions\Action::make('cancelar')
+                            ->label('Cancelar')
+                            ->tooltip('Cancelar')
+                            ->icon('heroicon-o-x-circle')
+                            ->color('danger')
+                            // ->iconButton()
+                            ->visible(fn(Agenda $record) => $record->status === 'agendado')
+                            ->requiresConfirmation()
+                            ->action(function (Agenda $record) {
+                                $record->update(['status' => 'cancelado']);
+                                \Filament\Notifications\Notification::make()
+                                    ->warning()
+                                    ->title('Cancelado')
+                                    ->send();
+                            }),
+                    ]
+                )
+            )
+            ->bulkActions(
+                StofgardTable::defaultBulkActions([
                     Tables\Actions\BulkAction::make('marcar_concluido')
                         ->label('Marcar como Concluído')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->each->update(['status' => 'concluido'])),
+                        ->action(fn($records) => $records->each->update(['status' => 'concluido'])),
 
                     Tables\Actions\BulkAction::make('marcar_cancelado')
                         ->label('Marcar como Cancelado')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn ($records) => $records->each->update(['status' => 'cancelado'])),
-
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+                        ->action(fn($records) => $records->each->update(['status' => 'cancelado'])),
+                ])
+            );
     }
 
     public static function getPages(): array
@@ -464,21 +458,36 @@ class AgendaResource extends Resource
                 // ===== CABEÇALHO DO AGENDAMENTO =====
                 InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(3)->schema([
+                        InfolistGrid::make(4)->schema([
                             TextEntry::make('titulo')
                                 ->label('Título')
-                                ->weight('bold')
-                                ->columnSpan(2)
+                                ->weight('bold')->columnSpan(2)
                                 ->size(TextEntry\TextEntrySize::Large),
+                            TextEntry::make('tipo')
+                                ->label('Tipo')
+                                ->badge()
+                                ->color(fn($state) => match ($state) {
+                                    'servico' => 'info',
+                                    'visita' => 'warning',
+                                    'reuniao' => 'success',
+                                    default => 'gray',
+                                })
+                                ->formatStateUsing(fn($state) => match ($state) {
+                                    'servico' => '🧼 Serviço',
+                                    'visita' => '👁️ Visita',
+                                    'reuniao' => '🤝 Reunião',
+                                    'outro' => '📌 Outro',
+                                    default => $state,
+                                }),
                             TextEntry::make('status')
                                 ->badge()
-                                ->color(fn (string $state): string => match ($state) {
+                                ->color(fn(string $state): string => match ($state) {
                                     'concluido' => 'success',
                                     'cancelado' => 'danger',
                                     'em_andamento' => 'warning',
                                     default => 'info',
                                 })
-                                ->formatStateUsing(fn ($state) => match ($state) {
+                                ->formatStateUsing(fn($state) => match ($state) {
                                     'agendado' => '📅 Agendado',
                                     'em_andamento' => '🔄 Em Andamento',
                                     'concluido' => '✅ Concluído',
@@ -487,22 +496,6 @@ class AgendaResource extends Resource
                                 }),
                         ]),
                         InfolistGrid::make(4)->schema([
-                            TextEntry::make('tipo')
-                                ->label('Tipo')
-                                ->badge()
-                                ->color(fn ($state) => match ($state) {
-                                    'servico' => 'info',
-                                    'visita' => 'warning',
-                                    'reuniao' => 'success',
-                                    default => 'gray',
-                                })
-                                ->formatStateUsing(fn ($state) => match ($state) {
-                                    'servico' => '🧼 Serviço',
-                                    'visita' => '👁️ Visita Técnica',
-                                    'reuniao' => '🤝 Reunião',
-                                    'outro' => '📌 Outro',
-                                    default => $state,
-                                }),
                             TextEntry::make('data_hora_inicio')
                                 ->label('Início')
                                 ->dateTime('d/m/Y H:i')
@@ -511,170 +504,188 @@ class AgendaResource extends Resource
                                 ->label('Término')
                                 ->dateTime('d/m/Y H:i')
                                 ->icon('heroicon-m-clock'),
-                            TextEntry::make('dia_inteiro')
-                                ->label('Dia Inteiro')
-                                ->badge()
-                                ->color(fn ($state) => $state ? 'success' : 'gray')
-                                ->formatStateUsing(fn ($state) => $state ? 'Sim' : 'Não'),
-                        ]),
-                    ]),
-
-                // ===== VINCULAÇÕES =====
-                InfolistSection::make('🔗 Vinculações')
-                    ->schema([
-                        InfolistGrid::make(3)->schema([
                             TextEntry::make('cadastro.nome')
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
-                                ->url(fn ($record) => $record->cadastro_url)
-                                ->color('primary')
-                                ->placeholder('Não vinculado'),
-                            TextEntry::make('tipo_servico_exibicao')
-                                ->label('Tipo de Serviço')
-                                ->icon('heroicon-m-wrench-screwdriver')
+                                ->placeholder('Não informado'),
+                            TextEntry::make('ordemServico.numero_os')
+                                ->label('OS')
+                                ->icon('heroicon-m-clipboard-document-check')
+                                ->placeholder('-'),
+                            TextEntry::make('id_parceiro')
+                                ->label('ID Parceiro')
                                 ->badge()
                                 ->color('info')
-                                ->getStateUsing(function ($record) {
-                                    // Prioriza OS, depois Orçamento
-                                    if ($record->ordem_servico_id && $record->ordemServico) {
-                                        return \App\Services\ServiceTypeManager::getLabel($record->ordemServico->tipo_servico ?? 'servico');
-                                    }
-                                    if ($record->orcamento_id && $record->orcamento) {
-                                        return \App\Services\ServiceTypeManager::getLabel($record->orcamento->tipo_servico ?? 'servico');
-                                    }
+                                ->placeholder('-'),
+                        ]),
+                    ]),
 
-                                    return null;
+                // ===== RESUMO =====
+                InfolistSection::make('📊 Resumo do Agendamento')
+                    ->schema([
+                        InfolistGrid::make(4)->schema([
+                            TextEntry::make('duracao')
+                                ->label('⏱️ Duração')
+                                ->weight('bold')
+                                ->state(fn($record) => $record->data_hora_inicio && $record->data_hora_fim
+                                    ? \Carbon\Carbon::parse($record->data_hora_inicio)->diff(\Carbon\Carbon::parse($record->data_hora_fim))->format('%H:%I')
+                                    : '-')
+                                ->suffix(' horas')
+                                ->color('info'),
+                            TextEntry::make('dia_inteiro')
+                                ->label('📅 Dia Inteiro')
+                                ->badge()
+                                ->color(fn($state) => $state ? 'success' : 'gray')
+                                ->formatStateUsing(fn($state) => $state ? 'Sim' : 'Não'),
+                            TextEntry::make('lembrete_config')
+                                ->label('🔔 Lembrete')
+                                ->badge()
+                                ->formatStateUsing(fn($record) => match ((int) $record->minutos_antes_lembrete) {
+                                    15 => '15 min',
+                                    30 => '30 min',
+                                    60 => '1h',
+                                    120 => '2h',
+                                    1440 => '1 dia',
+                                    2880 => '2 dias',
+                                    default => ($record->minutos_antes_lembrete ?? 0) . ' min',
                                 })
-                                ->placeholder('Não vinculado'),
-                            TextEntry::make('orcamento.numero')
-                                ->label('Orçamento')
-                                ->icon('heroicon-m-document-text')
-                                ->url(fn ($record) => $record->orcamento_id
-                                    ? \App\Filament\Resources\OrcamentoResource::getUrl('view', ['record' => $record->orcamento_id])
-                                    : null)
-                                ->color('primary')
-                                ->placeholder('Não vinculado'),
-                        ]),
-                        InfolistGrid::make(1)->schema([
-                            TextEntry::make('ordemServico.numero_os')
-                                ->label('Ordem de Serviço')
-                                ->icon('heroicon-m-clipboard-document-check')
-                                ->url(fn ($record) => $record->ordem_servico_id
-                                    ? \App\Filament\Resources\OrdemServicoResource::getUrl('view', ['record' => $record->ordem_servico_id])
-                                    : null)
-                                ->color('primary')
-                                ->placeholder('Não vinculada'),
+                                ->color('warning'),
+                            TextEntry::make('lembrete_status')
+                                ->label('📬 Status Envio')
+                                ->badge()
+                                ->color(fn($record) => $record->lembrete_enviado ? 'success' : 'warning')
+                                ->formatStateUsing(fn($record) => $record->lembrete_enviado ? '✅ Enviado' : '⏳ Pendente'),
                         ]),
                     ])
                     ->collapsible(),
 
-                // ===== LOCALIZAÇÃO =====
-                InfolistSection::make('📍 Local do Serviço')
-                    ->schema([
-                        InfolistGrid::make(1)->schema([
-                            TextEntry::make('local')
-                                ->label('')
-                                ->icon('heroicon-m-map-pin')
-                                ->url(fn ($record) => $record->endereco_maps, true)
-                                ->placeholder('Local não informado'),
-                            TextEntry::make('endereco_completo')
-                                ->label('Endereço Completo')
-                                ->placeholder('Endereço não informado')
-                                ->visible(fn ($record) => $record->endereco_completo && $record->endereco_completo !== $record->local),
-                        ]),
-                    ])
-                    ->collapsible(),
-
-                // ===== DESCRIÇÃO E OBSERVAÇÕES =====
-                InfolistSection::make('📝 Detalhes')
-                    ->schema([
-                        InfolistGrid::make(1)->schema([
-                            TextEntry::make('descricao')
-                                ->label('Descrição')
-                                ->markdown()
-                                ->placeholder('Sem descrição'),
-                            TextEntry::make('observacoes')
-                                ->label('Observações Internas')
-                                ->markdown()
-                                ->placeholder('Sem observações'),
-                        ]),
-                    ])
-                    ->collapsible()
-                    ->collapsed(),
-
-                // ===== CHECKLIST DE TAREFAS =====
-                InfolistSection::make('✅ Checklist de Tarefas')
-                    ->schema([
-                        Infolists\Components\RepeatableEntry::make('extra_attributes.tarefas')
-                            ->label('')
+                // ===== ABAS =====
+                \Filament\Infolists\Components\Tabs::make('Detalhes')
+                    ->tabs([
+                        // ABA 1: DETALHES
+                        \Filament\Infolists\Components\Tabs\Tab::make('📝 Detalhes')
                             ->schema([
-                                Infolists\Components\IconEntry::make('concluida')
+                                InfolistGrid::make(1)->schema([
+                                    TextEntry::make('local')
+                                        ->label('Local')
+                                        ->icon('heroicon-m-map-pin')
+                                        ->url(fn($record) => $record->endereco_maps, true)
+                                        ->placeholder('Local não informado'),
+                                    TextEntry::make('descricao')
+                                        ->label('Descrição')
+                                        ->markdown()
+                                        ->placeholder('Sem descrição'),
+                                    TextEntry::make('observacoes')
+                                        ->label('Observações Internas')
+                                        ->markdown()
+                                        ->placeholder('Sem observações'),
+                                ]),
+                            ]),
+
+                        // ABA 2: VINCULAÇÕES
+                        \Filament\Infolists\Components\Tabs\Tab::make('🔗 Vinculações')
+                            ->schema([
+                                InfolistGrid::make(2)->schema([
+                                    TextEntry::make('orcamento.numero')
+                                        ->label('Orçamento')
+                                        ->icon('heroicon-m-document-text')
+                                        ->url(fn($record) => $record->orcamento_id
+                                            ? \App\Filament\Resources\OrcamentoResource::getUrl('view', ['record' => $record->orcamento_id])
+                                            : null)
+                                        ->color('primary')
+                                        ->placeholder('Não vinculado'),
+                                    TextEntry::make('tipo_servico_exibicao')
+                                        ->label('Tipo de Serviço')
+                                        ->icon('heroicon-m-wrench-screwdriver')
+                                        ->badge()
+                                        ->color('info')
+                                        ->getStateUsing(function ($record) {
+                                            if ($record->ordem_servico_id && $record->ordemServico) {
+                                                return \App\Services\ServiceTypeManager::getLabel($record->ordemServico->tipo_servico ?? 'servico');
+                                            }
+                                            if ($record->orcamento_id && $record->orcamento) {
+                                                return \App\Services\ServiceTypeManager::getLabel($record->orcamento->tipo_servico ?? 'servico');
+                                            }
+                                            return null;
+                                        })
+                                        ->placeholder('Não vinculado'),
+                                ]),
+                            ]),
+
+                        // ABA 3: CHECKLIST
+                        \Filament\Infolists\Components\Tabs\Tab::make('✅ Checklist')
+                            ->badge(fn($record) => count($record->extra_attributes['tarefas'] ?? []))
+                            ->schema([
+                                \Filament\Infolists\Components\RepeatableEntry::make('extra_attributes.tarefas')
                                     ->label('')
-                                    ->boolean()
-                                    ->trueIcon('heroicon-o-check-circle')
-                                    ->falseIcon('heroicon-o-x-circle')
-                                    ->trueColor('success')
-                                    ->falseColor('gray'),
-                                TextEntry::make('descricao')
-                                    ->label('Tarefa')
-                                    ->weight(fn ($record) => $record['concluida'] ?? false ? 'normal' : 'bold')
-                                    ->color(fn ($record) => $record['concluida'] ?? false ? 'gray' : 'primary'),
-                            ])
-                            ->columns(2)
-                            ->columnSpanFull(),
-                        TextEntry::make('tarefas_vazio')
-                            ->label('')
-                            ->default('Nenhuma tarefa cadastrada')
-                            ->visible(fn ($record) => empty($record->extra_attributes['tarefas'] ?? [])),
-                    ])
-                    ->collapsible()
-                    ->collapsed()
-                    ->visible(fn ($record) => ! empty($record->extra_attributes['tarefas'] ?? []) || true),
+                                    ->schema([
+                                        \Filament\Infolists\Components\IconEntry::make('concluida')
+                                            ->label('')
+                                            ->boolean()
+                                            ->trueIcon('heroicon-o-check-circle')
+                                            ->falseIcon('heroicon-o-x-circle')
+                                            ->trueColor('success')
+                                            ->falseColor('gray'),
+                                        TextEntry::make('descricao')
+                                            ->label('Tarefa')
+                                            ->weight(fn($record) => $record['concluida'] ?? false ? 'normal' : 'bold')
+                                            ->color(fn($record) => $record['concluida'] ?? false ? 'gray' : 'primary'),
+                                    ])
+                                    ->columns(2)
+                                    ->columnSpanFull()
+                                    ->hidden(fn($record) => empty($record->extra_attributes['tarefas'] ?? [])),
+                                TextEntry::make('tarefas_vazio')
+                                    ->label('')
+                                    ->default('Nenhuma tarefa cadastrada')
+                                    ->visible(fn($record) => empty($record->extra_attributes['tarefas'] ?? [])),
+                            ]),
 
-                // ===== LEMBRETES E NOTIFICAÇÕES =====
-                InfolistSection::make('🔔 Lembretes')
-                    ->schema([
-                        InfolistGrid::make(2)->schema([
-                            TextEntry::make('minutos_antes_lembrete')
-                                ->label('Lembrete Configurado')
-                                ->badge()
-                                ->formatStateUsing(fn ($state) => match ((int) $state) {
-                                    15 => '15 min antes',
-                                    30 => '30 min antes',
-                                    60 => '1h antes',
-                                    120 => '2h antes',
-                                    1440 => '1 dia antes',
-                                    2880 => '2 dias antes',
-                                    default => $state.' min antes',
-                                }),
-                            TextEntry::make('lembrete_enviado')
-                                ->label('Status do Lembrete')
-                                ->badge()
-                                ->color(fn ($state) => $state ? 'success' : 'warning')
-                                ->formatStateUsing(fn ($state) => $state ? '✅ Enviado' : '⏳ Pendente'),
-                        ]),
+                        // ABA 4: HISTÓRICO
+                        \Filament\Infolists\Components\Tabs\Tab::make('📜 Histórico')
+                            ->icon('heroicon-m-clock')
+                            ->badge(fn($record) => $record->audits()->count())
+                            ->schema([
+                                \Filament\Infolists\Components\RepeatableEntry::make('audits')
+                                    ->label('')
+                                    ->schema([
+                                        InfolistGrid::make(4)->schema([
+                                            TextEntry::make('user.name')
+                                                ->label('Usuário')
+                                                ->icon('heroicon-m-user')
+                                                ->placeholder('Sistema'),
+                                            TextEntry::make('event')
+                                                ->label('Ação')
+                                                ->badge()
+                                                ->formatStateUsing(fn(string $state): string => match ($state) {
+                                                    'created' => 'Criação',
+                                                    'updated' => 'Edição',
+                                                    'deleted' => 'Exclusão',
+                                                    default => ucfirst($state),
+                                                })
+                                                ->color(fn(string $state): string => match ($state) {
+                                                    'created' => 'success',
+                                                    'updated' => 'warning',
+                                                    'deleted' => 'danger',
+                                                    default => 'gray',
+                                                }),
+                                            TextEntry::make('created_at')
+                                                ->label('Data/Hora')
+                                                ->dateTime('d/m/Y H:i:s'),
+                                            TextEntry::make('ip_address')
+                                                ->label('IP')
+                                                ->icon('heroicon-m-globe-alt')
+                                                ->copyable(),
+                                        ]),
+                                    ])
+                                    ->grid(1)
+                                    ->contained(false),
+                                TextEntry::make('sem_historico')
+                                    ->label('')
+                                    ->default('Nenhuma alteração registrada.')
+                                    ->visible(fn($record) => $record->audits()->count() === 0),
+                            ]),
                     ])
-                    ->collapsible()
-                    ->collapsed(),
-
-                // ===== INFORMAÇÕES DO SISTEMA =====
-                InfolistSection::make('ℹ️ Informações do Sistema')
-                    ->schema([
-                        InfolistGrid::make(3)->schema([
-                            TextEntry::make('created_at')
-                                ->label('Criado em')
-                                ->dateTime('d/m/Y H:i'),
-                            TextEntry::make('updated_at')
-                                ->label('Atualizado em')
-                                ->dateTime('d/m/Y H:i'),
-                            TextEntry::make('cor')
-                                ->label('Cor no Calendário')
-                                ->badge()
-                                ->color(fn ($state) => $state ?? 'gray'),
-                        ]),
-                    ])
-                    ->collapsible()
-                    ->collapsed(),
+                    ->columnSpanFull(),
             ]);
     }
 

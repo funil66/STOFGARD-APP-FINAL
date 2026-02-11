@@ -118,8 +118,8 @@ class TabelaPrecoResource extends Resource
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn (string $state): string => \App\Services\ServiceTypeManager::getColor($state))
-                    ->formatStateUsing(fn (string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
+                    ->color(fn(string $state): string => \App\Services\ServiceTypeManager::getColor($state))
+                    ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
                     ->sortable()
                     ->searchable(),
 
@@ -138,7 +138,7 @@ class TabelaPrecoResource extends Resource
                 Tables\Columns\TextColumn::make('unidade_medida')
                     ->label('Unidade')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'unidade' => 'UN',
                         'm2' => 'M²',
                         default => $state,
@@ -197,40 +197,34 @@ class TabelaPrecoResource extends Resource
                 Tables\Filters\TrashedFilter::make()
                     ->label('Excluídos'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('pdf')
-                    ->label('')
-                    ->tooltip('Abrir PDF')
-                    ->icon('heroicon-o-document-text')
-                    ->color('info')
-                    ->url(fn (TabelaPreco $record) => route('tabelapreco.pdf', $record))
-                    ->openUrlInNewTab(),
+            ->actions(
+                array_merge(
+                    \App\Support\Filament\StofgardTable::defaultActions(
+                        view: true,
+                        edit: true,
+                        delete: true,
+                        extraActions: [
+                            Tables\Actions\Action::make('pdf')
+                                ->label('Abrir PDF')
+                                ->tooltip('Abrir PDF')
+                                ->icon('heroicon-o-document-text')
+                                ->color('info')
+                                ->url(fn(TabelaPreco $record) => route('tabelapreco.pdf', $record))
+                                ->openUrlInNewTab(),
 
-                Tables\Actions\ViewAction::make()
-                    ->label('')
-                    ->tooltip('Visualizar')
-                    ->iconButton(),
+                            Tables\Actions\Action::make('download')
+                                ->label('Baixar PDF')
+                                ->tooltip('Baixar PDF')
+                                ->icon('heroicon-o-arrow-down-tray')
+                                ->color('success')
+                                ->url(fn(TabelaPreco $record) => route('tabelapreco.pdf', $record))
+                                ->openUrlInNewTab(),
 
-                Tables\Actions\EditAction::make()
-                    ->label('')
-                    ->tooltip('Editar')
-                    ->iconButton(),
-
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn (TabelaPreco $record) => route('tabelapreco.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\DeleteAction::make()
-                    ->label('')
-                    ->tooltip('Excluir')
-                    ->iconButton(),
-
-                Tables\Actions\RestoreAction::make(),
-            ])
+                            Tables\Actions\RestoreAction::make(),
+                        ]
+                    ),
+                )
+            )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -253,7 +247,7 @@ class TabelaPrecoResource extends Resource
                                 TextEntry::make('preco_base')->label('Preço Base')->money('BRL'),
                                 TextEntry::make('preco_adicional')->label('Preço Adicional')->money('BRL'),
                                 TextEntry::make('unidade')->label('Unidade'),
-                                TextEntry::make('ativo')->label('Status')->badge()->color(fn ($state) => $state ? 'success' : 'danger'),
+                                TextEntry::make('ativo')->label('Status')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
                             ]),
                     ]),
             ]);

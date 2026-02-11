@@ -90,7 +90,7 @@
                                     </h4>
                                 </div>
                                 <div class="text-xs font-black text-primary-600 bg-primary-50 dark:bg-primary-900/30 dark:text-primary-400 px-3 py-1.5 rounded-lg shadow-sm">
-                                    R$ {{ number_format($orcamento->valor_total, 2, ',', '.') }}
+                                    R$ {{ number_format($orcamento->valor_efetivo, 2, ',', '.') }}
                                 </div>
                             </div>
 

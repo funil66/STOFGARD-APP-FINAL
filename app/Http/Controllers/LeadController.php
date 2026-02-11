@@ -15,7 +15,8 @@ class LeadController extends Controller
 {
     public function __construct(
         protected LeadService $leadService
-    ) {}
+    ) {
+    }
 
     /**
      * Exibe o formulário de solicitação de orçamento

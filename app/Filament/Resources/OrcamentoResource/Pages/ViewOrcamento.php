@@ -22,7 +22,7 @@ class ViewOrcamento extends ViewRecord
     {
         return [
             Actions\EditAction::make()
-                ->visible(fn ($record): bool => $record->status !== 'convertido'),
+                ->visible(fn($record): bool => $record->status !== 'convertido'),
 
             Actions\Action::make('aprovar')
                 ->label('Aprovar e Gerar OS')
@@ -33,7 +33,7 @@ class ViewOrcamento extends ViewRecord
                 ->modalHeading('Aprovar Orçamento e Gerar OS')
                 ->modalDescription('Configure a data e horário do serviço. Após aprovação, será criada a Ordem de Serviço, o agendamento e o lançamento financeiro.')
                 ->modalSubmitActionLabel('✓ Aprovar e Criar Registros')
-                ->visible(fn ($record): bool => $record->status === 'pendente')
+                ->visible(fn($record): bool => in_array($record->status, ['rascunho', 'pendente', 'enviado']))
                 ->form([
                     Forms\Components\Grid::make(2)
                         ->schema([
@@ -50,14 +50,14 @@ class ViewOrcamento extends ViewRecord
                                 ->default('09:00')
                                 ->native(false)
                                 ->columnSpan(1)
-                                ->visible(fn (\Filament\Forms\Get $get) => filled($get('data_servico'))),
+                                ->visible(fn(\Filament\Forms\Get $get) => filled($get('data_servico'))),
 
                             Forms\Components\TimePicker::make('hora_fim')
                                 ->label('🕐 Hora de Término (estimada)')
                                 ->default('17:00')
                                 ->native(false)
                                 ->columnSpan(1)
-                                ->visible(fn (\Filament\Forms\Get $get) => filled($get('data_servico'))),
+                                ->visible(fn(\Filament\Forms\Get $get) => filled($get('data_servico'))),
                         ]),
 
                     Forms\Components\Textarea::make('local_servico')
@@ -77,111 +77,33 @@ class ViewOrcamento extends ViewRecord
                         ->placeholder('Observações adicionais para a Ordem de Serviço...'),
                 ])
                 ->action(function ($record, array $data): void {
-                    DB::transaction(function () use ($record, $data) {
-                        // 1. Criar Ordem de Serviço
-                        $cadastro = $record->cliente; // Uses cliente() relationship -> Cadastro
-                        // Use the edited location from form instead of auto-generating
-                        $enderecoCompleto = $data['local_servico'] ?? 'Endereço não informado';
+                    try {
+                        $stofgard = app(\App\Services\StofgardSystem::class);
 
-                        $osData = [
-                            'numero_os' => OrdemServico::gerarNumeroOS(),
-                            'orcamento_id' => $record->id,
-                            'cadastro_id' => $record->cadastro_id, // Unified Cadastro
-                            'loja_id' => $record->loja_id,
-                            'vendedor_id' => $record->vendedor_id,
-                            'tipo_servico' => $record->tipo_servico ?? 'servico',
-                            'descricao_servico' => $record->descricao_servico ?? 'Conforme orçamento '.$record->numero,
-                            'data_abertura' => now(),
-                            'data_prevista' => $data['data_servico'] ?? null,
-                            'status' => 'pendente',
-                            'valor_total' => $record->valor_total,
-                            'observacoes' => $data['observacoes_os'] ?? $record->observacoes,
-                            'criado_por' => auth()->user()->name ?? auth()->id(),
-                        ];
-
-                        $os = OrdemServico::create($osData);
-
-                        // Copiar itens do orçamento para a OS
-                        foreach ($record->itens as $item) {
-                            OrdemServicoItem::create([
-                                'ordem_servico_id' => $os->id,
-                                'descricao' => $item->item_nome ?? $item->descricao_item ?? 'Serviço',
-                                'quantidade' => $item->quantidade,
-                                'unidade_medida' => $item->unidade ?? $item->unidade_medida ?? 'un',
-                                'valor_unitario' => $item->valor_unitario,
-                                'subtotal' => $item->subtotal,
-                            ]);
-                        }
-
-                        // 2. Criar registro na Agenda (APENAS SE TIVER DATA)
-                        if (! empty($data['data_servico'])) {
-                            $dataServico = \Carbon\Carbon::parse($data['data_servico']);
-                            $horaInicio = \Carbon\Carbon::parse($data['hora_inicio'] ?? '09:00');
-                            $horaFim = \Carbon\Carbon::parse($data['hora_fim'] ?? '17:00');
-
-                            $agenda = Agenda::create([
-                                'titulo' => sprintf(
-                                    '%s - %s',
-                                    match ($record->tipo_servico ?? 'servico') {
-                                        'higienizacao' => '🧼 Higienização',
-                                        'impermeabilizacao' => '💧 Impermeabilização',
-                                        'higienizacao_impermeabilizacao' => '🧼💧 Hig + Imper',
-                                        default => 'Serviço',
-                                    },
-                                    $cadastro?->nome ?? 'Cliente'
-                                ),
-                                'descricao' => $record->descricao_servico ?? ('Conforme orçamento '.$record->numero),
-                                'cadastro_id' => $record->cadastro_id,
-                                'ordem_servico_id' => $os->id,
-                                'orcamento_id' => $record->id,
-                                'tipo' => 'servico',
-                                'data_hora_inicio' => $dataServico->copy()->setTimeFromTimeString($horaInicio->format('H:i:s')),
-                                'data_hora_fim' => $dataServico->copy()->setTimeFromTimeString($horaFim->format('H:i:s')),
-                                'status' => 'agendado',
-                                'local' => $enderecoCompleto ?: 'Endereço não informado',
-                                'endereco_completo' => $enderecoCompleto,
-                                'observacoes' => $data['observacoes_os'] ?? ('Agendado automaticamente - '.$record->numero),
-                                'cor' => match ($record->tipo_servico ?? 'servico') {
-                                    'higienizacao' => '#3b82f6',
-                                    'impermeabilizacao' => '#f59e0b',
-                                    'higienizacao_impermeabilizacao' => '#10b981',
-                                    default => '#6b7280',
-                                },
-                                'criado_por' => auth()->id(),
-                            ]);
-                        }
-
-                        // 3. Criar lançamento no Financeiro (Conta a Receber) - USANDO MODEL CORRETO
-                        \App\Models\Financeiro::create([
-                            'tipo' => 'entrada',
-                            'categoria' => 'servico',
-                            'descricao' => sprintf(
-                                'Serviço - OS %s - Cliente: %s',
-                                $os->numero_os,
-                                $cadastro?->nome ?? 'Cliente'
-                            ),
-                            'valor' => $record->valor_total,
-                            // Se não tem data serviço, usa hoje como base
-                            'data' => $data['data_servico'] ?? now(),
-                            'data_vencimento' => $data['data_servico'] ?? now()->addDays(30),
-                            'status' => 'pendente',
-                            'forma_pagamento' => $record->forma_pagamento ?? null,
-                            'cadastro_id' => $record->cadastro_id,
-                            'ordem_servico_id' => $os->id,
-                            'orcamento_id' => $record->id,
+                        $stofgard->aprovarOrcamento($record, auth()->id(), [
+                            'data_servico' => $data['data_servico'] ?? null,
+                            'hora_inicio' => $data['hora_inicio'] ?? null,
+                            'hora_fim' => $data['hora_fim'] ?? null,
+                            'local_servico' => $data['local_servico'] ?? null,
+                            'observacoes' => $data['observacoes_os'] ?? null,
                         ]);
 
-                        // 4. Atualizar orçamento com link para OS
-                        $record->update([
-                            'status' => 'aprovado',
-                        ]);
-                    });
+                        \Filament\Notifications\Notification::make()
+                            ->title('Orçamento Aprovado!')
+                            ->body('A Ordem de Serviço, Agenda e Financeiro foram criados automaticamente.')
+                            ->success()
+                            ->send();
 
-                    Notification::make()
-                        ->success()
-                        ->title('Orçamento Aprovado!')
-                        ->body('A Ordem de Serviço, Agenda e Financeiro foram criados automaticamente.')
-                        ->send();
+                        // Recarregar a página para atualizar status
+                        redirect(request()->header('Referer'));
+
+                    } catch (\Exception $e) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Erro ao aprovar')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 }),
 
             Actions\Action::make('gerar_pdf')
@@ -193,7 +115,7 @@ class ViewOrcamento extends ViewRecord
                 ->form([
                     Forms\Components\Toggle::make('include_pix')
                         ->label('Incluir QR Code PIX')
-                        ->default(fn ($record) => (bool) ($record->pdf_incluir_pix ?? true)),
+                        ->default(fn($record) => (bool) ($record->pdf_incluir_pix ?? true)),
 
                     Forms\Components\Toggle::make('persist')
                         ->label('Salvar preferência (persistir)')
@@ -232,7 +154,7 @@ class ViewOrcamento extends ViewRecord
                 ->label('Enviar WhatsApp')
                 ->icon('heroicon-o-chat-bubble-left-right')
                 ->color('success')
-                ->url(fn (Orcamento $record) => $this->getWhatsappUrl($record))
+                ->url(fn(Orcamento $record) => $this->getWhatsappUrl($record))
                 ->openUrlInNewTab(),
         ];
     }

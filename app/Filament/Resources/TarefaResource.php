@@ -153,33 +153,25 @@ class TarefaResource extends Resource
                     ->label('Responsável')
                     ->relationship('responsavel', 'name'),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('')
-                    ->tooltip('Visualizar')
-                    ->iconButton(),
-
-                Tables\Actions\EditAction::make()
-                    ->label('')
-                    ->tooltip('Editar')
-                    ->iconButton(),
-
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn(Tarefa $record) => route('tarefa.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\DeleteAction::make()
-                    ->label('')
-                    ->tooltip('Excluir')
-                    ->iconButton(),
-            ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
+            ->actions(
+                \App\Support\Filament\StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        Tables\Actions\Action::make('download')
+                            ->label('Baixar PDF')
+                            ->tooltip('Baixar PDF')
+                            ->icon('heroicon-o-arrow-down-tray')
+                            ->color('success')
+                            ->url(fn(Tarefa $record) => route('tarefa.pdf', $record))
+                            ->openUrlInNewTab(),
+                    ]
+                )
+            )
+            ->bulkActions(
+                \App\Support\Filament\StofgardTable::defaultBulkActions()
+            );
     }
 
     public static function infolist(Infolist $infolist): Infolist

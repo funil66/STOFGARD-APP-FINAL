@@ -133,13 +133,13 @@ class ProdutoResource extends Resource
                         if ($record->preco_venda > 0 && $record->preco_custo > 0) {
                             $margem = (($record->preco_venda - $record->preco_custo) / $record->preco_custo) * 100;
 
-                            return number_format($margem, 1).'%';
+                            return number_format($margem, 1) . '%';
                         }
 
                         return '-';
                     })
                     ->badge()
-                    ->color(fn ($state) => $state === '-' ? 'gray' : 'success'),
+                    ->color(fn($state) => $state === '-' ? 'gray' : 'success'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Criado em')
@@ -148,20 +148,22 @@ class ProdutoResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('nome')
-            ->actions([
-                Tables\Actions\ViewAction::make()->label('')->tooltip('Visualizar')->iconButton(),
-                Tables\Actions\EditAction::make()->label('')->tooltip('Editar')->iconButton(),
-
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn (Produto $record) => route('produto.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir')->iconButton(),
-            ])
+            ->actions(
+                \App\Support\Filament\StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        Tables\Actions\Action::make('download')
+                            ->label('Baixar PDF')
+                            ->tooltip('Baixar PDF')
+                            ->icon('heroicon-o-arrow-down-tray')
+                            ->color('success')
+                            ->url(fn(Produto $record) => route('produto.pdf', $record))
+                            ->openUrlInNewTab(),
+                    ]
+                )
+            )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -173,45 +175,131 @@ class ProdutoResource extends Resource
     {
         return $infolist
             ->schema([
-                InfolistSection::make('Informações do Produto')
+                // ===== CABEÇALHO =====
+                InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(2)->schema([
-                            TextEntry::make('nome')->label('Nome')->size(TextEntry\TextEntrySize::Large)->weight('bold')->columnSpan(2),
-                            TextEntry::make('unidade')->label('Unidade')->badge(),
-                            TextEntry::make('descricao')->label('Descrição')->columnSpanFull()->placeholder('Sem descrição'),
-                        ]),
-                    ]),
-
-                InfolistSection::make('Valores')
-                    ->schema([
-                        InfolistGrid::make(3)->schema([
-                            TextEntry::make('preco_custo')->label('Custo')->money('BRL'),
-                            TextEntry::make('preco_venda')->label('Venda')->money('BRL')->size(TextEntry\TextEntrySize::Large)->color('success'),
-                            TextEntry::make('margem')
-                                ->label('Margem Calculada')
-                                ->state(function (Produto $record) {
+                        InfolistGrid::make(4)->schema([
+                            TextEntry::make('nome')
+                                ->label('Produto')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->weight('bold')
+                                ->columnSpan(2),
+                            TextEntry::make('unidade')
+                                ->label('Unidade')
+                                ->badge()
+                                ->color('gray'),
+                            TextEntry::make('margem_calc')
+                                ->label('Margem')
+                                ->badge()
+                                ->state(function ($record) {
                                     if ($record->preco_venda > 0 && $record->preco_custo > 0) {
                                         $margem = (($record->preco_venda - $record->preco_custo) / $record->preco_custo) * 100;
-
-                                        return number_format($margem, 2).'%';
+                                        return number_format($margem, 1) . '%';
                                     }
-
-                                    return 'N/A';
+                                    return '-';
                                 })
-                                ->badge()
-                                ->color('success'),
+                                ->color(fn($state) => $state === '-' ? 'gray' : 'success'),
                         ]),
                     ]),
 
-                InfolistSection::make('Imagens')
+                // ===== RESUMO FINANCEIRO =====
+                InfolistSection::make('💰 Precificação')
                     ->schema([
-                        ImageEntry::make('fotos')
-                            ->collection('produtos')
-                            ->label('')
-                            ->limit(3)
-                            ->height(200),
+                        InfolistGrid::make(3)->schema([
+                            TextEntry::make('preco_custo')
+                                ->label('💵 Custo')
+                                ->money('BRL')
+                                ->color('warning'),
+                            TextEntry::make('preco_venda')
+                                ->label('💎 Venda')
+                                ->money('BRL')
+                                ->size(TextEntry\TextEntrySize::Large)
+                                ->weight('bold')
+                                ->color('success'),
+                            TextEntry::make('lucro')
+                                ->label('📈 Lucro/Un')
+                                ->money('BRL')
+                                ->weight('bold')
+                                ->color('info')
+                                ->state(fn($record) => $record->preco_venda - $record->preco_custo),
+                        ]),
                     ])
                     ->collapsible(),
+
+                // ===== ABAS =====
+                \Filament\Infolists\Components\Tabs::make('Detalhes')
+                    ->tabs([
+                        // ABA 1: INFORMAÇÕES
+                        \Filament\Infolists\Components\Tabs\Tab::make('📋 Informações')
+                            ->schema([
+                                TextEntry::make('descricao')
+                                    ->label('Descrição')
+                                    ->columnSpanFull()
+                                    ->placeholder('Sem descrição'),
+                            ]),
+
+                        // ABA 2: IMAGENS
+                        \Filament\Infolists\Components\Tabs\Tab::make('📸 Imagens')
+                            ->badge(fn($record) => $record->getMedia('produtos')->count())
+                            ->schema([
+                                ImageEntry::make('fotos')
+                                    ->collection('produtos')
+                                    ->label('')
+                                    ->limit(10)
+                                    ->height(200)
+                                    ->columnSpanFull(),
+                                TextEntry::make('sem_imagens')
+                                    ->label('')
+                                    ->default('Nenhuma imagem cadastrada.')
+                                    ->visible(fn($record) => $record->getMedia('produtos')->isEmpty()),
+                            ]),
+
+                        // ABA 3: HISTÓRICO
+                        \Filament\Infolists\Components\Tabs\Tab::make('📜 Histórico')
+                            ->icon('heroicon-m-clock')
+                            ->badge(fn($record) => $record->audits()->count())
+                            ->schema([
+                                \Filament\Infolists\Components\RepeatableEntry::make('audits')
+                                    ->label('')
+                                    ->schema([
+                                        InfolistGrid::make(4)->schema([
+                                            TextEntry::make('user.name')
+                                                ->label('Usuário')
+                                                ->icon('heroicon-m-user')
+                                                ->placeholder('Sistema'),
+                                            TextEntry::make('event')
+                                                ->label('Ação')
+                                                ->badge()
+                                                ->formatStateUsing(fn(string $state): string => match ($state) {
+                                                    'created' => 'Criação',
+                                                    'updated' => 'Edição',
+                                                    'deleted' => 'Exclusão',
+                                                    default => ucfirst($state),
+                                                })
+                                                ->color(fn(string $state): string => match ($state) {
+                                                    'created' => 'success',
+                                                    'updated' => 'warning',
+                                                    'deleted' => 'danger',
+                                                    default => 'gray',
+                                                }),
+                                            TextEntry::make('created_at')
+                                                ->label('Data/Hora')
+                                                ->dateTime('d/m/Y H:i:s'),
+                                            TextEntry::make('ip_address')
+                                                ->label('IP')
+                                                ->icon('heroicon-m-globe-alt')
+                                                ->copyable(),
+                                        ]),
+                                    ])
+                                    ->grid(1)
+                                    ->contained(false),
+                                TextEntry::make('sem_historico')
+                                    ->label('')
+                                    ->default('Nenhuma alteração registrada.')
+                                    ->visible(fn($record) => $record->audits()->count() === 0),
+                            ]),
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 

@@ -11,9 +11,15 @@ use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
 use App\Traits\HasAuditTrail;
 
-class OrdemServico extends Model implements HasMedia
+class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
-    use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail;
+    use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail, \OwenIt\Auditing\Auditable;
+
+    protected static function boot()
+    {
+        parent::boot();
+        self::observe(\OwenIt\Auditing\AuditableObserver::class);
+    }
 
     // --- CORREÇÃO DO ERRO DE FK ---
     // Define explicitamente o nome da tabela no banco
@@ -187,6 +193,14 @@ class OrdemServico extends Model implements HasMedia
                     // Em ambiente CLI/Job sem usuário, não deve criar sem responsabilidade
                     throw new \Exception('Não é possível criar Ordem de Serviço sem usuário responsável. Defina criado_por explicitamente.');
                 }
+            }
+        });
+
+        static::updated(function ($model) {
+            // Verifica se o status mudou para 'concluida'
+            // O isDirty('status') garante que só executa quando o status muda, evitando duplicidade se salvar sem mudar status
+            if ($model->isDirty('status') && $model->status === 'concluida') {
+                \App\Services\EstoqueService::baixarEstoquePorOS($model);
             }
         });
     }

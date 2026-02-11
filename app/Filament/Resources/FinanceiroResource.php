@@ -17,6 +17,7 @@ use App\Services\FinanceiroService;
 use Filament\Tables;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Table;
+use App\Support\Filament\StofgardTable;
 
 class FinanceiroResource extends Resource
 {
@@ -145,6 +146,11 @@ class FinanceiroResource extends Resource
                                 'boleto' => 'Boleto',
                                 'transferencia' => 'Transferência',
                             ]),
+
+                        Forms\Components\TextInput::make('id_parceiro')
+                            ->label('ID Parceiro')
+                            ->placeholder('Identificação da loja/vendedor')
+                            ->maxLength(255),
 
                         Forms\Components\Textarea::make('observacoes')
                             ->label('Observações')
@@ -500,85 +506,92 @@ class FinanceiroResource extends Resource
                         false: fn($query) => $query->where(fn($q) => $q->where('status', 'pago')->orWhereDate('data_vencimento', '>=', now())),
                     ),
             ])
-            ->actions([
-                // Baixar pagamento
-                Tables\Actions\Action::make('baixar')
-                    ->label('')
-                    ->tooltip('Baixar Pagamento')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->iconButton()
-                    ->visible(fn(Financeiro $record) => $record->status === 'pendente' || $record->status === 'atrasado')
-                    ->requiresConfirmation()
-                    ->action(fn(Financeiro $record) => FinanceiroService::baixarPagamento($record)),
+            ->actions(
+                StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        // Baixar pagamento
+                        Tables\Actions\Action::make('baixar')
+                            ->label('Baixar Pagamento')
+                            ->tooltip('Baixar Pagamento')
+                            ->icon('heroicon-s-check-circle')
+                            ->color('success')
+                            // ->iconButton()
+                            ->visible(fn(Financeiro $record) => $record->status === 'pendente' || $record->status === 'atrasado')
+                            ->requiresConfirmation()
+                            ->action(fn(Financeiro $record) => FinanceiroService::baixarPagamento($record)),
 
-                // Estornar (Desfazer pagamento)
-                Tables\Actions\Action::make('estornar')
-                    ->label('')
-                    ->tooltip('Estornar (Voltar para Pendente)')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('warning')
-                    ->iconButton()
-                    ->visible(fn(Financeiro $record) => $record->status === 'pago')
-                    ->requiresConfirmation()
-                    ->action(fn(Financeiro $record) => FinanceiroService::estornarPagamento($record)),
+                        // Estornar
+                        Tables\Actions\Action::make('estornar')
+                            ->label('Estornar')
+                            ->tooltip('Estornar (Voltar para Pendente)')
+                            ->icon('heroicon-s-arrow-path')
+                            ->color('warning')
+                            // ->iconButton()
+                            ->visible(fn(Financeiro $record) => $record->status === 'pago')
+                            ->requiresConfirmation()
+                            ->action(fn(Financeiro $record) => FinanceiroService::estornarPagamento($record)),
 
-                // Pagar Comissão
-                Tables\Actions\Action::make('pagar_comissao')
-                    ->label('')
-                    ->tooltip('Pagar Comissão')
-                    ->icon('heroicon-o-banknotes')
-                    ->color('success')
-                    ->iconButton()
-                    ->visible(fn(Financeiro $record) => $record->is_comissao && !$record->comissao_paga && $record->status !== 'pago')
-                    ->requiresConfirmation()
-                    ->modalHeading('Confirmar Pagamento de Comissão')
-                    ->modalDescription(fn(Financeiro $record) => 'Deseja marcar a comis são de ' . ($record->cadastro?->nome ?? 'N/A') . ' no valor de R$ ' . number_format((float) $record->valor, 2, ',', '.') . ' como paga?')
-                    ->action(fn(Financeiro $record) => FinanceiroService::pagarComissao($record)),
+                        // Pagar Comissão
+                        Tables\Actions\Action::make('pagar_comissao')
+                            ->label('Pagar Comissão')
+                            ->tooltip('Pagar Comissão e Gerar Despesa')
+                            ->icon('heroicon-s-banknotes')
+                            ->color('success')
+                            ->visible(fn(Financeiro $record) => $record->is_comissao && !$record->comissao_paga && $record->status !== 'pago')
+                            ->requiresConfirmation()
+                            ->modalHeading('Pagamento de Comissão')
+                            ->modalDescription('Confirme os dados abaixo para registrar o pagamento da comissão e gerar a despesa financeira.')
+                            ->form([
+                                Forms\Components\DatePicker::make('data_pagamento')
+                                    ->label('Data do Pagamento')
+                                    ->default(now())
+                                    ->required(),
+                                Forms\Components\TextInput::make('valor')
+                                    ->label('Valor da Comissão (R$)')
+                                    ->numeric()
+                                    ->prefix('R$')
+                                    ->default(fn(Financeiro $record) => $record->valor)
+                                    ->required(),
+                                Forms\Components\Select::make('beneficiario_id')
+                                    ->label('Beneficiário (Vendedor/Parceiro)')
+                                    ->options(\App\Models\Cadastro::parceiros()->pluck('nome', 'id'))
+                                    ->searchable()
+                                    ->default(fn(Financeiro $record) => $record->id_parceiro ? \App\Models\Cadastro::where('nome', $record->id_parceiro)->value('id') : null) // Tenta achar pelo nome armazenado em id_parceiro (que as vezes é string) ou null
+                                    ->helperText('Selecione quem receberá a comissão para vincular na despesa.'),
+                            ])
+                            ->action(fn(Financeiro $record, array $data) => FinanceiroService::pagarComissao($record, $data)),
 
-                // Ver
-                Tables\Actions\ViewAction::make()
-                    ->label('')
-                    ->tooltip('Ver')
-                    ->iconButton(),
+                        // Duplicar
+                        Tables\Actions\ReplicateAction::make()
+                            ->label('Duplicar')
+                            ->tooltip('Duplicar Lançamento')
+                            ->modalHeading('Duplicar Lançamento')
+                            ->excludeAttributes(['status', 'data_pagamento', 'created_at', 'updated_at'])
+                            ->beforeReplicaSaved(function (Financeiro $replica) {
+                                $replica->status = 'pendente';
+                                $replica->data_pagamento = null;
+                                $replica->descricao = $replica->descricao . ' (Cópia)';
+                            })
+                        // ->iconButton()
+                        ,
 
-                // Editar
-                Tables\Actions\EditAction::make()
-                    ->label('')
-                    ->tooltip('Editar')
-                    ->iconButton(),
-
-                // Duplicar
-                Tables\Actions\ReplicateAction::make()
-                    ->label('')
-                    ->tooltip('Duplicar Lançamento')
-                    ->modalHeading('Duplicar Lançamento')
-                    ->excludeAttributes(['status', 'data_pagamento', 'created_at', 'updated_at'])
-                    ->beforeReplicaSaved(function (Financeiro $replica) {
-                        $replica->status = 'pendente';
-                        $replica->data_pagamento = null;
-                        $replica->descricao = $replica->descricao . ' (Cópia)';
-                    })
-                    ->iconButton(),
-
-                // PDF
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('info')
-                    ->iconButton()
-                    ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                // Excluir
-                Tables\Actions\DeleteAction::make()
-                    ->label('')
-                    ->tooltip('Excluir')
-                    ->iconButton(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
+                        // PDF
+                        Tables\Actions\Action::make('pdf')
+                            ->label('Baixar PDF')
+                            ->tooltip('Baixar PDF')
+                            ->icon('heroicon-s-document-text')
+                            ->color('success')
+                            // ->iconButton()
+                            ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
+                            ->openUrlInNewTab(),
+                    ]
+                )
+            )
+            ->bulkActions(
+                StofgardTable::defaultBulkActions([
                     Tables\Actions\BulkAction::make('baixar_selecionados')
                         ->label('Baixar Selecionados')
                         ->icon('heroicon-o-check-circle')
@@ -591,20 +604,18 @@ class FinanceiroResource extends Resource
                         ->label('Exportar CSV')
                         ->icon('heroicon-o-table-cells')
                         ->action(fn($records) => FinanceiroService::gerarCsvExportacao($records)),
-
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+                ])
+            );
     }
 
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist
             ->schema([
-                // CABEÇALHO FINANCEIRO
+                // ===== CABEÇALHO =====
                 InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(3)->schema([
+                        InfolistGrid::make(4)->schema([
                             TextEntry::make('tipo')
                                 ->label('Tipo')
                                 ->badge()
@@ -615,156 +626,193 @@ class FinanceiroResource extends Resource
                                 ->badge()
                                 ->color(fn($state) => match ($state) {
                                     'pago' => 'success',
-                                    'vencido' => 'danger',
+                                    'atrasado' => 'danger',
                                     'pendente' => 'warning',
+                                    'cancelado' => 'gray',
                                     default => 'gray',
-                                })
-                                ->formatStateUsing(fn($state) => match ($state) {
-                                    'pago' => '✅ Pago',
-                                    'pendente' => '⏳ Pendente',
-                                    'vencido' => '🔴 Vencido',
-                                    'cancelado' => '❌ Cancelado',
-                                    default => $state,
                                 }),
+                            TextEntry::make('data')
+                                ->label('Data')
+                                ->date('d/m/Y'),
+                            TextEntry::make('categoria.nome')
+                                ->label('Categoria')
+                                ->badge()
+                                ->color('info'),
+                        ]),
+                        InfolistGrid::make(4)->schema([
+                            TextEntry::make('cadastro.nome')
+                                ->label('Cliente/Fornecedor')
+                                ->icon('heroicon-m-user')
+                                ->placeholder('Não vinculado')
+                                ->columnSpan(2),
+                            TextEntry::make('forma_pagamento')
+                                ->label('Forma Pagamento')
+                                ->formatStateUsing(fn($state) => match ($state) {
+                                    'pix' => '💳 PIX',
+                                    'dinheiro' => '💵 Dinheiro',
+                                    'cartao_credito' => '💳 Crédito',
+                                    'cartao_debito' => '💳 Débito',
+                                    'boleto' => '📄 Boleto',
+                                    'transferencia' => '🏦 Transfer.',
+                                    default => $state ?? '-',
+                                }),
+                            TextEntry::make('data_vencimento')
+                                ->label('Vencimento')
+                                ->date('d/m/Y')
+                                ->color(fn($record) => $record->status === 'atrasado' ? 'danger' : 'gray'),
+                            TextEntry::make('id_parceiro')
+                                ->label('ID Parceiro')
+                                ->badge()
+                                ->color('info')
+                                ->placeholder('-'),
+                        ]),
+                    ]),
+
+                // ===== RESUMO FINANCEIRO =====
+                InfolistSection::make('💰 Resumo de Valores')
+                    ->schema([
+                        InfolistGrid::make(5)->schema([
                             TextEntry::make('valor')
-                                ->label('Valor')
+                                ->label('💵 Valor')
                                 ->money('BRL')
                                 ->size(TextEntry\TextEntrySize::Large)
                                 ->weight('bold')
                                 ->color(fn($record) => $record->tipo === 'entrada' ? 'success' : 'danger'),
-                        ]),
-                    ]),
-
-                // INFORMAÇÕES PRINCIPAIS
-                InfolistSection::make('📋 Informações da Transação')
-                    ->schema([
-                        InfolistGrid::make(2)->schema([
-                            TextEntry::make('descricao')
-                                ->label('Descrição')
-                                ->columnSpanFull(),
-                            TextEntry::make('categoria.nome')
-                                ->label('Categoria')
-                                ->badge()
-                                ->color('info')
-                                ->icon(fn($record) => $record->categoria?->icone ?? 'heroicon-o-tag'),
-                            TextEntry::make('forma_pagamento')
-                                ->label('Forma de Pagamento')
-                                ->formatStateUsing(fn($state) => match ($state) {
-                                    'pix' => '💳 PIX',
-                                    'dinheiro' => '💵 Dinheiro',
-                                    'cartao_credito' => '💳 Cartão de Crédito',
-                                    'cartao_debito' => '💳 Cartão de Débito',
-                                    'boleto' => '📄 Boleto',
-                                    'transferencia' => '🏦 Transferência',
-                                    default => $state ?? 'Não informado',
-                                }),
-                        ]),
-                    ]),
-
-                // DATAS
-                InfolistSection::make('📅 Datas')
-                    ->schema([
-                        InfolistGrid::make(3)->schema([
-                            TextEntry::make('data')
-                                ->label('Data do Lançamento')
-                                ->date('d/m/Y')
-                                ->icon('heroicon-m-calendar'),
-                            TextEntry::make('data_vencimento')
-                                ->label('Data de Vencimento')
-                                ->date('d/m/Y')
-                                ->icon('heroicon-m-calendar-days')
-                                ->color(fn($record) => $record->status === 'vencido' ? 'danger' : 'gray'),
-                            TextEntry::make('data_pagamento')
-                                ->label('Data do Pagamento')
-                                ->dateTime('d/m/Y H:i')
-                                ->icon('heroicon-m-check-circle')
-                                ->color('success')
-                                ->placeholder('Não pago'),
-                        ]),
-                    ]),
-
-                // VALORES DETALHADOS
-                InfolistSection::make('💵 Detalhamento de Valores')
-                    ->schema([
-                        InfolistGrid::make(4)->schema([
-                            TextEntry::make('valor')
-                                ->label('Valor Original')
-                                ->money('BRL'),
                             TextEntry::make('desconto')
-                                ->label('Desconto')
+                                ->label('🎁 Desconto')
                                 ->money('BRL')
                                 ->color('success')
                                 ->placeholder('R$ 0,00'),
                             TextEntry::make('juros')
-                                ->label('Juros')
+                                ->label('📈 Juros')
                                 ->money('BRL')
                                 ->color('warning')
                                 ->placeholder('R$ 0,00'),
-                            TextEntry::make('multa')
-                                ->label('Multa')
-                                ->money('BRL')
-                                ->color('danger')
-                                ->placeholder('R$ 0,00'),
-                        ]),
-                        InfolistGrid::make(2)->schema([
-                            TextEntry::make('valor_total')
-                                ->label('Valor Total (com juros/multa)')
-                                ->money('BRL')
-                                ->weight('bold')
-                                ->size(TextEntry\TextEntrySize::Medium)
-                                ->color('info'),
                             TextEntry::make('valor_pago')
-                                ->label('Valor Pago')
+                                ->label('✅ Pago')
                                 ->money('BRL')
                                 ->weight('bold')
-                                ->size(TextEntry\TextEntrySize::Medium)
                                 ->color('success')
                                 ->placeholder('R$ 0,00'),
-                        ]),
-                    ]),
-
-                // VINCULAÇÕES
-                InfolistSection::make('🔗 Vinculações')
-                    ->schema([
-                        InfolistGrid::make(3)->schema([
-                            TextEntry::make('cadastro.nome')
-                                ->label('Cliente/Fornecedor')
-                                ->icon('heroicon-m-user')
-                                ->placeholder('Não vinculado'),
-                            TextEntry::make('ordemServico.numero_os')
-                                ->label('Ordem de Serviço')
-                                ->icon('heroicon-m-document-text')
-                                ->url(fn($record) => $record->ordem_servico_id ? "/admin/ordem-servicos/{$record->ordem_servico_id}" : null)
-                                ->placeholder('Não vinculado'),
-                            TextEntry::make('orcamento.numero')
-                                ->label('Orçamento')
-                                ->icon('heroicon-m-document-text')
-                                ->url(fn($record) => $record->orcamento_id ? "/admin/orcamentos/{$record->orcamento_id}" : null)
-                                ->placeholder('Não vinculado'),
+                            TextEntry::make('saldo')
+                                ->label('📊 Saldo')
+                                ->money('BRL')
+                                ->weight('bold')
+                                ->color(fn($state) => $state > 0 ? 'danger' : 'success')
+                                ->state(fn($record) => ($record->valor + ($record->juros ?? 0) - ($record->desconto ?? 0)) - ($record->valor_pago ?? 0))
+                                ->placeholder('R$ 0,00'),
                         ]),
                     ])
-                    ->collapsed(),
+                    ->collapsible(),
 
-                // COMPROVANTES
-                InfolistSection::make('📎 Comprovantes e Anexos')
-                    ->schema([
-                        \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
-                            ->collection('arquivos')
-                            ->label('')
-                            ->columnSpanFull(),
-                    ])
-                    ->visible(fn($record) => $record->getMedia('arquivos')->isNotEmpty())
-                    ->collapsed(),
+                // ===== ABAS =====
+                \Filament\Infolists\Components\Tabs::make('Detalhes')
+                    ->tabs([
+                        // ABA 1: INFORMAÇÕES
+                        \Filament\Infolists\Components\Tabs\Tab::make('📋 Informações')
+                            ->schema([
+                                InfolistGrid::make(2)->schema([
+                                    TextEntry::make('descricao')
+                                        ->label('Descrição')
+                                        ->columnSpanFull()
+                                        ->weight('bold'),
+                                    TextEntry::make('data_pagamento')
+                                        ->label('Data do Pagamento')
+                                        ->dateTime('d/m/Y H:i')
+                                        ->icon('heroicon-m-check-circle')
+                                        ->color('success')
+                                        ->placeholder('Não pago'),
+                                    TextEntry::make('observacoes')
+                                        ->label('Observações')
+                                        ->placeholder('Nenhuma observação')
+                                        ->columnSpanFull(),
+                                ]),
+                            ]),
 
-                // OBSERVAÇÕES
-                InfolistSection::make('📝 Observações')
-                    ->schema([
-                        TextEntry::make('observacoes')
-                            ->label('')
-                            ->placeholder('Nenhuma observação registrada')
-                            ->columnSpanFull(),
+                        // ABA 2: VINCULAÇÕES
+                        \Filament\Infolists\Components\Tabs\Tab::make('🔗 Vinculações')
+                            ->schema([
+                                InfolistGrid::make(2)->schema([
+                                    TextEntry::make('ordemServico.numero_os')
+                                        ->label('Ordem de Serviço')
+                                        ->icon('heroicon-m-clipboard-document-check')
+                                        ->url(fn($record) => $record->ordem_servico_id
+                                            ? \App\Filament\Resources\OrdemServicoResource::getUrl('view', ['record' => $record->ordem_servico_id])
+                                            : null)
+                                        ->color('primary')
+                                        ->placeholder('Não vinculado'),
+                                    TextEntry::make('orcamento.numero')
+                                        ->label('Orçamento')
+                                        ->icon('heroicon-m-document-text')
+                                        ->url(fn($record) => $record->orcamento_id
+                                            ? \App\Filament\Resources\OrcamentoResource::getUrl('view', ['record' => $record->orcamento_id])
+                                            : null)
+                                        ->color('primary')
+                                        ->placeholder('Não vinculado'),
+                                ]),
+                            ]),
+
+                        // ABA 3: COMPROVANTES
+                        \Filament\Infolists\Components\Tabs\Tab::make('📎 Comprovantes')
+                            ->badge(fn($record) => $record->getMedia('arquivos')->count())
+                            ->schema([
+                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
+                                    ->collection('arquivos')
+                                    ->label('')
+                                    ->columnSpanFull(),
+                                TextEntry::make('sem_arquivos')
+                                    ->label('')
+                                    ->default('Nenhum comprovante anexado.')
+                                    ->visible(fn($record) => $record->getMedia('arquivos')->isEmpty()),
+                            ]),
+
+                        // ABA 4: HISTÓRICO DE ALTERAÇÕES
+                        \Filament\Infolists\Components\Tabs\Tab::make('📜 Histórico')
+                            ->icon('heroicon-m-clock')
+                            ->badge(fn($record) => $record->audits()->count())
+                            ->schema([
+                                \Filament\Infolists\Components\RepeatableEntry::make('audits')
+                                    ->label('')
+                                    ->schema([
+                                        InfolistGrid::make(4)->schema([
+                                            TextEntry::make('user.name')
+                                                ->label('Usuário')
+                                                ->icon('heroicon-m-user')
+                                                ->placeholder('Sistema/Automático'),
+                                            TextEntry::make('event')
+                                                ->label('Ação')
+                                                ->badge()
+                                                ->formatStateUsing(fn(string $state): string => match ($state) {
+                                                    'created' => 'Criação',
+                                                    'updated' => 'Edição',
+                                                    'deleted' => 'Exclusão',
+                                                    'restored' => 'Restauração',
+                                                    default => ucfirst($state),
+                                                })
+                                                ->color(fn(string $state): string => match ($state) {
+                                                    'created' => 'success',
+                                                    'updated' => 'warning',
+                                                    'deleted' => 'danger',
+                                                    default => 'gray',
+                                                }),
+                                            TextEntry::make('created_at')
+                                                ->label('Data/Hora')
+                                                ->dateTime('d/m/Y H:i:s'),
+                                            TextEntry::make('ip_address')
+                                                ->label('IP')
+                                                ->icon('heroicon-m-globe-alt')
+                                                ->copyable(),
+                                        ]),
+                                    ])
+                                    ->grid(1)
+                                    ->contained(false),
+                                TextEntry::make('sem_historico')
+                                    ->label('')
+                                    ->default('Nenhuma alteração registrada.')
+                                    ->visible(fn($record) => $record->audits()->count() === 0),
+                            ]),
                     ])
-                    ->collapsed(),
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -776,6 +824,8 @@ class FinanceiroResource extends Resource
             'create' => Pages\CreateFinanceiro::route('/create'),
 
             // Dashboard e Relatórios (ANTES de {record})
+            'dashboard' => Pages\FinanceiroDashboard::route('/dashboard'),
+            'analise' => Pages\FinanceiroAnalise::route('/analise'),
             'extratos' => Pages\Extratos::route('/extratos'),
 
             // Visualizações por Status (ANTES de {record})

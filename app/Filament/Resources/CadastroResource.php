@@ -14,6 +14,7 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use App\Support\Filament\StofgardTable;
 
 class CadastroResource extends Resource
 {
@@ -51,16 +52,14 @@ class CadastroResource extends Resource
                             TextEntry::make('telefone')
                                 ->label('WhatsApp')
                                 ->icon('heroicon-m-chat-bubble-left-right')
-                                ->url(fn($state) => 'https://wa.me/55' . preg_replace('/\D/', '', $state), true)
-                                ->visibleFrom('md'),
+                                ->url(fn($state) => 'https://wa.me/55' . preg_replace('/\D/', '', $state), true),
                             TextEntry::make('email')
                                 ->label('E-mail')
                                 ->icon('heroicon-m-envelope')
                                 ->copyable(),
                             TextEntry::make('cidade')
                                 ->label('Localização')
-                                ->formatStateUsing(fn($record) => "{$record->cidade}/{$record->estado}")
-                                ->visibleFrom('lg'),
+                                ->formatStateUsing(fn($record) => "{$record->cidade}/{$record->estado}"),
                             TextEntry::make('created_at')
                                 ->label('Cliente desde')
                                 ->date('d/m/Y'),
@@ -121,7 +120,7 @@ class CadastroResource extends Resource
                                                 }),
                                             TextEntry::make('descricao_servico')->label('Serviço')->limit(30),
                                             TextEntry::make('created_at')->label('Data')->date('d/m/Y'),
-                                            TextEntry::make('valor_total')->label('Valor')->money('BRL')->color('success')->weight('bold'),
+                                            TextEntry::make('valor_efetivo')->label('Valor')->money('BRL')->color('success')->weight('bold'),
                                             TextEntry::make('id')
                                                 ->label('')
                                                 ->formatStateUsing(fn() => 'Ver PDF')
@@ -273,6 +272,63 @@ class CadastroResource extends Resource
                                     ->extraImgAttributes(['class' => 'rounded-lg shadow-md'])
                                     ->columnSpanFull(),
                             ]),
+
+                        // ABA 7: HISTÓRICO DE ALTERAÇÕES
+                        Infolists\Components\Tabs\Tab::make('📜 Histórico')
+                            ->icon('heroicon-m-clock')
+                            ->badge(fn($record) => $record->audits()->count())
+                            ->schema([
+                                Infolists\Components\RepeatableEntry::make('audits')
+                                    ->label('')
+                                    ->schema([
+                                        Grid::make(4)->schema([
+                                            TextEntry::make('user.name')
+                                                ->label('Usuário')
+                                                ->icon('heroicon-m-user')
+                                                ->placeholder('Sistema/Automático'),
+                                            TextEntry::make('event')
+                                                ->label('Ação')
+                                                ->badge()
+                                                ->formatStateUsing(fn(string $state): string => match ($state) {
+                                                    'created' => 'Criação',
+                                                    'updated' => 'Edição',
+                                                    'deleted' => 'Exclusão',
+                                                    'restored' => 'Restauração',
+                                                    default => ucfirst($state),
+                                                })
+                                                ->color(fn(string $state): string => match ($state) {
+                                                    'created' => 'success',
+                                                    'updated' => 'warning',
+                                                    'deleted' => 'danger',
+                                                    default => 'gray',
+                                                }),
+                                            TextEntry::make('created_at')
+                                                ->label('Data/Hora')
+                                                ->dateTime('d/m/Y H:i:s'),
+                                            TextEntry::make('ip_address')
+                                                ->label('IP')
+                                                ->icon('heroicon-m-globe-alt')
+                                                ->copyable(),
+                                        ]),
+                                        Section::make('Detalhes da Alteração')
+                                            ->schema([
+                                                Infolists\Components\KeyValueEntry::make('old_values')
+                                                    ->label('Antes')
+                                                    ->keyLabel('Campo')
+                                                    ->valueLabel('Valor')
+                                                    ->visible(fn($record) => !empty($record->old_values)),
+                                                Infolists\Components\KeyValueEntry::make('new_values')
+                                                    ->label('Depois')
+                                                    ->keyLabel('Campo')
+                                                    ->valueLabel('Valor')
+                                                    ->visible(fn($record) => !empty($record->new_values)),
+                                            ])
+                                            ->columns(2)
+                                            ->visible(fn($record) => $record->event === 'updated'),
+                                    ])
+                                    ->grid(1)
+                                    ->contained(false),
+                            ]),
                     ])->columnSpanFull(),
             ]);
     }
@@ -342,11 +398,11 @@ class CadastroResource extends Resource
                                 $set('estado', $endereco['estado']);
                             }
                         }),
-                    Forms\Components\TextInput::make('logradouro')->required(),
-                    Forms\Components\TextInput::make('numero')->required(),
-                    Forms\Components\TextInput::make('bairro')->required(),
-                    Forms\Components\TextInput::make('cidade')->required(),
-                    Forms\Components\TextInput::make('estado')->maxLength(2)->required(),
+                    Forms\Components\TextInput::make('logradouro'),
+                    Forms\Components\TextInput::make('numero'),
+                    Forms\Components\TextInput::make('bairro'),
+                    Forms\Components\TextInput::make('cidade'),
+                    Forms\Components\TextInput::make('estado')->maxLength(2),
                     Forms\Components\TextInput::make('complemento'),
                 ])->columns(4),
             Forms\Components\Section::make('Central de Arquivos')
@@ -385,7 +441,27 @@ class CadastroResource extends Resource
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('tipo')
                     ->badge()
-                    ->color(fn(string $state): string => \App\Models\Categoria::where('slug', $state)->where('tipo', 'cadastro_tipo')->value('cor') ?? 'gray'),
+                    // Fallback de cores se o seed não rodou ou categoria não existe
+                    ->color(
+                        fn(string $state): string =>
+                        \App\Models\Categoria::where('slug', $state)->where('tipo', 'cadastro_tipo')->value('cor')
+                        ?? match ($state) {
+                            'cliente', 'concluida', 'finalizada', 'pago', 'receita' => 'success',
+                            'lead', 'em_andamento', 'pendente' => 'warning',
+                            'fornecedor', 'cancelado', 'rejeitado', 'despesa' => 'danger',
+                            'parceiro', 'arquiteto' => 'primary',
+                            'loja', 'orcamento' => 'info',
+                            default => 'gray',
+                        }
+                    ),
+                Tables\Columns\TextColumn::make('documento')
+                    ->label('CPF/CNPJ')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('email')
+                    ->searchable()
+                    ->icon('heroicon-m-envelope')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('telefone')
                     ->label('WhatsApp')
                     ->icon('heroicon-m-phone')
@@ -394,29 +470,26 @@ class CadastroResource extends Resource
                     ->label('Cidade')
                     ->visibleFrom('lg'),
             ])
-            ->actions([
-                // 1. PDF (Verde Destaque) - Mobile: só ícone
-                Tables\Actions\Action::make('pdf')
-                    ->label('Ficha')
-                    ->icon('heroicon-o-document-text')
-                    ->color('success')
-                    ->iconButton() // Mobile-friendly
-                    ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
-                    ->openUrlInNewTab(),
-                // 2. VISUALIZAR
-                Tables\Actions\ViewAction::make()
-                    ->iconButton()
-                    ->tooltip('Ver Detalhes'),
-                // 3. EDITAR
-                Tables\Actions\EditAction::make()
-                    ->iconButton()
-                    ->tooltip('Editar'),
-                // 4. EXCLUIR
-                Tables\Actions\DeleteAction::make()
-                    ->iconButton()
-                    ->tooltip('Excluir'),
-            ])
-            ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
+            ->actions(
+                StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        Tables\Actions\Action::make('pdf')
+                            ->label('PDF')
+                            ->icon('heroicon-o-document-text')
+                            ->color('success')
+                            ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
+                            ->openUrlInNewTab(),
+                    ]
+                )
+            )
+            ->bulkActions(
+                StofgardTable::defaultBulkActions([
+                    // Tables\Actions\DeleteBulkAction::make(), // Já incluído no default
+                ])
+            );
     }
 
     public static function getRelations(): array

@@ -7,6 +7,9 @@ use App\Filament\Pages\RelatoriosAvancados;
 use App\Filament\Resources\FinanceiroResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use App\Filament\Resources\FinanceiroResource\Pages\FinanceiroDashboard;
+use App\Filament\Resources\FinanceiroResource\Pages\FinanceiroAnalise;
+use Filament\Support\Enums\ActionSize;
 
 class ListFinanceiros extends ListRecords
 {
@@ -19,25 +22,24 @@ class ListFinanceiros extends ListRecords
                 ->label('Nova Transação')
                 ->icon('heroicon-o-plus'),
 
-            Actions\Action::make('categorias')
-                ->label('Categorias')
-                ->icon('heroicon-o-tag')
-                ->color('info')
-                ->url(url('/admin/categorias')),
-
             Actions\Action::make('notas_fiscais')
                 ->label('Notas Fiscais')
                 ->icon('heroicon-o-document-currency-dollar')
                 ->color('info')
                 ->url(url('/admin/notas-fiscais')),
 
-            // NOVO: Grupo de Análises
-            Actions\ActionGroup::make([
-                Actions\Action::make('dashboard')
-                    ->label('📊 Dashboard')
-                    ->icon('heroicon-o-presentation-chart-bar')
-                    ->url(\App\Filament\Pages\CentralFinanceira::getUrl()),
+            // Gráficos (Overlay Interativo)
+            Actions\Action::make('graficos')
+                ->label('📊 Gráficos')
+                ->color('primary')
+                ->size(ActionSize::Large)
+                ->modalHeading('Análise Financeira')
+                ->modalContent(view('filament.pages.partials.financeiro-charts-overlay-livewire'))
+                ->modalSubmitAction(false)
+                ->modalCancelAction(fn($action) => $action->label('Fechar')),
 
+            // Grupo de Análises
+            Actions\ActionGroup::make([
                 Actions\Action::make('analise_vendedores')
                     ->label('👔 Por Vendedor')
                     ->icon('heroicon-o-user-group')
@@ -92,12 +94,12 @@ class ListFinanceiros extends ListRecords
             ])
                 ->label('📋 Visualizar')
                 ->icon('heroicon-m-eye')
-                ->color('gray')
+                ->color('info')
                 ->button(),
 
             Actions\ActionGroup::make([
                 Actions\Action::make('relatorioSimples')
-                    ->label('Relatórios')
+                    ->label('Simples / Resumido')
                     ->icon('heroicon-o-chart-bar')
                     ->url(Relatorios::getUrl()),
                 Actions\Action::make('relatorioAvancado')
@@ -132,7 +134,7 @@ class ListFinanceiros extends ListRecords
                             ->label('Ano')
                             ->options(
                                 collect(range(now()->year - 2, now()->year + 1))
-                                    ->mapWithKeys(fn ($year) => [$year => $year])
+                                    ->mapWithKeys(fn($year) => [$year => $year])
                             )
                             ->default(now()->year)
                             ->required(),
@@ -155,8 +157,6 @@ class ListFinanceiros extends ListRecords
     {
         return [
             FinanceiroResource\Widgets\FinanceiroOverview::class,
-            FinanceiroResource\Widgets\FluxoCaixaChart::class,
-            FinanceiroResource\Widgets\DespesasCategoriaChart::class,
         ];
     }
 

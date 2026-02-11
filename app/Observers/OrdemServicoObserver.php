@@ -16,9 +16,17 @@ class OrdemServicoObserver
      */
     public function created(OrdemServico $os): void
     {
+        // Verifica se já existe uma agenda para esta OS
+        // (evita duplicação quando criada via aprovação de orçamento)
+        $agendaExistente = Agenda::where('ordem_servico_id', $os->id)->exists();
+
+        if ($agendaExistente) {
+            return; // Já foi criada manualmente, não duplicar
+        }
+
         // Cria agendamento automático ao criar a OS
         Agenda::create([
-            'titulo' => 'Serviço - '.($os->cliente->nome ?? 'Cliente'),
+            'titulo' => 'Serviço - ' . ($os->cliente->nome ?? 'Cliente'),
             'descricao' => "Ordem de Serviço {$os->numero_os}",
             'cliente_id' => $os->cliente_id ?? null,
             'cadastro_id' => $os->cadastro_id,
@@ -35,13 +43,76 @@ class OrdemServicoObserver
     }
 
     /**
+     * Handle the OrdemServico "updated" event.
+     * Cria garantia automaticamente ao concluir a OS.
+     */
+    public function updated(OrdemServico $os): void
+    {
+        // Só cria garantia na primeira conclusão
+        if ($os->status === 'concluida' && $os->wasChanged('status')) {
+            $this->criarGarantiaAutomatica($os);
+        }
+    }
+
+    /**
+     * Cria garantia automaticamente baseada nas configurações do sistema.
+     */
+    protected function criarGarantiaAutomatica(OrdemServico $os): void
+    {
+        // Verifica se já existe garantia para esta OS
+        if ($os->garantias()->exists()) {
+            Log::info("Garantia já existe para OS {$os->numero_os}, pulando criação");
+            return;
+        }
+
+        try {
+            // Busca configurações de garantia
+            $config = \App\Models\Configuracao::first();
+            $prazosGarantia = $config->config_prazo_garantia ?? [];
+
+            if (empty($prazosGarantia)) {
+                Log::warning("Nenhuma configuração de garantia encontrada, usando padrões");
+                $prazosGarantia = [
+                    ['tipo_servico' => 'higienizacao', 'dias' => 90, 'descricao' => 'Garantia contra manchas e odores'],
+                    ['tipo_servico' => 'impermeabilizacao', 'dias' => 365, 'descricao' => 'Garantia contra infiltrações'],
+                ];
+            }
+
+            // Determina tipo(s) de serviço da OS
+            $tipoServico = $os->tipo_servico ?? 'servico';
+
+            // Encontra prazo correspondente (ou usa default 90 dias)
+            $prazoConfig = collect($prazosGarantia)->firstWhere('tipo_servico', $tipoServico);
+            $maiorPrazo = $prazoConfig['dias'] ?? 90;
+            $descricao = $prazoConfig['descricao'] ?? 'Garantia do serviço realizado';
+
+            // Cria a garantia
+            \App\Models\Garantia::create([
+                'ordem_servico_id' => $os->id,
+                'tipo_servico' => $tipoServico,
+                'data_inicio' => now(),
+                'dias_garantia' => $maiorPrazo,
+                'data_fim' => now()->addDays($maiorPrazo),
+                'status' => 'ativa',
+                'observacoes' => $descricao,
+            ]);
+
+            Log::info("Garantia de {$maiorPrazo} dias criada automaticamente para OS {$os->numero_os}");
+
+        } catch (\Exception $e) {
+            Log::error("Erro ao criar garantia automática para OS {$os->numero_os}: " . $e->getMessage());
+            // Não lança exception para não bloquear a conclusão da OS
+        }
+    }
+
+    /**
      * Handle the OrdemServico "saved" event (after create or update).
      * Gerencia baixas e estornos de produtos do estoque.
      */
     public function saved(OrdemServico $ordemServico): void
     {
         // Verifica se há dados de produtos no request
-        if (! request()->has('produtosUtilizados') && ! request()->has('data.produtosUtilizados')) {
+        if (!request()->has('produtosUtilizados') && !request()->has('data.produtosUtilizados')) {
             return;
         }
 
@@ -59,7 +130,7 @@ class OrdemServicoObserver
 
                 // ESTORNAR produtos removidos
                 foreach ($produtosAtuais as $produtoAtual) {
-                    if (! $produtosNovos->has($produtoAtual->id)) {
+                    if (!$produtosNovos->has($produtoAtual->id)) {
                         Log::info("Estornando produto {$produtoAtual->item}: {$produtoAtual->pivot->quantidade_utilizada}");
                         $produtoAtual->estornar($produtoAtual->pivot->quantidade_utilizada);
                     }
@@ -79,7 +150,7 @@ class OrdemServicoObserver
                             Log::info("Aumentando baixa do produto {$estoque->item}: diferença de {$diferenca}");
                             $estoque->darBaixa($diferenca);
                         } elseif ($diferenca < 0) {
-                            Log::info("Estornando parcialmente produto {$estoque->item}: {".abs($diferenca).'}');
+                            Log::info("Estornando parcialmente produto {$estoque->item}: {" . abs($diferenca) . '}');
                             $estoque->estornar(abs($diferenca));
                         }
                     } else {
@@ -91,7 +162,7 @@ class OrdemServicoObserver
             });
         } catch (\Exception $e) {
             // Log do erro mas não interrompe o salvamento da OS
-            Log::error("Erro ao processar estoque da OS {$ordemServico->numero_os}: ".$e->getMessage());
+            Log::error("Erro ao processar estoque da OS {$ordemServico->numero_os}: " . $e->getMessage());
 
             // Re-lança a exception para que o usuário saiba do problema
             throw $e;
@@ -117,7 +188,7 @@ class OrdemServicoObserver
                 }
             });
         } catch (\Exception $e) {
-            Log::error("Erro ao estornar produtos da OS {$ordemServico->numero_os} ao deletar: ".$e->getMessage());
+            Log::error("Erro ao estornar produtos da OS {$ordemServico->numero_os} ao deletar: " . $e->getMessage());
             throw $e;
         }
     }

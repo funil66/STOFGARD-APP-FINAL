@@ -15,9 +15,9 @@ use App\Traits\HasAuditTrail;
  * Representa entradas (receitas) e saídas (despesas) do sistema financeiro.
  * Suporta PIX, boletos, e integração com orçamentos e ordens de serviço.
  */
-class Financeiro extends Model implements HasMedia
+class Financeiro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
-    use HasFactory, HasArquivos, HasAuditTrail;
+    use HasFactory, HasArquivos, HasAuditTrail, \OwenIt\Auditing\Auditable;
 
     protected $table = 'financeiros';
 
@@ -25,6 +25,7 @@ class Financeiro extends Model implements HasMedia
         'cadastro_id',
         'orcamento_id',
         'ordem_servico_id',
+        'id_parceiro',
         'tipo',
         'is_comissao',
         'comissao_paga',

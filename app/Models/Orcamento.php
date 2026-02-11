@@ -13,13 +13,20 @@ use App\Traits\HasArquivos;
 use App\Traits\HasSequentialNumber;
 use App\Traits\HasAuditTrail;
 
-class Orcamento extends Model implements HasMedia
+class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
     use HasFactory;
     use HasArquivos;
     use SoftDeletes;
     use HasSequentialNumber;
     use HasAuditTrail;
+    use \OwenIt\Auditing\Auditable;
+
+    protected static function boot()
+    {
+        parent::boot();
+        self::observe(\OwenIt\Auditing\AuditableObserver::class);
+    }
 
     // Configuração para HasSequentialNumber trait
     protected string $sequenceType = 'orcamento';
@@ -86,6 +93,68 @@ class Orcamento extends Model implements HasMedia
         $this->saveQuietly();
     }
 
+    // --- ACESSORES FINANCEIROS CENTRALIZADOS ---
+
+    /**
+     * Valor efetivo do orçamento (editado se > 0, senão calculado).
+     * Usar em TODAS as exibições: tabela, infolist, PDF.
+     */
+    public function getValorEfetivoAttribute(): float
+    {
+        return floatval($this->valor_final_editado) > 0
+            ? floatval($this->valor_final_editado)
+            : floatval($this->valor_total);
+    }
+
+    /**
+     * Verifica se o valor foi editado manualmente.
+     */
+    public function getValorFoiEditadoAttribute(): bool
+    {
+        return floatval($this->valor_final_editado) > 0;
+    }
+
+    /**
+     * Calcula o valor com todos os descontos aplicáveis.
+     * Retorna array com breakdown completo para uso em views e PDFs.
+     *
+     * @param float|null $percentualPix  Percentual de desconto PIX (de Settings)
+     * @return array{valor_base: float, desconto_prestador: float, desconto_pix: float, percentual_pix: float, valor_final: float, valor_foi_editado: bool}
+     */
+    public function getValorComDescontos(?float $percentualPix = null): array
+    {
+        $valorBase = floatval($this->valor_total);
+        $valorFinal = $this->valor_efetivo;
+        $foiEditado = $this->valor_foi_editado;
+
+        $descontoPrestador = 0;
+        $descontoPix = 0;
+
+        // Se NÃO foi editado manualmente, aplicar descontos automáticos
+        if (!$foiEditado) {
+            // Desconto do Prestador
+            if (floatval($this->desconto_prestador) > 0) {
+                $descontoPrestador = floatval($this->desconto_prestador);
+                $valorFinal -= $descontoPrestador;
+            }
+
+            // Desconto PIX
+            if ($this->aplicar_desconto_pix && $percentualPix !== null && $percentualPix > 0) {
+                $descontoPix = ($valorFinal * $percentualPix) / 100;
+                $valorFinal -= $descontoPix;
+            }
+        }
+
+        return [
+            'valor_base' => $valorBase,
+            'desconto_prestador' => $descontoPrestador,
+            'desconto_pix' => $descontoPix,
+            'percentual_pix' => $percentualPix ?? 0,
+            'valor_final' => $valorFinal,
+            'valor_foi_editado' => $foiEditado,
+        ];
+    }
+
     // --- RELACIONAMENTOS ---
 
     public function cliente(): BelongsTo
@@ -121,6 +190,8 @@ class Orcamento extends Model implements HasMedia
 
             $model->comissao_vendedor = $model->comissao_vendedor ?? 0;
             $model->comissao_loja = $model->comissao_loja ?? 0;
+            $model->desconto_prestador = $model->desconto_prestador ?? 0;
+            $model->valor_final_editado = $model->valor_final_editado ?? 0;
 
             $model->pdf_incluir_pix = $model->pdf_incluir_pix ?? \App\Models\Setting::get('pdf_include_pix_global', true);
             $model->pdf_mostrar_fotos = $model->pdf_mostrar_fotos ?? \App\Models\Setting::get('pdf_mostrar_fotos_global', true);

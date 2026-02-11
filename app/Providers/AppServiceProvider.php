@@ -42,6 +42,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // O "Modo Deus". Se retornar true aqui, ignora as Policies.
+        Gate::before(function (\App\Models\User $user, string $ability) {
+            if ($user->is_admin) {
+                return true;
+            }
+        });
         // Allow environment overrides for Node & PDF generator script during tests/CI.
         // Tests call putenv('NODE_BINARY=...') / putenv('PDF_GENERATOR_SCRIPT=...') and
         // some parts of the app read config('app.node_binary') -- ensure the runtime
@@ -59,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
         // dedicated POST route to handle authentication (with CSRF protection).
 
         // Register policy for cadastro models (cliente and parceiro)
+        Gate::policy(\App\Models\Cadastro::class, CadastroPolicy::class);
         Gate::policy(Cliente::class, CadastroPolicy::class);
         Gate::policy(Parceiro::class, CadastroPolicy::class);
 

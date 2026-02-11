@@ -45,6 +45,12 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::hex('#2563eb'), // Azul royal do logo Stofgard
                 'secondary' => Color::hex('#06b6d4'), // Azul ciano do logo
                 'gray' => Color::hex('#64748b'), // Cinza metálico do logo
+
+                // Cores para ações (dark mode compatible)
+                'success' => Color::hex('#10b981'), // Verde para PDF, Receber, Baixar
+                'warning' => Color::hex('#f59e0b'), // Amarelo/Laranja para Editar
+                'danger' => Color::hex('#ef4444'), // Vermelho para Excluir
+                'info' => Color::hex('#3b82f6'), // Azul para Ver
             ])
             ->font('Inter')
             ->maxContentWidth('full')
@@ -142,14 +148,85 @@ class AdminPanelProvider extends PanelProvider
                         }
                     }
                     
-                    /* Ocultar avatar do usuário */
-                    .fi-user-avatar, .fi-dropdown-trigger {
+                    /* Ocultar avatar do usuário (SOMENTE no topbar/user-menu, NÃO em ações de tabela) */
+                    .fi-user-avatar,
+                    .fi-topbar .fi-dropdown-trigger,
+                    .fi-sidebar .fi-dropdown-trigger {
                         display: none !important;
                     }
                     
                     /* Animações suaves */
                     .group {
                         transition: all 0.2s ease-in-out;
+                    }
+                    
+                    /* ========================================
+                       DARK MODE: Cores dos Ícones de Ação
+                       ======================================== */
+                    /* Apenas aplicar cores para botões de ícone e links, NÃO para botões preenchidos */
+                    .dark .fi-icon-btn.fi-color-success,
+                    .dark .fi-link.fi-color-success {
+                        color: rgb(16, 185, 129) !important; /* Verde */
+                    }
+                    
+                    .dark .fi-icon-btn.fi-color-warning,
+                    .dark .fi-link.fi-color-warning {
+                        color: rgb(245, 158, 11) !important; /* Amarelo/Laranja */
+                    }
+                    
+                    .dark .fi-icon-btn.fi-color-danger,
+                    .dark .fi-link.fi-color-danger {
+                        color: rgb(239, 68, 68) !important; /* Vermelho */
+                    }
+                    
+                    .dark .fi-icon-btn.fi-color-info,
+                    .dark .fi-link.fi-color-info {
+                        color: rgb(59, 130, 246) !important; /* Azul */
+                    }
+                    
+                    /* Hover states para dark mode */
+                    .dark .fi-icon-btn.fi-color-success:hover,
+                    .dark .fi-link.fi-color-success:hover {
+                        color: rgb(5, 150, 105) !important;
+                    }
+                    
+                    .dark .fi-icon-btn.fi-color-warning:hover,
+                    .dark .fi-link.fi-color-warning:hover {
+                        color: rgb(217, 119, 6) !important;
+                    }
+                    
+                    .dark .fi-icon-btn.fi-color-danger:hover,
+                    .dark .fi-link.fi-color-danger:hover {
+                        color: rgb(220, 38, 38) !important;
+                    }
+                    
+                    .dark .fi-icon-btn.fi-color-info:hover,
+                    .dark .fi-link.fi-color-info:hover {
+                        color: rgb(37, 99, 235) !important;
+                    }
+                    
+                    /* ========================================
+                       ESPAÇAMENTO ENTRE ÍCONES DE AÇÃO
+                       ======================================== */
+                    .fi-ta-actions {
+                        gap: 0.5rem !important; /* 8px entre ícones */
+                    }
+                    
+                    /* Garantir que os botões tenham espaçamento */
+                    .fi-ac-icon-btn-action,
+                    .fi-icon-btn {
+                        margin-left: 0.25rem !important;
+                        margin-right: 0.25rem !important;
+                    }
+                    
+                    /* Primeiro botão não precisa de margem esquerda */
+                    .fi-ta-actions > :first-child {
+                        margin-left: 0 !important;
+                    }
+                    
+                    /* Último botão não precisa de margem direita */
+                    .fi-ta-actions > :last-child {
+                        margin-right: 0 !important;
                     }
                 </style>' . (str_contains(request()->getPathInfo(), '/admin/login') && file_exists(public_path('downloads/stofgard.apk')) ? '<div style="text-align:center;margin:12px 0"><a href="' . url('/downloads/stofgard.apk') . '?v=' . filemtime(public_path('downloads/stofgard.apk')) . '" class="inline-block px-6 py-2 bg-[#d97706] text-white rounded-md font-medium" download>📲 Baixar APK Stofgard (Android)</a><p style="margin-top:6px;color:#6b7280;font-size:0.85rem">Instale manualmente no Android. Habilite "Fontes desconhecidas" se necessário.</p></div>' : '')
             )

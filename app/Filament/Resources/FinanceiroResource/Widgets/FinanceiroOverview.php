@@ -31,9 +31,9 @@ class FinanceiroOverview extends BaseWidget
             ->whereBetween('data_vencimento', [$inicioMes, $fimMes])
             ->sum('valor');
 
-        // Pendentes Gerais
-        $pendentesReceber = Financeiro::pendente()->entrada()->sum('valor');
-        $pendentesPagar = Financeiro::pendente()->saida()->sum('valor');
+        // Pendentes Gerais (Inclui Atrasados)
+        $pendentesReceber = Financeiro::whereIn('status', ['pendente', 'atrasado'])->entrada()->sum('valor');
+        $pendentesPagar = Financeiro::whereIn('status', ['pendente', 'atrasado'])->saida()->sum('valor');
 
         return [
             Stat::make('Saldo em Caixa', Number::currency($saldo, 'BRL'))

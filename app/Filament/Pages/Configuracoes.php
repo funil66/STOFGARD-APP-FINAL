@@ -51,7 +51,7 @@ class Configuracoes extends Page implements HasForms
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
         // chaves que são Arrays/Repeaters e precisam ser decodificadas do JSON
-        $jsonFields = ['financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento', 'system_service_types', 'admin_emails', 'pdf_layout', 'backup_tables'];
+        $jsonFields = ['financeiro_pix_keys', 'financeiro_taxas_cartao', 'financeiro_parcelamento', 'system_service_types', 'admin_emails', 'pdf_layout', 'backup_tables', 'socios_config'];
         foreach ($jsonFields as $key) {
             if (isset($settings[$key]) && is_string($settings[$key])) {
                 $decoded = json_decode($settings[$key], true);
@@ -151,6 +151,25 @@ class Configuracoes extends Page implements HasForms
                                             ->default(20)
                                             ->suffix('%')
                                             ->helperText('Quanto do lucro líquido fica na empresa antes da distribuição'),
+
+                                        Repeater::make('socios_config')
+                                            ->label('Configuração de Sócios')
+                                            ->schema([
+                                                Select::make('user_id')
+                                                    ->label('Usuário (Sócio)')
+                                                    ->options(\App\Models\User::all()->pluck('name', 'id'))
+                                                    ->required()
+                                                    ->searchable(),
+                                                TextInput::make('percentual')
+                                                    ->label('Participação (%)')
+                                                    ->numeric()
+                                                    ->suffix('%')
+                                                    ->required()
+                                                    ->maxValue(100),
+                                            ])
+                                            ->columns(2)
+                                            ->defaultItems(1)
+                                            ->addActionLabel('Adicionar Sócio'),
                                     ])->columns(2),
                             ]),
 
@@ -282,7 +301,7 @@ class Configuracoes extends Page implements HasForms
                                             ->deletable(false)
                                             ->reorderable(true)
                                             ->collapsible()
-                                            ->itemLabel(fn (array $state): ?string => $state['label'] ?? null),
+                                            ->itemLabel(fn(array $state): ?string => $state['label'] ?? null),
                                     ]),
 
                                 Section::make('Gerenciamento de Itens/Produtos')
@@ -292,19 +311,19 @@ class Configuracoes extends Page implements HasForms
                                         \Filament\Forms\Components\Placeholder::make('link_tabela_precos')
                                             ->label('')
                                             ->content(new \Illuminate\Support\HtmlString(
-                                                '<div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">'.
-                                                '<div class="flex items-center space-x-3">'.
-                                                '<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">'.
-                                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"></path>'.
-                                                '</svg>'.
-                                                '<div>'.
-                                                '<h3 class="font-semibold text-blue-900">Tabela de Preços Unificada</h3>'.
-                                                '<p class="text-sm text-blue-700">Gerencie todos os itens, preços e categorias em um local único.</p>'.
-                                                '<a href="/admin/configuracoes/tabela-precos" class="inline-flex items-center mt-2 text-sm font-medium text-blue-600 hover:text-blue-800">'.
-                                                'Acessar Tabela de Preços →'.
-                                                '</a>'.
-                                                '</div>'.
-                                                '</div>'.
+                                                '<div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">' .
+                                                '<div class="flex items-center space-x-3">' .
+                                                '<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">' .
+                                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"></path>' .
+                                                '</svg>' .
+                                                '<div>' .
+                                                '<h3 class="font-semibold text-blue-900">Tabela de Preços Unificada</h3>' .
+                                                '<p class="text-sm text-blue-700">Gerencie todos os itens, preços e categorias em um local único.</p>' .
+                                                '<a href="/admin/configuracoes/tabela-precos" class="inline-flex items-center mt-2 text-sm font-medium text-blue-600 hover:text-blue-800">' .
+                                                'Acessar Tabela de Preços →' .
+                                                '</a>' .
+                                                '</div>' .
+                                                '</div>' .
                                                 '</div>'
                                             )),
                                     ]),
@@ -532,13 +551,13 @@ class Configuracoes extends Page implements HasForms
                                                     ])
                                                     ->required()
                                                     ->reactive()
-                                                    ->afterStateUpdated(fn (callable $set) => $set('validada', false)),
+                                                    ->afterStateUpdated(fn(callable $set) => $set('validada', false)),
 
                                                 TextInput::make('chave')
                                                     ->label('Chave PIX')
                                                     ->required()
                                                     ->reactive()
-                                                    ->afterStateUpdated(fn (callable $set) => $set('validada', false))
+                                                    ->afterStateUpdated(fn(callable $set) => $set('validada', false))
                                                     ->rules(function (callable $get) {
                                                         $tipo = $get('tipo');
 
@@ -567,8 +586,8 @@ class Configuracoes extends Page implements HasForms
                                                 TextInput::make('codigo_pais')
                                                     ->label('Código do País')
                                                     ->default('55')
-                                                    ->visible(fn (callable $get) => $get('tipo') === 'telefone')
-                                                    ->required(fn (callable $get) => $get('tipo') === 'telefone')
+                                                    ->visible(fn(callable $get) => $get('tipo') === 'telefone')
+                                                    ->required(fn(callable $get) => $get('tipo') === 'telefone')
                                                     ->numeric()
                                                     ->helperText('Ex: 55 para Brasil'),
 
@@ -578,12 +597,12 @@ class Configuracoes extends Page implements HasForms
                                                     ->helperText('Indica se a chave passou pela validação automática'),
                                             ])->columns(2)
                                             ->itemLabel(
-                                                fn (array $state): ?string => ($state['tipo'] ?? 'Novo').': '.($state['chave'] ?? 'Não definido')
+                                                fn(array $state): ?string => ($state['tipo'] ?? 'Novo') . ': ' . ($state['chave'] ?? 'Não definido')
                                             )
                                             ->afterStateUpdated(function (callable $get, callable $set, $state) {
                                                 if (is_array($state)) {
                                                     foreach ($state as $index => $chaveData) {
-                                                        if (isset($chaveData['chave']) && isset($chaveData['tipo']) && ! empty($chaveData['chave'])) {
+                                                        if (isset($chaveData['chave']) && isset($chaveData['tipo']) && !empty($chaveData['chave'])) {
                                                             $validacao = \App\Services\Pix\PixKeyValidatorService::validate(
                                                                 $chaveData['chave'],
                                                                 $chaveData['tipo'],
@@ -667,19 +686,19 @@ class Configuracoes extends Page implements HasForms
         // Ensure settings are saved first?
         // Optional: $this->save();
 
-        $zipFileName = 'backup-'.now()->format('Y-m-d-His').'.zip';
+        $zipFileName = 'backup-' . now()->format('Y-m-d-His') . '.zip';
         // Ensure directory exists
-        if (! is_dir(storage_path('app/public/backups'))) {
+        if (!is_dir(storage_path('app/public/backups'))) {
             mkdir(storage_path('app/public/backups'), 0755, true);
         }
-        $zipPath = storage_path('app/public/backups/'.$zipFileName);
+        $zipPath = storage_path('app/public/backups/' . $zipFileName);
 
         $zip = new \ZipArchive;
         if ($zip->open($zipPath, \ZipArchive::CREATE) === true) {
 
             // Export Tables to JSON
             foreach ($tables as $table) {
-                $modelClass = 'App\\Models\\'.\Illuminate\Support\Str::studly(\Illuminate\Support\Str::singular($table));
+                $modelClass = 'App\\Models\\' . \Illuminate\Support\Str::studly(\Illuminate\Support\Str::singular($table));
 
                 // Handle specific table mappings correctly
                 if ($table === 'ordem_servicos') {
@@ -729,7 +748,7 @@ class Configuracoes extends Page implements HasForms
                     if (strpos($relativePath, 'backups/') === 0 || $relativePath === $zipFileName) {
                         continue;
                     }
-                    $zip->addFile($file->getRealPath(), 'storage/'.$relativePath);
+                    $zip->addFile($file->getRealPath(), 'storage/' . $relativePath);
                 }
             }
 
@@ -746,7 +765,7 @@ class Configuracoes extends Page implements HasForms
                 ->label('Baixar Backup')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
-                ->action(fn () => $this->exportData()),
+                ->action(fn() => $this->exportData()),
 
             Action::make('limpar_cache')
                 ->label('Resetar Cache')

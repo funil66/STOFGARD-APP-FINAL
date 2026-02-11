@@ -220,8 +220,7 @@ class OrdemServicoResource extends Resource
                     ->collapsible()
                     ->collapsed()
                     ->schema([
-                        Repeater::make('produtosUtilizados')
-                            ->relationship('produtosUtilizados')
+                        Repeater::make('produtos_selecionados') // Renomeado para evitar conflito e salvar manualmente
                             ->label('')
                             ->schema([
                                 Select::make('estoque_id')
@@ -403,69 +402,98 @@ class OrdemServicoResource extends Resource
                             ->when($data['created_until'], fn(Builder $query, $date) => $query->whereDate('created_at', '<=', $date));
                     }),
             ])
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\Action::make('download')
-                        ->label('Baixar PDF')
-                        ->icon('heroicon-o-arrow-down-tray')
-                        ->url(fn(?OrdemServico $record) => $record ? route('os.pdf', $record) : null)
-                        ->openUrlInNewTab(),
-                    Tables\Actions\DeleteAction::make(),
-                ]),
-                // Botões de Ação Rápida
-                Tables\Actions\Action::make('receber')
-                    ->label('')
-                    ->tooltip('Receber')
-                    ->icon('heroicon-o-currency-dollar')
-                    ->color('success')
-                    ->iconButton()
-                    ->visible(fn(OrdemServico $record) => $record->status !== 'cancelada' && ($record->financeiro?->status !== 'pago'))
-                    ->form([
-                        Forms\Components\DatePicker::make('data_pagamento')->default(now())->required(),
-                        Forms\Components\TextInput::make('valor_pago')->default(fn(OrdemServico $record) => $record->valor_total)->numeric()->prefix('R$')->required(),
-                        Forms\Components\Select::make('forma_pagamento')->options(['pix' => 'PIX', 'dinheiro' => 'Dinheiro', 'cartao_credito' => 'Crédito', 'cartao_debito' => 'Débito'])->required(),
-                    ])
-                    ->action(function (OrdemServico $record, array $data) {
-                        $financeiro = $record->financeiro;
-                        if (!$financeiro) {
-                            $financeiro = \App\Models\Financeiro::create([
-                                'cadastro_id' => $record->cliente_id ?? null,
-                                'ordem_servico_id' => $record->id,
-                                'tipo' => 'entrada',
-                                'descricao' => "Recebimento OS #{$record->numero_os}",
-                                'valor' => $record->valor_total,
-                                'data_vencimento' => $record->data_conclusao ?? now(),
-                                'status' => 'pendente',
-                            ]);
-                        }
-                        $financeiro->update([
-                            'status' => 'pago',
-                            'valor_pago' => $data['valor_pago'],
-                            'data_pagamento' => $data['data_pagamento'],
-                            'forma_pagamento' => $data['forma_pagamento'],
-                        ]);
-                        \Filament\Notifications\Notification::make()->title('Pagamento Registrado!')->success()->send();
-                    }),
+            ->actions(
+                \App\Support\Filament\StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        // 1. PDF (Verde)
+                        Tables\Actions\Action::make('pdf')
+                            ->label('PDF')
+                            ->icon('heroicon-s-document-text')
+                            ->color('success')
+                            ->tooltip('Imprimir Ficha da OS')
+                            // ->iconButton()
+                            ->url(fn(?OrdemServico $record) => $record ? route('os.pdf', $record) : null)
+                            ->openUrlInNewTab(),
 
-                Tables\Actions\Action::make('concluir')
-                    ->label('')
-                    ->tooltip('Concluir')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->iconButton()
-                    ->visible(fn(?OrdemServico $record) => $record && $record->status !== 'concluida')
-                    ->requiresConfirmation()
-                    ->action(fn(OrdemServico $record) => $record->update(['status' => 'concluida'])),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('marcar_agendada')->action(fn($records) => $records->each->update(['status' => 'agendada'])),
-                    Tables\Actions\BulkAction::make('marcar_concluida')->action(fn($records) => $records->each->update(['status' => 'concluida'])),
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+                        // 4. Baixar/Receber (Verde escuro)
+                        Tables\Actions\Action::make('baixar')
+                            ->label('Receber')
+                            ->tooltip('Receber Pagamento')
+                            ->icon('heroicon-s-currency-dollar')
+                            ->color('success')
+                            // ->iconButton()
+                            ->visible(fn(OrdemServico $record) => $record->status !== 'cancelada' && ($record->financeiro?->status !== 'pago'))
+                            ->form([
+                                Forms\Components\DatePicker::make('data_pagamento')->default(now())->required()->label('Data do Pagamento'),
+                                Forms\Components\TextInput::make('valor_pago')
+                                    ->default(fn(OrdemServico $record) => $record->valor_total)
+                                    ->numeric()
+                                    ->prefix('R$')
+                                    ->required()
+                                    ->label('Valor Recebido'),
+                                Forms\Components\Select::make('forma_pagamento')
+                                    ->options([
+                                        'pix' => 'PIX',
+                                        'dinheiro' => 'Dinheiro',
+                                        'cartao_credito' => 'Crédito',
+                                        'cartao_debito' => 'Débito'
+                                    ])
+                                    ->required()
+                                    ->label('Forma de Pagamento'),
+                            ])
+                            ->action(function (OrdemServico $record, array $data) {
+                                $financeiro = $record->financeiro;
+                                if (!$financeiro) {
+                                    $financeiro = \App\Models\Financeiro::create([
+                                        'cadastro_id' => $record->cliente_id ?? null,
+                                        'ordem_servico_id' => $record->id,
+                                        'tipo' => 'entrada',
+                                        'descricao' => "Recebimento OS #{$record->numero_os}",
+                                        'valor' => $record->valor_total,
+                                        'data_vencimento' => $record->data_conclusao ?? now(),
+                                        'data' => now(),
+                                        'status' => 'pendente',
+                                    ]);
+                                }
+                                $financeiro->update([
+                                    'status' => 'pago',
+                                    'valor_pago' => $data['valor_pago'],
+                                    'data_pagamento' => $data['data_pagamento'],
+                                    'forma_pagamento' => $data['forma_pagamento'],
+                                ]);
+                                \Filament\Notifications\Notification::make()->title('Pagamento Registrado!')->success()->send();
+                            }),
+
+                        // 3. Concluir OS
+                        Tables\Actions\Action::make('concluir')
+                            ->label('Concluir')
+                            ->tooltip('Concluir OS')
+                            ->icon('heroicon-s-check-circle') // Changed Icon to check-circle
+                            ->color('warning')
+                            // ->iconButton()
+                            ->visible(fn(?OrdemServico $record) => $record && $record->status !== 'concluida')
+                            ->requiresConfirmation()
+                            ->modalHeading('Concluir Ordem de Serviço')
+                            ->modalDescription('Tem certeza que deseja marcar esta OS como concluída?')
+                            ->action(fn(OrdemServico $record) => $record->update(['status' => 'concluida'])),
+                    ]
+                )
+            )
+            ->bulkActions(
+                \App\Support\Filament\StofgardTable::defaultBulkActions([
+                    Tables\Actions\BulkAction::make('marcar_agendada')
+                        ->label('Marcar como Agendada')
+                        ->icon('heroicon-m-calendar')
+                        ->action(fn($records) => $records->each->update(['status' => 'agendada'])),
+                    Tables\Actions\BulkAction::make('marcar_concluida')
+                        ->label('Marcar como Concluída')
+                        ->icon('heroicon-m-check-circle')
+                        ->action(fn($records) => $records->each->update(['status' => 'concluida'])),
+                ])
+            );
     }
 
     public static function getRelations(): array
@@ -520,6 +548,11 @@ class OrdemServicoResource extends Resource
                             TextEntry::make('vendedor.nome')
                                 ->label('Vendedor')
                                 ->icon('heroicon-m-user-circle'),
+                            TextEntry::make('id_parceiro')
+                                ->label('ID Parceiro')
+                                ->badge()
+                                ->color('info')
+                                ->placeholder('-'),
                         ]),
                     ]),
 
@@ -620,6 +653,56 @@ class OrdemServicoResource extends Resource
                                     TextEntry::make('financeiro.data_pagamento')->label('Data Pagto')->date('d/m/Y'),
                                     TextEntry::make('financeiro.valor_pago')->label('Valor Pago')->money('BRL'),
                                 ]),
+                            ]),
+
+                        Infolists\Components\Tabs\Tab::make('📜 Histórico')
+                            ->icon('heroicon-m-clock')
+                            ->badge(fn($record) => $record->audits()->count())
+                            ->schema([
+                                RepeatableEntry::make('audits')
+                                    ->label('')
+                                    ->schema([
+                                        InfolistGrid::make(4)->schema([
+                                            TextEntry::make('user.name')
+                                                ->label('Usuário')
+                                                ->icon('heroicon-m-user'),
+                                            TextEntry::make('event')
+                                                ->label('Ação')
+                                                ->badge()
+                                                ->formatStateUsing(fn(string $state): string => match ($state) {
+                                                    'created' => 'Criação',
+                                                    'updated' => 'Edição',
+                                                    'deleted' => 'Exclusão',
+                                                    'restored' => 'Restauração',
+                                                    default => ucfirst($state),
+                                                })
+                                                ->color(fn(string $state): string => match ($state) {
+                                                    'created' => 'success',
+                                                    'updated' => 'warning',
+                                                    'deleted' => 'danger',
+                                                    default => 'gray',
+                                                }),
+                                            TextEntry::make('created_at')
+                                                ->label('Data')
+                                                ->dateTime('d/m/Y H:i:s'),
+                                            TextEntry::make('ip_address')
+                                                ->label('IP')
+                                                ->icon('heroicon-m-globe-alt')
+                                                ->copyable(),
+                                        ]),
+                                        \Filament\Infolists\Components\KeyValueEntry::make('old_values')
+                                            ->label('Valores Antigos')
+                                            ->visible(fn($state) => !empty($state)),
+                                        \Filament\Infolists\Components\KeyValueEntry::make('new_values')
+                                            ->label('Novos Valores')
+                                            ->visible(fn($state) => !empty($state)),
+                                    ])
+                                    ->grid(1)
+                                    ->contained(false),
+                                TextEntry::make('sem_historico')
+                                    ->label('')
+                                    ->default('Nenhuma alteração registrada.')
+                                    ->visible(fn($record) => $record->audits()->count() === 0),
                             ]),
                     ]),
             ]);

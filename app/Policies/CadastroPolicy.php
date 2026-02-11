@@ -7,11 +7,19 @@ use App\Models\User;
 class CadastroPolicy
 {
     /**
+     * Verifica se usuário pode visualizar lista
+     */
+    public function viewAny(User $user): bool
+    {
+        return true;
+    }
+
+    /**
      * Verifica se usuário pode visualizar registros
      */
     public function view(User $user, $model): bool
     {
-        return settings()->isAdmin($user);
+        return true;
     }
 
     /**
@@ -19,7 +27,7 @@ class CadastroPolicy
      */
     public function update(User $user, $model): bool
     {
-        return settings()->isAdmin($user);
+        return true;
     }
 
     /**
@@ -33,10 +41,14 @@ class CadastroPolicy
     /**
      * Verifica se usuário pode baixar arquivos
      */
-    public function download(User $user, $model): bool
+    public function restore(User $user, $model): bool
     {
-        // Downloads requerem apenas autenticação
-        return $user !== null;
+        return true;
+    }
+
+    public function forceDelete(User $user, $model): bool
+    {
+        return settings()->isAdmin($user);
     }
 }
 

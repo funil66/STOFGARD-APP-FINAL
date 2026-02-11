@@ -7,21 +7,12 @@
         </div>
 
         @php
-            // Logic duplicated here or passed from parent? passed from parent is better but we recalculate for safety
-            $valorFinal = $orcamento->valor_final_editado ?? $orcamento->valor_total;
-            $descontoPrestador = $orcamento->desconto_prestador ?? 0;
-            if ($descontoPrestador > 0 && !$orcamento->valor_final_editado) {
-                $valorFinal -= $descontoPrestador;
-            }
-            // Recalculate PIX discount for display
-            $percentual = $config->financeiro_desconto_avista ?? 10;
-            $descontoPix = 0;
-            if ($orcamento->aplicar_desconto_pix && $percentual > 0) {
-                // If manually edited, do NOT apply extra discount
-                if (!$orcamento->valor_final_editado) {
-                    $descontoPix = ($valorFinal * $percentual) / 100;
-                }
-            }
+            // Usa método centralizado do Model para garantir consistência
+            $percentual = floatval($config->financeiro_desconto_avista ?? 10);
+            $descontos = $orcamento->getValorComDescontos($percentual);
+            $valorFinal = $descontos['valor_final'];
+            $descontoPrestador = $descontos['desconto_prestador'];
+            $descontoPix = $descontos['desconto_pix'];
         @endphp
 
         @if($descontoPrestador > 0)
@@ -31,12 +22,38 @@
             </div>
         @endif
 
+        @if($descontoPix > 0)
+            <div class="valor-row desconto">
+                <span>Desconto PIX ({{ $percentual }}%):</span>
+                <span>- R$ {{ number_format($descontoPix, 2, ',', '.') }}</span>
+            </div>
+        @endif
+
         <div class="valor-row-separator"></div>
 
         <div class="valor-total-box">
             <div class="valor-total-label">VALOR FINAL</div>
             <div class="valor-total-value">R$ {{ number_format($valorFinal, 2, ',', '.') }}</div>
         </div>
+
+        {{-- Comissões (Apenas se houver) --}}
+        @if($orcamento->comissao_vendedor > 0 || $orcamento->comissao_loja > 0)
+            <div class="valor-row-separator"></div>
+            <div style="font-size: 9px; color: #666; margin-top: 5px;">
+                @if($orcamento->comissao_vendedor > 0)
+                    <div class="valor-row">
+                        <span>Comissão Vendedor:</span>
+                        <span>R$ {{ number_format($orcamento->comissao_vendedor, 2, ',', '.') }}</span>
+                    </div>
+                @endif
+                @if($orcamento->comissao_loja > 0)
+                    <div class="valor-row">
+                        <span>Comissão Loja:</span>
+                        <span>R$ {{ number_format($orcamento->comissao_loja, 2, ',', '.') }}</span>
+                    </div>
+                @endif
+            </div>
+        @endif
 
         <!-- PARCELAMENTO -->
         @if(isset($config->financeiro_parcelamento) && is_array($config->financeiro_parcelamento) && count($config->financeiro_parcelamento) > 0)
@@ -72,25 +89,18 @@
             </div>
 
             @php
-                // Recalculate Final Value locally if needed
-                $valorFinal = $orcamento->valor_final_editado ?? $orcamento->valor_total;
-                if (($orcamento->desconto_prestador ?? 0) > 0 && !$orcamento->valor_final_editado) {
-                    $valorFinal -= $orcamento->desconto_prestador;
-                }
-                $percentual = $config->financeiro_desconto_avista ?? 10;
-                if ($orcamento->aplicar_desconto_pix && $percentual > 0) {
-                    if (!$orcamento->valor_final_editado) {
-                        $valorFinal -= ($valorFinal * $percentual / 100);
-                    }
-                }
-             @endphp
+                // Usa método centralizado do Model para consistência
+                $percentual = floatval($config->financeiro_desconto_avista ?? 10);
+                $descontos = $orcamento->getValorComDescontos($percentual);
+                $valorFinal = $descontos['valor_final'];
+            @endphp
 
             <div class="pix-valor" style="font-size: 1.1em; font-weight: bold;">R$ {{ number_format($valorFinal, 2, ',', '.') }}
             </div>
 
-            @if(!$orcamento->valor_final_editado && $orcamento->aplicar_desconto_pix)
+            @if(!$descontos['valor_foi_editado'] && $orcamento->aplicar_desconto_pix && $descontos['desconto_pix'] > 0)
                 <div class="pix-desconto" style="font-size: 8px; margin-top:2px;">
-                    (Já com {{ $config->financeiro_desconto_avista ?? 10 }}% de desconto)
+                    (Já com {{ $percentual }}% de desconto)
                 </div>
             @endif
 
@@ -98,17 +108,18 @@
                 <div style="margin-top: 8px; position: relative;">
                     <!-- Label discreto -->
                     <div style="font-size: 7px; color: #777; margin-bottom: 2px;">PIX COPIA E COLA:</div>
-                    <div class="pix-code" style="
-                                                                                    word-break: break-all; 
-                                                                                    font-size: 8px; 
-                                                                                    text-align: left; 
-                                                                                    color: #333; 
-                                                                                    padding: 6px; 
-                                                                                    background: #fdfdfd; 
-                                                                                    border: 1px dashed #a7f3d0; 
-                                                                                    border-radius: 4px;
-                                                                                    line-height: 1.25;
-                                                                                 ">
+                    <div class="pix-code"
+                        style="
+                                                                                                                                                                        word-break: break-all; 
+                                                                                                                                                                        font-size: 8px; 
+                                                                                                                                                                        text-align: left; 
+                                                                                                                                                                        color: #333; 
+                                                                                                                                                                        padding: 6px; 
+                                                                                                                                                                        background: #fdfdfd; 
+                                                                                                                                                                        border: 1px dashed #a7f3d0; 
+                                                                                                                                                                        border-radius: 4px;
+                                                                                                                                                                        line-height: 1.25;
+                                                                                                                                                                     ">
                         {{ $orcamento->pix_copia_cola }}
                     </div>
                 </div>

@@ -18,9 +18,10 @@ class DatabaseSeeder extends Seeder
             ConfiguracaoSeeder::class,
             ConfigSeed::class, // Configurações personalizadas do sistema
             AuxiliaryListsSeeder::class, // Listas auxiliares (unidades, tipos, etc.)
+            CadastroTipoSeeder::class,   // Categorias de cadastro (Cliente, Lead, etc.)
             TabelaPrecosSeeder::class,
             UserSeeder::class, // Create default admin and users
-            // CompleteTestDataSeeder::class, // ⚠️ Descomente apenas para desenvolvimento/teste
+            CompleteTestDataSeeder::class,
             // ClienteFactory::class, // (Se necessário)
         ]);
     }

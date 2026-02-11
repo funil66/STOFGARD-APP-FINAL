@@ -37,21 +37,8 @@ class OrcamentoPdfController extends Controller
         // --- LÓGICA DE PIX ---
         if ($orcamento->pdf_incluir_pix && $orcamento->pix_chave_selecionada) {
             try {
-                // 1. Calcular Valor Final (Com descontos)
-                $valorFinal = $orcamento->valor_final_editado ?? $orcamento->valor_total;
-
-                // Desconto do Prestador
-                if (($orcamento->desconto_prestador ?? 0) > 0) {
-                    if (!$orcamento->valor_final_editado) { // Evita descontar duas vezes se já estiver no valor final
-                        $valorFinal -= $orcamento->desconto_prestador;
-                    }
-                }
-
-                // Desconto PIX (Se configurado e habilitado)
-                $config = \App\Models\Configuracao::first(); // Ou buscar via Settings se usar json
-                $descontoPix = 0;
-
-                // Busca configurações via Helper ou Model Setting diretamente para garantir
+                // 1. Calcular Valor Final (Usando método centralizado do Model)
+                // Busca configurações via Settings
                 $settingsArray = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
 
                 // Decodifica JSONs conhecidos
@@ -65,15 +52,11 @@ class OrcamentoPdfController extends Controller
                 // Cria objeto Config Fake para a View
                 $config = (object) $settingsArray;
 
-                $percentualPix = $settingsArray['financeiro_desconto_avista'] ?? 10;
+                $percentualPix = floatval($settingsArray['financeiro_desconto_avista'] ?? 10);
 
-                if ($orcamento->aplicar_desconto_pix && $percentualPix > 0) {
-                    // NEW RULE: If value was manually edited, do NOT apply PIX discount again
-                    if (!$orcamento->valor_final_editado) {
-                        $descontoPix = ($valorFinal * $percentualPix) / 100;
-                        $valorFinal -= $descontoPix;
-                    }
-                }
+                // Usa o método centralizado do model
+                $descontos = $orcamento->getValorComDescontos($percentualPix);
+                $valorFinal = $descontos['valor_final'];
 
                 // 2. Encontrar Titular da Chave
                 $chavesPix = $config->financeiro_pix_keys ?? []; // Já decodificado acima

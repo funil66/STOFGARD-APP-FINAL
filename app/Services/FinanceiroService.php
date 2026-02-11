@@ -87,7 +87,7 @@ class FinanceiroService
             ->send();
     }
 
-    public static function pagarComissao(Financeiro $record): void
+    public static function pagarComissao(Financeiro $record, ?array $dados = null): void
     {
         $record->update([
             'comissao_paga' => true,
@@ -97,9 +97,33 @@ class FinanceiroService
             'valor_pago' => $record->valor,
         ]);
 
+        // Se dados adicionais foram passados, cria a DESPESA correspondente
+        if ($dados) {
+            // Busca ou cria categoria 'Comissões'
+            $categoria = \App\Models\Categoria::firstOrCreate(
+                ['nome' => 'Comissões', 'tipo' => 'financeiro_despesa'],
+                ['cor' => '#f59e0b', 'icone' => '💼']
+            );
+
+            Financeiro::create([
+                'tipo' => 'saida',
+                'status' => 'pago',
+                'data' => now(),
+                'data_vencimento' => now(),
+                'data_pagamento' => $dados['data_pagamento'] ?? now(),
+                'valor' => $dados['valor'] ?? $record->valor,
+                'valor_pago' => $dados['valor'] ?? $record->valor,
+                'descricao' => 'Comissão ref. ' . ($record->descricao ?? 'Venda'),
+                'categoria_id' => $categoria->id,
+                'cadastro_id' => $dados['beneficiario_id'] ?? null,
+                'observacoes' => 'Pagamento de comissão gerado automaticamente.',
+                'forma_pagamento' => 'transferencia', // Default
+            ]);
+        }
+
         Notification::make()
             ->title('Comissão paga com sucesso!')
-            ->body('A comissão foi marcada como paga e o lançamento foi atualizado.')
+            ->body('A comissão foi marcada como paga e a despesa financeira gerada.')
             ->success()
             ->send();
     }

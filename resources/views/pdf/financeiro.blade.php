@@ -237,6 +237,9 @@
             <div class="titulo-doc">RECIBO / DETALHAMENTO</div>
             <div class="numero-doc">#{{ str_pad($financeiro->id, 6, '0', STR_PAD_LEFT) }}</div>
             <div style="font-size: 9px; opacity: 0.9;">
+                @if(!empty($financeiro->id_parceiro))
+                    <span style="font-weight: bold; color: yellow;">ID Parceiro: {{ $financeiro->id_parceiro }}</span><br>
+                @endif
                 Emissão: {{ now()->format('d/m/Y') }}
             </div>
         </div>

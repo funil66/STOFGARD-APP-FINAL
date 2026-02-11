@@ -13,7 +13,12 @@ class ListGarantias extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            \Filament\Actions\Action::make('configurar')
+                ->label('⚙️ Configurar Garantias')
+                ->icon('heroicon-o-cog-6-tooth')
+                ->color('info')
+                ->url('/admin/configuracoes?activeTab=🛡️ Garantias')
+                ->tooltip('Configure os prazos de garantia por tipo de serviço'),
         ];
     }
 }

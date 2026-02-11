@@ -40,11 +40,6 @@ class FinanceiroPolicy
      */
     public function update(User $user, Financeiro $financeiro): bool
     {
-        // Registros pagos são imutáveis (exceto para admins)
-        if ($financeiro->status === 'pago') {
-            return settings()->isAdmin($user);
-        }
-
         return true;
     }
 
@@ -53,18 +48,7 @@ class FinanceiroPolicy
      */
     public function delete(User $user, Financeiro $financeiro): bool
     {
-        // Nunca permitir deletar registros pagos
-        if ($financeiro->status === 'pago') {
-            return false;
-        }
-
-        // Registros com comprovante fiscal não podem ser excluídos
-        if (!empty($financeiro->comprovante)) {
-            return false;
-        }
-
-        // Para registros pendentes, apenas admin pode deletar
-        return settings()->isAdmin($user);
+        return $user->is_admin === true;
     }
 
     /**

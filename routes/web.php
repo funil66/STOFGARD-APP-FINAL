@@ -57,7 +57,6 @@ Route::middleware(['auth'])->group(function () {
         ->name('google.auth');
     Route::get('/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback'])
         ->name('google.callback');
-
     // Rota para visualizar PDF do orçamento
     Route::get('/orcamento/{orcamento}/pdf', [OrcamentoPdfController::class, 'gerarPdf'])
         ->name('orcamento.pdf');

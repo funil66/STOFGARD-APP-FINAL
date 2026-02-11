@@ -29,10 +29,12 @@ class CategoriaResource extends Resource
     // Slug direto para acesso
     protected static ?string $slug = 'categorias';
 
-    // Acessado via Financeiro > Categorias ou Configurações hub
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?string $navigationGroup = 'Configurações';
 
-    protected static ?int $navigationSort = 10;
+    // Acessado via Financeiro > Categorias ou Configurações hub
+    protected static bool $shouldRegisterNavigation = true;
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
@@ -182,38 +184,28 @@ class CategoriaResource extends Resource
                     ->trueLabel('Apenas ativos')
                     ->falseLabel('Apenas inativos'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('pdf')
-                    ->label('')
-                    ->tooltip('Abrir PDF')
-                    ->icon('heroicon-o-document-text')
-                    ->color('info')
-                    ->url(fn(Categoria $record) => route('categoria.pdf', $record))
-                    ->openUrlInNewTab(),
+            ->actions(
+                \App\Support\Filament\StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        Tables\Actions\Action::make('pdf')
+                            ->label('Abrir PDF')
+                            ->icon('heroicon-o-document-text')
+                            ->color('info')
+                            ->url(fn(Categoria $record) => route('categoria.pdf', $record))
+                            ->openUrlInNewTab(),
 
-                Tables\Actions\ViewAction::make()
-                    ->label('')
-                    ->tooltip('Visualizar')
-                    ->iconButton(),
-
-                Tables\Actions\EditAction::make()
-                    ->label('')
-                    ->tooltip('Editar')
-                    ->iconButton(),
-
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn(Categoria $record) => route('categoria.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\DeleteAction::make()
-                    ->label('')
-                    ->tooltip('Excluir')
-                    ->iconButton(),
-            ])
+                        Tables\Actions\Action::make('download')
+                            ->label('Baixar PDF')
+                            ->icon('heroicon-o-arrow-down-tray')
+                            ->color('success')
+                            ->url(fn(Categoria $record) => route('categoria.pdf', $record))
+                            ->openUrlInNewTab(),
+                    ]
+                )
+            )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

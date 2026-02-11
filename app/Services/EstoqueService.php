@@ -61,4 +61,21 @@ class EstoqueService
             // throw new \Exception("Estoque insuficiente.");
         }
     }
+    /**
+     * Baixa o estoque dos produtos utilizados em uma Ordem de Serviço.
+     *
+     * @param \App\Models\OrdemServico $os
+     * @return void
+     */
+    public static function baixarEstoquePorOS(\App\Models\OrdemServico $os): void
+    {
+        foreach ($os->produtosUtilizados as $produto) {
+            $quantidade = $produto->pivot->quantidade_utilizada;
+
+            if ($quantidade > 0) {
+                // Usa o método existente para manter a lógica de notificação/validação
+                self::consumirEstoque($produto, $quantidade);
+            }
+        }
+    }
 }

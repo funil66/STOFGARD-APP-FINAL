@@ -24,6 +24,7 @@ class Configuracao extends Model
         'status_orcamento_personalizado',
         'formas_pagamento_personalizado',
         'cores_pdf',
+        'config_prazo_garantia',
     ];
 
     protected $casts = [
@@ -33,6 +34,7 @@ class Configuracao extends Model
         'status_orcamento_personalizado' => 'array',
         'formas_pagamento_personalizado' => 'array',
         'cores_pdf' => 'array',
+        'config_prazo_garantia' => 'array',
     ];
 
     public function tabela_precos()

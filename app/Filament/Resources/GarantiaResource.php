@@ -30,9 +30,21 @@ class GarantiaResource extends Resource
     // Submódulo de Configurações
     protected static ?string $slug = 'configuracoes/garantias';
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static bool $shouldRegisterNavigation = true; // Agora visível
+
+    protected static ?string $navigationGroup = 'Configurações';
 
     protected static ?int $navigationSort = 6;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::where('status', 'ativa')->count();
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'success';
+    }
 
     public static function form(Form $form): Form
     {
@@ -96,13 +108,13 @@ class GarantiaResource extends Resource
                             ->label('Data de Uso')
                             ->native(false)
                             ->displayFormat('d/m/Y')
-                            ->visible(fn ($get) => in_array($get('status'), ['utilizada']))
+                            ->visible(fn($get) => in_array($get('status'), ['utilizada']))
                             ->columnSpan(1),
 
                         Forms\Components\Textarea::make('motivo_uso')
                             ->label('Motivo do Uso da Garantia')
                             ->rows(3)
-                            ->visible(fn ($get) => in_array($get('status'), ['utilizada']))
+                            ->visible(fn($get) => in_array($get('status'), ['utilizada']))
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -111,6 +123,7 @@ class GarantiaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->description('💡 Garantias são **criadas automaticamente** ao concluir OSs. Configure os prazos por tipo de serviço em **Configurações**.')
             ->columns([
                 Tables\Columns\TextColumn::make('ordemServico.numero_os')
                     ->label('OS')
@@ -128,8 +141,8 @@ class GarantiaResource extends Resource
                 Tables\Columns\TextColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn (string $state): string => \App\Services\ServiceTypeManager::getColor($state))
-                    ->formatStateUsing(fn (string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
+                    ->color(fn(string $state): string => \App\Services\ServiceTypeManager::getColor($state))
+                    ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state))
                     ->visibleFrom('lg'),
 
                 Tables\Columns\TextColumn::make('data_inicio')
@@ -143,17 +156,17 @@ class GarantiaResource extends Resource
                     ->date('d/m/Y')
                     ->sortable()
                     ->badge()
-                    ->color(fn ($record): string => $record->esta_vencida ? 'danger' : 'success')
+                    ->color(fn($record): string => $record->esta_vencida ? 'danger' : 'success')
                     ->description(function ($record): string {
                         $dias = $record->dias_restantes;
                         if ($dias < 0) {
-                            return 'Vencida há '.abs($dias).' dias';
+                            return 'Vencida há ' . abs($dias) . ' dias';
                         }
                         if ($dias === 0) {
                             return 'Vence hoje';
                         }
 
-                        return 'Restam '.$dias.' dias';
+                        return 'Restam ' . $dias . ' dias';
                     }),
 
                 Tables\Columns\TextColumn::make('dias_garantia')
@@ -165,14 +178,14 @@ class GarantiaResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'ativa' => 'success',
                         'vencida' => 'danger',
                         'utilizada' => 'warning',
                         'cancelada' => 'gray',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'ativa' => '✅ Ativa',
                         'vencida' => '❌ Vencida',
                         'utilizada' => '⚠️ Utilizada',
@@ -209,69 +222,61 @@ class GarantiaResource extends Resource
 
                 Tables\Filters\Filter::make('proximas_vencer')
                     ->label('Próximas a vencer (30 dias)')
-                    ->query(fn (Builder $query): Builder => $query->proximasVencer(30)),
+                    ->query(fn(Builder $query): Builder => $query->proximasVencer(30)),
 
                 Tables\Filters\TrashedFilter::make(),
             ])
-            ->actions([
-                Tables\Actions\Action::make('utilizar')
-                    ->label('Usar Garantia')
-                    ->icon('heroicon-o-wrench-screwdriver')
-                    ->color('warning')
-                    ->visible(fn ($record): bool => $record->status === 'ativa')
-                    ->form([
-                        Forms\Components\DatePicker::make('usado_em')
-                            ->label('Data de Uso')
-                            ->required()
-                            ->native(false)
-                            ->displayFormat('d/m/Y')
-                            ->default(now())
-                            ->maxDate(now()),
+            ->actions(
+                \App\Support\Filament\StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        Tables\Actions\Action::make('utilizar')
+                            ->label('Usar Garantia')
+                            ->icon('heroicon-o-wrench-screwdriver')
+                            ->color('warning')
+                            ->visible(fn($record): bool => $record->status === 'ativa')
+                            ->form([
+                                Forms\Components\DatePicker::make('usado_em')
+                                    ->label('Data de Uso')
+                                    ->required()
+                                    ->native(false)
+                                    ->displayFormat('d/m/Y')
+                                    ->default(now())
+                                    ->maxDate(now()),
 
-                        Forms\Components\Textarea::make('motivo_uso')
-                            ->label('Motivo/Problema Relatado')
-                            ->required()
-                            ->rows(3),
-                    ])
-                    ->action(function ($record, array $data): void {
-                        $record->update([
-                            'status' => 'utilizada',
-                            'usado_em' => $data['usado_em'],
-                            'motivo_uso' => $data['motivo_uso'],
-                        ]);
-                    }),
+                                Forms\Components\Textarea::make('motivo_uso')
+                                    ->label('Motivo/Problema Relatado')
+                                    ->required()
+                                    ->rows(3),
+                            ])
+                            ->action(function ($record, array $data): void {
+                                $record->update([
+                                    'status' => 'utilizada',
+                                    'usado_em' => $data['usado_em'],
+                                    'motivo_uso' => $data['motivo_uso'],
+                                ]);
+                            }),
 
-                Tables\Actions\Action::make('pdf')
-                    ->label('')
-                    ->tooltip('Abrir PDF')
-                    ->icon('heroicon-o-document-text')
-                    ->color('info')
-                    ->url(fn (Garantia $record) => route('garantia.pdf', $record))
-                    ->openUrlInNewTab(),
+                        Tables\Actions\Action::make('pdf')
+                            ->label('Abrir PDF')
+                            ->tooltip('Abrir PDF')
+                            ->icon('heroicon-o-document-text')
+                            ->color('info')
+                            ->url(fn(Garantia $record) => route('garantia.pdf', $record))
+                            ->openUrlInNewTab(),
 
-                Tables\Actions\ViewAction::make()
-                    ->label('')
-                    ->tooltip('Visualizar')
-                    ->iconButton(),
-
-                Tables\Actions\EditAction::make()
-                    ->label('')
-                    ->tooltip('Editar')
-                    ->iconButton(),
-
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn (Garantia $record) => route('garantia.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\DeleteAction::make()
-                    ->label('')
-                    ->tooltip('Excluir')
-                    ->iconButton(),
-            ])
+                        Tables\Actions\Action::make('download')
+                            ->label('Baixar PDF')
+                            ->tooltip('Baixar PDF')
+                            ->icon('heroicon-o-arrow-down-tray')
+                            ->color('success')
+                            ->url(fn(Garantia $record) => route('garantia.pdf', $record))
+                            ->openUrlInNewTab(),
+                    ]
+                )
+            )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -292,8 +297,8 @@ class GarantiaResource extends Resource
                                 TextEntry::make('data_inicio')->label('Data de Início')->date('d/m/Y'),
                                 TextEntry::make('data_fim')->label('Data de Fim')->date('d/m/Y'),
                                 TextEntry::make('tipo_servico')->label('Tipo de Serviço'),
-                                TextEntry::make('usado_em')->label('Data de Uso')->date('d/m/Y')->visible(fn ($record) => $record->usado_em),
-                                TextEntry::make('motivo_uso')->label('Motivo de Uso')->columnSpanFull()->visible(fn ($record) => $record->motivo_uso),
+                                TextEntry::make('usado_em')->label('Data de Uso')->date('d/m/Y')->visible(fn($record) => $record->usado_em),
+                                TextEntry::make('motivo_uso')->label('Motivo de Uso')->columnSpanFull()->visible(fn($record) => $record->motivo_uso),
                             ]),
                     ]),
             ]);
@@ -310,7 +315,6 @@ class GarantiaResource extends Resource
     {
         return [
             'index' => Pages\ListGarantias::route('/'),
-            'create' => Pages\CreateGarantia::route('/create'),
             'view' => Pages\ViewGarantia::route('/{record}'),
             'edit' => Pages\EditGarantia::route('/{record}/edit'),
         ];

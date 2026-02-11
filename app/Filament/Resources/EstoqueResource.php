@@ -154,52 +154,56 @@ class EstoqueResource extends Resource
                     ->falseColor('danger'),
             ])
             ->defaultSort('item')
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\Action::make('pdf')
-                        ->label('PDF')
-                        ->icon('heroicon-o-document-text')
-                        ->color('success')
-                        ->url(fn(Estoque $record) => route('estoque.pdf', $record))
-                        ->openUrlInNewTab(),
-                    Tables\Actions\DeleteAction::make(),
-                ]),
+            ->actions(
+                \App\Support\Filament\StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        Tables\Actions\Action::make('pdf')
+                            ->label('PDF')
+                            ->icon('heroicon-o-document-text')
+                            ->color('success')
+                            ->url(fn(Estoque $record) => route('estoque.pdf', $record))
+                            ->openUrlInNewTab(),
 
-                // Ações Rápidas
-                Tables\Actions\Action::make('adicionar')
-                    ->label('')
-                    ->tooltip('Entrada Rápida')
-                    ->icon('heroicon-o-plus-circle')
-                    ->color('success')
-                    ->form([
-                        Forms\Components\TextInput::make('qtd')
-                            ->label('Quantidade a adicionar')
-                            ->numeric()
-                            ->required()
-                            ->minValue(1),
-                    ])
-                    ->action(function (Estoque $record, array $data) {
-                        \App\Services\EstoqueService::adicionarEstoque($record, $data['qtd']);
-                    }),
+                        Tables\Actions\Action::make('adicionar')
+                            ->label('Entrada Rápida')
+                            ->tooltip('Entrada Rápida')
+                            ->icon('heroicon-o-plus-circle')
+                            ->color('success')
+                            ->form([
+                                Forms\Components\TextInput::make('qtd')
+                                    ->label('Quantidade a adicionar')
+                                    ->numeric()
+                                    ->required()
+                                    ->minValue(1),
+                            ])
+                            ->action(function (Estoque $record, array $data) {
+                                \App\Services\EstoqueService::adicionarEstoque($record, $data['qtd']);
+                            }),
 
-                Tables\Actions\Action::make('consumir')
-                    ->label('')
-                    ->tooltip('Saída Rápida')
-                    ->icon('heroicon-o-minus-circle')
-                    ->color('warning')
-                    ->form([
-                        Forms\Components\TextInput::make('qtd')
-                            ->label('Quantidade a consumir')
-                            ->numeric()
-                            ->required()
-                            ->minValue(1),
-                    ])
-                    ->action(function (Estoque $record, array $data) {
-                        \App\Services\EstoqueService::consumirEstoque($record, $data['qtd']);
-                    }),
-            ]);
+                        Tables\Actions\Action::make('consumir')
+                            ->label('Saída Rápida')
+                            ->tooltip('Saída Rápida')
+                            ->icon('heroicon-o-minus-circle')
+                            ->color('warning')
+                            ->form([
+                                Forms\Components\TextInput::make('qtd')
+                                    ->label('Quantidade a consumir')
+                                    ->numeric()
+                                    ->required()
+                                    ->minValue(1),
+                            ])
+                            ->action(function (Estoque $record, array $data) {
+                                \App\Services\EstoqueService::consumirEstoque($record, $data['qtd']);
+                            }),
+                    ]
+                )
+            )
+            ->bulkActions(
+                \App\Support\Filament\StofgardTable::defaultBulkActions()
+            );
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -318,6 +322,51 @@ class EstoqueResource extends Resource
                                     ->label('')
                                     ->default('Nenhum uso registrado em Ordens de Serviço.')
                                     ->visible(fn(Estoque $record) => $record->ordensServico()->count() === 0),
+                            ]),
+
+                        // ABA 3: HISTÓRICO DE ALTERAÇÕES
+                        Tabs\Tab::make('📜 Histórico')
+                            ->icon('heroicon-m-clock')
+                            ->badge(fn(Estoque $record) => $record->audits()->count())
+                            ->schema([
+                                \Filament\Infolists\Components\RepeatableEntry::make('audits')
+                                    ->label('')
+                                    ->schema([
+                                        InfolistGrid::make(4)->schema([
+                                            TextEntry::make('user.name')
+                                                ->label('Usuário')
+                                                ->icon('heroicon-m-user')
+                                                ->placeholder('Sistema'),
+                                            TextEntry::make('event')
+                                                ->label('Ação')
+                                                ->badge()
+                                                ->formatStateUsing(fn(string $state): string => match ($state) {
+                                                    'created' => 'Criação',
+                                                    'updated' => 'Edição',
+                                                    'deleted' => 'Exclusão',
+                                                    default => ucfirst($state),
+                                                })
+                                                ->color(fn(string $state): string => match ($state) {
+                                                    'created' => 'success',
+                                                    'updated' => 'warning',
+                                                    'deleted' => 'danger',
+                                                    default => 'gray',
+                                                }),
+                                            TextEntry::make('created_at')
+                                                ->label('Data/Hora')
+                                                ->dateTime('d/m/Y H:i:s'),
+                                            TextEntry::make('ip_address')
+                                                ->label('IP')
+                                                ->icon('heroicon-m-globe-alt')
+                                                ->copyable(),
+                                        ]),
+                                    ])
+                                    ->grid(1)
+                                    ->contained(false),
+                                TextEntry::make('sem_historico')
+                                    ->label('')
+                                    ->default('Nenhuma alteração registrada.')
+                                    ->visible(fn(Estoque $record) => $record->audits()->count() === 0),
                             ]),
                     ]),
             ]);

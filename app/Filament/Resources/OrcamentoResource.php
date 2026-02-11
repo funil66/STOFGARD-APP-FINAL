@@ -42,10 +42,12 @@ class OrcamentoResource extends Resource
                             ->createOptionForm(\App\Filament\Resources\CadastroResource::getFormSchema())
                             ->columnSpan(2), // Give more space
 
+
                         Forms\Components\DatePicker::make('data_orcamento')->default(now())->required(),
                         Forms\Components\DatePicker::make('data_validade')->default(now()->addDays(15)),
 
-                        // Status logic...
+                        Forms\Components\Hidden::make('status')
+                            ->default('rascunho'),
                     ])->columns(4),
 
                 // ... (Keep existing sections but ensuring they use Icons if missing)
@@ -104,6 +106,20 @@ class OrcamentoResource extends Resource
                                 \App\Services\OrcamentoFormService::recalcularTotal($set, $get);
                             }),
 
+                        Forms\Components\Select::make('loja_id')
+                            ->label('Loja/Parceiro')
+                            ->options(fn() => \App\Models\Cadastro::whereIn('tipo', ['loja', 'vendedor'])->pluck('nome', 'id'))
+                            ->searchable()
+                            ->live()
+                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                \App\Services\OrcamentoFormService::recalcularTotal($set, $get);
+                            }),
+
+                        Forms\Components\TextInput::make('id_parceiro')
+                            ->label('ID Parceiro')
+                            ->helperText('Identificador fornecido pelo parceiro comercial')
+                            ->maxLength(100),
+
                         // ... other fields from original
                     ])->columns(3),
 
@@ -119,30 +135,64 @@ class OrcamentoResource extends Resource
                                     ->searchable()
                                     ->required()
                                     ->live()
-                                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get, $state) => self::atualizarPrecoItem($set, $get))
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('nome_item')
+                                            ->label('Nome do Serviço Customizado')
+                                            ->required(),
+                                    ])
+                                    ->createOptionUsing(function ($data) {
+                                        // Retorna apenas o nome para uso direto
+                                        return $data['nome_item'];
+                                    })
+                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state, $livewire) {
+                                        self::atualizarPrecoItem($set, $get);
+                                        // Trigger parent recalculate
+                                        self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
+                                    })
                                     ->columnSpan(4),
 
                                 Forms\Components\Select::make('servico_tipo')
+                                    ->label('Tipo de Serviço')
                                     ->options(\App\Services\ServiceTypeManager::getOptions())
                                     ->default('higienizacao')
                                     ->live()
-                                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::atualizarPrecoItem($set, $get))
+                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $livewire) {
+                                        self::atualizarPrecoItem($set, $get);
+                                        // Trigger parent recalculate
+                                        self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
+                                    })
                                     ->columnSpan(2),
 
                                 Forms\Components\TextInput::make('quantidade')
                                     ->numeric()->default(1)->live(onBlur: true)
-                                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get))
+                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $livewire) {
+                                        // Recalculate subtotal for this item
+                                        $quantidade = floatval($get('quantidade') ?? 0);
+                                        $valorUnitario = floatval($get('valor_unitario') ?? 0);
+                                        $set('subtotal', $quantidade * $valorUnitario);
+
+                                        // Trigger parent recalculate
+                                        self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
+                                    })
                                     ->columnSpan(1),
 
                                 Forms\Components\TextInput::make('valor_unitario')
                                     ->label('Unit.')
                                     ->numeric()->prefix('R$')->live(onBlur: true)
-                                    ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get))
+                                    ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $livewire) {
+                                        // Recalculate subtotal for this item
+                                        $quantidade = floatval($get('quantidade') ?? 0);
+                                        $valorUnitario = floatval($get('valor_unitario') ?? 0);
+                                        $set('subtotal', $quantidade * $valorUnitario);
+
+                                        // Trigger parent recalculate
+                                        self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
+                                    })
                                     ->columnSpan(2),
 
                                 Forms\Components\TextInput::make('subtotal')
                                     ->label('Total')
-                                    ->disabled()
+                                    ->readOnly()
                                     ->dehydrated()
                                     ->numeric()
                                     ->prefix('R$')
@@ -150,17 +200,69 @@ class OrcamentoResource extends Resource
                             ])
                             ->columns(11)
                             ->live()
-                            ->afterStateUpdated(fn(Forms\Set $set, Forms\Get $get) => self::recalcularTotal($set, $get)),
+                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
+                                self::recalcularTotal($set, $get);
+                            })
+                            ->addActionLabel('Adicionar Item')
+                            ->reorderable(false)
+                            ->deleteAction(
+                                fn($action) => $action->after(function (Forms\Set $set, Forms\Get $get) {
+                                    self::recalcularTotal($set, $get);
+                                })
+                            ),
                     ]),
 
                 Forms\Components\Section::make()
                     ->schema([
                         Forms\Components\TextInput::make('valor_total')
-                            ->label('VALOR TOTAL')
+                            ->label('VALOR TOTAL (Calculado)')
                             ->numeric()->prefix('R$')
                             ->extraInputAttributes(['style' => 'font-size:1.5rem;font-weight:bold;color:#16a34a;background-color:#f0fdf4;'])
-                            ->readOnly()->dehydrated()->columnSpanFull(),
-                    ]),
+                            ->readOnly()->dehydrated()
+                            ->columnSpan(1),
+
+                        Forms\Components\TextInput::make('valor_final_editado')
+                            ->label('VALOR FINAL (Editável)')
+                            ->numeric()->prefix('R$')
+                            ->placeholder('Deixe vazio para usar o valor calculado')
+                            ->helperText('Edite aqui para aplicar desconto/acréscimo manual')
+                            ->extraInputAttributes(['style' => 'font-size:1.5rem;font-weight:bold;color:#2563eb;background-color:#eff6ff;'])
+                            ->default(null) // Permite null
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $state) {
+                                $valorTotal = floatval($get('valor_total') ?? 0);
+                                $valorEditado = $state === null ? null : floatval($state);
+
+                                if ($valorEditado === null) {
+                                    $set('desconto_prestador', 0);
+                                    return;
+                                }
+
+                                // Calcula o desconto (pode ser negativo se for acréscimo)
+                                $desconto = $valorTotal - $valorEditado;
+                                $set('desconto_prestador', $desconto);
+                            })
+                            ->columnSpan(1),
+
+                        Forms\Components\TextInput::make('desconto_prestador')
+                            ->label('Desconto/Acréscimo')
+                            ->numeric()->prefix('R$')
+                            ->readOnly()
+                            ->dehydrated()
+                            ->default(0) // Garante que nunca seja null no submit
+                            ->formatStateUsing(fn($state) => $state ?? 0) // Garante visualização 0 se null
+                            ->helperText('Calculado automaticamente (positivo = desconto, negativo = acréscimo)')
+                            ->extraInputAttributes(fn($state) => [
+                                'style' => floatval($state ?? 0) > 0
+                                    ? 'color:#dc2626;font-weight:bold;'
+                                    : 'color:#16a34a;font-weight:bold;'
+                            ])
+                            ->columnSpan(1),
+                    ])->columns(3),
+
+                // Campos Hidden para persistir comissões calculadas
+                Forms\Components\Hidden::make('comissao_vendedor')->dehydrated(),
+                Forms\Components\Hidden::make('comissao_loja')->dehydrated(),
 
                 Forms\Components\Section::make('Central de Arquivos')
                     ->icon('heroicon-o-paper-clip')
@@ -184,6 +286,59 @@ class OrcamentoResource extends Resource
     public static function recalcularTotal(Forms\Set $set, Forms\Get $get): void
     {
         \App\Services\OrcamentoFormService::recalcularTotal($set, $get);
+    }
+
+    /**
+     * Helper to recalculate total from within repeater item context
+     */
+    public static function recalcularTotalFromRepeaterItem(Forms\Set $set, Forms\Get $get, $livewire): void
+    {
+        // Get all form data from the livewire instance
+        $formData = $livewire->data ?? [];
+
+        // Calculate total from all items
+        $itens = $formData['itens'] ?? [];
+        $total = 0;
+
+        foreach ($itens as $item) {
+            $quantidade = floatval($item['quantidade'] ?? 0);
+            $valorUnitario = floatval($item['valor_unitario'] ?? 0);
+            $total += $quantidade * $valorUnitario;
+        }
+
+        // Use relative paths from repeater item to parent
+        $set('../../valor_total', number_format($total, 2, '.', ''));
+
+        // Base para comissão: valor editado (se definido) ou total calculado
+        $valorEditado = floatval($formData['valor_final_editado'] ?? 0);
+        $baseComissao = $valorEditado > 0 ? $valorEditado : $total;
+
+        // Calculate commissions if needed
+        $vendedorId = $formData['vendedor_id'] ?? null;
+        if ($vendedorId) {
+            $vendedor = \App\Models\Cadastro::find($vendedorId);
+            if ($vendedor && $vendedor->comissao_percentual > 0) {
+                $comissao = ($baseComissao * $vendedor->comissao_percentual) / 100;
+                $set('../../comissao_vendedor', number_format($comissao, 2, '.', ''));
+            } else {
+                $set('../../comissao_vendedor', 0);
+            }
+        } else {
+            $set('../../comissao_vendedor', 0);
+        }
+
+        $lojaId = $formData['loja_id'] ?? null;
+        if ($lojaId) {
+            $loja = \App\Models\Cadastro::find($lojaId);
+            if ($loja && $loja->comissao_percentual > 0) {
+                $comissaoLoja = ($baseComissao * $loja->comissao_percentual) / 100;
+                $set('../../comissao_loja', number_format($comissaoLoja, 2, '.', ''));
+            } else {
+                $set('../../comissao_loja', 0);
+            }
+        } else {
+            $set('../../comissao_loja', 0);
+        }
     }
 
     public static function infolist(Infolist $infolist): Infolist
@@ -211,6 +366,7 @@ class OrcamentoResource extends Resource
 
                             TextEntry::make('created_at')->label('Emissão')->date('d/m/Y'),
                             TextEntry::make('data_validade')->label('Validade')->date('d/m/Y')->color('warning'),
+                            TextEntry::make('id_parceiro')->label('ID Parceiro')->badge()->color('info'),
                         ]),
                         Grid::make(4)->schema([
                             TextEntry::make('cliente.nome')
@@ -231,12 +387,34 @@ class OrcamentoResource extends Resource
                     ->schema([
                         Grid::make(4)->schema([
                             TextEntry::make('valor_total')
-                                ->label('Valor Final')
+                                ->label('Valor Calculado')
+                                ->money('BRL')
+                                ->size(TextEntry\TextEntrySize::Medium)
+                                ->weight('bold')
+                                ->color('success'),
+
+                            TextEntry::make('valor_efetivo')
+                                ->label('Valor Final (Efetivo)')
                                 ->money('BRL')
                                 ->size(TextEntry\TextEntrySize::Large)
                                 ->weight('bold')
-                                ->color('success'),
+                                ->color('primary'),
+
+                            TextEntry::make('desconto_prestador')
+                                ->label('Desconto/Acréscimo')
+                                ->money('BRL')
+                                ->color(fn($state) => floatval($state ?? 0) > 0 ? 'danger' : 'success')
+                                ->weight('bold')
+                                ->formatStateUsing(
+                                    fn($state) =>
+                                    floatval($state ?? 0) > 0
+                                    ? '- R$ ' . number_format($state, 2, ',', '.')
+                                    : ($state < 0 ? '+ R$ ' . number_format(abs($state), 2, ',', '.') : 'Sem ajuste')
+                                ),
+
                             TextEntry::make('comissao_vendedor')->label('Comissão Vend.')->money('BRL'),
+                        ]),
+                        Grid::make(4)->schema([
                             TextEntry::make('comissao_loja')->label('Comissão Loja')->money('BRL'),
                         ]),
                     ])
@@ -281,6 +459,56 @@ class OrcamentoResource extends Resource
                                     ->collection('arquivos')
                                     ->disk('public'),
                             ]),
+
+                        Tabs\Tab::make('📜 Histórico')
+                            ->icon('heroicon-m-clock')
+                            ->badge(fn($record) => $record->audits()->count())
+                            ->schema([
+                                RepeatableEntry::make('audits')
+                                    ->label('')
+                                    ->schema([
+                                        Grid::make(4)->schema([
+                                            TextEntry::make('user.name')
+                                                ->label('Usuário')
+                                                ->icon('heroicon-m-user'),
+                                            TextEntry::make('event')
+                                                ->label('Ação')
+                                                ->badge()
+                                                ->formatStateUsing(fn(string $state): string => match ($state) {
+                                                    'created' => 'Criação',
+                                                    'updated' => 'Edição',
+                                                    'deleted' => 'Exclusão',
+                                                    'restored' => 'Restauração',
+                                                    default => ucfirst($state),
+                                                })
+                                                ->color(fn(string $state): string => match ($state) {
+                                                    'created' => 'success',
+                                                    'updated' => 'warning',
+                                                    'deleted' => 'danger',
+                                                    default => 'gray',
+                                                }),
+                                            TextEntry::make('created_at')
+                                                ->label('Data')
+                                                ->dateTime('d/m/Y H:i:s'),
+                                            TextEntry::make('ip_address')
+                                                ->label('IP')
+                                                ->icon('heroicon-m-globe-alt')
+                                                ->copyable(),
+                                        ]),
+                                        \Filament\Infolists\Components\KeyValueEntry::make('old_values')
+                                            ->label('Valores Antigos')
+                                            ->visible(fn($state) => !empty($state)),
+                                        \Filament\Infolists\Components\KeyValueEntry::make('new_values')
+                                            ->label('Novos Valores')
+                                            ->visible(fn($state) => !empty($state)),
+                                    ])
+                                    ->grid(1)
+                                    ->contained(false),
+                                TextEntry::make('sem_historico')
+                                    ->label('')
+                                    ->default('Nenhuma alteração registrada.')
+                                    ->visible(fn($record) => $record->audits()->count() === 0),
+                            ]),
                     ]),
             ]);
     }
@@ -299,9 +527,10 @@ class OrcamentoResource extends Resource
                     ->label('Cliente')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('valor_total')
+                Tables\Columns\TextColumn::make('valor_efetivo')
+                    ->label('Valor')
                     ->money('BRL')
-                    ->sortable()
+                    ->sortable(query: fn($query, $direction) => $query->orderByRaw("CASE WHEN CAST(valor_final_editado AS REAL) > 0 THEN valor_final_editado ELSE valor_total END {$direction}"))
                     ->weight('bold')
                     ->color('success'),
                 Tables\Columns\TextColumn::make('status')
@@ -314,15 +543,26 @@ class OrcamentoResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('created_at')->date('d/m')->label('Data'),
             ])
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\Action::make('pdf')
-                        ->icon('heroicon-o-document-arrow-down')
-                        ->url(fn(Orcamento $record) => route('orcamento.pdf', $record))
-                        ->openUrlInNewTab(),
-                    Tables\Actions\DeleteAction::make(),
+            ->actions(
+                \App\Support\Filament\StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        Tables\Actions\Action::make('pdf')
+                            ->label('PDF')
+                            ->icon('heroicon-s-document-text')
+                            ->color('success')
+                            ->tooltip('Gerar PDF')
+                            // ->iconButton()
+                            ->url(fn(Orcamento $record) => route('orcamento.pdf', $record))
+                            ->openUrlInNewTab(),
+                    ]
+                )
+            )
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -332,8 +572,8 @@ class OrcamentoResource extends Resource
         return [
             'index' => Pages\ListOrcamentos::route('/'),
             'create' => Pages\CreateOrcamento::route('/create'),
-            'view' => Pages\ViewOrcamento::route('/{record}'),
             'edit' => Pages\EditOrcamento::route('/{record}/edit'),
+            'view' => Pages\ViewOrcamento::route('/{record}'),
         ];
     }
 }

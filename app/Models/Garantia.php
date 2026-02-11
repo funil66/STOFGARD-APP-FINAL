@@ -29,17 +29,13 @@ class Garantia extends Model
         'dias_garantia' => 'integer',
     ];
 
-    // Boot para calcular data_fim automaticamente
+    // Boot para validações e atualizações automáticas
     protected static function boot()
     {
         parent::boot();
 
-        static::creating(function ($garantia) {
-            if ($garantia->data_inicio && $garantia->tipo_servico) {
-                $garantia->dias_garantia = $garantia->tipo_servico === 'impermeabilizacao' ? 365 : 90;
-                $garantia->data_fim = Carbon::parse($garantia->data_inicio)->addDays($garantia->dias_garantia);
-            }
-        });
+        // Garantias agora são criadas pelo OrdemServicoObserver
+        // com data_fim e dias_garantia já preenchidos
 
         static::updating(function ($garantia) {
             // Atualizar status se vencida

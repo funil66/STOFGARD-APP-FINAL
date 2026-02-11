@@ -19,6 +19,7 @@ class ListCadastros extends ListRecords
                 ->label('Funil de Vendas')
                 ->icon('heroicon-o-funnel')
                 ->color('warning')
+                ->extraAttributes(['style' => 'color: white !important;']) // Força texto branco via style (vence CSS global)
                 ->url(FunilVendas::getUrl()),
 
             Actions\Action::make('buscaUniversal')
@@ -27,11 +28,14 @@ class ListCadastros extends ListRecords
                 ->color('primary')
                 ->url(BuscaUniversal::getUrl()),
 
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->icon('heroicon-o-plus'), // Adiciona ícone
+
             Actions\Action::make('importar')
                 ->label('Importar Contatos')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('info')
+                ->extraAttributes(['style' => 'color: white !important;']) // Força texto branco via style
                 ->form([
                     \Filament\Forms\Components\FileUpload::make('arquivo')
                         ->label('Arquivo de Contatos (.vcf)')
@@ -47,7 +51,7 @@ class ListCadastros extends ListRecords
                     $storage = \Illuminate\Support\Facades\Storage::disk('local');
                     $pathRelativo = $data['arquivo'];
 
-                    if (! $storage->exists($pathRelativo)) {
+                    if (!$storage->exists($pathRelativo)) {
                         \Filament\Notifications\Notification::make()->title('Erro ao ler arquivo')->body("Arquivo não encontrado: $pathRelativo")->danger()->send();
 
                         return;
@@ -59,24 +63,24 @@ class ListCadastros extends ListRecords
                     $importados = 0;
 
                     set_time_limit(0); // Para arquivos grandes
-
+        
                     if ($extensao === 'csv') {
                         // --- IMPORTAÇÃO CSV ---
                         // Verifica encoding para evitar caracteres quebrados (comum em Excel)
                         // Se não for UTF-8 válido, tenta Win-1252
                         $content = file_get_contents($caminhoAbsoluto);
-                        if (! mb_check_encoding($content, 'UTF-8')) {
+                        if (!mb_check_encoding($content, 'UTF-8')) {
                             $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
                             file_put_contents($caminhoAbsoluto, $content);
                         }
                         unset($content); // Libera memória
-
+        
                         $handle = fopen($caminhoAbsoluto, 'r');
                         if ($handle !== false) {
                             $header = fgetcsv($handle, 1000, ',');
 
                             // Tenta detectar delimitador se falhou (ex: ponto e virgula)
-                            if (! $header || count($header) < 2) {
+                            if (!$header || count($header) < 2) {
                                 rewind($handle);
                                 $header = fgetcsv($handle, 1000, ';');
                                 $delimiter = ';';
@@ -85,7 +89,7 @@ class ListCadastros extends ListRecords
                             }
 
                             // Normaliza header para lower case para facilitar busca
-                            $header = array_map(fn ($h) => strtolower(trim($h)), $header ?? []);
+                            $header = array_map(fn($h) => strtolower(trim($h)), $header ?? []);
 
                             // --- LÓGICA DE PONTUAÇÃO PARA COLUNAS CSV ---
                             // Função auxiliar definida inline ou lógica direta
@@ -149,12 +153,12 @@ class ListCadastros extends ListRecords
 
                                 $telefoneLimpo = $telefone ? preg_replace('/[^0-9]/', '', $telefone) : null;
 
-                                if (! $nome && ! $telefoneLimpo && ! $email) {
+                                if (!$nome && !$telefoneLimpo && !$email) {
                                     continue;
                                 }
 
                                 // Se não tem nome mas tem email, usa parte do email
-                                if (! $nome && $email) {
+                                if (!$nome && $email) {
                                     $parts = explode('@', $email);
                                     $nome = ucfirst($parts[0]);
                                 }
@@ -166,7 +170,7 @@ class ListCadastros extends ListRecords
                                     $cadastroExistente = \App\Models\Cadastro::where('email', $email)->first();
                                 }
 
-                                if (! $cadastroExistente && $nome) {
+                                if (!$cadastroExistente && $nome) {
                                     $cadastroExistente = \App\Models\Cadastro::where('nome', $nome)->first();
                                 }
 
@@ -191,14 +195,14 @@ class ListCadastros extends ListRecords
                                     // Evita criar duplicado APENAS pelo telefone se já existir (casos raros)
                                     $existeTel = $telefoneLimpo ? \App\Models\Cadastro::where('celular', 'LIKE', "%$telefoneLimpo%")->exists() : false;
 
-                                    if (! $existeTel) {
+                                    if (!$existeTel) {
                                         \App\Models\Cadastro::create([
                                             'nome' => $nome ?? 'Sem Nome',
                                             'celular' => $telefoneLimpo,
                                             'telefone' => $telefoneLimpo, // Sync visual
                                             'email' => $email,
                                             'tipo' => 'cliente',
-                                            'observacoes' => 'Importado via CSV em '.date('d/m/Y'),
+                                            'observacoes' => 'Importado via CSV em ' . date('d/m/Y'),
                                         ]);
                                         $importados++;
                                     }
@@ -225,7 +229,7 @@ class ListCadastros extends ListRecords
                         while ($card = $splitter->getNext()) {
                             // Extrai Nome (FN) - Prioriza FN, depois N (formatado)
                             $nome = isset($card->FN) ? (string) $card->FN : null;
-                            if (! $nome && isset($card->N)) {
+                            if (!$nome && isset($card->N)) {
                                 $nome = (string) $card->N;
                                 // Se N for apenas ";;;;" ou vazio
                                 if (trim(str_replace(';', '', $nome)) === '') {
@@ -251,7 +255,7 @@ class ListCadastros extends ListRecords
 
                                     // Determina tipos (CELL, HOME, WORK, etc.)
                                     $types = $telProperty['TYPE'] ?? [];
-                                    if (! is_array($types)) {
+                                    if (!is_array($types)) {
                                         $types = [$types];
                                     }
                                     $types = array_map('strtoupper', $types);
@@ -277,7 +281,7 @@ class ListCadastros extends ListRecords
                                     }
 
                                     // Se ainda não temos nenhum telefone, aceita qualquer um
-                                    if (! $telefone) {
+                                    if (!$telefone) {
                                         $telefone = $telValue;
                                     }
                                 }
@@ -289,12 +293,12 @@ class ListCadastros extends ListRecords
                                 $telefoneLimpo = preg_replace('/[^0-9]/', '', $telefone);
                             }
 
-                            if (! $nome && ! $telefoneLimpo && ! $email) {
+                            if (!$nome && !$telefoneLimpo && !$email) {
                                 continue; // Nada útil
                             }
 
                             // Se não tem nome mas tem email, usa parte do email
-                            if (! $nome && $email) {
+                            if (!$nome && $email) {
                                 $parts = explode('@', $email);
                                 $nome = ucfirst($parts[0]);
                             }
@@ -304,7 +308,7 @@ class ListCadastros extends ListRecords
                             if ($email) {
                                 $cadastroExistente = \App\Models\Cadastro::where('email', $email)->first();
                             }
-                            if (! $cadastroExistente && $nome) {
+                            if (!$cadastroExistente && $nome) {
                                 $cadastroExistente = \App\Models\Cadastro::where('nome', $nome)->first();
                             }
 
@@ -328,14 +332,14 @@ class ListCadastros extends ListRecords
                                 // Cria novo se não existir
                                 $existeTel = $telefoneLimpo ? \App\Models\Cadastro::where('celular', 'LIKE', "%$telefoneLimpo%")->exists() : false;
 
-                                if (! $existeTel) {
+                                if (!$existeTel) {
                                     \App\Models\Cadastro::create([
                                         'nome' => $nome ?? 'Sem Nome',
                                         'celular' => $telefoneLimpo,
                                         'telefone' => $telefoneLimpo,
                                         'email' => $email,
                                         'tipo' => 'cliente',
-                                        'observacoes' => 'Importado via VCF em '.date('d/m/Y'),
+                                        'observacoes' => 'Importado via VCF em ' . date('d/m/Y'),
                                     ]);
                                     $importados++;
                                 }
@@ -356,10 +360,10 @@ class ListCadastros extends ListRecords
     {
         return [
             'clientes' => \Filament\Resources\Components\Tab::make('Clientes')
-                ->modifyQueryUsing(fn ($query) => $query->where('tipo', 'cliente'))
+                ->modifyQueryUsing(fn($query) => $query->where('tipo', 'cliente'))
                 ->icon('heroicon-m-user'),
             'parceiros' => \Filament\Resources\Components\Tab::make('Parceiros e Lojas')
-                ->modifyQueryUsing(fn ($query) => $query->whereIn('tipo', ['loja', 'vendedor']))
+                ->modifyQueryUsing(fn($query) => $query->whereIn('tipo', ['loja', 'vendedor']))
                 ->icon('heroicon-m-briefcase'),
             'todos' => \Filament\Resources\Components\Tab::make('Todos'),
         ];

@@ -130,14 +130,14 @@ class ListaDesejoResource extends Resource
                 Tables\Columns\TextColumn::make('prioridade')
                     ->label('Prioridade')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'urgente' => 'danger',
                         'alta' => 'warning',
                         'media' => 'info',
                         'baixa' => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'urgente' => '🔴 Urgente',
                         'alta' => '🟠 Alta',
                         'media' => '🟡 Média',
@@ -157,7 +157,7 @@ class ListaDesejoResource extends Resource
                 Tables\Columns\TextColumn::make('valor_total_estimado')
                     ->label('Total')
                     ->money('BRL')
-                    ->state(fn (ListaDesejo $record): float => ($record->quantidade_desejada ?? 1) * ($record->preco_estimado ?? 0))
+                    ->state(fn(ListaDesejo $record): float => ($record->quantidade_desejada ?? 1) * ($record->preco_estimado ?? 0))
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('data_prevista_compra')
@@ -165,7 +165,7 @@ class ListaDesejoResource extends Resource
                     ->date('d/m/Y')
                     ->sortable()
                     ->color(
-                        fn (ListaDesejo $record): string => $record->data_prevista_compra && $record->data_prevista_compra->isPast() && $record->status === 'pendente'
+                        fn(ListaDesejo $record): string => $record->data_prevista_compra && $record->data_prevista_compra->isPast() && $record->status === 'pendente'
                         ? 'danger'
                         : 'gray'
                     ),
@@ -173,14 +173,14 @@ class ListaDesejoResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'pendente' => 'warning',
                         'aprovado' => 'success',
                         'comprado' => 'info',
                         'recusado' => 'danger',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
                         'pendente' => '⏳ Pendente',
                         'aprovado' => '✅ Aprovado',
                         'comprado' => '🛒 Comprado',
@@ -204,48 +204,40 @@ class ListaDesejoResource extends Resource
                         'baixa' => '🟢 Baixa',
                     ]),
             ])
-            ->actions([
-                Tables\Actions\Action::make('aprovar')
-                    ->label('')
-                    ->tooltip('Aprovar')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->visible(fn (ListaDesejo $record) => $record->status === 'pendente')
-                    ->requiresConfirmation()
-                    ->action(fn (ListaDesejo $record) => $record->aprovar()),
+            ->actions(
+                \App\Support\Filament\StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        Tables\Actions\Action::make('aprovar')
+                            ->label('Aprovar')
+                            ->tooltip('Aprovar')
+                            ->icon('heroicon-o-check-circle')
+                            ->color('success')
+                            ->visible(fn(ListaDesejo $record) => $record->status === 'pendente')
+                            ->requiresConfirmation()
+                            ->action(fn(ListaDesejo $record) => $record->aprovar()),
 
-                Tables\Actions\Action::make('comprar')
-                    ->label('')
-                    ->tooltip('Marcar como Comprado')
-                    ->icon('heroicon-o-shopping-cart')
-                    ->color('info')
-                    ->visible(fn (ListaDesejo $record) => $record->status === 'aprovado')
-                    ->requiresConfirmation()
-                    ->action(fn (ListaDesejo $record) => $record->marcarComoComprado()),
+                        Tables\Actions\Action::make('comprar')
+                            ->label('Comprar')
+                            ->tooltip('Marcar como Comprado')
+                            ->icon('heroicon-o-shopping-cart')
+                            ->color('info')
+                            ->visible(fn(ListaDesejo $record) => $record->status === 'aprovado')
+                            ->requiresConfirmation()
+                            ->action(fn(ListaDesejo $record) => $record->marcarComoComprado()),
 
-                Tables\Actions\ViewAction::make()
-                    ->label('')
-                    ->tooltip('Visualizar')
-                    ->iconButton(),
-
-                Tables\Actions\EditAction::make()
-                    ->label('')
-                    ->tooltip('Editar')
-                    ->iconButton(),
-
-                Tables\Actions\Action::make('download')
-                    ->label('')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->url(fn (ListaDesejo $record) => route('listadesejo.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\DeleteAction::make()
-                    ->label('')
-                    ->tooltip('Excluir')
-                    ->iconButton(),
-            ])
+                        Tables\Actions\Action::make('download')
+                            ->label('Baixar PDF')
+                            ->tooltip('Baixar PDF')
+                            ->icon('heroicon-o-arrow-down-tray')
+                            ->color('success')
+                            ->url(fn(ListaDesejo $record) => route('listadesejo.pdf', $record))
+                            ->openUrlInNewTab(),
+                    ]
+                )
+            )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

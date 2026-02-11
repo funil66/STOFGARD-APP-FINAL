@@ -11,9 +11,9 @@ use App\Traits\HasArquivos;
 use App\Traits\HasAuditTrail;
 use Spatie\MediaLibrary\HasMedia;
 
-class Cadastro extends Model implements HasMedia
+class Cadastro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
-    use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail;
+    use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail, \OwenIt\Auditing\Auditable;
 
     protected static function boot()
     {

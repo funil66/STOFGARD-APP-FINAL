@@ -25,10 +25,11 @@ class FinanceiroChart extends ChartWidget
         if ($activeFilter === 'year' || $activeFilter === 'last_year') {
             $targetYear = $activeFilter === 'year' ? $now->year : $now->subYear()->year;
 
-            // Query unificada: Agrupa por Mês e Tipo
-            $data = Financeiro::selectRaw('MONTH(data) as mes, tipo, SUM(valor) as total')
-                ->whereYear('data', $targetYear)
-                ->groupBy('mes', 'tipo')
+            $start = Carbon::createFromDate($targetYear, 1, 1)->startOfYear();
+            $end = Carbon::createFromDate($targetYear, 12, 31)->endOfYear();
+
+            // Fetch raw data
+            $transactions = Financeiro::whereBetween('data', [$start, $end])
                 ->get();
 
             // Preenche os 12 meses
@@ -36,30 +37,27 @@ class FinanceiroChart extends ChartWidget
                 $date = Carbon::createFromDate($targetYear, $m, 1);
                 $meses[] = $date->locale('pt_BR')->shortMonthName;
 
-                // Filtra da coleção em memória (rápido)
-                $receitas[] = $data->where('mes', $m)->where('tipo', 'entrada')->sum('total');
-                $despesas[] = $data->where('mes', $m)->where('tipo', 'saida')->sum('total');
+                // Filter collection in memory
+                $receitas[] = $transactions->filter(fn($t) => (int) Carbon::parse($t->data)->format('m') === $m && $t->tipo === 'entrada')->sum('valor');
+                $despesas[] = $transactions->filter(fn($t) => (int) Carbon::parse($t->data)->format('m') === $m && $t->tipo === 'saida')->sum('valor');
             }
         } else {
             // Default: Últimos 6 Meses
-            // Também otimizada para uma única query
             $start = $now->copy()->subMonths(5)->startOfMonth();
             $end = $now->copy()->endOfMonth();
 
-            $data = Financeiro::selectRaw('YEAR(data) as ano, MONTH(data) as mes, tipo, SUM(valor) as total')
-                ->whereBetween('data', [$start, $end])
-                ->groupBy('ano', 'mes', 'tipo')
+            $transactions = Financeiro::whereBetween('data', [$start, $end])
                 ->get();
 
             for ($i = 5; $i >= 0; $i--) {
                 $date = Carbon::now()->subMonths($i);
-                $m = $date->month;
-                $y = $date->year;
+                $m = (int) $date->format('m');
+                $y = (int) $date->format('Y');
 
                 $meses[] = $date->locale('pt_BR')->translatedFormat('M/Y');
 
-                $receitas[] = $data->where('ano', $y)->where('mes', $m)->where('tipo', 'entrada')->sum('total');
-                $despesas[] = $data->where('ano', $y)->where('mes', $m)->where('tipo', 'saida')->sum('total');
+                $receitas[] = $transactions->filter(fn($t) => (int) Carbon::parse($t->data)->format('m') === $m && (int) Carbon::parse($t->data)->format('Y') === $y && $t->tipo === 'entrada')->sum('valor');
+                $despesas[] = $transactions->filter(fn($t) => (int) Carbon::parse($t->data)->format('m') === $m && (int) Carbon::parse($t->data)->format('Y') === $y && $t->tipo === 'saida')->sum('valor');
             }
         }
 

@@ -24,8 +24,8 @@
             color: {{ $text }};
             line-height: 1.4;
             
-            /* Define content safe area via padding - AUMENTADO para evitar sobreposição */
-            padding-top: 6.2cm;    /* Ajustado para 6.2cm (Era 5.5cm) */
+            /* Define content safe area via padding */
+            padding-top: 4.5cm;    /* Reduzido de 6.2cm para 4.5cm */
             padding-bottom: 3cm;
             padding-left: 1cm;
             padding-right: 1cm;

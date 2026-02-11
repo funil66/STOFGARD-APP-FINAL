@@ -16,14 +16,14 @@ class OrcamentoObserver
     public function saving(Orcamento $orcamento): void
     {
         // Gerar número do orçamento se não existir
-        if (! $orcamento->numero_orcamento) {
+        if (!$orcamento->numero_orcamento) {
             $orcamento->numero_orcamento = Orcamento::gerarNumeroOrcamento();
         }
 
         // Generate PIX QR Code if enabled
         if ($orcamento->pdf_incluir_pix && $orcamento->pix_chave_selecionada) {
             // Skip if already has QR code and value hasn't changed
-            if ($orcamento->pix_qrcode_base64 && ! $orcamento->isDirty('valor_total')) {
+            if ($orcamento->pix_qrcode_base64 && !$orcamento->isDirty('valor_total')) {
                 return;
             }
 
@@ -46,7 +46,7 @@ class OrcamentoObserver
     {
         $config = Configuracao::first();
 
-        if (! $config) {
+        if (!$config) {
             Log::warning('Configuração não encontrada para gerar PIX');
 
             return;
@@ -54,23 +54,23 @@ class OrcamentoObserver
 
         $pixService = app(PixMasterService::class);
 
-        // Get the correct amount (with PIX discount if applicable)
-        // PRIORITY 1: Manually edited final value (Already agreed upon, NO EXTRA DISCOUNT)
-        if ($orcamento->valor_final_editado && $orcamento->valor_final_editado > 0) {
-            $valor = $orcamento->valor_final_editado;
-        }
-        // PRIORITY 2: Calculated total with PIX discount (If enabled)
-        elseif ($orcamento->aplicar_desconto_pix && $config->percentual_desconto_pix > 0) {
-            $desconto = ($orcamento->valor_total * $config->percentual_desconto_pix) / 100;
-            $valor = $orcamento->valor_total - $desconto;
-        }
-        // PRIORITY 3: Standard total (No discount)
-        else {
-            $valor = $orcamento->valor_total;
+        // Usa accessor centralizado para valor base
+        $valorEfetivo = $orcamento->valor_efetivo;
+
+        // Se NÃO foi editado manualmente, aplica desconto PIX automático
+        if (
+            floatval($orcamento->valor_final_editado) <= 0
+            && $orcamento->aplicar_desconto_pix
+            && $config->percentual_desconto_pix > 0
+        ) {
+            $desconto = ($valorEfetivo * $config->percentual_desconto_pix) / 100;
+            $valor = $valorEfetivo - $desconto;
+        } else {
+            $valor = $valorEfetivo;
         }
 
         // Generate unique transaction ID
-        $txid = 'ORC'.str_pad($orcamento->id ?? 'TEMP'.rand(1000, 9999), 6, '0', STR_PAD_LEFT).time();
+        $txid = 'ORC' . str_pad($orcamento->id ?? 'TEMP' . rand(1000, 9999), 6, '0', STR_PAD_LEFT) . time();
 
         // Generate PIX
         $result = $pixService->gerarPix(

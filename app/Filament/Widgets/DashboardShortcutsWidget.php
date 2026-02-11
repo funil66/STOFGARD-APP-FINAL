@@ -53,7 +53,7 @@ class DashboardShortcutsWidget extends Widget
             ['label' => 'Ordens de Serviço', 'icon' => 'heroicon-o-wrench-screwdriver', 'url' => OrdemServicoResource::getUrl('index'), 'color' => '#DC2626'],
             ['label' => 'Orçamentos', 'icon' => 'heroicon-o-document-plus', 'url' => OrcamentoResource::getUrl('index'), 'color' => '#16A34A'],
             ['label' => 'Agenda', 'icon' => 'heroicon-o-calendar', 'url' => AgendaResource::getUrl('index'), 'color' => '#F59E0B'],
-            ['label' => 'Financeiro', 'icon' => 'heroicon-o-banknotes', 'url' => \App\Filament\Pages\CentralFinanceira::getUrl(), 'color' => '#059669'],
+            ['label' => 'Financeiro', 'icon' => 'heroicon-o-banknotes', 'url' => \App\Filament\Resources\FinanceiroResource::getUrl('index'), 'color' => '#059669'],
             ['label' => 'Almoxarifado', 'icon' => 'heroicon-o-archive-box', 'url' => Almoxarifado::getUrl(), 'color' => '#EA580C'],
             ['label' => 'Configurações', 'icon' => 'heroicon-o-cog-6-tooth', 'url' => Configuracoes::getUrl(), 'color' => '#475569'],
         ];

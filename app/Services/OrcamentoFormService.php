@@ -33,23 +33,58 @@ class OrcamentoFormService
     }
 
     /**
-     * Recalcula o valor total do orçamento somando os subtotais dos itens.
+     * Recalcula o valor total do orçamento somando os subtotals dos itens.
      */
     public static function recalcularTotal(Forms\Set $set, Forms\Get $get): void
     {
         $itens = $get('itens') ?? [];
 
-        $total = collect($itens)->sum(fn($item) => floatval($item['subtotal'] ?? 0));
+        $total = 0;
 
-        $set('valor_total', $total);
+        // Itera sobre cada item para calcular o subtotal
+        foreach ($itens as $uuid => $item) {
+            $quantidade = floatval($item['quantidade'] ?? 0);
+            $valorUnitario = floatval($item['valor_unitario'] ?? 0);
+            $subtotal = $quantidade * $valorUnitario;
+
+            // Atualiza o subtotal do item
+            $set("itens.{$uuid}.subtotal", number_format($subtotal, 2, '.', ''));
+
+            $total += $subtotal;
+        }
+
+        $set('valor_total', number_format($total, 2, '.', ''));
+
+        // Base para comissão: valor editado (se definido) ou total calculado
+        $valorEditado = floatval($get('valor_final_editado') ?? 0);
+        $baseComissao = $valorEditado > 0 ? $valorEditado : $total;
 
         // Se houver vendedor selecionado, recalcula a comissão
         $vendedorId = $get('vendedor_id');
         if ($vendedorId) {
             $vendedor = \App\Models\Cadastro::find($vendedorId);
             if ($vendedor && $vendedor->comissao_percentual > 0) {
-                $set('comissao_vendedor', ($total * $vendedor->comissao_percentual) / 100);
+                $comissao = ($baseComissao * $vendedor->comissao_percentual) / 100;
+                $set('comissao_vendedor', number_format($comissao, 2, '.', ''));
+            } else {
+                $set('comissao_vendedor', 0);
             }
+        } else {
+            $set('comissao_vendedor', 0);
+        }
+
+        // Recalcula comissão da loja se houver
+        $lojaId = $get('loja_id');
+        if ($lojaId) {
+            $loja = \App\Models\Cadastro::find($lojaId);
+            if ($loja && $loja->comissao_percentual > 0) {
+                $comissaoLoja = ($baseComissao * $loja->comissao_percentual) / 100;
+                $set('comissao_loja', number_format($comissaoLoja, 2, '.', ''));
+            } else {
+                $set('comissao_loja', 0);
+            }
+        } else {
+            $set('comissao_loja', 0);
         }
     }
 }

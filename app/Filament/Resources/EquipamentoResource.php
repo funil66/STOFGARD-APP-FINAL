@@ -187,32 +187,31 @@ class EquipamentoResource extends Resource
                         'baixado' => '❌ Baixados',
                     ]),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->iconButton()
-                    ->tooltip('Visualizar'),
-                Tables\Actions\EditAction::make()
-                    ->iconButton()
-                    ->tooltip('Editar'),
+            ->actions(
+                \App\Support\Filament\StofgardTable::defaultActions(
+                    view: true,
+                    edit: true,
+                    delete: true,
+                    extraActions: [
+                        Tables\Actions\Action::make('download')
+                            ->label('Baixar PDF')
+                            ->tooltip('Baixar PDF') // Tooltip might be redundant in dropdown but harmless
+                            ->icon('heroicon-o-arrow-down-tray')
+                            ->color('success')
+                            ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
+                            ->openUrlInNewTab(),
 
-                Tables\Actions\Action::make('download')
-                    ->tooltip('Baixar PDF')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('success')
-                    ->iconButton()
-                    ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
-                    ->openUrlInNewTab(),
-
-                Tables\Actions\Action::make('enviar_lista_desejos')
-                    ->tooltip('Enviar para Lista de Desejos')
-                    ->icon('heroicon-o-gift')
-                    ->color('info')
-                    ->iconButton()
-                    ->action(function (Equipamento $record) {
-                        \App\Services\EquipamentoService::enviarParaListaDesejos($record);
-                    }),
-                Tables\Actions\DeleteAction::make()->label('')->tooltip('Excluir')->iconButton(),
-            ])
+                        Tables\Actions\Action::make('enviar_lista_desejos')
+                            ->label('Lista de Desejos')
+                            ->tooltip('Enviar para Lista de Desejos')
+                            ->icon('heroicon-o-gift')
+                            ->color('info')
+                            ->action(function (Equipamento $record) {
+                                \App\Services\EquipamentoService::enviarParaListaDesejos($record);
+                            }),
+                    ]
+                )
+            )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

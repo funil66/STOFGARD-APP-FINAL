@@ -20,7 +20,8 @@ class StofgardSystem
 {
     public function __construct(
         private EstoqueService $estoqueService
-    ) {}
+    ) {
+    }
 
     /**
      * Aprova um orçamento, gerando OS e previsão financeira de forma atômica.
@@ -33,15 +34,10 @@ class StofgardSystem
      *
      * @throws \Exception Se o orçamento já foi aprovado ou se userId não for fornecido
      */
-    public function aprovarOrcamento(
-        Orcamento $orcamento,
-        ?int $userId = null,
-        int $prazoVencimentoDias = 30,
-        int $diasAteAgendamento = 1,
-        int $horaAgendamento = 9
-    ): OrdemServico {
+    public function aprovarOrcamento(Orcamento $orcamento, int $userId, array $options = [])
+    {
         // CORREÇÃO CRÍTICA: Não permitir operações sem usuário responsável
-        if (! $userId && ! auth()->id()) {
+        if (!$userId && !auth()->id()) {
             throw new \Exception('Não é possível aprovar orçamento sem um usuário responsável. Operação rejeitada por questão de auditoria.');
         }
 
@@ -52,48 +48,156 @@ class StofgardSystem
             throw new \Exception('Este orçamento já foi aprovado anteriormente.');
         }
 
-        return DB::transaction(function () use ($orcamento, $userId, $prazoVencimentoDias, $diasAteAgendamento, $horaAgendamento) {
+        return DB::transaction(function () use ($orcamento, $userId, $options) {
             // A. Criação da OS (Usando cadastro_id unificado)
+            // OBS: O OrdemServicoObserver cria uma Agenda automaticamente aqui!
             $os = OrdemServico::create([
                 'orcamento_id' => $orcamento->id,
                 'cadastro_id' => $orcamento->cadastro_id,
                 'loja_id' => $orcamento->loja_id,
                 'vendedor_id' => $orcamento->vendedor_id,
+                'id_parceiro' => $orcamento->id_parceiro,
                 'status' => OrdemServicoStatus::Aberta->value,
                 'data_abertura' => now(),
+                'data_prevista' => $options['data_servico'] ?? now()->addDays(2),
                 'tipo_servico' => $orcamento->tipo_servico ?? FinanceiroCategoria::Servico->value,
-                'descricao_servico' => "Gerado a partir do Orçamento #{$orcamento->numero}",
-                'valor_total' => $orcamento->valor_total,
+                'descricao_servico' => $orcamento->descricao_servico ?? "Conforme orçamento {$orcamento->numero}",
+                'valor_total' => $orcamento->valor_efetivo,
+                'observacoes' => $options['observacoes'] ?? $orcamento->observacoes,
                 'criado_por' => $userId,
             ]);
 
+            // Copiar itens para OS
+            foreach ($orcamento->itens as $item) {
+                // Mapeia unidade para valores aceitos pelo enum
+                $unidade = $item->unidade ?? $item->unidade_medida ?? 'un';
+                $unidadeMapeada = $unidade === 'm2' ? 'm2' : 'unidade';
+
+                \App\Models\OrdemServicoItem::create([
+                    'ordem_servico_id' => $os->id,
+                    'descricao' => $item->item_nome ?? $item->descricao_item ?? 'Serviço',
+                    'quantidade' => $item->quantidade,
+                    'unidade_medida' => $unidadeMapeada,
+                    'valor_unitario' => $item->valor_unitario,
+                    'subtotal' => $item->subtotal,
+                ]);
+            }
+
+            $prazoVencimentoDias = 3;
+
             // B. Criação do Financeiro (Receita Prevista) - Usando Financeiro model com cadastro_id
+            $dataVencimento = !empty($options['data_servico'])
+                ? \Carbon\Carbon::parse($options['data_servico'])
+                : now()->addDays($prazoVencimentoDias);
+
             Financeiro::create([
-                'descricao' => "Receita ref. OS #{$os->numero_os} - ".($orcamento->cliente->nome ?? 'Cliente'),
+                'descricao' => "Receita ref. OS #{$os->numero_os} - " . ($orcamento->cliente->nome ?? 'Cliente'),
                 'ordem_servico_id' => $os->id,
                 'orcamento_id' => $orcamento->id,
+                'id_parceiro' => $orcamento->id_parceiro,
                 'cadastro_id' => $orcamento->cadastro_id,
-                'valor' => $orcamento->valor_total,
-                'data_vencimento' => now()->addDays($prazoVencimentoDias),
+                'valor' => $orcamento->valor_efetivo,
+                'data' => !empty($options['data_servico']) ? $options['data_servico'] : now(),
+                'data_vencimento' => $dataVencimento,
                 'status' => FinanceiroStatus::Pendente->value,
                 'tipo' => FinanceiroTipo::Entrada->value,
                 'categoria' => FinanceiroCategoria::Servico->value,
             ]);
 
-            // C. Cria Agenda (Serviço Agendado)
-            Agenda::create([
-                'titulo' => 'Serviço - '.($orcamento->cliente->nome ?? 'Cliente'),
-                'descricao' => "OS #{$os->numero_os} via Orçamento #{$orcamento->numero}",
-                'cadastro_id' => $orcamento->cadastro_id,
-                'ordem_servico_id' => $os->id,
-                'orcamento_id' => $orcamento->id,
-                'tipo' => AgendaTipo::Servico->value,
-                'data_hora_inicio' => now()->addDays($diasAteAgendamento)->setHour($horaAgendamento)->setMinute(0),
-                'data_hora_fim' => now()->addDays($diasAteAgendamento)->setHour($horaAgendamento + 2)->setMinute(0),
-                'status' => AgendaStatus::Agendado->value,
-                'local' => $orcamento->cliente->endereco ?? 'A definir',
-                'criado_por' => $userId,
-            ]);
+            // B2. Comissão do Vendedor (Despesa)
+            if (floatval($orcamento->comissao_vendedor) > 0 && $orcamento->vendedor_id) {
+                Financeiro::create([
+                    'descricao' => "Comissão Vendedor - OS #{$os->numero_os} - " . ($orcamento->vendedor->nome ?? 'Vendedor'),
+                    'ordem_servico_id' => $os->id,
+                    'orcamento_id' => $orcamento->id,
+                    'cadastro_id' => $orcamento->vendedor_id,
+                    'valor' => $orcamento->comissao_vendedor,
+                    'data' => now(),
+                    'data_vencimento' => $dataVencimento->copy()->addDays(5),
+                    'status' => FinanceiroStatus::Pendente->value,
+                    'tipo' => FinanceiroTipo::Saida->value,
+                    'categoria' => FinanceiroCategoria::Comissao->value,
+                    'is_comissao' => true,
+                    'comissao_paga' => false,
+                ]);
+            }
+
+            // B3. Comissão da Loja (Despesa)
+            if (floatval($orcamento->comissao_loja) > 0 && $orcamento->loja_id) {
+                Financeiro::create([
+                    'descricao' => "Comissão Loja - OS #{$os->numero_os} - " . ($orcamento->loja->nome ?? 'Loja'),
+                    'ordem_servico_id' => $os->id,
+                    'orcamento_id' => $orcamento->id,
+                    'cadastro_id' => $orcamento->loja_id,
+                    'valor' => $orcamento->comissao_loja,
+                    'data' => now(),
+                    'data_vencimento' => $dataVencimento->copy()->addDays(5),
+                    'status' => FinanceiroStatus::Pendente->value,
+                    'tipo' => FinanceiroTipo::Saida->value,
+                    'categoria' => FinanceiroCategoria::Comissao->value,
+                    'is_comissao' => true,
+                    'comissao_paga' => false,
+                ]);
+            }
+
+            // C. Atualiza/Cria Agenda (Evitando duplicidade do Observer)
+            // Tenta buscar a agenda criada pelo Observer
+            $agenda = Agenda::where('ordem_servico_id', $os->id)->first();
+
+            if (!empty($options['data_servico'])) {
+                $dataServico = \Carbon\Carbon::parse($options['data_servico']);
+                $horaInicio = !empty($options['hora_inicio']) ? \Carbon\Carbon::parse($options['hora_inicio']) : \Carbon\Carbon::parse('09:00');
+                $horaFim = !empty($options['hora_fim']) ? \Carbon\Carbon::parse($options['hora_fim']) : \Carbon\Carbon::parse('11:00');
+
+                $inicio = $dataServico->copy()->setTimeFromTimeString($horaInicio->format('H:i:s'));
+                $fim = $dataServico->copy()->setTimeFromTimeString($horaFim->format('H:i:s'));
+
+                $dadosAgenda = [
+                    'titulo' => 'Serviço - ' . ($orcamento->cliente->nome ?? 'Cliente'),
+                    'descricao' => "OS #{$os->numero_os} via Orçamento #{$orcamento->numero}",
+                    'cadastro_id' => $orcamento->cadastro_id,
+                    'ordem_servico_id' => $os->id,
+                    'orcamento_id' => $orcamento->id,
+                    'tipo' => AgendaTipo::Servico->value,
+                    'data_hora_inicio' => $inicio,
+                    'data_hora_fim' => $fim,
+                    'status' => AgendaStatus::Agendado->value,
+                    'local' => $options['local_servico'] ?? ($orcamento->cliente->endereco ?? 'A definir'),
+                    'id_parceiro' => $orcamento->id_parceiro,
+                    'criado_por' => $userId,
+                ];
+
+                if ($agenda) {
+                    $agenda->update($dadosAgenda);
+                } else {
+                    Agenda::create($dadosAgenda);
+                }
+            } else if ($agenda) {
+                // Se o observer criou, mas não temos data definida, apenas atualiza descrição
+                $agenda->update([
+                    'descricao' => "OS #{$os->numero_os} via Orçamento #{$orcamento->numero}",
+                    'orcamento_id' => $orcamento->id,
+                    'tipo' => AgendaTipo::Servico->value,
+                    'status' => AgendaStatus::Agendado->value,
+                    'id_parceiro' => $orcamento->id_parceiro,
+                ]);
+            } else {
+                // Se não tem data definida e o Observer não criou (improvável), cria um placeholder
+                Agenda::create([
+                    'titulo' => 'Agendar Serviço - ' . ($orcamento->cliente->nome ?? 'Cliente'),
+                    'descricao' => "OS #{$os->numero_os} (Aguardando Agendamento)",
+                    'cadastro_id' => $orcamento->cadastro_id,
+                    'ordem_servico_id' => $os->id,
+                    'orcamento_id' => $orcamento->id,
+                    'tipo' => AgendaTipo::Servico->value,
+                    'data_hora_inicio' => now()->addDays(2)->setHour(9)->setMinute(0),
+                    'data_hora_fim' => now()->addDays(2)->setHour(11)->setMinute(0),
+                    'status' => AgendaStatus::Agendado->value,
+                    'local' => $orcamento->cliente->endereco ?? 'A definir',
+                    'id_parceiro' => $orcamento->id_parceiro,
+                    'criado_por' => $userId,
+                ]);
+            }
 
             // D. Atualiza o Orçamento
             $orcamento->update([

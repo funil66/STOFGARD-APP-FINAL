@@ -41,7 +41,7 @@ class OrcamentoCalculator
 
         if ($orcamento->aplicar_desconto_pix && $percentualPix > 0) {
             // Se valor foi editado manualmente, NÃO aplica desconto PIX
-            if (! $orcamento->valor_final_editado) {
+            if (!$orcamento->valor_final_editado) {
                 $descontoPix = ($valorAposDescontoPrestador * $percentualPix) / 100;
             }
         }
@@ -73,7 +73,7 @@ class OrcamentoCalculator
     public function calcularSubtotal(Orcamento $orcamento): float
     {
         // Prioridade: valor_total existente ou soma dos itens
-        if ($orcamento->valor_total > 0 && ! $orcamento->relationLoaded('itens')) {
+        if ($orcamento->valor_total > 0 && !$orcamento->relationLoaded('itens')) {
             return (float) $orcamento->valor_total;
         }
 
@@ -101,7 +101,10 @@ class OrcamentoCalculator
         $percentualLoja = 0;
 
         // Comissão do Vendedor
-        if ($orcamento->vendedor_id) {
+        if (floatval($orcamento->comissao_vendedor) > 0) {
+            $comissaoVendedor = floatval($orcamento->comissao_vendedor);
+            $percentualVendedor = $orcamento->vendedor->comissao_percentual ?? 0;
+        } elseif ($orcamento->vendedor_id) {
             $vendedor = $orcamento->vendedor;
             if ($vendedor) {
                 $percentualVendedor = $vendedor->comissao_percentual ?? 0;
@@ -110,7 +113,10 @@ class OrcamentoCalculator
         }
 
         // Comissão da Loja
-        if ($orcamento->loja_id) {
+        if (floatval($orcamento->comissao_loja) > 0) {
+            $comissaoLoja = floatval($orcamento->comissao_loja);
+            $percentualLoja = $orcamento->loja->comissao_percentual ?? 0;
+        } elseif ($orcamento->loja_id) {
             $loja = $orcamento->loja;
             if ($loja) {
                 $percentualLoja = $loja->comissao_percentual ?? 0;
@@ -131,7 +137,7 @@ class OrcamentoCalculator
      */
     public function prepararDadosPix(Orcamento $orcamento, float $valorFinal): ?array
     {
-        if (! $orcamento->pdf_incluir_pix || ! $orcamento->pix_chave_selecionada) {
+        if (!$orcamento->pdf_incluir_pix || !$orcamento->pix_chave_selecionada) {
             return null;
         }
 
@@ -171,7 +177,7 @@ class OrcamentoCalculator
             ];
 
         } catch (\Exception $e) {
-            Log::error('Erro ao gerar dados PIX: '.$e->getMessage());
+            Log::error('Erro ao gerar dados PIX: ' . $e->getMessage());
 
             return null;
         }
@@ -230,7 +236,7 @@ class OrcamentoCalculator
      */
     public static function formatarMoeda(float $valor): string
     {
-        return 'R$ '.number_format($valor, 2, ',', '.');
+        return 'R$ ' . number_format($valor, 2, ',', '.');
     }
 }
 
@@ -250,7 +256,8 @@ class CalculoOrcamentoDTO
         public readonly float $comissaoLoja,
         public readonly float $percentualComissaoVendedor,
         public readonly float $percentualComissaoLoja,
-    ) {}
+    ) {
+    }
 
     /**
      * Total de descontos aplicados

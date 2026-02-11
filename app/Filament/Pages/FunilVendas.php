@@ -90,7 +90,7 @@ class FunilVendas extends Page
             $query->where(function ($q) {
                 $termo = "%{$this->busca}%";
                 $q->where('numero', 'like', $termo)
-                    ->orWhereHas('cliente', fn ($q) => $q->where('nome', 'like', $termo));
+                    ->orWhereHas('cliente', fn($q) => $q->where('nome', 'like', $termo));
             });
         }
 
@@ -118,7 +118,7 @@ class FunilVendas extends Page
             $items = $orcamentos->where('etapa_funil', $key);
             $estatisticas[$key] = [
                 'count' => $items->count(),
-                'total' => $items->sum('valor_total'),
+                'total' => $items->sum(fn($item) => $item->valor_efetivo),
             ];
         }
 

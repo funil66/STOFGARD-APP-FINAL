@@ -10,9 +10,9 @@ use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
 use App\Traits\HasAuditTrail;
 
-class Agenda extends Model implements HasMedia
+class Agenda extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
-    use HasArquivos, HasAuditTrail;
+    use HasArquivos, HasAuditTrail, \OwenIt\Auditing\Auditable;
 
     protected $table = 'agendas';
 
@@ -31,6 +31,7 @@ class Agenda extends Model implements HasMedia
         'cadastro_id',
         'ordem_servico_id',
         'orcamento_id',
+        'id_parceiro',
         'local',
         'endereco_completo',
         'lembrete_enviado',

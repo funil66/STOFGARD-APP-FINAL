@@ -142,58 +142,58 @@
   /* blue-300 */
 }
 
-/* FIX DEFINITIVO: Forçar visibilidade e dimensões corretas dos SVG icons */
-svg {
+/* ========================================
+   ACTION ICONS - Targeted fix for table actions
+   Only targets Filament action buttons, NOT all SVGs
+   ======================================== */
+
+/* Ensure action column cells are visible and have proper dimensions */
+.fi-ta-actions-cell {
+  min-width: 3rem !important;
+  width: auto !important;
+}
+
+/* Ensure the actions wrapper has proper display */
+.fi-ta-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+}
+
+/* Action group dropdown trigger (3 dots button) */
+.fi-ta-actions .fi-dropdown-trigger button,
+.fi-ta-actions .fi-ac-group-trigger-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-width: 2rem !important;
+  min-height: 2rem !important;
+  padding: 0.25rem !important;
+}
+
+/* SVG icons inside action buttons only */
+.fi-ta-actions svg,
+.fi-ta-actions button svg,
+.fi-dropdown-trigger svg {
   display: inline-block !important;
-  min-width: 1.25rem !important;
-  min-height: 1.25rem !important;
   width: 1.25rem !important;
   height: 1.25rem !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+  min-width: 1.25rem !important;
+  min-height: 1.25rem !important;
   flex-shrink: 0 !important;
 }
 
-svg * {
-  color: currentColor !important;
-  fill: currentColor !important;
-  stroke: currentColor !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Ensure icon containers display properly */
-.fi-btn svg,
-.fi-btn-icon,
-button svg,
-a svg,
-.fi-icon svg,
-[data-slot="icon"] {
+/* Dropdown menu items (inside the 3-dots popup) */
+.fi-dropdown-list-item svg {
   display: inline-block !important;
-  vertical-align: middle !important;
-  min-width: 1.25rem !important;
-  min-height: 1.25rem !important;
   width: 1.25rem !important;
   height: 1.25rem !important;
   flex-shrink: 0 !important;
 }
 
-/* Action buttons specifically */
-.fi-ac-btn svg,
-.fi-ac-btn-icon,
-.fi-ac-action svg,
+/* Header action buttons */
 .fi-header-actions svg {
   display: inline-block !important;
-  min-width: 1.25rem !important;
-  min-height: 1.25rem !important;
   width: 1.25rem !important;
   height: 1.25rem !important;
   flex-shrink: 0 !important;
-}
-
-/* Force all paths to be visible */
-svg path {
-  display: inline !important;
-  opacity: 1 !important;
-  visibility: visible !important;
 }

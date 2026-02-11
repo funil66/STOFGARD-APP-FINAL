@@ -28,11 +28,13 @@ class ProLaboreCalculator
     /**
      * Calcula o valor de reserva (estoque/caixa)
      */
-    public function calcularReserva(float $lucro, float $percentual): float
+    public function calcularReserva(float $lucro): float
     {
         if ($lucro <= 0) {
             return 0;
         }
+
+        $percentual = (float) settings()->get('prolabore_percentual_reserva', 20);
 
         return $lucro * ($percentual / 100);
     }
@@ -40,16 +42,37 @@ class ProLaboreCalculator
     /**
      * Calcula a distribuição para os sócios
      */
-    public function calcularDistribuicao(float $lucroDisponivel, array $socios): array
+    public function calcularDistribuicao(float $lucroDisponivel): array
     {
-        // $socios = [['nome' => 'João', 'percentual' => 50], ...]
+        $sociosConfig = settings()->get('socios_config');
+
+        // Se não houver configuração, retorna vazio
+        if (empty($sociosConfig) || !is_array($sociosConfig)) {
+            return [];
+        }
+
+        // Decodificar se vier como string (caso não tenha passado pelo cast do Settings)
+        if (is_string($sociosConfig)) {
+            $sociosConfig = json_decode($sociosConfig, true) ?? [];
+        }
+
         $distribuicao = [];
 
-        foreach ($socios as $socio) {
-            $valor = $lucroDisponivel * ($socio['percentual'] / 100);
+        foreach ($sociosConfig as $socio) {
+            $percentual = (float) ($socio['percentual'] ?? 0);
+            $userId = $socio['user_id'] ?? null;
+
+            if (!$userId)
+                continue;
+
+            $user = \App\Models\User::find($userId);
+
+            $valor = $lucroDisponivel * ($percentual / 100);
+
             $distribuicao[] = [
-                'nome' => $socio['nome'],
-                'percentual' => $socio['percentual'],
+                'user_id' => $userId,
+                'nome' => $user?->name ?? 'Usuário Desconhecido',
+                'percentual' => $percentual,
                 'valor' => $valor,
             ];
         }
