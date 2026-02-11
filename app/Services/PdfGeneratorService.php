@@ -19,19 +19,11 @@ class PdfGeneratorService
      */
     public function gerarOrcamentoPdf(Orcamento $orcamento)
     {
-        // Garante diretório temporário
-        $tempPath = storage_path('app/temp');
-        if (! file_exists($tempPath)) {
-            mkdir($tempPath, 0755, true);
-        }
-
         return Pdf::view('pdf.orcamento', ['orcamento' => $orcamento])
             ->format('a4')
             ->name("Orcamento-{$orcamento->id}.pdf")
             ->withBrowsershot(function ($browsershot) {
                 $browsershot->noSandbox()
-                    ->setNodeBinary(config('services.browsershot.node_path', '/usr/bin/node'))
-                    ->setNpmBinary(config('services.browsershot.npm_path', '/usr/bin/npm'))
                     ->setOption('args', [
                         '--disable-web-security',
                         '--no-sandbox',
@@ -48,7 +40,12 @@ class PdfGeneratorService
      */
     public function salvarPdf($pdf, string $path): string
     {
-        Storage::put($path, $pdf->save());
+        // Pega o conteúdo binário do PDF sem salvar em disco primeiro
+        // Usando base64() para garantir compatibilidade
+        $content = base64_decode($pdf->base64());
+
+        // Salva no disco configurado (local, s3, google)
+        Storage::put($path, $content);
 
         return $path;
     }
@@ -59,7 +56,7 @@ class PdfGeneratorService
     public function gerarESalvarOrcamento(Orcamento $orcamento): string
     {
         $pdf = $this->gerarOrcamentoPdf($orcamento);
-        $path = "orcamentos/orcamento-{$orcamento->id}-".now()->format('YmdHis').'.pdf';
+        $path = "orcamentos/orcamento-{$orcamento->id}-" . now()->format('YmdHis') . '.pdf';
 
         return $this->salvarPdf($pdf, $path);
     }
