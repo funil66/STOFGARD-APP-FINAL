@@ -139,7 +139,7 @@ class FinanceiroService
         $record->update([
             'status' => 'pendente',
             'data_pagamento' => null,
-            'valor_pago' => null,
+            'valor_pago' => 0,
         ]);
 
         Notification::make()
