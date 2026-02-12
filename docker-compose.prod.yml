@@ -11,6 +11,9 @@ services:
       - ./:/var/www
     networks:
       - stofgard-network
+    depends_on:
+      - mysql
+      - redis
 
   nginx:
     image: nginx:alpine
@@ -31,6 +34,31 @@ services:
     networks:
       - stofgard-network
 
+  mysql:
+    image: 'mysql/mysql-server:8.0'
+    container_name: stofgard-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: '${DB_DATABASE}'
+      MYSQL_USER: '${DB_USERNAME}'
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    volumes:
+      - 'stofgard-mysql:/var/lib/mysql'
+    networks:
+      - stofgard-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 networks:
   stofgard-network:
     driver: bridge
+
+volumes:
+  stofgard-mysql:
+    driver: local
