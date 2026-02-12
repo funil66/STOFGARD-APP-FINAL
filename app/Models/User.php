@@ -10,7 +10,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
+
 use App\Traits\HasArquivos;
 
 class User extends Authenticatable implements FilamentUser, HasMedia
