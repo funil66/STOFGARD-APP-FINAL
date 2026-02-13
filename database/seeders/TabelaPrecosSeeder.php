@@ -9,8 +9,10 @@ class TabelaPrecosSeeder extends Seeder
 {
     public function run(): void
     {
-        // Limpa tabela antes de popular (sem FK checks para SQLite)
+        // Limpa tabela antes de popular (MySQL requer desativar FK checks)
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         TabelaPreco::truncate();
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $itens = [
             // --- SOFÁS RETRÁTEIS ---
