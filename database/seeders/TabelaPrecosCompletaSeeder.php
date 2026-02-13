@@ -9,8 +9,10 @@ class TabelaPrecosCompletaSeeder extends Seeder
 {
     public function run(): void
     {
-        // Limpa a tabela para não duplicar
+        // Limpa a tabela para não duplicar, ignorando constraints de chave estrangeira
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         TabelaPreco::truncate();
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         $itens = [
             // --- SOFÁS RETRÁTEIS ---
