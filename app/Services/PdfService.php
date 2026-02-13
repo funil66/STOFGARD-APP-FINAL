@@ -64,7 +64,11 @@ class PdfService
             '--disable-dev-shm-usage',
             '--disable-gpu',
             '--headless',
-            '--disable-web-security' // Necessário para carregar assets locais em alguns ambientes
+            '--disable-web-security',
+            '--remote-debugging-port=9222',
+            '--user-data-dir=/tmp/chromium-data-' . uniqid(),
+            '--disable-software-rasterizer',
+            '--disable-features=VizDisplayCompositor'
         ];
 
         $args = config('browsershot.chrome_args', $defaultArgs);
