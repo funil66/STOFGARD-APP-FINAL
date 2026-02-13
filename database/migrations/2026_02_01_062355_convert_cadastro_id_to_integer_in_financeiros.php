@@ -31,7 +31,9 @@ return new class extends Migration {
         DB::transaction(function () {
             // PASSO 1: Criar coluna temporária
             Schema::table('financeiros', function (Blueprint $table) {
-                $table->unsignedBigInteger('cadastro_id_new')->nullable()->after('id');
+                if (!Schema::hasColumn('financeiros', 'cadastro_id_new')) {
+                    $table->unsignedBigInteger('cadastro_id_new')->nullable()->after('id');
+                }
             });
 
             $this->log('✓ Coluna temporária cadastro_id_new criada');
