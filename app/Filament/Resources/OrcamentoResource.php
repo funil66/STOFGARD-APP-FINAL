@@ -48,7 +48,7 @@ class OrcamentoResource extends Resource
 
                         Forms\Components\Hidden::make('status')
                             ->default('rascunho'),
-                    ])->columns(4),
+                    ])->columns(['default' => 1, 'lg' => 4]),
 
                 // ... (Keep existing sections but ensuring they use Icons if missing)
                 Forms\Components\Section::make('Comercial & Pagamento')
@@ -140,7 +140,7 @@ class OrcamentoResource extends Resource
                                     ->helperText('Deixe vazio para usar o padrão de Configurações'),
                             ])->columns(3),
 
-                    ])->columns(3),
+                    ])->columns(['default' => 1, 'lg' => 3]),
 
                 Forms\Components\Section::make('Detalhamento')
                     ->icon('heroicon-o-list-bullet')
@@ -170,7 +170,7 @@ class OrcamentoResource extends Resource
                                         // Trigger parent recalculate
                                         self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
                                     })
-                                    ->columnSpan(4),
+                                    ->columnSpan(['default' => 1, 'md' => 4]),
 
                                 Forms\Components\Select::make('servico_tipo')
                                     ->label('Tipo de Serviço')
@@ -182,7 +182,7 @@ class OrcamentoResource extends Resource
                                         // Trigger parent recalculate
                                         self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
                                     })
-                                    ->columnSpan(4),
+                                    ->columnSpan(['default' => 1, 'md' => 3]),
 
                                 Forms\Components\TextInput::make('quantidade')
                                     ->numeric()->default(1)->live(onBlur: true)
@@ -195,7 +195,7 @@ class OrcamentoResource extends Resource
                                         // Trigger parent recalculate
                                         self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
                                     })
-                                    ->columnSpan(1),
+                                    ->columnSpan(['default' => 1, 'md' => 1]),
 
                                 Forms\Components\TextInput::make('valor_unitario')
                                     ->label('Unit.')
@@ -209,7 +209,7 @@ class OrcamentoResource extends Resource
                                         // Trigger parent recalculate
                                         self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
                                     })
-                                    ->columnSpan(2),
+                                    ->columnSpan(['default' => 1, 'md' => 2]),
 
                                 Forms\Components\TextInput::make('subtotal')
                                     ->label('Total')
@@ -217,9 +217,9 @@ class OrcamentoResource extends Resource
                                     ->dehydrated()
                                     ->numeric()
                                     ->prefix('R$')
-                                    ->columnSpan(2),
+                                    ->columnSpan(['default' => 1, 'md' => 2]),
                             ])
-                            ->columns(11)
+                            ->columns(['default' => 1, 'md' => 12])
                             ->live()
                             ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get) {
                                 self::recalcularTotal($set, $get);
@@ -282,7 +282,7 @@ class OrcamentoResource extends Resource
                                     : 'color:#16a34a;font-weight:bold;'
                             ])
                             ->columnSpan(1),
-                    ])->columns(3),
+                    ])->columns(['default' => 1, 'md' => 3]),
 
                 // Campos Hidden para persistir comissões calculadas
                 Forms\Components\Hidden::make('comissao_vendedor')->dehydrated(),
