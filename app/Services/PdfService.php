@@ -81,14 +81,6 @@ class PdfService
         if ($chromePath) {
             $browsershot->setChromePath($chromePath);
         }
-
-        if ($nodePath) {
-            $browsershot->setNodeBinary($nodePath);
-        }
-
-        if ($npmPath) {
-            $browsershot->setNpmBinary($npmPath);
-        }
     }
 
     /**
