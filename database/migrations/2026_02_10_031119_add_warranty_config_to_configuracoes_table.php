@@ -11,7 +11,11 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('configuracoes', function (Blueprint $table) {
-            $table->json('config_prazo_garantia')->nullable()->after('pdf_layout');
+            $column = $table->json('config_prazo_garantia')->nullable();
+
+            if (Schema::hasColumn('configuracoes', 'pdf_layout')) {
+                $column->after('pdf_layout');
+            }
         });
 
         // Seed default warranty configurations
