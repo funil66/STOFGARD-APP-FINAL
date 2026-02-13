@@ -37,33 +37,33 @@ class NotificationService
     /**
      * Criar notificação de sucesso
      */
-    public static function success(User|int $user, string $title, string $message, ?string $module = null): Notification
+    public static function success(User|int $user, string $title, string $message, ?string $module = null, ?string $icon = null, ?string $actionUrl = null, ?string $actionLabel = null): Notification
     {
-        return self::create($user, 'success', $title, $message, $module, 'heroicon-o-check-circle');
+        return self::create($user, 'success', $title, $message, $module, $icon ?? 'heroicon-o-check-circle', $actionUrl, $actionLabel);
     }
 
     /**
      * Criar notificação de informação
      */
-    public static function info(User|int $user, string $title, string $message, ?string $module = null): Notification
+    public static function info(User|int $user, string $title, string $message, ?string $module = null, ?string $actionUrl = null, ?string $actionLabel = null): Notification
     {
-        return self::create($user, 'info', $title, $message, $module, 'heroicon-o-information-circle');
+        return self::create($user, 'info', $title, $message, $module, 'heroicon-o-information-circle', $actionUrl, $actionLabel);
     }
 
     /**
      * Criar notificação de aviso
      */
-    public static function warning(User|int $user, string $title, string $message, ?string $module = null): Notification
+    public static function warning(User|int $user, string $title, string $message, ?string $module = null, ?string $actionUrl = null, ?string $actionLabel = null): Notification
     {
-        return self::create($user, 'warning', $title, $message, $module, 'heroicon-o-exclamation-triangle');
+        return self::create($user, 'warning', $title, $message, $module, 'heroicon-o-exclamation-triangle', $actionUrl, $actionLabel);
     }
 
     /**
      * Criar notificação de erro
      */
-    public static function danger(User|int $user, string $title, string $message, ?string $module = null): Notification
+    public static function danger(User|int $user, string $title, string $message, ?string $module = null, ?string $actionUrl = null, ?string $actionLabel = null): Notification
     {
-        return self::create($user, 'danger', $title, $message, $module, 'heroicon-o-x-circle');
+        return self::create($user, 'danger', $title, $message, $module, 'heroicon-o-x-circle', $actionUrl, $actionLabel);
     }
 
     /**
