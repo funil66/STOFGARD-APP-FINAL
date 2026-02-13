@@ -7,6 +7,14 @@ use Illuminate\Support\Facades\File;
 
 class PdfService
 {
+    public function __construct()
+    {
+        $tempPath = storage_path('app/temp');
+        if (!is_dir($tempPath)) {
+            mkdir($tempPath, 0777, true);
+        }
+        putenv("TMPDIR={$tempPath}");
+    }
     /**
      * Gera um PDF a partir de uma View.
      *
