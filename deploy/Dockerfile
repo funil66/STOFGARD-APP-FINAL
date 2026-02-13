@@ -41,6 +41,10 @@ RUN apt-get update && apt-get install -y \
     # Clean up
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Configure MySQL client to skip SSL (Fixes backup issues)
+RUN mkdir -p /etc/mysql/conf.d && \
+    echo "[client]\nssl=0" > /etc/mysql/conf.d/no-ssl.cnf
+
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip
 
@@ -58,6 +62,7 @@ RUN apt-get install -y nodejs
 RUN useradd -G www-data,root -u $uid -d /home/$user $user
 # Add www-data to the www group so PHP-FPM can write to files owned by www
 RUN usermod -aG $user www-data
+
 RUN mkdir -p /home/$user/.composer && \
     chown -R $user:$user /home/$user
 
