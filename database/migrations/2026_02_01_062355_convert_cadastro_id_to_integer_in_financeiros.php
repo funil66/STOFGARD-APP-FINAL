@@ -5,8 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      *
@@ -23,7 +22,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (! Schema::hasTable('financeiros')) {
+        if (!Schema::hasTable('financeiros')) {
             $this->log('Tabela "financeiros" não existe; pulando migração.');
 
             return;
@@ -184,15 +183,15 @@ return new class extends Migration
                 COUNT(*) AS total_registros,
                 SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
                 SUM(CASE WHEN status = 'pago' THEN 1 ELSE 0 END) AS pagos,
-                SUM(CASE WHEN tipo = 'receita' THEN valor_total ELSE 0 END) AS total_entradas,
-                SUM(CASE WHEN tipo = 'despesa' THEN valor_total ELSE 0 END) AS total_saidas,
+                SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END) AS total_entradas,
+                SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END) AS total_saidas,
                 MAX(created_at) AS ultimo_registro
             FROM transacoes_financeiras
             WHERE deleted_at IS NULL";
             }
 
-            if (! empty($selects)) {
-                $sql = 'CREATE VIEW financeiro_audit AS '.implode("\nUNION ALL\n", $selects);
+            if (!empty($selects)) {
+                $sql = 'CREATE VIEW financeiro_audit AS ' . implode("\nUNION ALL\n", $selects);
                 DB::statement($sql);
             }
 
@@ -208,7 +207,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (! Schema::hasTable('financeiros')) {
+        if (!Schema::hasTable('financeiros')) {
             $this->log('Tabela "financeiros" não existe; pulando rollback.');
 
             return;
@@ -245,13 +244,13 @@ return new class extends Migration
      */
     private function parseCadastroId(string $cadastroId): ?int
     {
-        if (! str_contains($cadastroId, '_')) {
+        if (!str_contains($cadastroId, '_')) {
             return null;
         }
 
         [$tipo, $legacyId] = explode('_', $cadastroId, 2);
 
-        if (! is_numeric($legacyId)) {
+        if (!is_numeric($legacyId)) {
             return null;
         }
 
@@ -265,7 +264,7 @@ return new class extends Migration
             'vendedor' => 'vendedor',
         ];
 
-        if (! isset($tipoMap[$tipo])) {
+        if (!isset($tipoMap[$tipo])) {
             return null;
         }
 
@@ -295,7 +294,7 @@ return new class extends Migration
     private function log(string $message): void
     {
         if (app()->runningInConsole()) {
-            echo $message.PHP_EOL;
+            echo $message . PHP_EOL;
         }
     }
 };

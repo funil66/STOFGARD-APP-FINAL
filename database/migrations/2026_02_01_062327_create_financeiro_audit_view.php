@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      *
@@ -38,8 +37,8 @@ return new class extends Migration
                 COUNT(*) AS total_registros,
                 SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
                 SUM(CASE WHEN status = 'pago' THEN 1 ELSE 0 END) AS pagos,
-                SUM(CASE WHEN tipo = 'receita' THEN valor_total ELSE 0 END) AS total_entradas,
-                SUM(CASE WHEN tipo = 'despesa' THEN valor_total ELSE 0 END) AS total_saidas,
+                SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END) AS total_entradas,
+                SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END) AS total_saidas,
                 MAX(created_at) AS ultimo_registro
             FROM transacoes_financeiras
             WHERE deleted_at IS NULL";
@@ -50,7 +49,7 @@ return new class extends Migration
             return;
         }
 
-        $sql = 'CREATE VIEW financeiro_audit AS '.implode("\nUNION ALL\n", $selects);
+        $sql = 'CREATE VIEW financeiro_audit AS ' . implode("\nUNION ALL\n", $selects);
         DB::statement($sql);
     }
 
