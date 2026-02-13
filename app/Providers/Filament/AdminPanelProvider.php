@@ -88,11 +88,11 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::HEAD_START,
                 fn(): string => '
-                    <meta name="theme-color" content="#d97706">
+                    <meta name="theme-color" content="#F59E0B">
                     <meta name="apple-mobile-web-app-capable" content="yes">
                     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
                     <meta name="apple-mobile-web-app-title" content="Stofgard">
-                    <link rel="apple-touch-icon" href="/images/icon-192x192.png">
+                    <link rel="apple-touch-icon" href="/images/icon-512x512.png">
                     <link rel="manifest" href="/build/manifest.webmanifest">
                 '
             )
