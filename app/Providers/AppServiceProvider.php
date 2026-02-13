@@ -64,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
         Orcamento::observe(OrcamentoObserver::class);
         \App\Models\OrdemServico::observe(\App\Observers\OrdemServicoObserver::class);
         \App\Models\ListaDesejo::observe(\App\Observers\ListaDesejoObserver::class);
+        \App\Models\Cadastro::observe(\App\Observers\CadastroObserver::class);
 
 
         // No early redirect middleware registered for /admin/login; allow the
