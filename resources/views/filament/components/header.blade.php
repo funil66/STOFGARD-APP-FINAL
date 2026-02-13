@@ -3,7 +3,7 @@
     class="flex items-center justify-between mb-4 md:mb-6 px-2 sm:px-4 sticky top-0 bg-white dark:bg-gray-900 z-50 py-3 md:py-4 shadow-sm dark:shadow-gray-800/50">
     <div class="flex items-center gap-2">
         <!-- Mobile Menu Button (Hamburger) -->
-        <button x-on:click="$store.sidebar.open()"
+        <button x-on:click="$store.sidebar.isOpen ? $store.sidebar.close() : $store.sidebar.open()"
             class="lg:hidden p-2 -ml-2 mr-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
             type="button" aria-label="Open sidebar">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
