@@ -172,18 +172,10 @@ class OrcamentoResource extends Resource
                                     })
                                     ->columnSpan(4),
 
-                                Forms\Components\ToggleButtons::make('servico_tipo')
+                                Forms\Components\Select::make('servico_tipo')
                                     ->label('Tipo de Serviço')
                                     ->options(\App\Services\ServiceTypeManager::getOptions())
-                                    ->colors(\App\Services\ServiceTypeManager::getColors())
-                                    ->icons([
-                                        'higienizacao' => 'heroicon-o-sparkles',
-                                        'impermeabilizacao' => 'heroicon-o-shield-check',
-                                        'combo' => 'heroicon-o-squares-plus',
-                                        'outro' => 'heroicon-o-cog',
-                                    ])
                                     ->default('higienizacao')
-                                    ->inline()
                                     ->live()
                                     ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $livewire) {
                                         self::atualizarPrecoItem($set, $get);
