@@ -17,7 +17,7 @@ class StofgardTable
         bool $edit = true,
         bool $delete = true,
         array $extraActions = [],
-        bool $grouped = true
+        bool $grouped = false
     ): array {
         $actions = [];
 
