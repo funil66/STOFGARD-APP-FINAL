@@ -97,6 +97,10 @@ class AdminPanelProvider extends PanelProvider
                 '
             )
             ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_END,
+                fn(): string => view('filament.hooks.pwa-install')
+            )
+            ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn(): string => (function () {
                     try {
