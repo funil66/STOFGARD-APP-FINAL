@@ -5,8 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Remove a coluna 'categoria' (string) da tabela financeiros para evitar conflito
      * com o relacionamento categoria() que usa categoria_id.
@@ -102,15 +101,15 @@ return new class extends Migration
                 COUNT(*) AS total_registros,
                 SUM(CASE WHEN status = 'pendente' THEN 1 ELSE 0 END) AS pendentes,
                 SUM(CASE WHEN status = 'pago' THEN 1 ELSE 0 END) AS pagos,
-                SUM(CASE WHEN tipo = 'receita' THEN valor_total ELSE 0 END) AS total_entradas,
-                SUM(CASE WHEN tipo = 'despesa' THEN valor_total ELSE 0 END) AS total_saidas,
+                SUM(CASE WHEN tipo = 'receita' THEN valor ELSE 0 END) AS total_entradas,
+                SUM(CASE WHEN tipo = 'despesa' THEN valor ELSE 0 END) AS total_saidas,
                 MAX(created_at) AS ultimo_registro
             FROM transacoes_financeiras
             WHERE deleted_at IS NULL";
                         }
 
-                        if (! empty($selects)) {
-                            $sql = 'CREATE VIEW financeiro_audit AS '.implode("\nUNION ALL\n", $selects);
+                        if (!empty($selects)) {
+                            $sql = 'CREATE VIEW financeiro_audit AS ' . implode("\nUNION ALL\n", $selects);
                             DB::statement($sql);
                         }
                     }
@@ -124,7 +123,7 @@ return new class extends Migration
                 echo "✅ Coluna 'categoria' (string) removida com sucesso!\n";
 
             } catch (\Exception $e) {
-                echo '⚠️  Erro ao remover coluna categoria: '.$e->getMessage()."\n";
+                echo '⚠️  Erro ao remover coluna categoria: ' . $e->getMessage() . "\n";
                 echo "ℹ️  O conflito será tratado no nível da aplicação.\n";
             }
         } else {
@@ -137,7 +136,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasTable('financeiros') && ! Schema::hasColumn('financeiros', 'categoria')) {
+        if (Schema::hasTable('financeiros') && !Schema::hasColumn('financeiros', 'categoria')) {
             Schema::table('financeiros', function (Blueprint $table) {
                 $table->string('categoria')->nullable()->after('descricao');
             });
