@@ -14,7 +14,9 @@ class PdfService
             mkdir($tempPath, 0777, true);
         }
         putenv("TMPDIR={$tempPath}");
+        putenv("NODE_PATH=/var/www/node_modules");
     }
+
     /**
      * Gera um PDF a partir de uma View.
      *
@@ -62,8 +64,8 @@ class PdfService
     {
         // Prioriza config/browsershot.php, fallback para services.browsershot
         $chromePath = config('browsershot.chrome_path') ?? config('services.browsershot.chrome_path');
-        $nodePath = config('browsershot.node_path') ?? config('services.browsershot.node_path');
-        $npmPath = config('browsershot.npm_path') ?? config('services.browsershot.npm_path');
+
+        $tempPath = storage_path('app/temp');
 
         // Argumentos padrão robustos
         $defaultArgs = [
@@ -74,7 +76,7 @@ class PdfService
             '--headless',
             '--disable-web-security',
             '--remote-debugging-port=9222',
-            '--user-data-dir=/tmp/chromium-data-' . uniqid(),
+            '--user-data-dir=' . $tempPath . '/chromium-data-' . uniqid(),
             '--disable-software-rasterizer',
             '--disable-features=VizDisplayCompositor'
         ];
