@@ -172,17 +172,25 @@ class OrcamentoResource extends Resource
                                     })
                                     ->columnSpan(4),
 
-                                Forms\Components\Select::make('servico_tipo')
+                                Forms\Components\ToggleButtons::make('servico_tipo')
                                     ->label('Tipo de Serviço')
                                     ->options(\App\Services\ServiceTypeManager::getOptions())
+                                    ->colors(\App\Services\ServiceTypeManager::getColors())
+                                    ->icons([
+                                        'higienizacao' => 'heroicon-o-sparkles',
+                                        'impermeabilizacao' => 'heroicon-o-shield-check',
+                                        'combo' => 'heroicon-o-squares-plus',
+                                        'outro' => 'heroicon-o-cog',
+                                    ])
                                     ->default('higienizacao')
+                                    ->inline()
                                     ->live()
                                     ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, $livewire) {
                                         self::atualizarPrecoItem($set, $get);
                                         // Trigger parent recalculate
                                         self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
                                     })
-                                    ->columnSpan(2),
+                                    ->columnSpan(4),
 
                                 Forms\Components\TextInput::make('quantidade')
                                     ->numeric()->default(1)->live(onBlur: true)
