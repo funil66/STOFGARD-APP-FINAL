@@ -404,6 +404,20 @@ class CadastroResource extends Resource
                         ->default(0)
                         ->visible(fn(Forms\Get $get) => in_array($get('tipo'), ['vendedor', 'loja', 'parceiro']))
                         ->helperText('Porcentagem que será aplicada automaticamente nos orçamentos.'),
+
+                    // CAMPOS EXCLUSIVOS PARA LEAD (Criação de Orçamento Automática)
+                    Forms\Components\Select::make('servico_interesse')
+                        ->label('Interesse no Serviço')
+                        ->options(\App\Services\LeadService::getServicosDisponiveis())
+                        ->visible(fn(Forms\Get $get) => $get('tipo') === 'lead')
+                        ->searchable()
+                        ->preload()
+                        ->live(),
+
+                    Forms\Components\Textarea::make('mensagem_inicial')
+                        ->label('Mensagem / Observações Iniciais')
+                        ->visible(fn(Forms\Get $get) => $get('tipo') === 'lead')
+                        ->columnSpanFull(),
                 ])->columns(3),
             Forms\Components\Section::make('Dados Principais')
                 ->schema([
