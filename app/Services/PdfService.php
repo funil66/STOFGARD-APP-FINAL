@@ -76,7 +76,11 @@ class PdfService
 
         $browsershot->noSandbox()
             ->setOption('args', $args)
-            ->timeout($timeout);
+            ->timeout($timeout)
+            ->setEnvironmentVariables([
+                'NODE_PATH' => '/var/www/node_modules',
+                'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+            ]);
 
         if ($chromePath) {
             $browsershot->setChromePath($chromePath);
