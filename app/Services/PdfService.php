@@ -87,6 +87,9 @@ class PdfService
         $browsershot->noSandbox()
             ->setOption('args', $args)
             ->timeout($timeout)
+            ->setNodeBinary('/usr/bin/node')
+            ->setNpmBinary('/usr/bin/npm')
+            ->setNodeModulePath('/var/www/node_modules')
             ->setEnvironmentVariables([
                 'NODE_PATH' => '/var/www/node_modules',
                 'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
