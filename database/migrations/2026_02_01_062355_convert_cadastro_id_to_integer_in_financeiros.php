@@ -29,6 +29,12 @@ return new class extends Migration {
         }
 
 
+
+        if (!Schema::hasColumn('financeiros', 'cliente_id') && !Schema::hasColumn('financeiros', 'parceiro_id')) {
+            $this->log('Migração já parece ter sido concluída (colunas legadas ausentes). Pulando.');
+            return;
+        }
+
         // PASSO 1: Criar coluna temporária
         Schema::table('financeiros', function (Blueprint $table) {
             if (!Schema::hasColumn('financeiros', 'cadastro_id_new')) {
