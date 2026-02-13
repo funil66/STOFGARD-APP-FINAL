@@ -118,7 +118,7 @@ return new class extends Migration {
             DB::statement('DROP VIEW IF EXISTS financeiro_audit');
 
             // Em SQLite precisamos remover índices que referenciam a coluna antes de dropar
-            if (Schema::hasTable('financeiros')) {
+            if (DB::getDriverName() === 'sqlite' && Schema::hasTable('financeiros')) {
                 DB::statement('DROP INDEX IF EXISTS idx_financeiros_cadastro_status_tipo');
             }
 
