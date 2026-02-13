@@ -24,7 +24,14 @@ class PdfGeneratorService
             ->name("Orcamento-{$orcamento->id}.pdf")
             ->withBrowsershot(function ($browsershot) {
                 $browsershot->noSandbox()
-                    ->timeout(config('services.browsershot.timeout', 60));
+                    ->timeout(config('browsershot.timeout', 60))
+                    ->setNodeBinary('/usr/bin/node')
+                    ->setNpmBinary('/usr/bin/npm')
+                    ->setNodeModulePath('/var/www/node_modules')
+                    ->setEnvironmentVariables([
+                        'NODE_PATH' => '/var/www/node_modules',
+                        'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+                    ]);
             });
     }
 
