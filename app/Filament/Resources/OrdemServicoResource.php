@@ -130,7 +130,7 @@ class OrdemServicoResource extends Resource
                                         ->valueLabel('Valor')
                                         ->reorderable()
                                         ->columnSpanFull(),
-                                ])->columns(2),
+                                ])->columns(['default' => 1, 'sm' => 2]),
 
                                 Textarea::make('descricao_servico')
                                     ->label('Descrição Técnica (Texto do Orçamento)')

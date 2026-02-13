@@ -265,8 +265,8 @@ class StofgardSystem
                 'data_fim' => now(),
             ]);
 
-            // Delega a baixa de estoque para o serviço especializado
-            $this->estoqueService->baixarEstoquePorOS($os);
+            // A baixa de estoque já é realizada pelo Observer ao salvar os itens da OS.
+            // $this->estoqueService->baixarEstoquePorOS($os);
         });
     }
 }
