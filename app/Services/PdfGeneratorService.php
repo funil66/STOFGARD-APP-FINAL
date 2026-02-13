@@ -24,16 +24,6 @@ class PdfGeneratorService
             ->name("Orcamento-{$orcamento->id}.pdf")
             ->withBrowsershot(function ($browsershot) {
                 $browsershot->noSandbox()
-                    ->setOption('args', [
-                        '--disable-web-security',
-                        '--no-sandbox',
-                        '--disable-setuid-sandbox',
-                        '--disable-dev-shm-usage',
-                        '--disable-gpu',
-                        '--headless',
-                        '--remote-debugging-port=9222',
-                        '--user-data-dir=/tmp/chromium-data-gen-' . uniqid(),
-                    ])
                     ->timeout(config('services.browsershot.timeout', 60));
             });
     }

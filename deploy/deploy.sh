@@ -32,14 +32,14 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 # 4. Instalar dependências e rodar migrações
 echo "📦 Instalando dependências e rodando migrações..."
-docker compose -f docker-compose.prod.yml exec -T app composer install --no-dev --optimize-autoloader
-docker compose -f docker-compose.prod.yml exec -T app php artisan key:generate
-docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force
-docker compose -f docker-compose.prod.yml exec -T app php artisan storage:link
-docker compose -f docker-compose.prod.yml exec -T app php artisan optimize:clear
-docker compose -f docker-compose.prod.yml exec -T app php artisan optimize
-docker compose -f docker-compose.prod.yml exec -T app npm install
-docker compose -f docker-compose.prod.yml exec -T app npm run build
+docker compose -f docker-compose.prod.yml exec -T -u www app composer install --no-dev --optimize-autoloader
+docker compose -f docker-compose.prod.yml exec -T -u www app php artisan key:generate
+docker compose -f docker-compose.prod.yml exec -T -u www app php artisan migrate --force
+docker compose -f docker-compose.prod.yml exec -T -u www app php artisan storage:link
+docker compose -f docker-compose.prod.yml exec -T -u www app php artisan optimize:clear
+docker compose -f docker-compose.prod.yml exec -T -u www app php artisan optimize
+docker compose -f docker-compose.prod.yml exec -T -u www app npm install
+docker compose -f docker-compose.prod.yml exec -T -u www app npm run build
 
 echo "✅ Deploy concluído com sucesso!"
 echo "🌍 Acesse sua aplicação no navegador."

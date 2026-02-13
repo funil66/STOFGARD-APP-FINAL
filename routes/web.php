@@ -128,28 +128,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/files/delete/{model}/{record}/{path}', [\App\Http\Controllers\ArquivosController::class, 'destroy'])
         ->middleware('signed')
         ->name('admin.files.delete');
-    Route::get('/debug/pdf', function () {
-        try {
-            return \Spatie\LaravelPdf\Facades\Pdf::html('<h1>Teste PDF</h1>')
-                ->withBrowsershot(function ($b) {
-                    $b->noSandbox()
-                        ->setOption('args', [
-                            '--no-sandbox',
-                            '--disable-setuid-sandbox',
-                            '--disable-dev-shm-usage',
-                            '--disable-gpu',
-                            '--headless',
-                            '--remote-debugging-port=9222',
-                        ])
-                        ->setChromePath('/usr/bin/chromium')
-                        ->setNodeBinary('/usr/bin/node')
-                        ->setNpmBinary('/usr/bin/npm');
-                })
-                ->inline();
-        } catch (\Exception $e) {
-            return response($e->getMessage(), 500);
-        }
-    });
 });
 
 // Rotas públicas de pagamento PIX
