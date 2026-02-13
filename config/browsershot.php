@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'chrome_path' => env('BROWSERSHOT_CHROME_PATH', '/usr/bin/google-chrome-stable'),
+    'chrome_path' => env('BROWSERSHOT_CHROME_PATH', '/usr/bin/chromium'),
     'node_path' => env('BROWSERSHOT_NODE_PATH', '/usr/bin/node'),
     'npm_path' => env('BROWSERSHOT_NPM_PATH', '/usr/bin/npm'),
 

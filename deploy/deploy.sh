@@ -38,6 +38,8 @@ docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --forc
 docker compose -f docker-compose.prod.yml exec -T app php artisan storage:link
 docker compose -f docker-compose.prod.yml exec -T app php artisan optimize:clear
 docker compose -f docker-compose.prod.yml exec -T app php artisan optimize
+docker compose -f docker-compose.prod.yml exec -T app npm install
+docker compose -f docker-compose.prod.yml exec -T app npm run build
 
 echo "✅ Deploy concluído com sucesso!"
 echo "🌍 Acesse sua aplicação no navegador."

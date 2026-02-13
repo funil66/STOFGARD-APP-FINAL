@@ -42,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Forçar HTTPS em produção para evitar erros de Mixed Content
+        if ($this->app->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // O "Modo Deus". Se retornar true aqui, ignora as Policies.
         Gate::before(function (\App\Models\User $user, string $ability) {
             if ($user->is_admin) {

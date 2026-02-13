@@ -38,11 +38,11 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/google/callback'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL') . '/google/callback'),
     ],
 
     'browsershot' => [
-        'chrome_path' => env('BROWSERSHOT_CHROME_PATH', '/home/sail/.cache/puppeteer/chrome/linux-144.0.7559.96/chrome-linux64/chrome'),
+        'chrome_path' => env('BROWSERSHOT_CHROME_PATH', '/usr/bin/chromium'),
         'node_path' => env('BROWSERSHOT_NODE_PATH', '/usr/bin/node'),
         'npm_path' => env('BROWSERSHOT_NPM_PATH', '/usr/bin/npm'),
         'timeout' => env('BROWSERSHOT_TIMEOUT', 60),
