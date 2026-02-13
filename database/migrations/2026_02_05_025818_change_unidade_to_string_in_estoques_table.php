@@ -4,42 +4,48 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        // Limpeza preventiva
-        \Illuminate\Support\Facades\DB::statement('DROP VIEW IF EXISTS financeiro_audit');
-        \Illuminate\Support\Facades\DB::statement('DROP TABLE IF EXISTS __temp__estoques');
-        Schema::dropIfExists('estoques_new');
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            // Limpeza preventiva
+            \Illuminate\Support\Facades\DB::statement('DROP VIEW IF EXISTS financeiro_audit');
+            \Illuminate\Support\Facades\DB::statement('DROP TABLE IF EXISTS __temp__estoques');
+            Schema::dropIfExists('estoques_new');
 
-        // 1. Criar nova tabela com estrutura correta (unidade como string)
-        Schema::create('estoques_new', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-            $table->string('item');
-            $table->decimal('quantidade', 10, 2)->default(0);
-            $table->string('unidade')->default('unidade'); // Alterado para string simples
-            $table->decimal('minimo_alerta', 10, 2)->default(5);
-            $table->string('tipo')->default('geral');
-            $table->text('observacoes')->nullable();
-        });
+            // 1. Criar nova tabela com estrutura correta (unidade como string)
+            Schema::create('estoques_new', function (Blueprint $table) {
+                $table->id();
+                $table->timestamps();
+                $table->string('item');
+                $table->decimal('quantidade', 10, 2)->default(0);
+                $table->string('unidade')->default('unidade'); // Alterado para string simples
+                $table->decimal('minimo_alerta', 10, 2)->default(5);
+                $table->string('tipo')->default('geral');
+                $table->text('observacoes')->nullable();
+            });
 
-        // 2. Copiar dados (SE a tabela antiga existir)
-        if (Schema::hasTable('estoques')) {
-            // Apenas copia as colunas que realmente existem na tabela
-            $colunas = implode(',', ['id', 'created_at', 'updated_at', 'item', 'quantidade', 'unidade', 'minimo_alerta']);
-            \Illuminate\Support\Facades\DB::statement("INSERT INTO estoques_new ($colunas) SELECT $colunas FROM estoques");
+            // 2. Copiar dados (SE a tabela antiga existir)
+            if (Schema::hasTable('estoques')) {
+                // Apenas copia as colunas que realmente existem na tabela
+                $colunas = implode(',', ['id', 'created_at', 'updated_at', 'item', 'quantidade', 'unidade', 'minimo_alerta']);
+                \Illuminate\Support\Facades\DB::statement("INSERT INTO estoques_new ($colunas) SELECT $colunas FROM estoques");
 
-            // 3. Dropar tabela antiga
-            Schema::drop('estoques');
+                // 3. Dropar tabela antiga
+                Schema::drop('estoques');
+            }
+
+            // 4. Renomear nova tabela
+            Schema::rename('estoques_new', 'estoques');
+        } else {
+            // MySQL/Postgres: Alterar coluna diretamente
+            if (Schema::hasColumn('estoques', 'unidade')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques MODIFY COLUMN unidade VARCHAR(255) DEFAULT 'unidade'");
+            }
         }
-
-        // 4. Renomear nova tabela
-        Schema::rename('estoques_new', 'estoques');
     }
 
     /**
