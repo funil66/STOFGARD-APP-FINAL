@@ -4,14 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Adiciona campos de precificação interna ao estoque.
      * Permite controle de custo e cálculo de margem.
      */
     public function up(): void
     {
+        // Garantir que a coluna 'tipo' existe (correção para migração anterior pulada)
+        if (!Schema::hasColumn('estoques', 'tipo')) {
+            Schema::table('estoques', function (Blueprint $table) {
+                $table->string('tipo')->default('geral');
+            });
+        }
+
         Schema::table('estoques', function (Blueprint $table) {
             // Preço interno (custo de aquisição)
             $table->decimal('preco_interno', 12, 2)->nullable()->after('tipo');
