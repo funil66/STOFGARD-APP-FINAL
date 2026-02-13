@@ -6,8 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      *
@@ -27,96 +26,101 @@ return new class extends Migration
             $table = 'transacoes_financeiras';
         }
 
-        if (! $table) {
+        if (!$table) {
             $this->log('Nenhuma tabela financeira encontrada; pulando migração.');
 
             return;
         }
 
-        DB::transaction(function () use ($table) {
-            // PASSO 1: Coletar todas as categorias únicas como string
-            $categoriasString = DB::table($table)
-                ->whereNotNull('categoria')
-                ->whereNull('categoria_id')
-                ->distinct()
-                ->pluck('categoria');
+        if (!Schema::hasColumn($table, 'categoria')) {
+            $this->log('Coluna categoria não existe; consolidação já concluída.');
+            return;
+        }
 
-            $this->log("📋 Encontradas {$categoriasString->count()} categorias únicas como string");
 
-            // PASSO 2: Criar registros na tabela categorias se não existirem
-            $criadasCount = 0;
-            foreach ($categoriasString as $nomeCategoria) {
-                if (empty($nomeCategoria)) {
-                    continue;
-                }
+        // PASSO 1: Coletar todas as categorias únicas como string
+        $categoriasString = DB::table($table)
+            ->whereNotNull('categoria')
+            ->whereNull('categoria_id')
+            ->distinct()
+            ->pluck('categoria');
 
-                $slug = Str::slug($nomeCategoria);
+        $this->log("📋 Encontradas {$categoriasString->count()} categorias únicas como string");
 
-                // Verificar se já existe
-                $exists = DB::table('categorias')
-                    ->where('slug', $slug)
-                    ->orWhere('nome', $nomeCategoria)
-                    ->exists();
-
-                if (! $exists) {
-                    DB::table('categorias')->insert([
-                        'nome' => $nomeCategoria,
-                        'slug' => $slug,
-                        'tipo' => $this->inferirTipoCategoria($nomeCategoria),
-                        'sistema' => 'financeiro',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                    $criadasCount++;
-                    $this->log("  ✓ Criada categoria: {$nomeCategoria}");
-                }
+        // PASSO 2: Criar registros na tabela categorias se não existirem
+        $criadasCount = 0;
+        foreach ($categoriasString as $nomeCategoria) {
+            if (empty($nomeCategoria)) {
+                continue;
             }
 
-            $this->log("✅ {$criadasCount} novas categorias criadas");
+            $slug = Str::slug($nomeCategoria);
 
-            // PASSO 3: Atualizar categoria_id para registros com categoria string
-            $financeiros = DB::table($table)
-                ->whereNotNull('categoria')
-                ->whereNull('categoria_id')
-                ->get();
+            // Verificar se já existe
+            $exists = DB::table('categorias')
+                ->where('slug', $slug)
+                ->orWhere('nome', $nomeCategoria)
+                ->exists();
 
-            $atualizados = 0;
-            foreach ($financeiros as $financeiro) {
-                $categoria = DB::table('categorias')
-                    ->where('nome', $financeiro->categoria)
-                    ->orWhere('slug', Str::slug($financeiro->categoria))
-                    ->first();
-
-                if ($categoria) {
-                    DB::table('financeiros')
-                        ->where('id', $financeiro->id)
-                        ->update(['categoria_id' => $categoria->id]);
-                    $atualizados++;
-                }
+            if (!$exists) {
+                DB::table('categorias')->insert([
+                    'nome' => $nomeCategoria,
+                    'slug' => $slug,
+                    'tipo' => $this->inferirTipoCategoria($nomeCategoria),
+                    'sistema' => 'financeiro',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $criadasCount++;
+                $this->log("  ✓ Criada categoria: {$nomeCategoria}");
             }
+        }
 
-            $this->log("✅ {$atualizados} registros financeiros atualizados com categoria_id");
+        $this->log("✅ {$criadasCount} novas categorias criadas");
 
-            // PASSO 4: Remover coluna categoria (string)
-            if (Schema::hasColumn($table, 'categoria')) {
-                // Em SQLite, DROP COLUMN pode falhar se houver views dependentes — optar por pular
-                if (DB::getDriverName() !== 'sqlite') {
-                    Schema::table($table, function (Blueprint $tbl) {
-                        $tbl->dropIndex(['categoria']); // remover índice se existir
-                    });
+        // PASSO 3: Atualizar categoria_id para registros com categoria string
+        $financeiros = DB::table($table)
+            ->whereNotNull('categoria')
+            ->whereNull('categoria_id')
+            ->get();
 
-                    Schema::table($table, function (Blueprint $tbl) {
-                        $tbl->dropColumn('categoria');
-                    });
+        $atualizados = 0;
+        foreach ($financeiros as $financeiro) {
+            $categoria = DB::table('categorias')
+                ->where('nome', $financeiro->categoria)
+                ->orWhere('slug', Str::slug($financeiro->categoria))
+                ->first();
 
-                    $this->log('✅ Coluna categoria (string) removida');
-                } else {
-                    $this->log('⚠ DRIVER sqlite detectado — remoção da coluna categoria pulada (incompatibilidade com views).');
-                }
+            if ($categoria) {
+                DB::table('financeiros')
+                    ->where('id', $financeiro->id)
+                    ->update(['categoria_id' => $categoria->id]);
+                $atualizados++;
             }
+        }
 
-            $this->log("\n🎉 CONSOLIDAÇÃO DE CATEGORIAS CONCLUÍDA!");
-        });
+        $this->log("✅ {$atualizados} registros financeiros atualizados com categoria_id");
+
+        // PASSO 4: Remover coluna categoria (string)
+        if (Schema::hasColumn($table, 'categoria')) {
+            // Em SQLite, DROP COLUMN pode falhar se houver views dependentes — optar por pular
+            if (DB::getDriverName() !== 'sqlite') {
+                Schema::table($table, function (Blueprint $tbl) {
+                    $tbl->dropIndex(['categoria']); // remover índice se existir
+                });
+
+                Schema::table($table, function (Blueprint $tbl) {
+                    $tbl->dropColumn('categoria');
+                });
+
+                $this->log('✅ Coluna categoria (string) removida');
+            } else {
+                $this->log('⚠ DRIVER sqlite detectado — remoção da coluna categoria pulada (incompatibilidade com views).');
+            }
+        }
+
+        $this->log("\n🎉 CONSOLIDAÇÃO DE CATEGORIAS CONCLUÍDA!");
+
     }
 
     /**
@@ -132,7 +136,7 @@ return new class extends Migration
             $table = 'transacoes_financeiras';
         }
 
-        if (! $table) {
+        if (!$table) {
             $this->log('Nenhuma tabela financeira encontrada; pulando rollback.');
 
             return;
@@ -195,7 +199,7 @@ return new class extends Migration
     private function log(string $message): void
     {
         if (app()->runningInConsole()) {
-            echo $message.PHP_EOL;
+            echo $message . PHP_EOL;
         }
     }
 };
