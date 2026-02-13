@@ -76,13 +76,19 @@ class TabelaPrecosCompletaSeeder extends Seeder
         ];
 
         foreach ($itens as $item) {
+            // Determinar categoria automaticamente
+            $categoria = $this->determinarCategoria($item['nome']);
+
             // Cria Higienização
             if ($item['higi'] > 0) {
                 TabelaPreco::create([
                     'configuracao_id' => 1,
-                    'nome' => $item['nome'],
-                    'valor' => $item['higi'],
+                    'nome_item' => $item['nome'],
+                    'preco_vista' => $item['higi'],
+                    'preco_prazo' => $item['higi'] * 1.1, // Padrão 10% a mais
                     'tipo_servico' => 'higienizacao',
+                    'categoria' => $categoria,
+                    'unidade_medida' => 'unidade',
                     'ativo' => true,
                 ]);
             }
@@ -90,12 +96,44 @@ class TabelaPrecosCompletaSeeder extends Seeder
             if ($item['imper'] > 0) {
                 TabelaPreco::create([
                     'configuracao_id' => 1,
-                    'nome' => $item['nome'],
-                    'valor' => $item['imper'],
+                    'nome_item' => $item['nome'],
+                    'preco_vista' => $item['imper'],
+                    'preco_prazo' => $item['imper'] * 1.1, // Padrão 10% a mais
                     'tipo_servico' => 'impermeabilizacao',
+                    'categoria' => $categoria,
+                    'unidade_medida' => 'unidade',
                     'ativo' => true,
                 ]);
             }
         }
+    }
+
+    private function determinarCategoria(string $nome): string
+    {
+        $nome = strtolower($nome);
+
+        if (str_contains($nome, 'cadeira') || str_contains($nome, 'banqueta')) {
+            return 'Cadeiras e Banquetas';
+        }
+        if (str_contains($nome, 'poltrona') || str_contains($nome, 'puff')) {
+            return 'Poltronas e Puffs';
+        }
+        if (str_contains($nome, 'sofá') || str_contains($nome, 'sofa')) {
+            return 'Sofás';
+        }
+        if (str_contains($nome, 'colchão') || str_contains($nome, 'colchao') || str_contains($nome, 'cama') || str_contains($nome, 'cabeceira')) {
+            return 'Colchões e Camas';
+        }
+        if (str_contains($nome, 'carro') || str_contains($nome, 'suv') || str_contains($nome, 'caminhão') || str_contains($nome, 'veículo')) {
+            return 'Automotivo';
+        }
+        if (str_contains($nome, 'bebê') || str_contains($nome, 'bebe') || str_contains($nome, 'carrinho') || str_contains($nome, 'urso')) {
+            return 'Bebê e Criança';
+        }
+        if (str_contains($nome, 'tapete')) {
+            return 'Tapetes';
+        }
+
+        return 'Diversos';
     }
 }
