@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y \
     fonts-liberation \
     fontconfig \
     mariadb-client \
+    chromium \
     # Clean up
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
