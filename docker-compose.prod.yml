@@ -11,6 +11,9 @@ services:
       - ./:/var/www
     networks:
       - stofgard-network
+    environment:
+      - TMPDIR=/var/www/storage/app/temp
+      - NODE_PATH=/var/www/node_modules
     depends_on:
       - mysql
       - redis
