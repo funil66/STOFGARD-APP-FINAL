@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y \
     # Fontes para PDF
     fonts-liberation \
     fontconfig \
+    mariadb-client \
     # Clean up
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
