@@ -45,6 +45,11 @@ return new class extends Migration {
             if (Schema::hasColumn('estoques', 'unidade')) {
                 \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques MODIFY COLUMN unidade VARCHAR(255) DEFAULT 'unidade'");
             }
+
+            // Adicionar coluna 'tipo' se não existir (para corrigir falha de migração anterior que foi pulada)
+            if (!Schema::hasColumn('estoques', 'tipo')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques ADD COLUMN tipo VARCHAR(255) DEFAULT 'geral'");
+            }
         }
     }
 
