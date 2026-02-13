@@ -76,6 +76,7 @@ export default defineConfig({
                 name: 'Sistema Stofgard',
                 short_name: 'Stofgard',
                 description: 'Sistema de Gestão Stofgard',
+                start_url: '/admin', // <--- Garante que abre no painel, evita erro 403 no /build/
                 theme_color: '#F59E0B', // Amber do Filament
                 background_color: '#ffffff',
                 display: 'standalone',
