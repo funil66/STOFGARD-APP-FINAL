@@ -66,50 +66,30 @@ class OrdemServicoObserver
         }
 
         try {
-            // Busca configurações de garantia
-            $config = \App\Models\Configuracao::first();
-            $prazosGarantia = $config->config_prazo_garantia ?? [];
-
-            // Se vazio, usa defaults básicos
-            if (empty($prazosGarantia)) {
-                Log::warning("Nenhuma configuração de garantia encontrada, usando padrões");
-                $prazosGarantia = [
-                    ['tipo_servico' => 'higienizacao', 'dias' => 90, 'descricao' => 'Garantia contra manchas e odores'],
-                    ['tipo_servico' => 'impermeabilizacao', 'dias' => 365, 'descricao' => 'Garantia contra infiltrações'],
-                    // Default fallback
-                    ['tipo_servico' => 'padrao', 'dias' => 90, 'descricao' => 'Garantia Padrão'],
-                ];
-            }
-
             // Determina tipo(s) de serviço da OS
             $tipoServico = $os->tipo_servico ?? 'servico';
 
-            // Tenta encontrar configuração específica para o tipo
-            $prazoConfig = collect($prazosGarantia)->firstWhere('tipo_servico', $tipoServico);
+            // Obtém dias de garantia via ServiceTypeManager (Centralizado)
+            $dias = \App\Services\ServiceTypeManager::getDiasGarantia($tipoServico);
 
-            // Se não encontrar, tenta 'padrao' ou usa o primeiro disponível
-            if (!$prazoConfig) {
-                $prazoConfig = collect($prazosGarantia)->firstWhere('tipo_servico', 'padrao')
-                    ?? $prazosGarantia[0]
-                    ?? ['dias' => 90, 'descricao' => 'Garantia do serviço realizado'];
-            }
-
-            $dias = $prazoConfig['dias'] ?? 90;
-            $descricao = $prazoConfig['descricao'] ?? 'Garantia do serviço realizado';
+            // Obtém descrição (label do serviço)
+            $labelServico = \App\Services\ServiceTypeManager::getLabel($tipoServico);
+            $descricao = "Garantia padrão para {$labelServico}";
 
             // Cria a garantia
             \App\Models\Garantia::create([
                 'ordem_servico_id' => $os->id,
                 'tipo_servico' => $tipoServico,
                 'data_inicio' => now(),
-                'dias_garantia' => $dias,
+                // Garante que é inteiro
+                'dias_garantia' => (int) $dias,
                 // Data fim calculada com base nos dias
-                'data_fim' => now()->addDays($dias),
+                'data_fim' => now()->addDays((int) $dias),
                 'status' => 'ativa',
                 'observacoes' => $descricao,
             ]);
 
-            Log::info("Garantia de {$dias} dias criada automaticamente para OS {$os->numero_os}");
+            Log::info("Garantia de {$dias} dias criada automaticamente para OS {$os->numero_os} ({$tipoServico})");
 
         } catch (\Exception $e) {
             Log::error("Erro ao criar garantia automática para OS {$os->numero_os}: " . $e->getMessage());
