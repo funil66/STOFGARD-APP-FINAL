@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class Produto extends Model implements HasMedia
+class Produto extends Model implements HasMedia, Auditable
 {
-    use HasFactory, HasArquivos;
+    use HasFactory, HasArquivos, \OwenIt\Auditing\Auditable;
 
     protected $fillable = ['nome', 'descricao', 'preco_custo', 'preco_venda', 'estoque_atual', 'unidade'];
 

@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
 use App\Traits\HasAuditTrail;
 
-class Estoque extends Model
+class Estoque extends Model implements Auditable
 {
-    use HasAuditTrail;
+    use HasAuditTrail, \OwenIt\Auditing\Auditable;
     protected $table = 'estoques';
 
     protected $fillable = [
