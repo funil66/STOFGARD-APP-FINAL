@@ -20,9 +20,9 @@ class CategoriaFactory extends Factory
     public function definition(): array
     {
         return [
-            'nome' => $this->faker->word(),
-            'tipo' => $this->faker->randomElement(['financeiro_receita', 'financeiro_despesa', 'produto', 'servico']),
-            'cor' => $this->faker->hexColor(),
+            'nome' => fake()->word(),
+            'tipo' => fake()->randomElement(['financeiro_receita', 'financeiro_despesa', 'produto', 'servico']),
+            'cor' => fake()->hexColor(),
             'icone' => 'heroicon-o-tag',
             'ativo' => true,
         ];

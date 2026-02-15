@@ -54,6 +54,20 @@ class EquipamentoResource extends Resource
                                     ->placeholder('Ex: EQP-001')
                                     ->unique(ignoreRecord: true)
                                     ->maxLength(50),
+
+                                Forms\Components\TextInput::make('numero_serie')
+                                    ->label('Número de Série')
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('marca')
+                                    ->label('Marca')
+                                    ->placeholder('Ex: WAP')
+                                    ->maxLength(255),
+
+                                Forms\Components\TextInput::make('modelo')
+                                    ->label('Modelo')
+                                    ->placeholder('Ex: Carpet Cleaner')
+                                    ->maxLength(255),
                             ]),
 
                         Forms\Components\Textarea::make('descricao')
@@ -142,6 +156,21 @@ class EquipamentoResource extends Resource
                     ->badge()
                     ->color('gray')
                     ->visibleFrom('md'),
+
+                Tables\Columns\TextColumn::make('marca')
+                    ->label('Marca')
+                    ->searchable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('modelo')
+                    ->label('Modelo')
+                    ->searchable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('numero_serie')
+                    ->label('Nº Série')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')

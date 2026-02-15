@@ -139,6 +139,11 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
         return $this->belongsTo(Agenda::class);
     }
 
+    public function garantias(): HasMany
+    {
+        return $this->hasMany(Garantia::class, 'ordem_servico_id');
+    }
+
     public function loja(): BelongsTo
     {
         return $this->belongsTo(Cadastro::class, 'loja_id');

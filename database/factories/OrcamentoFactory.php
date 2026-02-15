@@ -17,7 +17,7 @@ class OrcamentoFactory extends Factory
             'numero' => Orcamento::gerarNumeroOrcamento(),
             'data_orcamento' => now(),
             'data_validade' => now()->addDays(7),
-            'valor_total' => $this->faker->randomFloat(2, 100, 1000),
+            'valor_total' => fake()->randomFloat(2, 100, 1000),
             'status' => 'em_elaboracao',
         ];
     }

@@ -20,6 +20,9 @@ class Equipamento extends Model implements HasMedia
         'valor_aquisicao',
         'localizacao',
         'observacoes',
+        'numero_serie',
+        'marca',
+        'modelo',
         'criado_por',
     ];
 

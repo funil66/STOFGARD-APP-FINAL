@@ -71,7 +71,7 @@ class StofgardSystem
                 'status' => OrdemServicoStatus::Aberta->value,
                 'data_abertura' => now(),
                 'data_prevista' => $dataPrevista,
-                'tipo_servico' => $orcamento->tipo_servico ?? FinanceiroCategoria::Servico->value,
+                'tipo_servico' => $orcamento->itens->first()?->servico_tipo ?? FinanceiroCategoria::Servico->value,
                 'descricao_servico' => $orcamento->descricao_servico ?? "Conforme orçamento {$orcamento->numero}",
                 'valor_total' => $orcamento->valor_efetivo,
                 'observacoes' => $options['observacoes'] ?? $orcamento->observacoes,
