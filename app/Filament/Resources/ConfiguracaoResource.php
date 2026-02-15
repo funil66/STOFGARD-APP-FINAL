@@ -82,6 +82,27 @@ class ConfiguracaoResource extends Resource
                                             ->label('Tipo de Serviço')
                                             ->options(\App\Services\ServiceTypeManager::getOptions())
                                             ->required()
+                                            ->searchable()
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('nome')
+                                                    ->label('Nome do Serviço')
+                                                    ->required()
+                                                    ->maxLength(255),
+                                                Forms\Components\TextInput::make('icone')
+                                                    ->label('Ícone (Emoji)')
+                                                    ->placeholder('🧹')
+                                                    ->maxLength(255),
+                                            ])
+                                            ->createOptionUsing(function (array $data) {
+                                                $categoria = \App\Models\Categoria::create([
+                                                    'nome' => $data['nome'],
+                                                    'tipo' => 'servico_tipo',
+                                                    'slug' => \Illuminate\Support\Str::slug($data['nome']),
+                                                    'icone' => $data['icone'] ?? '🛠️',
+                                                    'ativo' => true,
+                                                ]);
+                                                return $categoria->slug;
+                                            })
                                             ->columnSpan(1),
 
                                         Forms\Components\TextInput::make('dias')
