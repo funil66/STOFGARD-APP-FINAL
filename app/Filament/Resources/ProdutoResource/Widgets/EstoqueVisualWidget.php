@@ -52,11 +52,18 @@ class EstoqueVisualWidget extends Widget
         })->toArray();
     }
 
-    protected function notificarEscassez(string $nomeProduto, float $volume): void
+    protected function notificarEscassez(?string $nomeProduto, float $volume): void
     {
+        if (empty($nomeProduto)) {
+            return;
+        }
+
         // Evita múltiplas notificações (cache por 1 hora)
-        $cacheKey = 'estoque_alerta_'.str_replace(' ', '_', $nomeProduto);
-        if (! cache()->has($cacheKey)) {
+        // Ensure cache key is safe
+        $safeName = \Illuminate\Support\Str::slug($nomeProduto, '_');
+        $cacheKey = 'estoque_alerta_' . $safeName;
+
+        if (!cache()->has($cacheKey)) {
             Notification::make()
                 ->title('⚠️ ESTOQUE BAIXO!')
                 ->body("Apenas {$volume}L de {$nomeProduto} restantes!")

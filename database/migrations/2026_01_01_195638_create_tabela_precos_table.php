@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -16,7 +15,7 @@ return new class extends Migration
             $table->enum('tipo_servico', ['higienizacao', 'impermeabilizacao'])->index();
             $table->string('categoria', 100); // Ex: "Cadeiras e Poltronas", "Sofás"
             $table->string('nome_item', 255);
-            $table->enum('unidade_medida', ['unidade', 'm2'])->default('unidade');
+            $table->string('unidade_medida', 50)->default('unidade');
             $table->decimal('preco_vista', 10, 2);
             $table->decimal('preco_prazo', 10, 2);
             $table->boolean('ativo')->default(true)->index();

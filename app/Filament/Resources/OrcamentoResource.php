@@ -39,7 +39,7 @@ class OrcamentoResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->createOptionForm(\App\Filament\Resources\CadastroResource::getFormSchema())
+                            ->createOptionForm(\App\Services\ClienteFormService::getFullSchema())
                             ->columnSpan(2), // Give more space
 
 

@@ -9,15 +9,20 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
+    libjpeg-dev \
+    libwebp-dev \
+    libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
     zip \
     unzip \
     libzip-dev \
     libicu-dev \
+    libmagickwand-dev \
     supervisor \
     cron \
     gnupg \
+    ffmpeg \
     libnss3 \
     libnspr4 \
     libatk1.0-0 \
@@ -47,10 +52,12 @@ RUN mkdir -p /etc/mysql/conf.d && \
     echo "[client]\nssl=0" > /etc/mysql/conf.d/no-ssl.cnf
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip
 
-# Install Redis extension
-RUN pecl install redis && docker-php-ext-enable redis
+# Install Redis and Imagick extensions
+RUN pecl install redis imagick \
+    && docker-php-ext-enable redis imagick
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

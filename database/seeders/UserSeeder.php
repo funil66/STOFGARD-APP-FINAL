@@ -19,15 +19,15 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Allisson Gonçalves de Sousa',
-                'email' => config('app.admin_email', 'allisson@stofgard.com.br'),
-                'password' => Hash::make(config('app.admin_password', 'Swordfish')),
+                'email' => 'allisson@stofgard.com.br',
+                'password' => Hash::make('admin'),
                 'is_admin' => true,
             ],
             [
                 'name' => 'Maria de Jesus Silva',
                 'email' => 'maria@stofgard.com.br',
-                'password' => Hash::make('Stofgard2026'),
-                'is_admin' => false,
+                'password' => Hash::make('admin'),
+                'is_admin' => true,
             ],
             [
                 'name' => 'Jaelsa Maria Silva',

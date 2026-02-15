@@ -12,17 +12,17 @@ class ClienteFactory extends Factory
     public function definition()
     {
         return [
-            'nome' => $this->faker->name,
-            'email' => $this->faker->unique()->safeEmail,
-            'telefone' => $this->faker->phoneNumber,
-            'celular' => $this->faker->phoneNumber,
-            'cpf_cnpj' => $this->faker->numerify('###########'),
-            'cep' => $this->faker->postcode,
-            'logradouro' => $this->faker->streetName,
-            'numero' => $this->faker->buildingNumber,
-            'bairro' => $this->faker->word,
-            'cidade' => $this->faker->city,
-            'estado' => $this->faker->stateAbbr,
+            'nome' => fake()->name,
+            'email' => fake()->unique()->safeEmail,
+            'telefone' => fake()->phoneNumber,
+            'celular' => fake()->phoneNumber,
+            'cpf_cnpj' => fake()->numerify('###########'),
+            'cep' => fake()->postcode,
+            'logradouro' => fake()->streetName,
+            'numero' => fake()->buildingNumber,
+            'bairro' => fake()->word,
+            'cidade' => fake()->city,
+            'estado' => fake()->stateAbbr,
         ];
     }
 }

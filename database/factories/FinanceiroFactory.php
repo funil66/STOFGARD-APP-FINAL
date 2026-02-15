@@ -24,13 +24,13 @@ class FinanceiroFactory extends Factory
         return [
             'cadastro_id' => Cadastro::factory(),
             'categoria_id' => Categoria::factory(), // Assuming CategoriaFactory exists, otherwise might need adjustment
-            'tipo' => $this->faker->randomElement(['entrada', 'saida']),
-            'descricao' => $this->faker->sentence(),
-            'valor' => $this->faker->randomFloat(2, 10, 1000),
-            'data' => $this->faker->date(),
-            'data_vencimento' => $this->faker->date(),
+            'tipo' => fake()->randomElement(['entrada', 'saida']),
+            'descricao' => fake()->sentence(),
+            'valor' => fake()->randomFloat(2, 10, 1000),
+            'data' => fake()->date(),
+            'data_vencimento' => fake()->date(),
             'status' => 'pendente',
-            'forma_pagamento' => $this->faker->randomElement(['pix', 'boleto', 'cartao_credito']),
+            'forma_pagamento' => fake()->randomElement(['pix', 'boleto', 'cartao_credito']),
         ];
     }
 }

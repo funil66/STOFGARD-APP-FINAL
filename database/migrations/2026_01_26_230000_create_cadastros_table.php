@@ -5,8 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::dropIfExists('cadastros');
@@ -41,7 +40,7 @@ return new class extends Migration
             $table->string('estado')->nullable();
 
             // Tipo e Status (Adicionado 'vendedor' e 'loja')
-            $table->enum('tipo', ['cliente', 'parceiro', 'fornecedor', 'loja', 'vendedor'])->default('cliente')->index();
+            $table->enum('tipo', ['cliente', 'parceiro', 'fornecedor', 'loja', 'vendedor', 'arquiteto'])->default('cliente')->index();
             $table->boolean('ativo')->default(true);
             $table->text('observacoes')->nullable();
 
