@@ -44,7 +44,7 @@ class ServiceTypeManager
                 'color' => $settingItem['color'] ?? $dbItem->cor ?? $enumItem?->getColor() ?? 'gray',
                 'icon' => $settingItem['icon'] ?? $dbItem->icone ?? $enumItem?->getIcon() ?? 'heroicon-o-sparkles',
                 'descricao_pdf' => $settingItem['descricao_pdf'] ?? $dbItem->descricao ?? $enumItem?->getDescricaoPdf() ?? null,
-                'dias_garantia' => $settingItem['dias_garantia'] ?? 90, // Default 90 days
+                'dias_garantia' => $settingItem['dias_garantia'] ?? null,
             ];
         });
     }
@@ -99,14 +99,16 @@ class ServiceTypeManager
     }
 
     /**
-     * Busca Dias de Garantia por Slug
+     * Busca Dias de Garantia por Slug. Retorna null se não houver garantia.
      */
-    public static function getDiasGarantia(string $slug): int
+    public static function getDiasGarantia(string $slug): ?int
     {
         $all = self::getAll();
         $item = $all->firstWhere('slug', $slug);
 
-        return (int) ($item['dias_garantia'] ?? 90);
+        $dias = $item['dias_garantia'] ?? null;
+
+        return $dias !== null ? (int) $dias : null;
     }
 
     /**
