@@ -66,6 +66,27 @@ class CadastroResource extends Resource
                         ]),
                     ]),
 
+                // ===== ENDEREÇO (INTERATIVO) =====
+                Section::make('📍 Endereço')
+                    ->schema([
+                        Grid::make(4)->schema([
+                            TextEntry::make('endereco_completo')
+                                ->label('Endereço Completo')
+                                ->state(fn($record) => "{$record->logradouro}, {$record->numero} - {$record->bairro}")
+                                ->icon('heroicon-m-map-pin')
+                                ->url(fn($record) => "https://www.google.com/maps/search/?api=1&query=" . urlencode("{$record->logradouro}, {$record->numero} - {$record->bairro}, {$record->cidade} - {$record->estado}"), true)
+                                ->color('primary')
+                                ->columnSpan(2),
+                            TextEntry::make('complemento')
+                                ->label('Complemento')
+                                ->placeholder('-'),
+                            TextEntry::make('cep')
+                                ->label('CEP')
+                                ->icon('heroicon-m-hashtag'),
+                        ]),
+                    ])
+                    ->collapsible(),
+
                 // ===== RESUMO FINANCEIRO (CARDS) =====
                 Section::make('💰 Resumo Financeiro')
                     ->schema([
@@ -411,6 +432,8 @@ class CadastroResource extends Resource
                     ->label('WhatsApp')
                     ->searchable()
                     ->icon('heroicon-m-phone')
+                    ->url(fn($state) => 'https://wa.me/55' . preg_replace('/\D/', '', $state), true)
+                    ->color('success')
                     ->visibleFrom('md'),
                 Tables\Columns\TextColumn::make('cidade')
                     ->label('Cidade')

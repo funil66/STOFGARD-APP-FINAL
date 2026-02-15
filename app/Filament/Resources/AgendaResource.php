@@ -277,12 +277,15 @@ class AgendaResource extends Resource
                     ->visibleFrom('md'),
 
                 // DESKTOP ONLY: Cliente
-                Tables\Columns\TextColumn::make('cadastro.nome')
+                Tables\Columns\TextColumn::make('cliente.nome')
                     ->label('Cliente')
                     ->searchable()
                     ->icon('heroicon-m-user')
                     ->placeholder('-')
-                    ->visibleFrom('lg'),
+                    ->visibleFrom('lg')
+                    ->url(fn($record) => $record->cadastro_id ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id]) : null)
+                    ->color('primary')
+                    ->weight('bold'),
 
                 // SEMPRE VISÍVEL: Tipo com ícone
                 Tables\Columns\TextColumn::make('tipo')
@@ -334,7 +337,9 @@ class AgendaResource extends Resource
                     ->label('Local')
                     ->icon('heroicon-m-map-pin')
                     ->limit(20)
-                    ->visibleFrom('xl'),
+                    ->visibleFrom('xl')
+                    ->url(fn($record) => $record->endereco_maps, true)
+                    ->color('primary'),
 
                 // DESKTOP ONLY: OS vinculada
                 Tables\Columns\TextColumn::make('ordemServico.numero_os')
@@ -509,10 +514,13 @@ class AgendaResource extends Resource
                                 ->label('Término')
                                 ->dateTime('d/m/Y H:i')
                                 ->icon('heroicon-m-clock'),
-                            TextEntry::make('cadastro.nome')
+                            TextEntry::make('cliente.nome')
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
-                                ->placeholder('Não informado'),
+                                ->placeholder('Não informado')
+                                ->url(fn($record) => $record->cadastro_id ? \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id]) : null)
+                                ->color('primary')
+                                ->weight('bold'),
                             TextEntry::make('ordemServico.numero_os')
                                 ->label('OS')
                                 ->icon('heroicon-m-clipboard-document-check')

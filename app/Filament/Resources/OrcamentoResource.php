@@ -467,7 +467,12 @@ class OrcamentoResource extends Resource
                                     TextEntry::make('cliente.email')->label('E-mail')->copyable(),
                                     TextEntry::make('cliente.documento')->label('CPF/CNPJ'),
                                     TextEntry::make('cliente.cidade')->label('Cidade'),
-                                    TextEntry::make('cliente.logradouro')->label('Endereço')->columnSpanFull(),
+                                    TextEntry::make('cliente.logradouro')
+                                        ->label('Endereço')
+                                        ->columnSpanFull()
+                                        ->icon('heroicon-m-map-pin')
+                                        ->url(fn($record) => "https://www.google.com/maps/search/?api=1&query=" . urlencode("{$record->cliente->logradouro}, {$record->cliente->numero} - {$record->cliente->bairro}, {$record->cliente->cidade} - {$record->cliente->estado}"), true)
+                                        ->color('primary'),
                                 ]),
                             ]),
 
@@ -570,7 +575,10 @@ class OrcamentoResource extends Resource
                 Tables\Columns\TextColumn::make('cliente.nome')
                     ->label('Cliente')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->url(fn($record) => \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id]))
+                    ->color('primary')
+                    ->weight('bold'),
                 Tables\Columns\TextColumn::make('valor_efetivo')
                     ->label('Valor')
                     ->money('BRL')
