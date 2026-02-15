@@ -72,6 +72,12 @@ class OrdemServicoObserver
             // Obtém dias de garantia via ServiceTypeManager (Centralizado)
             $dias = \App\Services\ServiceTypeManager::getDiasGarantia($tipoServico);
 
+            // Se não houver dias definidos (null ou 0), não cria garantia
+            if (empty($dias)) {
+                Log::info("Garantia não configurada para o serviço '{$tipoServico}' (dias=null|0), pulando criação.");
+                return;
+            }
+
             // Obtém descrição (label do serviço)
             $labelServico = \App\Services\ServiceTypeManager::getLabel($tipoServico);
             $descricao = "Garantia padrão para {$labelServico}";

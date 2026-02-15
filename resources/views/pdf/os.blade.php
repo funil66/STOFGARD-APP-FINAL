@@ -313,7 +313,8 @@
                     <tr>
                         <td>{{ $produto->item }}</td>
                         <td>{{ number_format($produto->pivot->quantidade_utilizada, 2, ',', '.') }}
-                            {{ $produto->pivot->unidade }}</td>
+                            {{ $produto->pivot->unidade }}
+                        </td>
                         <td style="font-size: 8px; color: #6b7280;">{{ $produto->pivot->observacao ?? '—' }}</td>
                     </tr>
                 @endforeach
@@ -335,6 +336,27 @@
         <div class="section-header">OBSERVAÇÕES</div>
         <div style="padding: 10px; font-size: 10px; color: #555;">
             {{ $record->observacoes }}
+        </div>
+    @endif
+
+    <!-- GARANTIA -->
+    @php
+        $garantia = $record->garantias()->where('status', 'ativa')->first();
+    @endphp
+    @if($garantia)
+        <div class="section-header">🛡️ GARANTIA</div>
+        <div style="padding: 10px; border: 1px dashed #2563eb; background: #eff6ff; border-radius: 4px;">
+            <div style="font-size: 11px; font-weight: bold; color: #1e40af;">
+                GARANTIA ATIVA: {{ $garantia->dias_garantia }} DIAS
+            </div>
+            <div style="font-size: 9px; color: #374151; margin-top: 4px;">
+                <strong>Válida até:</strong> {{ \Carbon\Carbon::parse($garantia->data_fim)->format('d/m/Y') }}
+            </div>
+            @if($garantia->observacoes)
+                <div style="font-size: 9px; color: #6b7280; margin-top: 2px; font-style: italic;">
+                    {{ $garantia->observacoes }}
+                </div>
+            @endif
         </div>
     @endif
 

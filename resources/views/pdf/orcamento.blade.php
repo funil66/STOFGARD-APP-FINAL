@@ -328,6 +328,25 @@
                                      border: 2px solid {{ $textColor }};">
                             {{ $servicoLabel }}
                         </span>
+                        
+                        {{-- Show Warranty if configured --}}
+                        @php
+                            $diasGarantia = \App\Services\ServiceTypeManager::getDiasGarantia($tipoServico);
+                        @endphp
+                        @if($diasGarantia)
+                            <span style="display: inline-block;
+                                         background: #ecfdf5;
+                                         color: #047857;
+                                         padding: 6px 10px;
+                                         border-radius: 16px;
+                                         font-weight: bold;
+                                         font-size: 10px;
+                                         margin-left: 5px;
+                                         border: 1px solid #047857;">
+                                🛡️ Garantia: {{ $diasGarantia }} dias
+                            </span>
+                        @endif
+
                         @if($servicoDescricao)
                             <span style="display: inline-block; 
                                          margin-left: 10px;
