@@ -54,10 +54,10 @@ class ProdutoObserver
                 // 'quantidade' => $produto->estoque_atual, 
 
                 'unidade' => $this->mapUnidade($produto->unidade),
-                'minimo_alerta' => $produto->estoque_minimo,
-                'preco_interno' => $produto->preco_custo,
-                'preco_venda' => $produto->preco_venda,
-                'observacoes' => $produto->descricao,
+                'minimo_alerta' => $produto->estoque_minimo ?? 5,
+                'preco_interno' => $produto->preco_custo ?? 0,
+                'preco_venda' => $produto->preco_venda ?? 0,
+                'observacoes' => $produto->descricao ?? '',
             ]);
 
             // Se a quantidade foi alterada no produto, atualizamos o estoque
