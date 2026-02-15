@@ -65,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\OrdemServico::observe(\App\Observers\OrdemServicoObserver::class);
         \App\Models\ListaDesejo::observe(\App\Observers\ListaDesejoObserver::class);
         \App\Models\Cadastro::observe(\App\Observers\CadastroObserver::class);
+        \App\Models\Produto::observe(\App\Observers\ProdutoObserver::class);
 
 
         // No early redirect middleware registered for /admin/login; allow the
