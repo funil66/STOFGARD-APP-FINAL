@@ -104,6 +104,124 @@ class OrcamentoObserver
     /**
      * Handle the Orcamento "saved" event.
      */
+    /**
+     * Handle the Orcamento "updated" event.
+     * Synchronizes changes to related records (Financeiro, OS, Agenda).
+     */
+    public function updated(Orcamento $orcamento): void
+    {
+        // Só sincroniza se já foi aprovado e tem registros vinculados
+        if ($orcamento->status !== \App\Enums\OrcamentoStatus::Aprovado->value) {
+            return;
+        }
+
+        // 1. Sincronizar Valores (Receita e Comissões)
+        if ($orcamento->isDirty(['valor_total', 'valor_final_editado', 'comissao_vendedor', 'comissao_loja'])) {
+            $this->syncFinanceiro($orcamento);
+            $this->syncOrdemServicoValores($orcamento);
+        }
+
+        // 2. Sincronizar IDs (Parceiro, Vendedor, Loja, Cliente)
+        if ($orcamento->isDirty(['id_parceiro', 'vendedor_id', 'loja_id', 'cadastro_id'])) {
+            $this->syncIds($orcamento);
+        }
+    }
+
+    private function syncFinanceiro(Orcamento $orcamento): void
+    {
+        // A. Atualizar Receita (Entrada)
+        $receita = $orcamento->financeiros()->where('tipo', 'entrada')->where('status', 'pendente')->first();
+        if ($receita) {
+            $novoValor = $orcamento->valor_efetivo;
+            $receita->update([
+                'valor' => $novoValor,
+                'desconto' => max(0, floatval($orcamento->valor_total) - floatval($novoValor)),
+            ]);
+            Log::info("OrcamentoObserver: Receita #{$receita->id} atualizada para R$ {$novoValor}");
+        }
+
+        // B. Atualizar Comissão Vendedor
+        $comissaoVendedor = $orcamento->financeiros()
+            ->where('tipo', 'saida')
+            ->where('is_comissao', true)
+            ->where('descricao', 'LIKE', '%Comissão Vendedor%')
+            ->where('status', 'pendente') // Só atualiza se ñ foi paga
+            ->first();
+
+        if (floatval($orcamento->comissao_vendedor) > 0) {
+            if ($comissaoVendedor) {
+                $comissaoVendedor->update(['valor' => $orcamento->comissao_vendedor]);
+            } else {
+                // Poderia criar aqui se não existisse, mas por hora vamos apenas atualizar
+            }
+        } elseif ($comissaoVendedor) {
+            // Se zerou a comissão, deleta o lançamento pendente?
+            // $comissaoVendedor->delete(); // Decisão de negócio: melhor manter ou zerar?
+            $comissaoVendedor->update(['valor' => 0]);
+        }
+
+        // C. Atualizar Comissão Loja
+        $comissaoLoja = $orcamento->financeiros()
+            ->where('tipo', 'saida')
+            ->where('is_comissao', true)
+            ->where('descricao', 'LIKE', '%Comissão Loja%')
+            ->where('status', 'pendente')
+            ->first();
+
+        if (floatval($orcamento->comissao_loja) > 0) {
+            if ($comissaoLoja) {
+                $comissaoLoja->update(['valor' => $orcamento->comissao_loja]);
+            }
+        } elseif ($comissaoLoja) {
+            $comissaoLoja->update(['valor' => 0]);
+        }
+    }
+
+    private function syncOrdemServicoValores(Orcamento $orcamento): void
+    {
+        $os = $orcamento->ordemServico;
+        if ($os) {
+            $os->update([
+                'valor_total' => $orcamento->valor_efetivo,
+            ]);
+            Log::info("OrcamentoObserver: OS #{$os->id} valor atualizado.");
+        }
+    }
+
+    private function syncIds(Orcamento $orcamento): void
+    {
+        $dadosUpdate = [
+            'id_parceiro' => $orcamento->id_parceiro,
+            'vendedor_id' => $orcamento->vendedor_id,
+            'loja_id' => $orcamento->loja_id,
+            'cadastro_id' => $orcamento->cadastro_id, // Cliente
+        ];
+
+        // 1. Update OS
+        if ($os = $orcamento->ordemServico) {
+            $os->update($dadosUpdate);
+        }
+
+        // 2. Update Financeiros
+        $orcamento->financeiros()->update($dadosUpdate);
+
+        // 3. Update Agendas
+        // Agenda tem campos slightly different context sometimes, but mostly match
+        // Agenda usa cliente_id (legacy) ou cadastro_id
+        $dadosAgenda = $dadosUpdate;
+        // Se mudou o cliente, atualiza título também
+        if ($orcamento->isDirty('cadastro_id') && $orcamento->cliente) {
+            $dadosAgenda['titulo'] = 'Serviço - ' . $orcamento->cliente->nome;
+        }
+
+        $orcamento->agendas()->update($dadosAgenda);
+
+        Log::info("OrcamentoObserver: IDs sincronizados para OS, Financeiro e Agenda do Orçamento #{$orcamento->id}");
+    }
+
+    /**
+     * Handle the Orcamento "saved" event.
+     */
     public function saved(Orcamento $orcamento): void
     {
         Log::info("Orçamento {$orcamento->id} salvo (número {$orcamento->numero_orcamento}).");

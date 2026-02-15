@@ -190,6 +190,16 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
         return $this->hasOne(\App\Models\OrdemServico::class);
     }
 
+    public function financeiros(): HasMany
+    {
+        return $this->hasMany(\App\Models\Financeiro::class, 'orcamento_id');
+    }
+
+    public function agendas(): HasMany
+    {
+        return $this->hasMany(\App\Models\Agenda::class, 'orcamento_id');
+    }
+
     // --- GERAÇÃO DE NÚMERO (LEGADO - MANTIDO PARA RETROCOMPATIBILIDADE) ---
     protected static function booted()
     {
