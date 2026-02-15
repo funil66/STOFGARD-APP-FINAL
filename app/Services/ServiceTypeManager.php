@@ -15,7 +15,13 @@ class ServiceTypeManager
     {
         // 1. Carrega tipos do banco de Configurações (Settings)
         // Isso tem prioridade sobre Categoria e Enum
-        $settingsTypes = collect(\App\Models\Setting::get('system_service_types', []))->keyBy('slug');
+        $settingsValue = \App\Models\Setting::get('system_service_types', []);
+
+        if (is_string($settingsValue)) {
+            $settingsValue = json_decode($settingsValue, true) ?? [];
+        }
+
+        $settingsTypes = collect($settingsValue)->keyBy('slug');
 
         // 2. Carrega tipos do banco (Legacy: Categoria where tipo = 'servico_tipo')
         $dbTypes = \App\Models\Categoria::where('tipo', 'servico_tipo')
