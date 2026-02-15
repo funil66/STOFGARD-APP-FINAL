@@ -294,7 +294,7 @@ class TabelaPrecosSeeder extends Seeder
                     'nome_item' => $item['nome'],
                     'unidade_medida' => $unidade,
                     'preco_vista' => $item['higi'],
-                    // 'preco_prazo' ignored (calculated internally)
+                    'preco_prazo' => 0.00, // Calculated internally, but required by DB
                     'ativo' => true,
                     'configuracao_id' => 1, // Default config
                 ]);
@@ -308,7 +308,7 @@ class TabelaPrecosSeeder extends Seeder
                     'nome_item' => $item['nome'],
                     'unidade_medida' => $unidade,
                     'preco_vista' => $item['imper'],
-                    // 'preco_prazo' ignored (calculated internally)
+                    'preco_prazo' => 0.00, // Calculated internally, but required by DB
                     'ativo' => true,
                     'configuracao_id' => 1, // Default config
                 ]);
