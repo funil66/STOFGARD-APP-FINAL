@@ -70,9 +70,10 @@ class CreateOrdemServico extends CreateRecord
         if ($ordemServico->data_prevista && $ordemServico->cadastro && str_starts_with($ordemServico->cadastro_id, 'cliente_')) {
             $cliente = $ordemServico->cadastro;
             $tipoServico = match ($ordemServico->tipo_servico) {
-                'higienizacao' => '🧼 Higienização',
-                'impermeabilizacao' => '💧 Impermeabilização',
-                'higienizacao_impermeabilizacao' => '🧼💧 Higienização + Impermeabilização',
+                \App\Enums\ServiceType::Higienizacao->value => '🧼 Higienização',
+                \App\Enums\ServiceType::Impermeabilizacao->value => '💧 Impermeabilização',
+                \App\Enums\ServiceType::Combo->value => '🧼💧 Higienização + Impermeabilização',
+                'higienizacao_impermeabilizacao' => '🧼💧 Higienização + Impermeabilização', // Legacy support
                 default => 'Serviço',
             };
 
