@@ -190,25 +190,51 @@ class OrcamentoObserver
 
     private function syncIds(Orcamento $orcamento): void
     {
-        $dadosUpdate = [
-            'id_parceiro' => $orcamento->id_parceiro,
-            'vendedor_id' => $orcamento->vendedor_id,
-            'loja_id' => $orcamento->loja_id,
-            'cadastro_id' => $orcamento->cadastro_id, // Cliente
-        ];
-
-        // 1. Update OS
+        // 1. Update OS (Has all specific ID columns)
         if ($os = $orcamento->ordemServico) {
-            $os->update($dadosUpdate);
+            $os->update([
+                'id_parceiro' => $orcamento->id_parceiro,
+                'vendedor_id' => $orcamento->vendedor_id,
+                'loja_id' => $orcamento->loja_id,
+                'cadastro_id' => $orcamento->cadastro_id, // Cliente
+            ]);
         }
 
         // 2. Update Financeiros
-        $orcamento->financeiros()->update($dadosUpdate);
+        // UPDATE GLOBAL (All linked records should have the new id_parceiro)
+        $orcamento->financeiros()->update(['id_parceiro' => $orcamento->id_parceiro]);
+
+        // UPDATE ESPECÍFICO DE CADASTRO_ID
+        // A. Receita (Entrada) -> Cadastro ID = Cliente
+        $orcamento->financeiros()
+            ->where('tipo', 'entrada')
+            ->update(['cadastro_id' => $orcamento->cadastro_id]);
+
+        // B. Comissão Vendedor -> Cadastro ID = Vendedor
+        if ($orcamento->vendedor_id) {
+            $orcamento->financeiros()
+                ->where('tipo', 'saida')
+                ->where('is_comissao', true)
+                ->where('descricao', 'LIKE', '%Comissão Vendedor%')
+                ->update(['cadastro_id' => $orcamento->vendedor_id]);
+        }
+
+        // C. Comissão Loja -> Cadastro ID = Loja
+        if ($orcamento->loja_id) {
+            $orcamento->financeiros()
+                ->where('tipo', 'saida')
+                ->where('is_comissao', true)
+                ->where('descricao', 'LIKE', '%Comissão Loja%')
+                ->update(['cadastro_id' => $orcamento->loja_id]);
+        }
 
         // 3. Update Agendas
-        // Agenda tem campos slightly different context sometimes, but mostly match
-        // Agenda usa cliente_id (legacy) ou cadastro_id
-        $dadosAgenda = $dadosUpdate;
+        // Agenda uses cadastro_id (Cliente/Legacy) and id_parceiro
+        $dadosAgenda = [
+            'id_parceiro' => $orcamento->id_parceiro,
+            'cadastro_id' => $orcamento->cadastro_id,
+        ];
+
         // Se mudou o cliente, atualiza título também
         if ($orcamento->isDirty('cadastro_id') && $orcamento->cliente) {
             $dadosAgenda['titulo'] = 'Serviço - ' . $orcamento->cliente->nome;
