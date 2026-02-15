@@ -324,6 +324,9 @@ class OrdemServicoResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->limit(20)
+                    ->url(fn($record) => \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $record->cadastro_id]))
+                    ->color('primary')
+                    ->weight('bold')
                     ->visibleFrom('md'),
 
                 Tables\Columns\TextColumn::make('loja.nome')
@@ -561,6 +564,17 @@ class OrdemServicoResource extends Resource
                                 ->badge()
                                 ->color('info')
                                 ->placeholder('-'),
+                        ]),
+
+                        InfolistGrid::make(1)->schema([
+                            TextEntry::make('endereco_cliente')
+                                ->label('📍 Local do Serviço (Endereço do Cliente)')
+                                ->state(fn($record) => $record->cliente ? "{$record->cliente->logradouro}, {$record->cliente->numero} - {$record->cliente->bairro}, {$record->cliente->cidade}/{$record->cliente->estado}" : 'Endereço não cadastrado')
+                                ->url(fn($state) => $state !== 'Endereço não cadastrado' ? "https://www.google.com/maps/search/?api=1&query=" . urlencode($state) : null, true)
+                                ->color('primary')
+                                ->weight('bold')
+                                ->icon('heroicon-m-map')
+                                ->columnSpanFull(),
                         ]),
                     ]),
 
