@@ -598,6 +598,19 @@ class OrdemServicoResource extends Resource
                                     'pendente' => 'Aguardando Conclusão',
                                     'nenhuma' => 'Sem garantia',
                                     default => '-',
+                                })
+                                ->helperText(function ($record) {
+                                    if ($record->status_garantia !== 'ativa' || !$record->data_fim_garantia) {
+                                        return null;
+                                    }
+                                    $dias = now()->diffInDays($record->data_fim_garantia, false);
+                                    $dias = (int) $dias; // Ensure integer
+                        
+                                    if ($dias < 0)
+                                        return 'Vencida há ' . abs($dias) . ' dias';
+                                    if ($dias === 0)
+                                        return 'Vence hoje!';
+                                    return '⏳ Restam ' . $dias . ' dias';
                                 }),
                         ]),
                     ])
