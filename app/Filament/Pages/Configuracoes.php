@@ -657,13 +657,13 @@ class Configuracoes extends Page implements HasForms
         $state = $this->form->getState();
 
         foreach ($state as $key => $value) {
-            // Se for array, converte para JSON antes de salvar
+            $type = 'string';
             if (is_array($value)) {
-                $value = json_encode($value, JSON_UNESCAPED_UNICODE);
+                $type = 'json';
+                // Setting::set handles encoding if type is json
             }
-            Setting::set($key, $value);
+            Setting::set($key, $value, 'geral', $type);
         }
-
         // Limpar cache de configurações
         settings()->clearCache();
 
