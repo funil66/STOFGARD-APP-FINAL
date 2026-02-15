@@ -606,11 +606,19 @@ class OrdemServicoResource extends Resource
                                     $dias = now()->diffInDays($record->data_fim_garantia, false);
                                     $dias = (int) $dias; // Ensure integer
                         
-                                    if ($dias < 0)
-                                        return 'Vencida há ' . abs($dias) . ' dias';
-                                    if ($dias === 0)
-                                        return 'Vence hoje!';
-                                    return '⏳ Restam ' . $dias . ' dias';
+                                    if ($dias < 0) {
+                                        return new \Illuminate\Support\HtmlString(
+                                            '<span class="text-danger-600 font-bold animate-pulse">🔴 Vencida há ' . abs($dias) . ' dias</span>'
+                                        );
+                                    }
+                                    if ($dias === 0) {
+                                        return new \Illuminate\Support\HtmlString(
+                                            '<span class="text-warning-600 font-bold animate-pulse">⚠️ Vence hoje!</span>'
+                                        );
+                                    }
+                                    return new \Illuminate\Support\HtmlString(
+                                        '<span class="text-success-600 font-bold animate-pulse">⏳ Restam ' . $dias . ' dias</span>'
+                                    );
                                 }),
                         ]),
                     ])
