@@ -287,37 +287,31 @@ class TabelaPrecosSeeder extends Seeder
                 $unidade = 'unidade'; // Explicito
 
             // 1. Cria HIGIENIZAÇÃO
-            if ($item['higi'] > 0) {
-                $dataHigi = [
-                    'tipo_servico' => 'higienizacao',
+            if (isset($item['higi']) && $item['higi'] > 0) {
+                TabelaPreco::create([
+                    'tipo_servico' => \App\Enums\ServiceType::Higienizacao->value,
                     'categoria' => $categoria,
                     'nome_item' => $item['nome'],
                     'unidade_medida' => $unidade,
                     'preco_vista' => $item['higi'],
-                    'preco_prazo' => 0.00,
+                    // 'preco_prazo' ignored (calculated internally)
                     'ativo' => true,
-                ];
-                if (Schema::hasColumn('tabela_precos', 'configuracao_id')) {
-                    $dataHigi['configuracao_id'] = 1;
-                }
-                TabelaPreco::create($dataHigi);
+                    'configuracao_id' => 1, // Default config
+                ]);
             }
 
             // 2. Cria IMPERMEABILIZAÇÃO
-            if ($item['imper'] > 0) {
-                $dataImper = [
-                    'tipo_servico' => 'impermeabilizacao',
+            if (isset($item['imper']) && $item['imper'] > 0) {
+                TabelaPreco::create([
+                    'tipo_servico' => \App\Enums\ServiceType::Impermeabilizacao->value,
                     'categoria' => $categoria,
                     'nome_item' => $item['nome'],
                     'unidade_medida' => $unidade,
                     'preco_vista' => $item['imper'],
-                    'preco_prazo' => 0.00,
+                    // 'preco_prazo' ignored (calculated internally)
                     'ativo' => true,
-                ];
-                if (Schema::hasColumn('tabela_precos', 'configuracao_id')) {
-                    $dataImper['configuracao_id'] = 1;
-                }
-                TabelaPreco::create($dataImper);
+                    'configuracao_id' => 1, // Default config
+                ]);
             }
         }
     }
