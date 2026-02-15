@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use OwenIt\Auditing\Contracts\Auditable;
 use Spatie\MediaLibrary\HasMedia;
 use App\Traits\HasArquivos;
 
-class Equipamento extends Model implements HasMedia
+class Equipamento extends Model implements HasMedia, Auditable
 {
-    use SoftDeletes, HasArquivos;
+    use SoftDeletes, HasArquivos, \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'nome',
