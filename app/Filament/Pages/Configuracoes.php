@@ -285,6 +285,12 @@ class Configuracoes extends Page implements HasForms
                                                     ])
                                                     ->required()
                                                     ->columnSpan(1),
+                                                TextInput::make('dias_garantia')
+                                                    ->label('Garantia (dias)')
+                                                    ->numeric()
+                                                    ->default(90)
+                                                    ->required()
+                                                    ->columnSpan(1),
                                                 TextInput::make('icon')
                                                     ->label('Ícone (Heroicon)')
                                                     ->placeholder('heroicon-o-sparkles')
