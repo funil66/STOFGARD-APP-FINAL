@@ -29,8 +29,10 @@ class TabelaPrecosRelationManager extends RelationManager
                     ->required(),
                 Forms\Components\Select::make('tipo_servico')
                     ->options([
-                        'higienizacao' => 'Higienização',
-                        'impermeabilizacao' => 'Impermeabilização',
+                        \App\Enums\ServiceType::Higienizacao->value => 'Higienização',
+                        \App\Enums\ServiceType::Impermeabilizacao->value => 'Impermeabilização',
+                        \App\Enums\ServiceType::Combo->value => 'Combo',
+                        \App\Enums\ServiceType::Outro->value => 'Outro',
                     ])
                     ->required(),
                 Forms\Components\Toggle::make('ativo')
@@ -55,8 +57,10 @@ class TabelaPrecosRelationManager extends RelationManager
                 Tables\Columns\SelectColumn::make('tipo_servico')
                     ->label('Tipo')
                     ->options([
-                        'higienizacao' => 'Higienização',
-                        'impermeabilizacao' => 'Impermeabilização',
+                        \App\Enums\ServiceType::Higienizacao->value => 'Higienização',
+                        \App\Enums\ServiceType::Impermeabilizacao->value => 'Impermeabilização',
+                        \App\Enums\ServiceType::Combo->value => 'Combo',
+                        \App\Enums\ServiceType::Outro->value => 'Outro',
                     ])
                     ->selectablePlaceholder(false)
                     ->rules(['required']),

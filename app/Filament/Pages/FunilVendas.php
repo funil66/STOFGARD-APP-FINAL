@@ -203,10 +203,10 @@ class FunilVendas extends Page
                         Select::make('tipo_servico')
                             ->label('Tipo de Serviço')
                             ->options([
-                                'higienizacao' => '🧼 Higienização',
-                                'impermeabilizacao' => '💧 Impermeabilização',
-                                'combo' => '🎯 Combo Completo',
-                                'outro' => '🔧 Outro',
+                                \App\Enums\ServiceType::Higienizacao->value => '🧼 Higienização',
+                                \App\Enums\ServiceType::Impermeabilizacao->value => '💧 Impermeabilização',
+                                \App\Enums\ServiceType::Combo->value => '🎯 Combo Completo',
+                                \App\Enums\ServiceType::Outro->value => '🔧 Outro',
                             ])
                             ->required()
                             ->native(false),

@@ -22,11 +22,11 @@ class VendasPorServicoChart extends ChartWidget
             ->get();
 
         // Mapeia labels e valores
-        $labels = $data->pluck('tipo_servico')->map(fn ($type) => match ($type) {
-            'higienizacao' => 'Higienização',
-            'impermeabilizacao' => 'Impermeabilização',
-            'combo' => 'Combo',
-            'outro' => 'Outros',
+        $labels = $data->pluck('tipo_servico')->map(fn($type) => match ($type) {
+            \App\Enums\ServiceType::Higienizacao->value => 'Higienização',
+            \App\Enums\ServiceType::Impermeabilizacao->value => 'Impermeabilização',
+            \App\Enums\ServiceType::Combo->value => 'Combo',
+            \App\Enums\ServiceType::Outro->value => 'Outros',
             default => ucfirst($type),
         })->toArray();
 

@@ -87,7 +87,7 @@ class VerifySystemIntegrity extends Command
                 'orcamento_id' => $orcamento->id,
                 'item_nome' => 'Serviço Teste',
                 'quantidade' => 1,
-                'servico_tipo' => 'higienizacao',
+                'servico_tipo' => \App\Enums\ServiceType::Higienizacao->value,
                 'valor_unitario' => 1000.00,
                 'subtotal' => 1000.00,
             ]);

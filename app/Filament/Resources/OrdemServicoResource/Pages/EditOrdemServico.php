@@ -131,9 +131,10 @@ class EditOrdemServico extends EditRecord
                 $cliente = $ordemServico->cadastro;
                 // Criar novo agendamento se não existia
                 $tipoServico = match ($ordemServico->tipo_servico) {
-                    'higienizacao' => '🧼 Higienização',
-                    'impermeabilizacao' => '💧 Impermeabilização',
-                    'higienizacao_impermeabilizacao' => '🧼💧 Higienização + Impermeabilização',
+                    \App\Enums\ServiceType::Higienizacao->value => '🧼 Higienização',
+                    \App\Enums\ServiceType::Impermeabilizacao->value => '💧 Impermeabilização',
+                    \App\Enums\ServiceType::Combo->value => '🧼💧 Higienização + Impermeabilização',
+                    'higienizacao_impermeabilizacao' => '🧼💧 Higienização + Impermeabilização', // Legacy support
                     default => 'Serviço',
                 };
 
