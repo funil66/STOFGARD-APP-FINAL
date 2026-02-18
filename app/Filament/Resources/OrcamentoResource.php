@@ -57,14 +57,15 @@ class OrcamentoResource extends Resource
                     ->schema([
                         // ... (Copy existing schema for pix keys, seller, etc.)
                         Forms\Components\Toggle::make('pdf_incluir_pix')
-                            ->label('Gerar QR Code PIX')
+                            ->label('Exibir PIX no PDF')
+                            ->helperText('Controla se a seção PIX (QR Code + copia e cola) aparece no PDF')
                             ->default(true)
                             ->live(),
 
                         Forms\Components\Toggle::make('aplicar_desconto_pix')
-                            ->label('Aplicar Desconto PIX')
-                            ->default(fn() => \App\Models\Setting::get('pdf_aplicar_desconto_global', true))
-                            ->visible(fn(Forms\Get $get) => $get('pdf_incluir_pix')),
+                            ->label('Conceder Desconto PIX')
+                            ->helperText('Aplica desconto automático para pagamento via PIX')
+                            ->default(fn() => \App\Models\Setting::get('pdf_aplicar_desconto_global', true)),
 
                         Forms\Components\Select::make('pix_chave_selecionada')
                             ->label('Selecionar Chave PIX')
@@ -287,6 +288,17 @@ class OrcamentoResource extends Resource
                 // Campos Hidden para persistir comissões calculadas
                 Forms\Components\Hidden::make('comissao_vendedor')->dehydrated(),
                 Forms\Components\Hidden::make('comissao_loja')->dehydrated(),
+
+                Forms\Components\Section::make('Observações')
+                    ->icon('heroicon-o-chat-bubble-bottom-center-text')
+                    ->collapsible()
+                    ->schema([
+                        Forms\Components\Textarea::make('observacoes')
+                            ->label('Observações / Notas Internas')
+                            ->rows(4)
+                            ->placeholder('Anotações sobre o orçamento, negociação, condições especiais...')
+                            ->columnSpanFull(),
+                    ]),
 
                 Forms\Components\Section::make('Central de Arquivos')
                     ->icon('heroicon-o-paper-clip')
@@ -661,13 +673,25 @@ class OrcamentoResource extends Resource
                             ])
                             ->action(function ($record, array $data) {
                                 $valorEditado = floatval($data['valor_final_editado'] ?? 0);
-                                $desconto = floatval($record->valor_total) - $valorEditado;
+                                $valorTotal = floatval($record->valor_total);
+                                $desconto = $valorTotal - $valorEditado;
+
                                 $record->update([
                                     'valor_final_editado' => $valorEditado > 0 ? $valorEditado : null,
-                                    'desconto_prestador' => $desconto > 0 ? $desconto : 0,
+                                    'desconto_prestador' => $desconto,
                                 ]);
+
+                                // Propagar para módulos vinculados (OS, Financeiro)
+                                \App\Services\OrcamentoFormService::sincronizarValorModulos($record->fresh());
+
                                 \Filament\Notifications\Notification::make()
-                                    ->title('Valor atualizado!')->success()->send();
+                                    ->title('Valor atualizado!')
+                                    ->body($desconto > 0
+                                        ? 'Desconto do prestador: R$ ' . number_format($desconto, 2, ',', '.')
+                                        : ($desconto < 0
+                                            ? 'Acréscimo: R$ ' . number_format(abs($desconto), 2, ',', '.')
+                                            : 'Sem desconto aplicado'))
+                                    ->success()->send();
                             }),
                     ]
                 )

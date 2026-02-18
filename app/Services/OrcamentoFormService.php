@@ -87,4 +87,38 @@ class OrcamentoFormService
             $set('comissao_loja', 0);
         }
     }
+
+    /**
+     * Propaga alterações de valor do orçamento para módulos vinculados (OS + Financeiro).
+     * Chamado pela ação "Editar Valor" da tabela e pelo model hook ao salvar o formulário.
+     */
+    public static function sincronizarValorModulos(\App\Models\Orcamento $orcamento): void
+    {
+        $valorEfetivo = $orcamento->valor_efetivo;
+        $desconto = max(0, floatval($orcamento->valor_total) - $valorEfetivo);
+
+        // 1. Propagar para OS vinculada
+        if ($orcamento->ordemServico) {
+            $orcamento->ordemServico->update([
+                'valor_total' => $valorEfetivo,
+                'valor_desconto' => $desconto,
+            ]);
+        }
+
+        // 2. Propagar para Financeiro principal (receita, não comissão)
+        $financeiroPrincipal = $orcamento->financeiros()
+            ->where('tipo', 'entrada')
+            ->where(function ($q) {
+                $q->where('is_comissao', false)
+                    ->orWhereNull('is_comissao');
+            })
+            ->first();
+
+        if ($financeiroPrincipal) {
+            $financeiroPrincipal->update([
+                'valor' => $valorEfetivo,
+                'desconto' => $desconto,
+            ]);
+        }
+    }
 }

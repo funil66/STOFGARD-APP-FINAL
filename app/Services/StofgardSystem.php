@@ -74,6 +74,7 @@ class StofgardSystem
                 'tipo_servico' => $orcamento->itens->first()?->servico_tipo ?? FinanceiroCategoria::Servico->value,
                 'descricao_servico' => $orcamento->descricao_servico ?? "Conforme orçamento {$orcamento->numero}",
                 'valor_total' => $orcamento->valor_efetivo,
+                'valor_desconto' => max(0, floatval($orcamento->valor_total) - floatval($orcamento->valor_efetivo)),
                 'observacoes' => $options['observacoes'] ?? $orcamento->observacoes,
                 'criado_por' => $userId,
             ]);
@@ -107,15 +108,13 @@ class StofgardSystem
                 'orcamento_id' => $orcamento->id,
                 'id_parceiro' => $orcamento->id_parceiro,
                 'cadastro_id' => $orcamento->cadastro_id,
-                'loja_id' => $orcamento->loja_id,
-                'vendedor_id' => $orcamento->vendedor_id,
                 'valor' => $orcamento->valor_efetivo,
                 'desconto' => max(0, floatval($orcamento->valor_total) - floatval($orcamento->valor_efetivo)),
                 'data' => !empty($options['data_servico']) ? $options['data_servico'] : now(),
                 'data_vencimento' => $dataVencimento,
                 'status' => FinanceiroStatus::Pendente->value,
                 'tipo' => FinanceiroTipo::Entrada->value,
-                'categoria' => FinanceiroCategoria::Servico->value,
+                'is_comissao' => false,
                 'observacoes' => implode(' | ', array_filter([
                     $orcamento->vendedor ? "Vendedor: {$orcamento->vendedor->nome}" : null,
                     $orcamento->loja ? "Loja: {$orcamento->loja->nome}" : null,
@@ -135,7 +134,6 @@ class StofgardSystem
                     'data_vencimento' => $dataVencimento->copy()->addDays(5),
                     'status' => FinanceiroStatus::Pendente->value,
                     'tipo' => FinanceiroTipo::Saida->value,
-                    'categoria' => FinanceiroCategoria::Comissao->value,
                     'is_comissao' => true,
                     'comissao_paga' => false,
                 ]);
@@ -153,7 +151,6 @@ class StofgardSystem
                     'data_vencimento' => $dataVencimento->copy()->addDays(5),
                     'status' => FinanceiroStatus::Pendente->value,
                     'tipo' => FinanceiroTipo::Saida->value,
-                    'categoria' => FinanceiroCategoria::Comissao->value,
                     'is_comissao' => true,
                     'comissao_paga' => false,
                 ]);

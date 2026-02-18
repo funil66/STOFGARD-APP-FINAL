@@ -36,7 +36,8 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
         'data_prevista',
         'data_conclusao',
         'valor_total',
-        'desconto',
+        'valor_desconto',
+        'observacoes',
         'criado_por',
         'dias_garantia',
         'loja_id',
@@ -50,8 +51,9 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
     protected $casts = [
         'data_abertura' => 'datetime',
         'data_prevista' => 'datetime',
-        'data_conclusao' => 'datetime', // Mantém datetime para precisão
+        'data_conclusao' => 'datetime',
         'valor_total' => 'decimal:2',
+        'valor_desconto' => 'decimal:2',
         'extra_attributes' => 'array',
     ];
 
