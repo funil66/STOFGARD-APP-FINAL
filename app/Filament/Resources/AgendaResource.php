@@ -117,11 +117,7 @@ class AgendaResource extends Resource
                             ->relationship('cliente', 'nome')
                             ->searchable()
                             ->preload()
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('nome')->required(),
-                                Forms\Components\TextInput::make('celular')->mask('(99) 99999-9999'),
-                                Forms\Components\Select::make('tipo')->options(['cliente' => 'Cliente'])->default('cliente')->hidden(),
-                            ])
+                            ->createOptionForm(\App\Services\ClienteFormService::getQuickSchema())
                             ->columnSpan(2),
 
                         Forms\Components\Select::make('ordem_servico_id')

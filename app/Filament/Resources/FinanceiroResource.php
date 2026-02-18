@@ -54,22 +54,7 @@ class FinanceiroResource extends Resource
                             ->relationship('cadastro', 'nome')
                             ->searchable(['nome', 'cpf_cnpj', 'email'])
                             ->preload()
-                            ->createOptionForm([
-                                Forms\Components\TextInput::make('nome')
-                                    ->required()
-                                    ->maxLength(255),
-                                Forms\Components\Select::make('tipo')
-                                    ->options([
-                                        'cliente' => 'Cliente',
-                                        'loja' => 'Loja',
-                                        'vendedor' => 'Vendedor',
-                                        'parceiro' => 'Parceiro',
-                                    ])
-                                    ->required(),
-                                Forms\Components\TextInput::make('cpf_cnpj')
-                                    ->label('CPF/CNPJ')
-                                    ->maxLength(18),
-                            ])
+                            ->createOptionForm(\App\Services\ClienteFormService::getQuickSchema())
                             ->getOptionLabelFromRecordUsing(fn($record) => match ($record->tipo) {
                                 'cliente' => "👤 {$record->nome} (Cliente)",
                                 'parceiro' => "🏢 {$record->nome} (Parceiro)",

@@ -15,17 +15,19 @@ class ClienteFormService
                     Forms\Components\TextInput::make('nome')
                         ->label('Nome / Razão Social')
                         ->required()
-                        ->columnSpan(2),
+                        ->columnSpan(['default' => 'full', 'sm' => 2]),
 
                     Forms\Components\TextInput::make('documento')
                         ->label('CPF / CNPJ')
                         ->unique(ignoreRecord: true)
                         ->mask(\Filament\Support\RawJs::make(<<<'JS'
                             $input.length > 14 ? '99.999.999/9999-99' : '999.999.999-99'
-                        JS)),
+                        JS))
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\TextInput::make('rg_ie')
-                        ->label('RG / Inscrição Estadual'),
+                        ->label('RG / Inscrição Estadual')
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
                 ])->columns(4),
         ];
     }
@@ -38,12 +40,13 @@ class ClienteFormService
                     Forms\Components\TextInput::make('email')
                         ->label('E-mail')
                         ->email()
-                        ->columnSpan(2),
+                        ->columnSpan(['default' => 'full', 'sm' => 2]),
 
                     Forms\Components\TextInput::make('telefone')
                         ->label('WhatsApp / Telefone')
                         ->mask('(99) 99999-9999')
-                        ->required(),
+                        ->required()
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\TextInput::make('cep')
                         ->label('CEP')
@@ -57,26 +60,33 @@ class ClienteFormService
                                 $set('cidade', $endereco['cidade']);
                                 $set('estado', $endereco['estado']);
                             }
-                        }),
+                        })
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\TextInput::make('logradouro')
-                        ->label('Endereço'),
+                        ->label('Endereço')
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\TextInput::make('numero')
-                        ->label('Número'),
+                        ->label('Número')
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\TextInput::make('bairro')
-                        ->label('Bairro'),
+                        ->label('Bairro')
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\TextInput::make('cidade')
-                        ->label('Cidade'),
+                        ->label('Cidade')
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\TextInput::make('estado')
                         ->label('UF')
-                        ->maxLength(2),
+                        ->maxLength(2)
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\TextInput::make('complemento')
-                        ->label('Complemento'),
+                        ->label('Complemento')
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
                 ])->columns(4),
         ];
     }
@@ -93,19 +103,21 @@ class ClienteFormService
                             ->pluck('nome', 'slug'))
                         ->required()
                         ->live()
-                        ->afterStateUpdated(fn($state, Forms\Set $set) => $state === 'parceiro' ? $set('especialidade', 'Arquiteto') : null),
+                        ->afterStateUpdated(fn($state, Forms\Set $set) => $state === 'parceiro' ? $set('especialidade', 'Arquiteto') : null)
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\TextInput::make('especialidade')
                         ->label('Ramo de Atividade / Profissão')
                         ->placeholder('Ex: Arquiteto, Advogado, Zelador')
                         ->visible(fn(Forms\Get $get) => in_array($get('tipo'), ['parceiro', 'loja']))
-                        ->columnSpan(1),
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\Select::make('parent_id')
                         ->label('Loja Vinculada')
                         ->relationship('loja', 'nome', fn(\Illuminate\Database\Eloquent\Builder $query) => $query->where('tipo', 'loja'))
                         ->visible(fn(Forms\Get $get) => $get('tipo') === 'vendedor')
-                        ->searchable(),
+                        ->searchable()
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     // CAMPO DE COMISSÃO
                     Forms\Components\TextInput::make('comissao_percentual')
@@ -114,7 +126,8 @@ class ClienteFormService
                         ->suffix('%')
                         ->default(0)
                         ->visible(fn(Forms\Get $get) => in_array($get('tipo'), ['vendedor', 'loja', 'parceiro']))
-                        ->helperText('Porcentagem que será aplicada automaticamente nos orçamentos.'),
+                        ->helperText('Porcentagem que será aplicada automaticamente nos orçamentos.')
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     // CAMPOS EXCLUSIVOS PARA LEAD (Criação de Orçamento Automática)
                     Forms\Components\Select::make('servico_interesse')
@@ -123,7 +136,8 @@ class ClienteFormService
                         ->visible(fn(Forms\Get $get) => $get('tipo') === 'lead')
                         ->searchable()
                         ->preload()
-                        ->live(),
+                        ->live()
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
 
                     Forms\Components\Textarea::make('mensagem_inicial')
                         ->label('Mensagem / Observações Iniciais')
@@ -159,6 +173,51 @@ class ClienteFormService
                         ->reorderable()
                         ->columnSpanFull(),
                 ]),
+        ];
+    }
+
+    /**
+     * Schema compacto para modais de cadastro rápido (createOptionForm).
+     * Contém apenas os campos essenciais: tipo, nome, documento, telefone, email.
+     */
+    public static function getQuickSchema(): array
+    {
+        return [
+            Forms\Components\Section::make('Cadastro Rápido')
+                ->schema([
+                    Forms\Components\Select::make('tipo')
+                        ->label('Tipo de Cadastro')
+                        ->options(fn() => \App\Models\Categoria::where('tipo', 'cadastro_tipo')
+                            ->where('ativo', true)
+                            ->pluck('nome', 'slug'))
+                        ->required()
+                        ->default('cliente')
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
+
+                    Forms\Components\TextInput::make('nome')
+                        ->label('Nome / Razão Social')
+                        ->required()
+                        ->columnSpan(['default' => 'full', 'sm' => 2]),
+
+                    Forms\Components\TextInput::make('documento')
+                        ->label('CPF / CNPJ')
+                        ->unique(ignoreRecord: true)
+                        ->mask(\Filament\Support\RawJs::make(<<<'JS'
+                            $input.length > 14 ? '99.999.999/9999-99' : '999.999.999-99'
+                        JS))
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
+
+                    Forms\Components\TextInput::make('telefone')
+                        ->label('WhatsApp / Telefone')
+                        ->mask('(99) 99999-9999')
+                        ->required()
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
+
+                    Forms\Components\TextInput::make('email')
+                        ->label('E-mail')
+                        ->email()
+                        ->columnSpan(['default' => 'full', 'sm' => 1]),
+                ])->columns(3),
         ];
     }
 

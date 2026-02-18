@@ -215,6 +215,26 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
             $model->pdf_mostrar_fotos = $model->pdf_mostrar_fotos ?? \App\Models\Setting::get('pdf_mostrar_fotos_global', true);
             $model->aplicar_desconto_pix = $model->aplicar_desconto_pix ?? \App\Models\Setting::get('pdf_aplicar_desconto_global', true);
         });
+
+        // Auto-calcula desconto_prestador quando valor_final_editado muda
+        static::updating(function ($model) {
+            if ($model->isDirty('valor_final_editado')) {
+                $valorEditado = floatval($model->valor_final_editado ?? 0);
+                $valorTotal = floatval($model->valor_total);
+                if ($valorEditado > 0) {
+                    $model->desconto_prestador = $valorTotal - $valorEditado;
+                } else {
+                    $model->desconto_prestador = 0;
+                }
+            }
+        });
+
+        // Propaga para módulos vinculados quando valor mudou
+        static::updated(function ($model) {
+            if ($model->wasChanged('valor_final_editado') || $model->wasChanged('desconto_prestador')) {
+                \App\Services\OrcamentoFormService::sincronizarValorModulos($model);
+            }
+        });
     }
 
     /**
