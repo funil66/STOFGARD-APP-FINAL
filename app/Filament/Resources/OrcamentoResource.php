@@ -291,7 +291,6 @@ class OrcamentoResource extends Resource
 
                 Forms\Components\Section::make('Observações')
                     ->icon('heroicon-o-chat-bubble-bottom-center-text')
-                    ->collapsible()
                     ->schema([
                         Forms\Components\Textarea::make('observacoes')
                             ->label('Observações / Notas Internas')

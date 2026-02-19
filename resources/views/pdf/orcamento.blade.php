@@ -443,6 +443,16 @@
             @endif
 
             @if($block['type'] === 'container_duplo')
+                {{-- Observações do Orçamento (se houver) --}}
+                @if(!empty($orcamento->observacoes))
+                    <div style="margin: 14px 0 10px 0; page-break-inside: avoid;">
+                        <div class="section-header" style="margin-top: 5px;">OBSERVAÇÕES</div>
+                        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; font-size: 9px; color: #92400e; line-height: 1.6;">
+                            {!! nl2br(e($orcamento->observacoes)) !!}
+                        </div>
+                    </div>
+                @endif
+
                 <div class="valores-section" style="page-break-inside: avoid;">
                     <div class="valores-left" style="flex:1; margin-right: 15px;">
                         @include('pdf.partials.block_content', ['type' => $data['coluna_esquerda'] ?? 'totais', 'orcamento' => $orcamento, 'config' => $config])

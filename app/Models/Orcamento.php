@@ -132,26 +132,22 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
     public function getValorComDescontos(?float $percentualPix = null): array
     {
         $valorBase = floatval($this->valor_total);
-        $valorFinal = $this->valor_efetivo;
         $foiEditado = $this->valor_foi_editado;
 
-        $descontoPrestador = 0;
+        // Desconto do prestador é SEMPRE lido do model (aplicado tanto manualmente quanto por lógica)
+        $descontoPrestador = max(0, floatval($this->desconto_prestador));
+
+        // Valor efetivo = editado se existir, senão valor_total
+        $valorEfetivo = $this->valor_efetivo;
+
         $descontoPix = 0;
 
-        // Se NÃO foi editado manualmente, aplicar descontos automáticos
-        if (!$foiEditado) {
-            // Desconto do Prestador
-            if (floatval($this->desconto_prestador) > 0) {
-                $descontoPrestador = floatval($this->desconto_prestador);
-                $valorFinal -= $descontoPrestador;
-            }
-
-            // Desconto PIX
-            if ($this->aplicar_desconto_pix && $percentualPix !== null && $percentualPix > 0) {
-                $descontoPix = ($valorFinal * $percentualPix) / 100;
-                $valorFinal -= $descontoPix;
-            }
+        // Desconto PIX só se aplica quando o valor NÃO foi editado manualmente
+        if (!$foiEditado && $this->aplicar_desconto_pix && $percentualPix !== null && $percentualPix > 0) {
+            $descontoPix = ($valorEfetivo * $percentualPix) / 100;
         }
+
+        $valorFinal = $valorEfetivo - $descontoPix;
 
         return [
             'valor_base' => $valorBase,
