@@ -116,7 +116,7 @@ class OrcamentoObserver
         }
 
         // 1. Sincronizar Valores (Receita e Comissões)
-        if ($orcamento->isDirty(['valor_total', 'valor_final_editado', 'comissao_vendedor', 'comissao_loja'])) {
+        if ($orcamento->isDirty(['valor_total', 'valor_final_editado', 'comissao_vendedor', 'comissao_loja', 'desconto_prestador'])) {
             $this->syncFinanceiro($orcamento);
             $this->syncOrdemServicoValores($orcamento);
         }
@@ -124,6 +124,11 @@ class OrcamentoObserver
         // 2. Sincronizar IDs (Parceiro, Vendedor, Loja, Cliente)
         if ($orcamento->isDirty(['id_parceiro', 'vendedor_id', 'loja_id', 'cadastro_id'])) {
             $this->syncIds($orcamento);
+        }
+
+        // 3. Sincronizar Observações do Orçamento → OS
+        if ($orcamento->isDirty('observacoes')) {
+            $this->syncObservacoes($orcamento);
         }
     }
 
@@ -183,8 +188,18 @@ class OrcamentoObserver
         if ($os) {
             $os->update([
                 'valor_total' => $orcamento->valor_efetivo,
+                'valor_desconto' => max(0, floatval($orcamento->desconto_prestador)),
             ]);
-            Log::info("OrcamentoObserver: OS #{$os->id} valor atualizado.");
+            Log::info("OrcamentoObserver: OS #{$os->id} valores atualizados (total={$orcamento->valor_efetivo}, desconto={$orcamento->desconto_prestador}).");
+        }
+    }
+
+    private function syncObservacoes(Orcamento $orcamento): void
+    {
+        $os = $orcamento->ordemServico;
+        if ($os) {
+            $os->update(['observacoes' => $orcamento->observacoes]);
+            Log::info("OrcamentoObserver: OS #{$os->id} observações sincronizadas.");
         }
     }
 
