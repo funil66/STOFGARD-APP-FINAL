@@ -195,6 +195,12 @@ class OrdemServicoResource extends Resource
                                     ->prefix('R$')
                                     ->readOnly()
                                     ->extraInputAttributes(['class' => 'text-xl font-bold']),
+
+                                Textarea::make('observacoes')
+                                    ->label('Observações (do Orçamento)')
+                                    ->rows(3)
+                                    ->placeholder('Observações transferidas do orçamento ou notas da OS...')
+                                    ->columnSpanFull(),
                             ]),
 
                         Tab::make('Datas e Prazos')
@@ -588,6 +594,11 @@ class OrdemServicoResource extends Resource
                                 ->color('success')
                                 ->weight('bold')
                                 ->size(TextEntry\TextEntrySize::Large),
+                            TextEntry::make('valor_desconto')
+                                ->label('🎁 Desconto')
+                                ->money('BRL')
+                                ->color('warning')
+                                ->placeholder('R$ 0,00'),
                             TextEntry::make('data_prevista')
                                 ->label('📅 Data Agendada')
                                 ->dateTime('d/m/Y H:i')
@@ -635,6 +646,11 @@ class OrdemServicoResource extends Resource
                                     );
                                 }),
                         ]),
+                        TextEntry::make('observacoes')
+                            ->label('📝 Observações')
+                            ->placeholder('Nenhuma observação registrada')
+                            ->columnSpanFull()
+                            ->visible(fn($record) => !empty($record->observacoes)),
                     ])
                     ->collapsible(),
 
