@@ -293,10 +293,10 @@
                 <div class="info-label">Nome:</div>
                 <div class="info-value">{{ $financeiro->cadastro->nome }}</div>
             </div>
-            @if($financeiro->cadastro->cpf_cnpj)
+            @if($financeiro->cadastro->documento)
             <div class="info-row">
                 <div class="info-label">CPF/CNPJ:</div>
-                <div class="info-value">{{ $financeiro->cadastro->cpf_cnpj }}</div>
+                <div class="info-value">{{ $financeiro->cadastro->documento }}</div>
             </div>
             @endif
             @if($financeiro->cadastro->email)
