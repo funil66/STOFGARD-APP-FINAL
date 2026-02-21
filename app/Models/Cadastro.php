@@ -32,7 +32,7 @@ class Cadastro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Aud
     }
 
     // CONFIGURAÇÃO DA BUSCA GLOBAL
-    public static $globallySearchableAttributes = ['nome', 'email', 'telefone', 'cpf_cnpj'];
+    public static $globallySearchableAttributes = ['nome', 'email', 'telefone', 'documento'];
 
     public function getGlobalSearchResultTitle(): string
     {
@@ -272,6 +272,14 @@ class Cadastro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Aud
     public function scopeSocios($query)
     {
         return $query->where('tipo', 'funcionario')->where('is_socio', true);
+    }
+
+    /**
+     * Histórico de mensagens do WhatsApp deste cliente.
+     */
+    public function whatsappMessages(): HasMany
+    {
+        return $this->hasMany(WhatsappMessage::class)->orderBy('created_at', 'asc');
     }
 
     protected static function booted(): void

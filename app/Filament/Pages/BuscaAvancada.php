@@ -330,7 +330,7 @@ class BuscaAvancada extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('descricao', 'like', $termo)
-                    ->orWhere('categoria', 'like', $termo);
+                    ->orWhere('observacoes', 'like', $termo);
             });
         }
 
@@ -353,7 +353,7 @@ class BuscaAvancada extends Page implements HasForms
                 'id' => $financeiro->id,
                 'titulo' => $financeiro->descricao,
                 'subtitulo' => 'R$ ' . number_format($financeiro->valor ?? 0, 2, ',', '.'),
-                'descricao' => $financeiro->categoria,
+                'descricao' => $financeiro->observacoes,
                 'status' => ucfirst($financeiro->status ?? 'pendente'),
                 'status_color' => match ($financeiro->status) {
                     'pago' => 'success',
@@ -423,9 +423,7 @@ class BuscaAvancada extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('nome', 'like', $termo)
-                    ->orWhere('descricao', 'like', $termo)
-                    ->orWhere('categoria', 'like', $termo)
-                    ->orWhere('codigo_barras', 'like', $termo);
+                    ->orWhere('descricao', 'like', $termo);
             });
         }
 
@@ -437,10 +435,10 @@ class BuscaAvancada extends Page implements HasForms
                 'tipo_color' => 'gray',
                 'id' => $produto->id,
                 'titulo' => $produto->nome,
-                'subtitulo' => "Estoque: {$produto->quantidade_estoque}",
-                'descricao' => $produto->categoria,
-                'status' => ($produto->quantidade_estoque ?? 0) > 0 ? 'Em estoque' : 'Sem estoque',
-                'status_color' => ($produto->quantidade_estoque ?? 0) > 0 ? 'success' : 'danger',
+                'subtitulo' => "Estoque: {$produto->estoque_atual}",
+                'descricao' => $produto->descricao,
+                'status' => ($produto->estoque_atual ?? 0) > 0 ? 'Em estoque' : 'Sem estoque',
+                'status_color' => ($produto->estoque_atual ?? 0) > 0 ? 'success' : 'danger',
                 'data' => $produto->created_at?->format('d/m/Y'),
                 'data_raw' => $produto->created_at,
                 'view_url' => route('filament.admin.resources.produtos.edit', ['record' => $produto->id]),

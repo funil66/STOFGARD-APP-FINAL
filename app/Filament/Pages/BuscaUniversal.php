@@ -195,8 +195,9 @@ class BuscaUniversal extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('nome', 'like', $termo)
-                    ->orWhere('cpf_cnpj', 'like', $termo)
+                    ->orWhere('documento', 'like', $termo)
                     ->orWhere('telefone', 'like', $termo)
+                    ->orWhere('celular', 'like', $termo)
                     ->orWhere('email', 'like', $termo)
                     ->orWhere('logradouro', 'like', $termo)
                     ->orWhere('bairro', 'like', $termo)
@@ -241,7 +242,7 @@ class BuscaUniversal extends Page implements HasForms
                 'titulo' => $cadastro->nome,
                 'subtitulo' => $this->formatarSubtitulo([
                     $cadastro->telefone,
-                    $cadastro->cpf_cnpj,
+                    $cadastro->documento,
                     $cadastro->cidade,
                 ]),
                 'descricao' => trim(implode(', ', array_filter([
@@ -387,7 +388,7 @@ class BuscaUniversal extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('descricao', 'like', $termo)
-                    ->orWhere('categoria', 'like', $termo);
+                    ->orWhere('observacoes', 'like', $termo);
             });
         }
 
@@ -422,7 +423,7 @@ class BuscaUniversal extends Page implements HasForms
                 'titulo' => $financeiro->descricao,
                 'subtitulo' => $this->formatarSubtitulo([
                     'R$ ' . number_format($financeiro->valor ?? 0, 2, ',', '.'),
-                    $financeiro->categoria,
+                    $financeiro->observacoes,
                 ]),
                 'descricao' => $financeiro->observacoes,
                 'status' => ucfirst($financeiro->status ?? 'pendente'),
@@ -501,17 +502,15 @@ class BuscaUniversal extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('nome', 'like', $termo)
-                    ->orWhere('descricao', 'like', $termo)
-                    ->orWhere('categoria', 'like', $termo)
-                    ->orWhere('codigo_barras', 'like', $termo);
+                    ->orWhere('descricao', 'like', $termo);
             });
         }
 
         $produtos = $query->limit(30)->get();
 
         foreach ($produtos as $produto) {
-            $estoqueStatus = ($produto->quantidade_estoque ?? 0) > 0 ? 'Em estoque' : 'Sem estoque';
-            $estoqueColor = ($produto->quantidade_estoque ?? 0) > 0 ? 'success' : 'danger';
+            $estoqueStatus = ($produto->estoque_atual ?? 0) > 0 ? 'Em estoque' : 'Sem estoque';
+            $estoqueColor = ($produto->estoque_atual ?? 0) > 0 ? 'success' : 'danger';
 
             $this->resultados->push([
                 'tipo' => 'produto',
@@ -521,8 +520,8 @@ class BuscaUniversal extends Page implements HasForms
                 'id' => $produto->id,
                 'titulo' => $produto->nome,
                 'subtitulo' => $this->formatarSubtitulo([
-                    $produto->categoria,
-                    "Estoque: {$produto->quantidade_estoque}",
+                    $produto->descricao,
+                    "Estoque: {$produto->estoque_atual}",
                 ]),
                 'descricao' => $produto->descricao,
                 'status' => $estoqueStatus,
