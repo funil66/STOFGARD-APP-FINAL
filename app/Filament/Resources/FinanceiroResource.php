@@ -52,7 +52,7 @@ class FinanceiroResource extends Resource
                         Forms\Components\Select::make('cadastro_id')
                             ->label('Cliente/Fornecedor')
                             ->relationship('cadastro', 'nome')
-                            ->searchable(['nome', 'cpf_cnpj', 'email'])
+                            ->searchable(['nome', 'documento', 'email'])
                             ->preload()
                             ->createOptionForm(\App\Services\ClienteFormService::getQuickSchema())
                             ->getOptionLabelFromRecordUsing(fn($record) => match ($record->tipo) {
