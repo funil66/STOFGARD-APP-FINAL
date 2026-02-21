@@ -181,8 +181,9 @@ class BuscaAvancada extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('nome', 'like', $termo)
-                    ->orWhere('cpf_cnpj', 'like', $termo)
+                    ->orWhere('documento', 'like', $termo)
                     ->orWhere('telefone', 'like', $termo)
+                    ->orWhere('celular', 'like', $termo)
                     ->orWhere('email', 'like', $termo)
                     ->orWhere('logradouro', 'like', $termo)
                     ->orWhere('cidade', 'like', $termo);
