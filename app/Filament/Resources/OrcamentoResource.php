@@ -57,15 +57,16 @@ class OrcamentoResource extends Resource
                     ->schema([
                         // ... (Copy existing schema for pix keys, seller, etc.)
                         Forms\Components\Toggle::make('pdf_incluir_pix')
-                            ->label('Exibir PIX no PDF')
-                            ->helperText('Controla se a seção PIX (QR Code + copia e cola) aparece no PDF')
+                            ->label('Gerar QR Code PIX')
+                            ->helperText('Controla se o QR Code e copia e cola aparecem no PDF')
                             ->default(true)
                             ->live(),
 
                         Forms\Components\Toggle::make('aplicar_desconto_pix')
-                            ->label('Conceder Desconto PIX')
-                            ->helperText('Aplica desconto automático para pagamento via PIX')
-                            ->default(fn() => \App\Models\Setting::get('pdf_aplicar_desconto_global', true)),
+                            ->label('Aplicar Desconto PIX')
+                            ->helperText('Exibe o valor do desconto PIX abaixo do total (não altera o valor final)')
+                            ->default(fn() => \App\Models\Setting::get('pdf_aplicar_desconto_global', true))
+                            ->live(),
 
                         Forms\Components\Select::make('pix_chave_selecionada')
                             ->label('Selecionar Chave PIX')
@@ -284,6 +285,39 @@ class OrcamentoResource extends Resource
                             ])
                             ->columnSpan(1),
                     ])->columns(['default' => 1, 'md' => 3]),
+
+                // Prévia do desconto PIX (somente leitura, abaixo dos totais)
+                Forms\Components\Section::make()
+                    ->schema([
+                        Forms\Components\Placeholder::make('desconto_pix_preview')
+                            ->label('')
+                            ->content(function (Forms\Get $get) {
+                                if (!$get('aplicar_desconto_pix')) {
+                                    return new \Illuminate\Support\HtmlString('');
+                                }
+                                $valorTotal = floatval($get('valor_total') ?? 0);
+                                if ($valorTotal <= 0) {
+                                    return new \Illuminate\Support\HtmlString('<span style="color:#16a34a;font-size:0.85rem;">Informe os itens para calcular o desconto PIX.</span>');
+                                }
+                                $percentual = floatval(\App\Models\Setting::get('financeiro_desconto_avista', 10));
+                                $valorDesconto = $valorTotal * ($percentual / 100);
+                                $valorAvista = $valorTotal - $valorDesconto;
+                                return new \Illuminate\Support\HtmlString(
+                                    '<div style="display:flex;gap:20px;align-items:center;">' .
+                                    '<span style="font-size:0.85rem;color:#64748b;">Desconto PIX (' . $percentual . '%): </span>' .
+                                    '<strong style="color:#16a34a;font-size:1rem;">- R$ ' . number_format($valorDesconto, 2, ',', '.') . '</strong>' .
+                                    '<span style="font-size:0.8rem;color:#64748b;">→ À vista: </span>' .
+                                    '<strong style="color:#0ea5e9;font-size:1rem;">R$ ' . number_format($valorAvista, 2, ',', '.') . '</strong>' .
+                                    '<span style="font-size:0.75rem;color:#94a3b8;">(valor total não alterado)</span>' .
+                                    '</div>'
+                                );
+                            })
+                            ->visible(fn(Forms\Get $get) => (bool) $get('aplicar_desconto_pix'))
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn(Forms\Get $get) => (bool) $get('aplicar_desconto_pix'))
+                    ->extraAttributes(['style' => 'background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 16px;border-radius:8px;'])
+                    ->columnSpanFull(),
 
                 // Campos Hidden para persistir comissões calculadas
                 Forms\Components\Hidden::make('comissao_vendedor')->dehydrated(),
