@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\WeatherController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\EvolutionWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,8 +19,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Weather Widget Endpoint (Throttled)
-Route::middleware(['throttle:60,1'])->group(function () {
-    Route::get('/widget/weather', [WeatherController::class, 'getWeather'])
-        ->name('api.weather.get');
-});
+// URL de Escuta: dominio.com/api/webhook/evolution
+Route::post('/webhook/evolution', [EvolutionWebhookController::class, 'handle']);

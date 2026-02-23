@@ -3,8 +3,9 @@
 namespace App\Observers;
 
 use App\Models\Cadastro;
-use App\Services\NotificationService;
 use App\Models\User;
+use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 
 class CadastroObserver
 {
@@ -18,15 +19,19 @@ class CadastroObserver
             $admins = \App\Models\User::all(); // TODO: Filtrar apenas admins ou interessados
 
             foreach ($admins as $admin) {
-                \App\Services\NotificationService::success(
-                    $admin,
-                    'Novo Cadastro: ' . $cadastro->nome,
-                    "Um novo {$cadastro->tipo} foi registrado no sistema.",
-                    'cadastro',
-                    'heroicon-o-user-plus',
-                    '/admin/cadastros/' . $cadastro->id . '/edit',
-                    'Ver Cadastro'
-                );
+                Notification::make()
+                    ->title('Novo Cadastro: ' . $cadastro->nome)
+                    ->body("Um novo {$cadastro->tipo} foi registrado no sistema.")
+                    ->icon('heroicon-o-user-plus')
+                    ->success()
+                    ->actions([
+                        Action::make('view')
+                            ->label('Ver Cadastro')
+                            ->button()
+                            ->url('/admin/cadastros/' . $cadastro->id . '/edit')
+                            ->markAsRead(),
+                    ])
+                    ->sendToDatabase($admin);
             }
         }
     }
