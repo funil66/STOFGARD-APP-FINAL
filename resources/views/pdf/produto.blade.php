@@ -68,7 +68,7 @@
     <div class="section-content">
         <div class="grid-3">
             <div class="field"><div class="field-label">Quantidade em Estoque</div>
-                <div class="field-value"><span class="badge {{ $produto->quantidade_estoque > 10 ? 'badge-success' : ($produto->quantidade_estoque > 0 ? 'badge-warning' : 'badge-danger') }}">{{ $produto->quantidade_estoque ?? 0 }}</span></div>
+                <div class="field-value"><span class="badge {{ $produto->estoque_atual > 10 ? 'badge-success' : ($produto->estoque_atual > 0 ? 'badge-warning' : 'badge-danger') }}">{{ $produto->estoque_atual ?? 0 }}</span></div>
             </div>
             <div class="field"><div class="field-label">Estoque Mínimo</div><div class="field-value">{{ $produto->estoque_minimo ?? 'Não definido' }}</div></div>
             <div class="field"><div class="field-label">Unidade</div><div class="field-value">{{ $produto->unidade_medida ?? 'UN' }}</div></div>

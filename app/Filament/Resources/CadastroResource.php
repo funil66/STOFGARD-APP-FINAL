@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use App\Support\Filament\StofgardTable;
+use Filament\Infolists\Components\Livewire;
 
 class CadastroResource extends Resource
 {
@@ -116,6 +117,13 @@ class CadastroResource extends Resource
                                 ->color(fn($state) => $state >= 0 ? 'success' : 'danger')
                                 ->weight('bold'),
                         ]),
+                    ])
+                    ->collapsible(),
+
+                // ===== CHAT WHATSAPP =====
+                Section::make('Central de Atendimento (WhatsApp)')
+                    ->schema([
+                        Livewire::make(\App\Livewire\WhatsappChat::class)
                     ])
                     ->collapsible(),
 

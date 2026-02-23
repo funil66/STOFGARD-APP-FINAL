@@ -3,7 +3,8 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\NotificationService;
+use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action;
 use App\Models\Agenda;
 use App\Models\Produto;
 use App\Models\Financeiro;
@@ -35,16 +36,19 @@ class GenerateDailyNotifications extends Command
         foreach ($events as $event) {
             foreach ($users as $user) {
                 // Logic to determine if user should be notified (e.g. if event is theirs or if they are admin)
-                // For now, notifying everyone for simplicity as per requirement "events of the day"
-                \App\Services\NotificationService::info(
-                    $user,
-                    'Evento Hoje: ' . $event->titulo,
-                    "Evento agendado para hoje às " . $event->data_hora_inicio->format('H:i') . ".",
-                    'agenda',
-                    'heroicon-o-calendar',
-                    '/admin/agendas/' . $event->id . '/edit',
-                    'Ver Evento'
-                );
+                Notification::make()
+                    ->title('Evento Hoje: ' . $event->titulo)
+                    ->body("Evento agendado para hoje às " . $event->data_hora_inicio->format('H:i') . ".")
+                    ->icon('heroicon-o-calendar')
+                    ->info()
+                    ->actions([
+                        Action::make('view')
+                            ->label('Ver Evento')
+                            ->button()
+                            ->url('/admin/agendas/' . $event->id . '/edit')
+                            ->markAsRead(),
+                    ])
+                    ->sendToDatabase($user);
             }
         }
         $this->info('Eventos notificados: ' . $events->count());
@@ -72,15 +76,18 @@ class GenerateDailyNotifications extends Command
 
         foreach ($products as $product) {
             foreach ($admins as $admin) {
-                \App\Services\NotificationService::warning(
-                    $admin,
-                    'Estoque Baixo: ' . $product->nome,
-                    "Nível de estoque: {$product->estoque_atual} (Mínimo: {$product->estoque_minimo}).",
-                    'estoque',
-                    null,
-                    '/admin/produtos/' . $product->id . '/edit',
-                    'Ver Produto'
-                );
+                Notification::make()
+                    ->title('Estoque Baixo: ' . $product->nome)
+                    ->body("Nível de estoque: {$product->estoque_atual} (Mínimo: {$product->estoque_minimo}).")
+                    ->warning()
+                    ->actions([
+                        Action::make('view')
+                            ->label('Ver Produto')
+                            ->button()
+                            ->url('/admin/produtos/' . $product->id . '/edit')
+                            ->markAsRead(),
+                    ])
+                    ->sendToDatabase($admin);
             }
         }
         $this->info('Produtos com estoque baixo notificados: ' . $products->count());
@@ -106,15 +113,18 @@ class GenerateDailyNotifications extends Command
                 : "O {$typeLabel} de R$ " . number_format($transaction->valor, 2, ',', '.') . " vence hoje.";
 
             foreach ($admins as $admin) {
-                \App\Services\NotificationService::danger(
-                    $admin,
-                    "Financeiro Pendente: {$typeLabel}",
-                    $msg,
-                    'financeiro',
-                    null,
-                    '/admin/financeiros/' . $transaction->id . '/edit',
-                    'Ver Transação'
-                );
+                Notification::make()
+                    ->title("Financeiro Pendente: {$typeLabel}")
+                    ->body($msg)
+                    ->danger()
+                    ->actions([
+                        Action::make('view')
+                            ->label('Ver Transação')
+                            ->button()
+                            ->url('/admin/financeiros/' . $transaction->id . '/edit')
+                            ->markAsRead(),
+                    ])
+                    ->sendToDatabase($admin);
             }
         }
         $this->info('Transações pendentes notificadas: ' . $transactions->count());
