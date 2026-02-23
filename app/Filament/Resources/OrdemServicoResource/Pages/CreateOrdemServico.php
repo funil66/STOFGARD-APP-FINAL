@@ -66,52 +66,9 @@ class CreateOrdemServico extends CreateRecord
             $ordemServico->produtosUtilizados()->sync($syncData);
         }
 
-        // Criar agendamento automaticamente se houver data_prevista E o cadastro for um cliente
-        if ($ordemServico->data_prevista && $ordemServico->cadastro && str_starts_with($ordemServico->cadastro_id, 'cliente_')) {
-            $cliente = $ordemServico->cadastro;
-            $tipoServico = match ($ordemServico->tipo_servico) {
-                \App\Enums\ServiceType::Higienizacao->value => '🧼 Higienização',
-                \App\Enums\ServiceType::Impermeabilizacao->value => '💧 Impermeabilização',
-                \App\Enums\ServiceType::Combo->value => '🧼💧 Higienização + Impermeabilização',
-                'higienizacao_impermeabilizacao' => '🧼💧 Higienização + Impermeabilização', // Legacy support
-                default => 'Serviço',
-            };
-
-            $agenda = Agenda::create([
-                'titulo' => "Serviço - OS #{$ordemServico->numero_os}",
-                'descricao' => "{$tipoServico}\nCliente: {$cliente->nome}\n{$ordemServico->descricao_servico}",
-                'data_hora_inicio' => $ordemServico->data_prevista->setTime(8, 0), // 8h da manhã
-                'data_hora_fim' => $ordemServico->data_prevista->setTime(18, 0), // 6h da tarde
-                'dia_inteiro' => false,
-                'tipo' => 'servico',
-                'status' => 'agendado',
-                'cliente_id' => $cliente->id,
-                'cadastro_id' => $ordemServico->cadastro_id ?? ($cliente ? 'cliente_' . $cliente->id : null),
-                'ordem_servico_id' => $ordemServico->id,
-                'local' => $cliente->cidade ?? null,
-                'endereco_completo' => trim(
-                    ($cliente->logradouro ?? '') . ', ' .
-                    ($cliente->numero ?? '') . ' - ' .
-                    ($cliente->bairro ?? '') . ' - ' .
-                    ($cliente->cidade ?? '') . '/' .
-                    ($cliente->estado ?? '')
-                ),
-                'cor' => '#22c55e', // Verde para serviços
-                'observacoes' => $ordemServico->observacoes,
-                'criado_por' => strtoupper(substr(Auth::user()->name, 0, 2)),
-            ]);
-
-            // Atualizar OS com o ID da agenda
-            $ordemServico->update(['agenda_id' => $agenda->id]);
-
-            Notification::make()
-                ->success()
-                ->title('Agendamento criado!')
-                ->body("Serviço agendado para {$ordemServico->data_prevista->format('d/m/Y')}")
-                ->icon('heroicon-o-calendar-days')
-                ->iconColor('success')
-                ->send();
-        }
+        // A criação da agenda foi movida e centralizada no OrdemServicoObserver
+        // para garantir que seja gerada consistentemente tanto via formulário
+        // quanto via aprovação de orçamento, evitando duplicações.
     }
 
     protected function getRedirectUrl(): string

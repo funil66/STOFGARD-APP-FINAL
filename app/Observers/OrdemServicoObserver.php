@@ -17,29 +17,47 @@ class OrdemServicoObserver
     public function created(OrdemServico $os): void
     {
         // Verifica se já existe uma agenda para esta OS
-        // (evita duplicação quando criada via aprovação de orçamento)
-        $agendaExistente = Agenda::where('ordem_servico_id', $os->id)->exists();
-
-        if ($agendaExistente) {
-            return; // Já foi criada manualmente, não duplicar
+        // (evita duplicação quando criada via aprovação de orçamento que já lida com a criação de agenda e financeiro no StofgardSystem)
+        if ($os->orcamento_id) {
+            return; // Veio de um orçamento: StofgardSystem/OrdemServicoService já cuidam disso.
         }
 
-        // Cria agendamento automático ao criar a OS
-        Agenda::create([
-            'titulo' => 'Serviço - ' . ($os->cliente->nome ?? 'Cliente'),
-            'descricao' => "Ordem de Serviço {$os->numero_os}",
-            'cliente_id' => $os->cliente_id ?? null,
-            'cadastro_id' => $os->cadastro_id,
-            'ordem_servico_id' => $os->id,
-            'tipo' => 'servico',
-            'tipo_servico' => 'servico',
-            'data_hora_inicio' => $os->data_prevista ?? now(),
-            'data_hora_fim' => $os->data_prevista ? \Carbon\Carbon::parse($os->data_prevista)->addHours(2) : now()->addHours(2),
-            'status' => 'agendado',
-            'local' => $os->cliente->endereco ?? 'Endereço não informado',
-            'endereco_completo' => $os->cliente->endereco_completo ?? null,
-            'criado_por' => Auth::id() ?? 1,
-        ]);
+        DB::transaction(function () use ($os) {
+            // 1. Cria a Receita no Financeiro automaticamente (Lançamento Pendente)
+            \App\Models\Financeiro::create([
+                'cadastro_id' => $os->cadastro_id,
+                'ordem_servico_id' => $os->id,
+                'id_parceiro' => $os->id_parceiro,
+                'tipo' => 'entrada',
+                'descricao' => "Receita ref. OS #{$os->numero_os} - " . ($os->cliente->nome ?? 'Cliente'),
+                'valor' => $os->valor_total,
+                'data_vencimento' => $os->data_prevista ?? now()->addDays(2),
+                'data' => now(),
+                'status' => 'pendente',
+            ]);
+
+            // 2. Cria a Agenda com cores e descrições aprimoradas
+            $tipoServico = \App\Services\ServiceTypeManager::getLabel($os->tipo_servico ?? 'servico');
+
+            $agendaExistente = Agenda::where('ordem_servico_id', $os->id)->exists();
+
+            if (!$agendaExistente) {
+                Agenda::create([
+                    'titulo' => "Serviço - OS #{$os->numero_os}",
+                    'descricao' => "{$tipoServico}\nCliente: " . ($os->cliente->nome ?? 'N/A') . "\n" . ($os->descricao_servico ?? ''),
+                    'cadastro_id' => $os->cadastro_id,
+                    'ordem_servico_id' => $os->id,
+                    'tipo' => 'servico',
+                    'data_hora_inicio' => $os->data_prevista ? \Carbon\Carbon::parse($os->data_prevista)->setTime(8, 0) : now()->addDays(1)->setTime(8, 0),
+                    'data_hora_fim' => $os->data_prevista ? \Carbon\Carbon::parse($os->data_prevista)->setTime(18, 0) : now()->addDays(1)->setTime(10, 0),
+                    'status' => 'agendado',
+                    'local' => $os->cliente->cidade ?? ($os->cliente->endereco ?? 'A definir'),
+                    'endereco_completo' => $os->cliente->endereco_completo ?? null,
+                    'cor' => '#22c55e', // Verde para serviços
+                    'criado_por' => Auth::id() ?? 1,
+                ]);
+            }
+        });
     }
 
     /**

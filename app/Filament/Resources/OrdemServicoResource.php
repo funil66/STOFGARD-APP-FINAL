@@ -73,7 +73,6 @@ class OrdemServicoResource extends Resource
                             ->options(\App\Models\Cadastro::where('tipo', 'loja')->pluck('nome', 'id'))
                             ->searchable()
                             ->preload()
-                            ->required()
                             ->helperText('Quem realizou ou indicou a venda?')
                             ->columnSpan(2),
 
@@ -82,7 +81,6 @@ class OrdemServicoResource extends Resource
                             ->options(\App\Models\Cadastro::where('tipo', 'vendedor')->pluck('nome', 'id'))
                             ->searchable()
                             ->preload()
-                            ->required()
                             ->default(fn() => \App\Models\Cadastro::where('tipo', 'vendedor')->where('email', auth()->user()->email)->first()?->id)
                             ->columnSpan(2),
 
