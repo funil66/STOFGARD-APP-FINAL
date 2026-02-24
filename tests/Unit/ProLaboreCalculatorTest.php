@@ -63,16 +63,17 @@ class ProLaboreCalculatorTest extends TestCase
 
     public function test_calcular_reserva()
     {
+        settings()->set('prolabore_percentual_reserva', 20);
         $calculator = new ProLaboreCalculator();
 
         // Lucro 1000, 20% reserva = 200
-        $this->assertEquals(200, $calculator->calcularReserva(1000, 20));
+        $this->assertEquals(200, $calculator->calcularReserva(1000));
 
         // Lucro 0, 20% reserva = 0
-        $this->assertEquals(0, $calculator->calcularReserva(0, 20));
+        $this->assertEquals(0, $calculator->calcularReserva(0));
 
         // Lucro -100, 20% reserva = 0 (não deve haver reserva sobre prejuízo)
-        $this->assertEquals(0, $calculator->calcularReserva(-100, 20));
+        $this->assertEquals(0, $calculator->calcularReserva(-100));
     }
 
     public function test_calcular_distribuicao()
@@ -81,11 +82,18 @@ class ProLaboreCalculatorTest extends TestCase
 
         $lucroDisponivel = 1000;
         $socios = [
-            ['nome' => 'Sócio A', 'percentual' => 60],
-            ['nome' => 'Sócio B', 'percentual' => 40],
+            ['user_id' => 1, 'percentual' => 60],
+            ['user_id' => 2, 'percentual' => 40],
         ];
 
-        $distribuicao = $calculator->calcularDistribuicao($lucroDisponivel, $socios);
+        \App\Models\User::factory()->create(['id' => 1, 'name' => 'Sócio A']);
+        \App\Models\User::factory()->create(['id' => 2, 'name' => 'Sócio B']);
+
+        settings()->set('socios_config', json_encode($socios));
+
+        dump(settings()->get('socios_config'));
+
+        $distribuicao = $calculator->calcularDistribuicao($lucroDisponivel);
 
         $this->assertCount(2, $distribuicao);
 

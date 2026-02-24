@@ -176,48 +176,41 @@ class ClienteFormService
         ];
     }
 
-    /**
-     * Schema compacto para modais de cadastro rápido (createOptionForm).
-     * Contém apenas os campos essenciais: tipo, nome, documento, telefone, email.
-     */
     public static function getQuickSchema(): array
     {
         return [
-            Forms\Components\Section::make('Cadastro Rápido')
-                ->schema([
-                    Forms\Components\Select::make('tipo')
-                        ->label('Tipo de Cadastro')
-                        ->options(fn() => \App\Models\Categoria::where('tipo', 'cadastro_tipo')
-                            ->where('ativo', true)
-                            ->pluck('nome', 'slug'))
-                        ->required()
-                        ->default('cliente')
-                        ->columnSpan(['default' => 'full', 'sm' => 1]),
+            Forms\Components\Select::make('tipo')
+                ->label('Tipo de Cadastro')
+                ->options(fn() => \App\Models\Categoria::where('tipo', 'cadastro_tipo')
+                    ->where('ativo', true)
+                    ->pluck('nome', 'slug'))
+                ->required()
+                ->default('cliente')
+                ->columnSpan(['default' => 'full', 'sm' => 1]),
 
-                    Forms\Components\TextInput::make('nome')
-                        ->label('Nome / Razão Social')
-                        ->required()
-                        ->columnSpan(['default' => 'full', 'sm' => 2]),
+            Forms\Components\TextInput::make('nome')
+                ->label('Nome / Razão Social')
+                ->required()
+                ->columnSpan(['default' => 'full', 'sm' => 2]),
 
-                    Forms\Components\TextInput::make('documento')
-                        ->label('CPF / CNPJ')
-                        ->unique(ignoreRecord: true)
-                        ->mask(\Filament\Support\RawJs::make(<<<'JS'
+            Forms\Components\TextInput::make('documento')
+                ->label('CPF / CNPJ')
+                ->unique(ignoreRecord: true)
+                ->mask(\Filament\Support\RawJs::make(<<<'JS'
                             $input.length > 14 ? '99.999.999/9999-99' : '999.999.999-99'
                         JS))
-                        ->columnSpan(['default' => 'full', 'sm' => 1]),
+                ->columnSpan(['default' => 'full', 'sm' => 1]),
 
-                    Forms\Components\TextInput::make('telefone')
-                        ->label('WhatsApp / Telefone')
-                        ->mask('(99) 99999-9999')
-                        ->required()
-                        ->columnSpan(['default' => 'full', 'sm' => 1]),
+            Forms\Components\TextInput::make('telefone')
+                ->label('WhatsApp / Telefone')
+                ->mask('(99) 99999-9999')
+                ->required()
+                ->columnSpan(['default' => 'full', 'sm' => 1]),
 
-                    Forms\Components\TextInput::make('email')
-                        ->label('E-mail')
-                        ->email()
-                        ->columnSpan(['default' => 'full', 'sm' => 1]),
-                ])->columns(3),
+            Forms\Components\TextInput::make('email')
+                ->label('E-mail')
+                ->email()
+                ->columnSpan(['default' => 'full', 'sm' => 1]),
         ];
     }
 

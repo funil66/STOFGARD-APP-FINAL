@@ -46,6 +46,10 @@ class ProLaboreCalculator
     {
         $sociosConfig = settings()->get('socios_config');
 
+        if (is_string($sociosConfig)) {
+            $sociosConfig = json_decode($sociosConfig, true);
+        }
+
         // Se não houver configuração, retorna vazio
         if (empty($sociosConfig) || !is_array($sociosConfig)) {
             return [];
