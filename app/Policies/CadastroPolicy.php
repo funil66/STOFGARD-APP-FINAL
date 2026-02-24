@@ -27,7 +27,7 @@ class CadastroPolicy
      */
     public function update(User $user, $model): bool
     {
-        return true;
+        return settings()->isAdmin($user);
     }
 
     /**
@@ -41,6 +41,11 @@ class CadastroPolicy
     /**
      * Verifica se usuário pode baixar arquivos
      */
+    public function download(User $user, $model): bool
+    {
+        return true;
+    }
+
     public function restore(User $user, $model): bool
     {
         return true;

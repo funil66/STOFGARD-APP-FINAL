@@ -238,16 +238,57 @@ class TabelaPrecoResource extends Resource
     {
         return $infolist
             ->schema([
-                InfolistSection::make('Informações do Preço')
+                InfolistSection::make('Informações do Serviço ou Produto')
                     ->schema([
-                        InfolistGrid::make(2)
+                        InfolistGrid::make(3)
                             ->schema([
-                                TextEntry::make('tipo_servico')->label('Tipo de Serviço'),
-                                TextEntry::make('categoria')->label('Categoria'),
-                                TextEntry::make('preco_base')->label('Preço Base')->money('BRL'),
-                                TextEntry::make('preco_adicional')->label('Preço Adicional')->money('BRL'),
-                                TextEntry::make('unidade')->label('Unidade'),
-                                TextEntry::make('ativo')->label('Status')->badge()->color(fn($state) => $state ? 'success' : 'danger'),
+                                TextEntry::make('nome_item')
+                                    ->label('Nome do Item/Serviço')
+                                    ->size(TextEntry\TextEntrySize::Large)
+                                    ->weight('bold')
+                                    ->columnSpanFull(),
+
+                                TextEntry::make('tipo_servico')
+                                    ->label('Tipo de Serviço')
+                                    ->badge()
+                                    ->color(fn(string $state): string => \App\Services\ServiceTypeManager::getColor($state))
+                                    ->formatStateUsing(fn(string $state): string => \App\Services\ServiceTypeManager::getLabel($state)),
+
+                                TextEntry::make('categoria')
+                                    ->label('Categoria'),
+
+                                TextEntry::make('unidade_medida')
+                                    ->label('Unidade de Medida')
+                                    ->badge()
+                                    ->color('gray')
+                                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                                        'unidade' => 'Unidade (UN)',
+                                        'm2' => 'Metro Quadrado (m²)',
+                                        default => $state,
+                                    }),
+
+                                TextEntry::make('preco_vista')
+                                    ->label('Preço à Vista (PIX)')
+                                    ->money('BRL')
+                                    ->color('success')
+                                    ->weight('bold'),
+
+                                TextEntry::make('preco_prazo')
+                                    ->label('Preço a Prazo')
+                                    ->money('BRL')
+                                    ->color('warning')
+                                    ->weight('bold'),
+
+                                TextEntry::make('ativo')
+                                    ->label('Status')
+                                    ->badge()
+                                    ->color(fn($state) => $state ? 'success' : 'danger')
+                                    ->formatStateUsing(fn($state) => $state ? 'Ativo' : 'Inativo'),
+
+                                TextEntry::make('observacoes')
+                                    ->label('Observações')
+                                    ->columnSpanFull()
+                                    ->placeholder('Nenhuma observação informada.'),
                             ]),
                     ]),
             ]);

@@ -20,7 +20,7 @@ class CategoriaFactory extends Factory
     public function definition(): array
     {
         return [
-            'nome' => fake()->word(),
+            'nome' => fake()->unique()->word(),
             'tipo' => fake()->randomElement(['financeiro_receita', 'financeiro_despesa', 'produto', 'servico']),
             'cor' => fake()->hexColor(),
             'icone' => 'heroicon-o-tag',
