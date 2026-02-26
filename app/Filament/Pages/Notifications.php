@@ -2,8 +2,8 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Notification;
 use Filament\Pages\Page;
+use Illuminate\Notifications\DatabaseNotification;
 
 class Notifications extends Page
 {
@@ -20,30 +20,32 @@ class Notifications extends Page
 
     public function getNotifications()
     {
-        return Notification::forUser(auth()->id())
+        return DatabaseNotification::where('notifiable_type', \App\Models\User::class)
+            ->where('notifiable_id', auth()->id())
             ->orderBy('created_at', 'desc')
             ->get();
     }
 
     public function markAsRead($notificationId)
     {
-        $notification = Notification::find($notificationId);
+        $notification = DatabaseNotification::find($notificationId);
 
-        if ($notification && $notification->user_id === auth()->id()) {
+        if ($notification && $notification->notifiable_id == auth()->id()) {
             $notification->markAsRead();
 
-            if ($notification->action_url) {
-                return redirect($notification->action_url);
+            $data = $notification->data;
+            if (!empty($data['action_url'])) {
+                return redirect($data['action_url']);
             }
         }
     }
 
     public function markAllAsRead()
     {
-        Notification::forUser(auth()->id())
-            ->unread()
+        DatabaseNotification::where('notifiable_type', \App\Models\User::class)
+            ->where('notifiable_id', auth()->id())
+            ->whereNull('read_at')
             ->update([
-                'read' => true,
                 'read_at' => now(),
             ]);
 
@@ -52,8 +54,8 @@ class Notifications extends Page
 
     public function deleteNotification($notificationId)
     {
-        Notification::where('id', $notificationId)
-            ->where('user_id', auth()->id())
+        DatabaseNotification::where('id', $notificationId)
+            ->where('notifiable_id', auth()->id())
             ->delete();
 
         $this->dispatch('notifications-updated');
