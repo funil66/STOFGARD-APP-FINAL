@@ -266,7 +266,8 @@
                 <div class="text-slate" style="font-size:9px;">ORÇAMENTO</div>
                 <div class="orc-number">{{ $orcamento->numero }}</div>
                 <div style="margin-top:5px; font-weight:bold; font-size:11px;">
-                    {{ strtoupper($orcamento->cliente->nome) }}</div>
+                    {{ strtoupper($orcamento->cliente->nome) }}
+                </div>
             </td>
         </tr>
     </table>
@@ -320,7 +321,8 @@
                         <tr style="background-color: #f8fafc;">
                             <td width="85%" style="text-align:right; font-weight: bold; color: #334155;">{{ ucfirst($key) }}</td>
                             <td width="15%" style="text-align:right; font-weight: bold; color: #0f766e;">R$
-                                {{ number_format($val, 2, ',', '.') }}</td>
+                                {{ number_format($val, 2, ',', '.') }}
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -400,14 +402,16 @@
 
             <td class="col-installments">
                 <div style="font-weight:bold; font-size:10px; margin-bottom:5px; color:#334155;">NO CARTÃO:</div>
-                @if(count($regras) > 0)
+                @if(($orcamento->pdf_mostrar_parcelamento ?? true) && count($regras) > 0)
                     <table class="inst-table">
                         @foreach($regras as $r)
                             <tr>
                                 <td><strong>{{ $r['parcelas'] }}x</strong> R$
-                                    {{ number_format(($total * (1 + ($r['taxa'] / 100))) / $r['parcelas'], 2, ',', '.') }}</td>
+                                    {{ number_format(($total * (1 + ($r['taxa'] / 100))) / $r['parcelas'], 2, ',', '.') }}
+                                </td>
                                 <td class="text-right text-slate">Total:
-                                    {{ number_format($total * (1 + ($r['taxa'] / 100)), 2, ',', '.') }}</td>
+                                    {{ number_format($total * (1 + ($r['taxa'] / 100)), 2, ',', '.') }}
+                                </td>
                             </tr>
                         @endforeach
                     </table>
