@@ -54,7 +54,7 @@
         @endif
 
         <!-- PARCELAMENTO -->
-        @if(isset($config->financeiro_parcelamento) && is_array($config->financeiro_parcelamento) && count($config->financeiro_parcelamento) > 0)
+        @if(($orcamento->pdf_mostrar_parcelamento ?? true) && isset($config->financeiro_parcelamento) && is_array($config->financeiro_parcelamento) && count($config->financeiro_parcelamento) > 0)
             <div class="parcelamento-box"
                 style="margin-top: 15px; font-size: 10px; border-top: 1px dashed #ddd; padding-top: 10px;">
                 <div style="font-weight: bold; margin-bottom: 5px;">CONDIÇÕES DE PARCELAMENTO (CARTÃO):</div>
@@ -108,16 +108,16 @@
                     <div style="font-size: 7px; color: #777; margin-bottom: 2px;">PIX COPIA E COLA:</div>
                     <div class="pix-code"
                         style="
-                                                                                                                                                                                                            word-break: break-all; 
-                                                                                                                                                                                                            font-size: 8px; 
-                                                                                                                                                                                                            text-align: left; 
-                                                                                                                                                                                                            color: #333; 
-                                                                                                                                                                                                            padding: 6px; 
-                                                                                                                                                                                                            background: #fdfdfd; 
-                                                                                                                                                                                                            border: 1px dashed #a7f3d0; 
-                                                                                                                                                                                                            border-radius: 4px;
-                                                                                                                                                                                                            line-height: 1.25;
-                                                                                                                                                                                                         ">
+                                                                                                                                                                                                                        word-break: break-all; 
+                                                                                                                                                                                                                        font-size: 8px; 
+                                                                                                                                                                                                                        text-align: left; 
+                                                                                                                                                                                                                        color: #333; 
+                                                                                                                                                                                                                        padding: 6px; 
+                                                                                                                                                                                                                        background: #fdfdfd; 
+                                                                                                                                                                                                                        border: 1px dashed #a7f3d0; 
+                                                                                                                                                                                                                        border-radius: 4px;
+                                                                                                                                                                                                                        line-height: 1.25;
+                                                                                                                                                                                                                     ">
                         {{ $orcamento->pix_copia_cola }}
                     </div>
                 </div>
