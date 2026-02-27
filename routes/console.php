@@ -18,13 +18,6 @@ Artisan::command('inspire', function () {
 |--------------------------------------------------------------------------
 */
 
-// Verificar PIX expirados (a cada hora)
-Schedule::command('pix:verificar-expirados')
-    ->hourly()
-    ->withoutOverlapping()
-    ->runInBackground()
-    ->description('Verifica e marca PIX expirados');
-
 // Backup diário completo (BD + arquivos) às 2h da manhã
 Schedule::command('backup:run')
     ->dailyAt('02:00')
