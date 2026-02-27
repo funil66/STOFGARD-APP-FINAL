@@ -96,7 +96,7 @@ class OrcamentoPdfController extends Controller
         // Se Config não foi criado no bloco if acima (caso PIX desligado)
         if (!isset($config)) {
             $settingsArray = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
-            $jsonFields = ['financeiro_pix_keys', 'pdf_layout'];
+            $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
             foreach ($jsonFields as $k) {
                 if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
                     $settingsArray[$k] = json_decode($settingsArray[$k], true);
