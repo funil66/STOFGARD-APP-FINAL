@@ -81,16 +81,13 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
-        healthcheck:
-            test: [ "CMD", "curl", "-f", "http://localhost:3000/pressure" ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
 
     horizon:
         image: sail-8.4/app
         restart: unless-stopped
         command: [ 'php', '/var/www/html/artisan', 'horizon' ]
+        environment:
+            WWWUSER: '${WWWUSER}'
         volumes:
             - '.:/var/www/html'
         networks:
