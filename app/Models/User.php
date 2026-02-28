@@ -29,7 +29,10 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'password',
         'is_admin',
         'is_cliente',
+        'is_super_admin',
+        'tenant_id',
         'cadastro_id',
+        'last_login_at',
     ];
 
     /**
@@ -54,6 +57,8 @@ class User extends Authenticatable implements FilamentUser, HasMedia
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'is_cliente' => 'boolean',
+            'is_super_admin' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
     }
 
@@ -64,6 +69,10 @@ class User extends Authenticatable implements FilamentUser, HasMedia
 
     public function canAccessPanel(Panel $panel): bool
     {
+        if ($panel->getId() === 'super-admin') {
+            return $this->is_admin && ($this->is_super_admin ?? false);
+        }
+
         if ($panel->getId() === 'admin') {
             return !$this->is_cliente;
         }
@@ -73,5 +82,10 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         }
 
         return true;
+    }
+
+    public function tenant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 }

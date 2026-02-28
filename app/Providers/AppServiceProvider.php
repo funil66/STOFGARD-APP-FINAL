@@ -8,8 +8,7 @@ use App\Models\OrdemServico;
 use App\Observers\AgendaObserver;
 use App\Observers\OrcamentoObserver;
 use App\Observers\OrdemServicoObserver;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate;
+use App\Policies\AuditPolicy;
 use App\Policies\CadastroPolicy;
 use App\Policies\FinanceiroPolicy;
 use App\Policies\OrcamentoPolicy;
@@ -17,6 +16,10 @@ use App\Policies\OrdemServicoPolicy;
 use App\Models\Cliente;
 use App\Models\Parceiro;
 use App\Models\Financeiro;
+use App\Services\TenantContext;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
+use OwenIt\Auditing\Models\Audit;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // TenantContext: singleton por request — mantém o tenant ativo para o TenantScope
+        $this->app->singleton(TenantContext::class, fn() => new TenantContext());
+
         // Ensure global helper functions are loaded for environments where composer
         // 'files' autoload may not be available (for example in some test runners).
         if (!function_exists('admin_resource_route')) {
@@ -81,6 +87,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Financeiro::class, FinanceiroPolicy::class);
         Gate::policy(Orcamento::class, OrcamentoPolicy::class);
         Gate::policy(OrdemServico::class, OrdemServicoPolicy::class);
+
+        // LGPD: Audit imutável — ninguém pode UPDATE/DELETE em logs de auditoria
+        Gate::policy(Audit::class, AuditPolicy::class);
 
         // Register Agenda Calendar Widget manually for Livewire (since it's not in AdminPanelProvider widgets list)
         \Livewire\Livewire::component('app.filament.widgets.agenda-calendar-widget', \App\Filament\Widgets\AgendaCalendarWidget::class);

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -9,6 +10,7 @@ use App\Traits\HasAuditTrail;
 class Estoque extends Model implements Auditable
 {
     use HasAuditTrail, \OwenIt\Auditing\Auditable;
+    use BelongsToTenant;
     protected $table = 'estoques';
 
     protected $fillable = [

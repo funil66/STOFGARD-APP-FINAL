@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -11,6 +13,7 @@ use App\Traits\HasArquivos;
 class Equipamento extends Model implements HasMedia, Auditable
 {
     use SoftDeletes, HasArquivos, \OwenIt\Auditing\Auditable;
+    use BelongsToTenant;
 
     protected $fillable = [
         'nome',

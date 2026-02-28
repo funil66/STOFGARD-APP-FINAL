@@ -51,7 +51,7 @@ class ProLabore extends Page implements HasForms
                 Section::make('Período de Apuração')
                     ->description('Selecione o período para calcular o lucro líquido.')
                     ->schema([
-                        Grid::make(2)->schema([
+                        Grid::make(['default' => 1, 'sm' => 2])->schema([
                             DatePicker::make('data_inicio')
                                 ->label('Data Início')
                                 ->required(),

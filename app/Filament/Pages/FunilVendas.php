@@ -167,7 +167,7 @@ class FunilVendas extends Page
                 ->modalDescription('Capture rapidamente um novo lead no funil de vendas')
                 ->modalWidth('2xl')
                 ->form([
-                    Grid::make(2)->schema([
+                    Grid::make(['default' => 1, 'sm' => 2])->schema([
                         // DADOS DO CLIENTE
                         TextInput::make('nome_cliente')
                             ->label('Nome do Cliente')

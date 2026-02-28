@@ -62,7 +62,7 @@ class BuscaUniversal extends Page implements HasForms
     {
         return $form
             ->schema([
-                Grid::make(4)
+                Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])
                     ->schema([
                         TextInput::make('termo')
                             ->label('🔍 O que você está procurando?')
@@ -192,16 +192,20 @@ class BuscaUniversal extends Page implements HasForms
         $query = Cadastro::query();
 
         if ($this->termo) {
-            $query->where(function ($q) {
-                $termo = "%{$this->termo}%";
-                $q->where('nome', 'like', $termo)
-                    ->orWhere('documento', 'like', $termo)
-                    ->orWhere('telefone', 'like', $termo)
-                    ->orWhere('celular', 'like', $termo)
-                    ->orWhere('email', 'like', $termo)
-                    ->orWhere('logradouro', 'like', $termo)
-                    ->orWhere('bairro', 'like', $termo)
-                    ->orWhere('cidade', 'like', $termo);
+            $termoLike = "%{$this->termo}%";
+            $termoHash = \App\Casts\EncryptedWithHash::makeHash($this->termo);
+
+            $query->where(function ($q) use ($termoLike, $termoHash) {
+                // Campos plaintext — busca LIKE
+                $q->where('nome', 'like', $termoLike)
+                    ->orWhere('logradouro', 'like', $termoLike)
+                    ->orWhere('bairro', 'like', $termoLike)
+                    ->orWhere('cidade', 'like', $termoLike)
+                    // Campos cifrados — busca exata pelo hash HMAC
+                    ->orWhere('documento_hash', $termoHash)
+                    ->orWhere('telefone_hash', $termoHash)
+                    ->orWhere('celular_hash', $termoHash)
+                    ->orWhere('email_hash', $termoHash);
             });
         }
 

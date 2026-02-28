@@ -14,7 +14,6 @@ class PdfService
             mkdir($tempPath, 0777, true);
         }
         putenv("TMPDIR={$tempPath}");
-        putenv("NODE_PATH=/var/www/node_modules");
     }
 
     /**
@@ -58,41 +57,60 @@ class PdfService
     }
 
     /**
-     * Configura a instância do Browsershot com caminhos e argumentos corretos.
+     * Configura a instância do Browsershot.
+     *
+     * Suporta dois modos via BROWSERSHOT_MODE:
+     *  - 'browserless' (padrão): aponta para o container Browserless via WebSocket.
+     *    Elimina dependência de Chrome/Node na máquina principal.
+     *  - 'local': usa Chrome/Node instalados localmente (dev sem Docker).
      */
-    protected function configureBrowsershot($browsershot)
+    public function configureBrowsershotPublic($browsershot): void
     {
-        // Prioriza config/browsershot.php, fallback para services.browsershot
-        $chromePath = config('browsershot.chrome_path') ?? config('services.browsershot.chrome_path');
+        $this->configureBrowsershot($browsershot);
+    }
 
+    protected function configureBrowsershot($browsershot): void
+    {
+        $mode = config('browsershot.mode', 'browserless');
+        $timeout = (int) config('browsershot.timeout', 60);
+
+        if ($mode === 'browserless') {
+            $wsUrl = rtrim(config('browsershot.browserless_url', 'http://browserless:3000'), '/');
+            $token = config('browsershot.browserless_token', 'localtoken');
+
+            // Configura a URL WebSocket do Browserless com o token via queryString
+            $wsEndpoint = str_replace(['http://', 'https://'], 'ws://', $wsUrl) . '?token=' . $token;
+
+            $browsershot
+                ->setCustomTempPath(storage_path('app/temp'))
+                ->setOption('browserWSEndpoint', $wsEndpoint)
+                ->timeout($timeout);
+
+            return;
+        }
+
+        // Modo local (fallback para desenvolvimento sem Docker)
+        $chromePath = config('browsershot.chrome_path');
         $tempPath = storage_path('app/temp');
 
-        // Argumentos padrão robustos
-        $defaultArgs = [
+        $args = config('browsershot.chrome_args', [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-gpu',
             '--headless',
-            '--disable-web-security',
-            '--remote-debugging-port=9222',
-            '--user-data-dir=' . $tempPath . '/chromium-data-' . uniqid(),
-            '--disable-software-rasterizer',
-            '--disable-features=VizDisplayCompositor'
-        ];
+        ]);
 
-        $args = config('browsershot.chrome_args', $defaultArgs);
-        $timeout = config('browsershot.timeout', 60);
-
-        $browsershot->noSandbox()
+        $browsershot
+            ->noSandbox()
             ->setOption('args', $args)
             ->timeout($timeout)
-            ->setNodeBinary('/usr/bin/node')
-            ->setNpmBinary('/usr/bin/npm')
+            ->setNodeBinary(config('browsershot.node_path', '/usr/bin/node'))
+            ->setNpmBinary(config('browsershot.npm_path', '/usr/bin/npm'))
             ->setNodeModulePath('/var/www/node_modules')
             ->setEnvironmentVariables([
                 'NODE_PATH' => '/var/www/node_modules',
-                'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+                'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
             ]);
 
         if ($chromePath) {
@@ -101,9 +119,9 @@ class PdfService
     }
 
     /**
-     * Garante arquivo temporário para escrita (se necessário pelo Spatie PDF)
+     * Garante que o diretório temporário existe.
      */
-    protected function ensureTempDirectoryExists()
+    protected function ensureTempDirectoryExists(): void
     {
         $tempPath = storage_path('app/temp');
         if (!File::isDirectory($tempPath)) {

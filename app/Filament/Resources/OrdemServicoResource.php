@@ -494,6 +494,25 @@ class OrdemServicoResource extends Resource
                             ->modalHeading('Concluir Ordem de Serviço')
                             ->modalDescription('Tem certeza que deseja marcar esta OS como concluída?')
                             ->action(fn(OrdemServico $record) => $record->update(['status' => 'concluida'])),
+
+                        // 5. Assinar Digitalmente
+                        Tables\Actions\Action::make('assinar')
+                            ->label('Assinar')
+                            ->tooltip('Assinatura Digital')
+                            ->icon('heroicon-s-pencil')
+                            ->color('info')
+                            ->visible(fn(OrdemServico $record) => $record->status !== 'cancelada' && empty($record->assinatura))
+                            ->form([
+                                \Saade\FilamentAutograph\Forms\Components\SignaturePad::make('assinatura')
+                                    ->label('Assinatura do Cliente/Responsável')
+                                    ->required()
+                                    ->exportBackgroundColor('#ffffff')
+                                    ->exportPenColor('#000000'),
+                            ])
+                            ->action(function (OrdemServico $record, array $data) {
+                                app(\App\Actions\FinalizeAssinaturaAction::class)->execute($record, $data['assinatura'], request());
+                            })
+                            ->successNotificationTitle('OS Assinada Digitalmente com Sucesso!'),
                     ]
                 )
             )

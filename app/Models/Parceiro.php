@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +14,7 @@ use Spatie\MediaLibrary\HasMedia;
 class Parceiro extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, HasArquivos;
+    use BelongsToTenant;
 
     protected $table = 'parceiros';
 
@@ -103,7 +106,7 @@ class Parceiro extends Model implements HasMedia
 
     public function getLinkWhatsappAttribute(): ?string
     {
-        if (! $this->celular) {
+        if (!$this->celular) {
             return null;
         }
 
@@ -114,7 +117,7 @@ class Parceiro extends Model implements HasMedia
 
     public function getLinkMapsAttribute(): string
     {
-        if (! $this->logradouro || ! $this->cidade) {
+        if (!$this->logradouro || !$this->cidade) {
             return '#';
         }
 

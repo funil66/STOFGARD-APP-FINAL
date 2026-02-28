@@ -1,12 +1,14 @@
 <?php
 
 namespace App\Models;
+use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Casts\EncryptedWithHash;
 use App\Traits\HasArquivos;
 use App\Traits\HasAuditTrail;
 use Spatie\MediaLibrary\HasMedia;
@@ -14,6 +16,7 @@ use Spatie\MediaLibrary\HasMedia;
 class Cadastro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
     use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail, \OwenIt\Auditing\Auditable;
+    use BelongsToTenant;
 
     protected static function boot()
     {
@@ -32,7 +35,9 @@ class Cadastro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Aud
     }
 
     // CONFIGURAÇÃO DA BUSCA GLOBAL
-    public static $globallySearchableAttributes = ['nome', 'email', 'telefone', 'documento'];
+    // NOTA: email, telefone, documento removidos pois serão criptografados.
+    // A busca por dados sensíveis deve usar hash-based lookup via EncryptedWithHash::makeHash().
+    public static $globallySearchableAttributes = ['nome', 'cidade', 'bairro', 'logradouro'];
 
     public function getGlobalSearchResultTitle(): string
     {
@@ -56,11 +61,15 @@ class Cadastro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Aud
         'nome',
         'tipo', // cliente, loja, vendedor, arquiteto, funcionario
         'parent_id', // Para vincular vendedor a loja
-        'documento', // CPF/CNPJ
+        'documento',        // CPF/CNPJ
+        'documento_hash',   // Hash HMAC-SHA256 p/ busca exata (populado automaticamente pelo cast)
         'rg_ie',
         'email',
+        'email_hash',       // Hash HMAC-SHA256 p/ busca exata
         'telefone',
+        'telefone_hash',    // Hash HMAC-SHA256 p/ busca exata
         'celular',
+        'celular_hash',     // Hash HMAC-SHA256 p/ busca exata
         'telefone_fixo',
         'cep',
         'logradouro',
@@ -81,6 +90,12 @@ class Cadastro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Aud
     ];
 
     protected $casts = [
+        // Campos sensíveis — criptografados com AES-256 + hash HMAC-SHA256 p/ busca exata
+        'documento' => EncryptedWithHash::class,
+        'email' => EncryptedWithHash::class,
+        'telefone' => EncryptedWithHash::class,
+        'celular' => EncryptedWithHash::class,
+        //
         'comissao_percentual' => 'decimal:2',
         'pdf_mostrar_documentos' => 'boolean',
         'salario_base' => 'decimal:2',
@@ -146,75 +161,15 @@ class Cadastro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Aud
         return $this->hasMany(Agenda::class, 'cadastro_id');
     }
 
-    // ===== ACCESSORS DE RESUMO FINANCEIRO =====
-
-    /**
-     * Total de receitas (entradas pagas)
-     */
-    public function getTotalReceitasAttribute(): float
-    {
-        return (float) $this->financeiros()
-            ->where('tipo', 'entrada')
-            ->where('status', 'pago')
-            ->sum('valor');
-    }
-
-    /**
-     * Total de despesas/saídas pagas
-     */
-    public function getTotalDespesasAttribute(): float
-    {
-        return (float) $this->financeiros()
-            ->where('tipo', 'saida')
-            ->where('status', 'pago')
-            ->sum('valor');
-    }
-
-    /**
-     * Saldo (receitas - despesas)
-     */
-    public function getSaldoAttribute(): float
-    {
-        return $this->total_receitas - $this->total_despesas;
-    }
-
-    /**
-     * Total pendente a receber
-     */
-    public function getPendentesReceberAttribute(): float
-    {
-        return (float) $this->financeiros()
-            ->where('tipo', 'entrada')
-            ->where('status', 'pendente')
-            ->sum('valor');
-    }
-
-    /**
-     * Total pendente a pagar
-     */
-    public function getPendentesPagarAttribute(): float
-    {
-        return (float) $this->financeiros()
-            ->where('tipo', 'saida')
-            ->where('status', 'pendente')
-            ->sum('valor');
-    }
-
-    /**
-     * Quantidade de orçamentos aprovados
-     */
-    public function getOrcamentosAprovadosCountAttribute(): int
-    {
-        return $this->orcamentos()->where('status', 'aprovado')->count();
-    }
-
-    /**
-     * Quantidade de OS concluídas
-     */
-    public function getOsConcluidasCountAttribute(): int
-    {
-        return $this->ordensServico()->whereIn('status', ['concluida', 'finalizada'])->count();
-    }
+    // ===== RESUMO FINANCEIRO =====
+    //
+    // Os accessors financeiros (total_receitas, total_despesas, saldo, etc.) foram
+    // REMOVIDOS desta model para eliminar N+1 queries em listagens do Filament.
+    //
+    // Use a Action dedicada para calcular sob demanda (com cache de 5 min):
+    //   app(\App\Actions\GetFinanceiroResumoAction::class)->execute($this)
+    //   => retorna: total_receitas, total_despesas, saldo, pendentes_receber,
+    //               pendentes_pagar, orcamentos_aprovados, os_concluidas
 
     // ===== QUERY SCOPES POR TIPO =====
 

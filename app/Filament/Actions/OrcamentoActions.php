@@ -55,7 +55,7 @@ class OrcamentoActions
     public static function getAprovarFormSchema(): array
     {
         return [
-            Forms\Components\Grid::make(2)
+            Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                 ->schema([
                     Forms\Components\DateTimePicker::make('data_servico')
                         ->label('📅 Data e Hora de Início')

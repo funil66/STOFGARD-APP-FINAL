@@ -40,6 +40,13 @@ class AdminPanelProvider extends PanelProvider
                     ->icon('heroicon-o-globe-alt')
                     ->group('Comercial')
                     ->sort(99),
+
+                \Filament\Navigation\NavigationItem::make('Horizon — Filas')
+                    ->url('/horizon', shouldOpenInNewTab: true)
+                    ->icon('heroicon-o-queue-list')
+                    ->group('Sistema')
+                    ->sort(90)
+                    ->visible(fn() => auth()->user()?->is_admin ?? false),
             ])
             ->colors([
                 'primary' => Color::hex('#2563eb'), // Azul royal do logo Stofgard
@@ -81,6 +88,8 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                // Multi-Tenancy: resolve tenant from authenticated user or subdomain
+                \App\Http\Middleware\InitializeTenant::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

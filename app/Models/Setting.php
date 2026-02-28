@@ -2,16 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+
 use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
+    use BelongsToTenant;
+
     protected $fillable = ['key', 'value', 'group', 'type'];
 
     public static function get($key, $default = null)
     {
         $setting = self::where('key', $key)->first();
-        if (! $setting) return $default;
+        if (!$setting)
+            return $default;
 
         // Cast common types
         if ($setting->type === 'boolean') {

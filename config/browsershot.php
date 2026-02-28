@@ -4,11 +4,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Browsershot Configuration
+    | Modo de operação do Browsershot
     |--------------------------------------------------------------------------
     |
-    | Configuration for Spatie Browsershot package used for PDF generation.
-    | These paths should point to the correct Chrome/Node installations.
+    | 'local'      → Chrome/Node instalados localmente (desenvolvimento sem Docker)
+    | 'browserless' → Container Browserless via WebSocket (production-ready)
+    |
+    */
+
+    'mode' => env('BROWSERSHOT_MODE', 'browserless'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Configuração do Browserless (modo 'browserless')
+    |--------------------------------------------------------------------------
+    |
+    | URL do container Browserless. No Docker Compose, use 'browserless' como host.
+    | TOKEN deve ser definido em .env e ser igual a BROWSERLESS_TOKEN no compose.
+    |
+    */
+
+    'browserless_url' => env('BROWSERLESS_URL', 'http://browserless:3000'),
+    'browserless_token' => env('BROWSERLESS_TOKEN', 'localtoken'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Configuração Local (modo 'local')
+    |--------------------------------------------------------------------------
+    |
+    | Usado apenas em desenvolvimento sem Docker ou em testes.
     |
     */
 
@@ -18,16 +42,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Chrome Arguments
+    | Argumentos do Chrome (modo 'local' apenas)
     |--------------------------------------------------------------------------
-    |
-    | Additional arguments passed to Chrome/Chromium for PDF generation.
-    | These are required for proper operation in containerized environments.
-    |
     */
 
     'chrome_args' => [
-        // '--disable-web-security' removed for security (allows CORS bypass)
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
@@ -40,7 +59,7 @@ return [
     | Timeout
     |--------------------------------------------------------------------------
     |
-    | Timeout in seconds for PDF generation.
+    | Timeout em segundos para geração de PDF.
     |
     */
 
