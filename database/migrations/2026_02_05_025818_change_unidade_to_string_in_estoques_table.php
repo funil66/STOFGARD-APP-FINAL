@@ -41,14 +41,25 @@ return new class extends Migration {
             // 4. Renomear nova tabela
             Schema::rename('estoques_new', 'estoques');
         } else {
-            // MySQL/Postgres: Alterar coluna diretamente
-            if (Schema::hasColumn('estoques', 'unidade')) {
-                \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques MODIFY COLUMN unidade VARCHAR(255) DEFAULT 'unidade'");
-            }
+            // MySQL: Alterar coluna diretamente com MODIFY COLUMN
+            $driver = \Illuminate\Support\Facades\DB::getDriverName();
 
-            // Adicionar coluna 'tipo' se não existir (para corrigir falha de migração anterior que foi pulada)
-            if (!Schema::hasColumn('estoques', 'tipo')) {
-                \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques ADD COLUMN tipo VARCHAR(255) DEFAULT 'geral'");
+            if ($driver === 'mysql') {
+                if (Schema::hasColumn('estoques', 'unidade')) {
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques MODIFY COLUMN unidade VARCHAR(255) DEFAULT 'unidade'");
+                }
+                if (!Schema::hasColumn('estoques', 'tipo')) {
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques ADD COLUMN tipo VARCHAR(255) DEFAULT 'geral'");
+                }
+            } elseif ($driver === 'pgsql') {
+                // PostgreSQL: usa ALTER COLUMN ... TYPE (sem backticks, sem MODIFY)
+                if (Schema::hasColumn('estoques', 'unidade')) {
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques ALTER COLUMN unidade TYPE VARCHAR(255) USING unidade::text");
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques ALTER COLUMN unidade SET DEFAULT 'unidade'");
+                }
+                if (!Schema::hasColumn('estoques', 'tipo')) {
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE estoques ADD COLUMN tipo VARCHAR(255) DEFAULT 'geral'");
+                }
             }
         }
     }

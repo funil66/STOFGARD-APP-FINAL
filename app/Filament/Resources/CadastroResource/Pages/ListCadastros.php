@@ -167,7 +167,8 @@ class ListCadastros extends ListRecords
                                 $cadastroExistente = null;
 
                                 if ($email) {
-                                    $cadastroExistente = \App\Models\Cadastro::where('email', $email)->first();
+                                    $emailHash = \App\Casts\EncryptedWithHash::makeHash($email);
+                                    $cadastroExistente = \App\Models\Cadastro::where('email_hash', $emailHash)->first();
                                 }
 
                                 if (!$cadastroExistente && $nome) {
@@ -192,8 +193,8 @@ class ListCadastros extends ListRecords
                                     }
                                 } else {
                                     // Se não encontrou, cria novo
-                                    // Evita criar duplicado APENAS pelo telefone se já existir (casos raros)
-                                    $existeTel = $telefoneLimpo ? \App\Models\Cadastro::where('celular', 'LIKE', "%$telefoneLimpo%")->exists() : false;
+                                    // Evita duplicado pelo telefone usando hash exato
+                                    $existeTel = $telefoneLimpo ? \App\Models\Cadastro::where('celular_hash', \App\Casts\EncryptedWithHash::makeHash($telefoneLimpo))->exists() : false;
 
                                     if (!$existeTel) {
                                         \App\Models\Cadastro::create([
@@ -306,7 +307,8 @@ class ListCadastros extends ListRecords
                             // Tenta encontrar existente para ATUALIZAR
                             $cadastroExistente = null;
                             if ($email) {
-                                $cadastroExistente = \App\Models\Cadastro::where('email', $email)->first();
+                                $emailHash = \App\Casts\EncryptedWithHash::makeHash($email);
+                                $cadastroExistente = \App\Models\Cadastro::where('email_hash', $emailHash)->first();
                             }
                             if (!$cadastroExistente && $nome) {
                                 $cadastroExistente = \App\Models\Cadastro::where('nome', $nome)->first();
@@ -329,8 +331,8 @@ class ListCadastros extends ListRecords
                                     $importados++;
                                 }
                             } else {
-                                // Cria novo se não existir
-                                $existeTel = $telefoneLimpo ? \App\Models\Cadastro::where('celular', 'LIKE', "%$telefoneLimpo%")->exists() : false;
+                                // Cria novo se não existir — verifica duplicado pelo hash do celular
+                                $existeTel = $telefoneLimpo ? \App\Models\Cadastro::where('celular_hash', \App\Casts\EncryptedWithHash::makeHash($telefoneLimpo))->exists() : false;
 
                                 if (!$existeTel) {
                                     \App\Models\Cadastro::create([

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,6 +14,7 @@ use Spatie\MediaLibrary\HasMedia;
 class Cliente extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
     use HasFactory, SoftDeletes, HasArquivos, \OwenIt\Auditing\Auditable;
+    use BelongsToTenant;
 
     protected $fillable = [
         'uuid',
@@ -119,7 +122,7 @@ class Cliente extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Audi
      */
     public function getLinkMapsAttribute(): string
     {
-        if (! $this->logradouro || ! $this->cidade) {
+        if (!$this->logradouro || !$this->cidade) {
             return '#';
         }
 
@@ -133,7 +136,7 @@ class Cliente extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Audi
      */
     public function getLinkWhatsappAttribute(): ?string
     {
-        if (! $this->celular) {
+        if (!$this->celular) {
             return null;
         }
 

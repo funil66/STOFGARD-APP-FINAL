@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,7 @@ use OwenIt\Auditing\Contracts\Auditable;
 class Produto extends Model implements HasMedia, Auditable
 {
     use HasFactory, HasArquivos, \OwenIt\Auditing\Auditable;
+    use BelongsToTenant;
 
     protected $fillable = ['nome', 'descricao', 'preco_custo', 'preco_venda', 'estoque_atual', 'unidade'];
 

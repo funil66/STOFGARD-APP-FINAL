@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ use App\Traits\HasAuditTrail;
 class Agenda extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
     use HasArquivos, HasAuditTrail, \OwenIt\Auditing\Auditable;
+    use BelongsToTenant;
 
     protected $table = 'agendas';
 

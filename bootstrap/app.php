@@ -18,5 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Sentry: Captura todas as exceções não tratadas em produção.
+        // Configurar SENTRY_DSN no .env de produção para ativar.
+        $exceptions->report(function (\Throwable $e) {
+            if (app()->bound('sentry') && config('sentry.dsn')) {
+                \Sentry\captureException($e);
+            }
+        });
     })->create();

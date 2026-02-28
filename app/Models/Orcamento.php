@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,6 +17,7 @@ use App\Traits\HasAuditTrail;
 class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
     use HasFactory;
+    use BelongsToTenant;
     use HasArquivos;
     use SoftDeletes;
     use HasSequentialNumber;
@@ -124,9 +126,12 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
 
     /**
      * Calcula o valor com todos os descontos aplicáveis.
-     * Retorna array com breakdown completo para uso em views e PDFs.
      *
-     * @param float|null $percentualPix  Percentual de desconto PIX (de Settings)
+     * @deprecated Use \App\Actions\CalculateOrcamentoTotalsAction::calculate() para cálculo
+     *   completo com DTO e comissões. Este método é mantido para retrocompatibilidade
+     *   com PDFs e views antigas.
+     *
+     * @param float|null $percentualPix Percentual de desconto PIX (de Settings)
      * @return array{valor_base: float, desconto_prestador: float, desconto_pix: float, percentual_pix: float, valor_final: float, valor_foi_editado: bool}
      */
     public function getValorComDescontos(?float $percentualPix = null): array
@@ -200,8 +205,6 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
     protected static function booted()
     {
         static::creating(function ($model) {
-            // Número é gerado automaticamente pelo HasSequentialNumber trait
-
             $model->comissao_vendedor = $model->comissao_vendedor ?? 0;
             $model->comissao_loja = $model->comissao_loja ?? 0;
             $model->desconto_prestador = $model->desconto_prestador ?? 0;
@@ -225,12 +228,9 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
             }
         });
 
-        // Propaga para módulos vinculados quando valor mudou
-        static::updated(function ($model) {
-            if ($model->wasChanged('valor_final_editado') || $model->wasChanged('desconto_prestador')) {
-                \App\Services\OrcamentoFormService::sincronizarValorModulos($model);
-            }
-        });
+        // Propaga para módulos: agora feito explicitamente via SincronizarValorModulosAction.
+        // Para sincronizar OS + Financeiro após salvar, use:
+        //   app(\App\Actions\SincronizarValorModulosAction::class)->execute($orcamento)
     }
 
     /**

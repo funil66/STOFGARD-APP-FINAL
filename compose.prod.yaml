@@ -22,12 +22,33 @@ services:
             - sail
         depends_on:
             - redis
+            - browserless
+            - pgsql
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost/up"]
+            test: [ "CMD", "curl", "-f", "http://localhost/up" ]
             interval: 30s
             timeout: 10s
             retries: 3
             start_period: 40s
+
+    pgsql:
+        image: 'postgres:16-alpine'
+        restart: unless-stopped
+        # Port NOT exposed externally in production
+        environment:
+            PGPASSWORD: '${DB_PASSWORD}'
+            POSTGRES_DB: '${DB_DATABASE}'
+            POSTGRES_USER: '${DB_USERNAME}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD}'
+        volumes:
+            - 'sail-pgsql:/var/lib/postgresql/data'
+        networks:
+            - sail
+        healthcheck:
+            test: [ "CMD", "pg_isready", "-U", "${DB_USERNAME}", "-d", "${DB_DATABASE}" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
     redis:
         image: 'redis:alpine'
@@ -40,8 +61,48 @@ services:
         networks:
             - sail
         healthcheck:
-            test: ["CMD", "redis-cli", "ping"]
+            test: [ "CMD", "redis-cli", "ping" ]
             interval: 30s
+            timeout: 10s
+            retries: 3
+
+    browserless:
+        image: 'browserless/chrome:latest'
+        restart: unless-stopped
+        # Não exposto externamente em produção — apenas rede interna
+        environment:
+            TOKEN: '${BROWSERLESS_TOKEN}'
+            MAX_CONCURRENT_SESSIONS: '${BROWSERLESS_MAX_SESSIONS:-10}'
+            PREBOOT_CHROME: 'true'
+            KEEP_ALIVE: 'true'
+            EXIT_ON_HEALTH_FAILURE: 'true'
+            ALLOW_FILE_PROTOCOL: 'true'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        healthcheck:
+            test: [ "CMD", "curl", "-f", "http://localhost:3000/pressure" ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+    horizon:
+        image: sail-8.4/app
+        restart: unless-stopped
+        command: [ 'php', '/var/www/html/artisan', 'horizon' ]
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            redis:
+                condition: service_healthy
+            laravel.test:
+                condition: service_healthy
+        healthcheck:
+            test: [ "CMD", "php", "/var/www/html/artisan", "horizon:status" ]
+            interval: 60s
             timeout: 10s
             retries: 3
 
@@ -50,5 +111,7 @@ networks:
         driver: bridge
 
 volumes:
+    sail-pgsql:
+        driver: local
     sail-redis:
         driver: local

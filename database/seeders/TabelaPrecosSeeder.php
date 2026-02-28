@@ -15,11 +15,10 @@ class TabelaPrecosSeeder extends Seeder
     public function run(): void
     {
         // ---------------------------------------------------------
-        // PROCEDIMENTO DE LIMPEZA SEGURA (MySQL)
         // ---------------------------------------------------------
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         TabelaPreco::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         $itens = [
             // ==============================================================================

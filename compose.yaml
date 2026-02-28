@@ -23,6 +23,27 @@ services:
             - sail
         depends_on:
             - redis
+            - browserless
+            - pgsql
+
+    pgsql:
+        image: 'postgres:16-alpine'
+        ports:
+            - '${FORWARD_DB_PORT:-5432}:5432'
+        environment:
+            PGPASSWORD: '${DB_PASSWORD:-secret}'
+            POSTGRES_DB: '${DB_DATABASE:-stofgard}'
+            POSTGRES_USER: '${DB_USERNAME:-stofgard}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+        volumes:
+            - 'sail-pgsql:/var/lib/postgresql/data'
+        networks:
+            - sail
+        healthcheck:
+            test: [ "CMD", "pg_isready", "-U", "${DB_USERNAME:-stofgard}", "-d", "${DB_DATABASE:-stofgard}" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
     redis:
         image: 'redis:alpine'
@@ -33,10 +54,44 @@ services:
         networks:
             - sail
 
+    browserless:
+        image: 'browserless/chrome:latest'
+        ports:
+            - '${BROWSERLESS_PORT:-3000}:3000'
+        environment:
+            TOKEN: '${BROWSERLESS_TOKEN:-localtoken}'
+            MAX_CONCURRENT_SESSIONS: '${BROWSERLESS_MAX_SESSIONS:-5}'
+            PREBOOT_CHROME: 'true'
+            KEEP_ALIVE: 'true'
+            ALLOW_FILE_PROTOCOL: 'true'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+
+    horizon:
+        build:
+            context: ./docker/8.4
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: sail-8.4/app
+        command: [ 'php', '/var/www/html/artisan', 'horizon' ]
+        restart: unless-stopped
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - redis
+            - laravel.test
+
 networks:
     sail:
         driver: bridge
 
 volumes:
+    sail-pgsql:
+        driver: local
     sail-redis:
         driver: local

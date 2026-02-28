@@ -98,6 +98,13 @@ return new class extends Migration {
                 ->update([
                     'cadastro_id_new' => DB::raw('CAST(cadastro_id AS INTEGER)'),
                 ]);
+        } elseif ($driver === 'pgsql') {
+            $numericos = DB::table('financeiros')
+                ->whereRaw("CAST(cadastro_id AS TEXT) ~ '^[0-9]+$'")
+                ->whereNull('cadastro_id_new')
+                ->update([
+                    'cadastro_id_new' => DB::raw('CAST(cadastro_id AS INTEGER)'),
+                ]);
         } else {
             $numericos = DB::table('financeiros')
                 ->whereRaw('cadastro_id REGEXP \'^[0-9]+$\'')

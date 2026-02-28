@@ -4,82 +4,66 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::table('orcamentos', function (Blueprint $table) {
-            // Lista de colunas antigas identificadas no log
-            $columns = [
-                'criado_por', 'atualizado_por', 'parceiro_id', 'ordem_servico_id', 'area_m2', 'valor_m2', 'valor_desconto', 'forma_pagamento',
-                'pix_chave_tipo', 'pix_chave_valor', 'pix_txid', 'pix_qrcode_base64', 'pix_copia_cola', 'link_pagamento_hash',
-                'aprovado_em', 'reprovado_em', 'motivo_reprovacao', 'data_servico_agendada', 'numero_pedido_parceiro', 'observacoes_internas', 'documentos',
-            ];
-
-            // Tratar colunas de relacionamento (dropar FK, ajustar tipo, readicionar FK)
-            foreach (['parceiro_id', 'ordem_servico_id'] as $fkColumn) {
-                if (Schema::hasColumn('orcamentos', $fkColumn)) {
-                    try {
-                        // Remove FK se existir
-                        $table->dropForeign([$fkColumn]);
-                    } catch (\Throwable $e) {
-                        // ignore se não existir
-                    }
-                    try {
-                        // Define como unsignedBigInteger nullable
-                        $table->unsignedBigInteger($fkColumn)->nullable()->change();
-                    } catch (\Throwable $e) {
-                        // ignore mudanças de tipo se falhar
-                    }
-                    // Re-adiciona FK somente para colunas conhecidas
-                    try {
-                        if ($fkColumn === 'parceiro_id') {
-                            $table->foreign('parceiro_id')->references('id')->on('parceiros')->nullOnDelete();
-                        } elseif ($fkColumn === 'ordem_servico_id') {
-                            $table->foreign('ordem_servico_id')->references('id')->on('ordens_servico')->nullOnDelete();
-                        }
-                    } catch (\Throwable $e) {
-                        // ignore se não puder re-criar FK
-                    }
-                }
-            }
-
-            // Agora processa as demais colunas genéricas
-            foreach ($columns as $column) {
-                if (in_array($column, ['parceiro_id', 'ordem_servico_id'])) {
-                    // já tratadas acima
-                    continue;
-                }
-                if (Schema::hasColumn('orcamentos', $column)) {
-                    try {
-                        // Colunas que precisam ser text (ex: base64 longo ou JSON)
-                        if (in_array($column, ['pix_qrcode_base64', 'documentos', 'observacoes_internas'])) {
-                            $table->text($column)->nullable()->change();
-                        } else {
-                            // Tentativa genérica: converte para string nullable se aplicável
-                            $table->string($column)->nullable()->change();
-                        }
-                    } catch (\Throwable $e) {
-                        // Se falhar (tipo numérico/decimal/etc), tentamos mudanças específicas para alguns campos conhecidos
-                        try {
-                            if (in_array($column, ['valor_desconto', 'valor_m2', 'area_m2'])) {
-                                $table->decimal($column, 10, 2)->nullable()->change();
-                            } else {
-                                // fallback: ignorar
-                            }
-                        } catch (\Throwable $e) {
-                            // ignorar falhas de change() por tipo
-                        }
-                    }
-                }
-            }
-
-            // Correções específicas de tipo para garantir
             if (Schema::hasColumn('orcamentos', 'criado_por')) {
                 $table->string('criado_por')->nullable()->change();
             }
+            if (Schema::hasColumn('orcamentos', 'atualizado_por')) {
+                $table->string('atualizado_por')->nullable()->change();
+            }
             if (Schema::hasColumn('orcamentos', 'valor_desconto')) {
                 $table->decimal('valor_desconto', 10, 2)->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'area_m2')) {
+                $table->decimal('area_m2', 10, 2)->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'valor_m2')) {
+                $table->decimal('valor_m2', 10, 2)->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'forma_pagamento')) {
+                $table->string('forma_pagamento')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'pix_chave_tipo')) {
+                $table->string('pix_chave_tipo')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'pix_chave_valor')) {
+                $table->string('pix_chave_valor')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'pix_txid')) {
+                $table->string('pix_txid')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'pix_qrcode_base64')) {
+                $table->text('pix_qrcode_base64')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'pix_copia_cola')) {
+                $table->string('pix_copia_cola')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'link_pagamento_hash')) {
+                $table->string('link_pagamento_hash')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'aprovado_em')) {
+                $table->timestamp('aprovado_em')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'reprovado_em')) {
+                $table->timestamp('reprovado_em')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'motivo_reprovacao')) {
+                $table->string('motivo_reprovacao')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'data_servico_agendada')) {
+                $table->timestamp('data_servico_agendada')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'numero_pedido_parceiro')) {
+                $table->string('numero_pedido_parceiro')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'observacoes_internas')) {
+                $table->text('observacoes_internas')->nullable()->change();
+            }
+            if (Schema::hasColumn('orcamentos', 'documentos')) {
+                $table->text('documentos')->nullable()->change();
             }
         });
     }
