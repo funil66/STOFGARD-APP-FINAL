@@ -16,7 +16,7 @@ test('admin consegue acessar a listagem de cadastros', function () {
     // 1. Arrange (Preparar)
     $admin = User::firstOrCreate(
         ['email' => 'admin@stofgard.com'],
-        ['name' => 'Admin', 'password' => bcrypt('password'), 'is_admin' => true]
+        ['name' => 'Admin', 'password' => bcrypt('password'), 'is_admin' => true, 'is_super_admin' => true]
     );
 
     // Cria 3 cadastros no banco pra ter o que mostrar
@@ -32,7 +32,7 @@ test('admin consegue acessar a listagem de cadastros', function () {
 test('admin consegue ver detalhes de um cadastro específico', function () {
     $admin = User::firstOrCreate(
         ['email' => 'admin@stofgard.com'],
-        ['name' => 'Admin', 'password' => bcrypt('password'), 'is_admin' => true]
+        ['name' => 'Admin', 'password' => bcrypt('password'), 'is_admin' => true, 'is_super_admin' => true]
     );
     $loja = Cadastro::factory()->loja()->create();
 
@@ -45,7 +45,7 @@ test('admin consegue ver detalhes de um cadastro específico', function () {
 test('admin consegue ver botões de ações na listagem', function () {
     $admin = User::firstOrCreate(
         ['email' => 'admin@stofgard.com'],
-        ['name' => 'Admin', 'password' => bcrypt('password'), 'is_admin' => true]
+        ['name' => 'Admin', 'password' => bcrypt('password'), 'is_admin' => true, 'is_super_admin' => true]
     );
     $cadastro = Cadastro::factory()->create();
 

@@ -27,7 +27,7 @@ class CadastroPdfController extends Controller
 
         // Carrega configurações do sistema
         $settingsArray = Setting::all()->pluck('value', 'key')->toArray();
-        
+
         // Decodifica JSONs conhecidos
         $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
         foreach ($jsonFields as $k) {
@@ -35,7 +35,7 @@ class CadastroPdfController extends Controller
                 $settingsArray[$k] = json_decode($settingsArray[$k], true);
             }
         }
-        
+
         // Cria objeto Config para a View
         $config = (object) $settingsArray;
 
@@ -45,20 +45,14 @@ class CadastroPdfController extends Controller
         // Nome de arquivo seguro
         $safeName = preg_replace('/[^A-Za-z0-9_\-]/', '-', $cadastro->nome);
 
-        return Pdf::view('pdf.cadastro_ficha', [
-            'cadastro' => $cadastro,
-            'config' => $config,
-        ])
-            ->format('a4')
-            ->name("Ficha-Cadastral-{$safeName}.pdf")
-            ->withBrowsershot(function ($browsershot) {
-                $browsershot->noSandbox()
-                    ->setChromePath(config('browsershot.chrome_path'))
-                    ->setNodeBinary(config('browsershot.node_path'))
-                    ->setNpmBinary(config('browsershot.npm_path'))
-                    ->setOption('args', config('browsershot.chrome_args'))
-                    ->timeout(config('browsershot.timeout'));
-            })
-            ->download();
+        return app(\App\Services\PdfService::class)->generate(
+            'pdf.cadastro_ficha',
+            [
+                'cadastro' => $cadastro,
+                'config' => $config,
+            ],
+            "Ficha-Cadastral-{$safeName}.pdf",
+            true
+        );
     }
 }

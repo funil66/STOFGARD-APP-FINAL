@@ -14,14 +14,8 @@ class FinanceiroFilamentAccessTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function it_can_access_financeiro_index_without_categoria_conflict_error()
     {
-        $user = User::create([
-            'name' => 'Test User',
-            'email' => 'test@test.com',
-            'password' => bcrypt('password'),
-        ]);
-
         // Testar se a página carrega sem o erro "Attempt to read property tipo on string"
-        $response = $this->actingAs($user)->get('/admin/financeiros');
+        $response = $this->actingAsSuperAdmin()->get('/admin/financeiros');
 
         $response->assertStatus(200);
 
