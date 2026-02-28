@@ -59,7 +59,7 @@ class EstoqueResource extends Resource
                         Forms\Components\Section::make('Precificação')
                             ->icon('heroicon-o-currency-dollar')
                             ->schema([
-                                Forms\Components\Grid::make(2)
+                                Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                                     ->schema([
                                         Forms\Components\TextInput::make('preco_interno')
                                             ->label('Custo Interno (R$/Unid)')
@@ -213,7 +213,7 @@ class EstoqueResource extends Resource
                 // ===== CABEÇALHO =====
                 InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('item')
                                 ->label('Produto')
                                 ->weight('bold')
@@ -237,7 +237,7 @@ class EstoqueResource extends Resource
                 // ===== RESUMO =====
                 InfolistSection::make('📊 Indicadores')
                     ->schema([
-                        InfolistGrid::make(3)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
                             TextEntry::make('quantidade')
                                 ->label('Estoque Atual')
                                 ->size(TextEntry\TextEntrySize::Large)
@@ -266,7 +266,7 @@ class EstoqueResource extends Resource
                         // ABA 1: GERAL
                         Tabs\Tab::make('📦 Detalhes Gerais')
                             ->schema([
-                                InfolistGrid::make(3)->schema([
+                                InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
                                     TextEntry::make('minimo_alerta')
                                         ->label('Estoque Mínimo')
                                         ->icon('heroicon-m-bell-alert')
@@ -294,7 +294,7 @@ class EstoqueResource extends Resource
                                 \Filament\Infolists\Components\RepeatableEntry::make('ordensServico')
                                     ->label('')
                                     ->schema([
-                                        InfolistGrid::make(4)->schema([
+                                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                                             TextEntry::make('numero_os')
                                                 ->label('OS')
                                                 ->weight('bold')
@@ -332,7 +332,7 @@ class EstoqueResource extends Resource
                                 \Filament\Infolists\Components\RepeatableEntry::make('audits')
                                     ->label('')
                                     ->schema([
-                                        InfolistGrid::make(4)->schema([
+                                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                                             TextEntry::make('user.name')
                                                 ->label('Usuário')
                                                 ->icon('heroicon-m-user')

@@ -56,7 +56,7 @@ class ProdutoResource extends Resource
 
                 Forms\Components\Section::make('Precificação e Detalhes')
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 Forms\Components\TextInput::make('preco_custo')
                                     ->label('Preço de Custo')
@@ -178,7 +178,7 @@ class ProdutoResource extends Resource
                 // ===== CABEÇALHO =====
                 InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('nome')
                                 ->label('Produto')
                                 ->size(TextEntry\TextEntrySize::Large)
@@ -205,7 +205,7 @@ class ProdutoResource extends Resource
                 // ===== RESUMO FINANCEIRO =====
                 InfolistSection::make('💰 Precificação')
                     ->schema([
-                        InfolistGrid::make(3)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
                             TextEntry::make('preco_custo')
                                 ->label('💵 Custo')
                                 ->money('BRL')
@@ -262,7 +262,7 @@ class ProdutoResource extends Resource
                                 \Filament\Infolists\Components\RepeatableEntry::make('audits')
                                     ->label('')
                                     ->schema([
-                                        InfolistGrid::make(4)->schema([
+                                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                                             TextEntry::make('user.name')
                                                 ->label('Usuário')
                                                 ->icon('heroicon-m-user')

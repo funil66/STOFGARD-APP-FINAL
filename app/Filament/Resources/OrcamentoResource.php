@@ -417,7 +417,7 @@ class OrcamentoResource extends Resource
                 // ===== CABEÇALHO =====
                 \Filament\Infolists\Components\Section::make()
                     ->schema([
-                        Grid::make(4)->schema([
+                        Grid::make(['default' => 1, 'md' => 4])->schema([
                             TextEntry::make('numero')
                                 ->label('Número')
                                 ->weight('bold')
@@ -437,7 +437,7 @@ class OrcamentoResource extends Resource
                             TextEntry::make('data_validade')->label('Validade')->date('d/m/Y')->color('warning'),
                             TextEntry::make('id_parceiro')->label('ID Parceiro')->badge()->color('info'),
                         ]),
-                        Grid::make(4)->schema([
+                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('cliente.nome')
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
@@ -454,7 +454,7 @@ class OrcamentoResource extends Resource
                 // ===== RESUMO FINANCEIRO =====
                 \Filament\Infolists\Components\Section::make('💰 Resumo Financeiro')
                     ->schema([
-                        Grid::make(4)->schema([
+                        Grid::make(['default' => 1, 'md' => 4])->schema([
                             TextEntry::make('valor_total')
                                 ->label('Valor Calculado')
                                 ->money('BRL')
@@ -483,7 +483,7 @@ class OrcamentoResource extends Resource
 
                             TextEntry::make('comissao_vendedor')->label('Comissão Vend.')->money('BRL'),
                         ]),
-                        Grid::make(4)->schema([
+                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('comissao_loja')->label('Comissão Loja')->money('BRL'),
                         ]),
                     ])
@@ -497,7 +497,7 @@ class OrcamentoResource extends Resource
                                 RepeatableEntry::make('itens')
                                     ->label('')
                                     ->schema([
-                                        Grid::make(4)->schema([
+                                        Grid::make(['default' => 1, 'md' => 4])->schema([
                                             TextEntry::make('item_nome')->label('Item')->weight('bold')->columnSpan(2),
                                             TextEntry::make('quantidade')->label('Qtd'),
                                             TextEntry::make('subtotal')->label('Total')->money('BRL')->weight('bold')->color('success'),
@@ -508,7 +508,7 @@ class OrcamentoResource extends Resource
 
                         Tabs\Tab::make('👤 Dados do Cliente')
                             ->schema([
-                                Grid::make(3)->schema([
+                                Grid::make(['default' => 1, 'sm' => 3])->schema([
                                     TextEntry::make('cliente.email')->label('E-mail')->copyable(),
                                     TextEntry::make('cliente.documento')->label('CPF/CNPJ'),
                                     TextEntry::make('cliente.cidade')->label('Cidade'),
@@ -561,7 +561,7 @@ class OrcamentoResource extends Resource
                                 RepeatableEntry::make('audits')
                                     ->label('')
                                     ->schema([
-                                        Grid::make(4)->schema([
+                                        Grid::make(['default' => 1, 'md' => 4])->schema([
                                             TextEntry::make('user.name')
                                                 ->label('Usuário')
                                                 ->icon('heroicon-m-user'),

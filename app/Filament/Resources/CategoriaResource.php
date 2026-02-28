@@ -60,7 +60,7 @@ class CategoriaResource extends Resource
                             ->live()
                             ->columnSpanFull(),
 
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('nome')
                                     ->label('Nome')
@@ -77,7 +77,7 @@ class CategoriaResource extends Resource
                                     ->helperText('URL amigável (gerado automaticamente)'),
                             ]),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 Forms\Components\TextInput::make('icone')
                                     ->label('Ícone')
@@ -219,7 +219,7 @@ class CategoriaResource extends Resource
             ->schema([
                 InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(3)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
                             TextEntry::make('nome')
                                 ->label('Nome da Categoria')
                                 ->size(TextEntry\TextEntrySize::Large)
@@ -234,7 +234,7 @@ class CategoriaResource extends Resource
 
                 InfolistSection::make('📋 Detalhes')
                     ->schema([
-                        InfolistGrid::make(3)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
                             TextEntry::make('tipo')
                                 ->label('Tipo')
                                 ->badge()
@@ -253,7 +253,7 @@ class CategoriaResource extends Resource
                                 ->badge()
                                 ->color('gray'),
                         ]),
-                        InfolistGrid::make(2)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
                             TextEntry::make('icone')
                                 ->label('Ícone')
                                 ->formatStateUsing(fn($state) => $state ?? '📌')
@@ -271,7 +271,7 @@ class CategoriaResource extends Resource
 
                 InfolistSection::make('📊 Estatísticas')
                     ->schema([
-                        InfolistGrid::make(2)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
                             TextEntry::make('created_at')
                                 ->label('Criado em')
                                 ->dateTime('d/m/Y H:i'),

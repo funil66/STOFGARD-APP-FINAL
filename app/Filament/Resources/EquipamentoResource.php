@@ -41,7 +41,7 @@ class EquipamentoResource extends Resource
                 Forms\Components\Section::make('Informações do Equipamento')
                     ->icon('heroicon-o-wrench-screwdriver')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('nome')
                                     ->label('Nome do Equipamento')
@@ -76,7 +76,7 @@ class EquipamentoResource extends Resource
                             ->rows(3)
                             ->columnSpanFull(),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 Forms\Components\Select::make('status')
                                     ->label('Status')
@@ -160,12 +160,12 @@ class EquipamentoResource extends Resource
                 Tables\Columns\TextColumn::make('marca')
                     ->label('Marca')
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('modelo')
                     ->label('Modelo')
                     ->searchable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('numero_serie')
                     ->label('Nº Série')
@@ -228,7 +228,8 @@ class EquipamentoResource extends Resource
                             ->icon('heroicon-o-arrow-down-tray')
                             ->color('success')
                             ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->openUrlInNewTab()
+                            ->hidden(fn() => request()->header('user-agent') && preg_match('/Mobile|Android|iPhone/i', request()->header('user-agent'))),
 
                         Tables\Actions\Action::make('enviar_lista_desejos')
                             ->label('Lista de Desejos')
@@ -252,15 +253,15 @@ class EquipamentoResource extends Resource
     {
         return $infolist->schema([
             InfolistSection::make()->schema([
-                InfolistGrid::make(2)->schema([
-                    TextEntry::make('nome')->label('Nome do Equipamento')->size(TextEntry\TextEntrySize::Large)->weight('bold'),
+                InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
+                    TextEntry::make('nome')->label('Nome do Equipamento')->size(TextEntry\TextEntrySize::Large)->weight('bold')->columnSpan(['default' => 1, 'sm' => 2]),
                     TextEntry::make('status')->badge()->color(fn($state) => match ($state) {
                         'ativo' => 'success', 'manutencao' => 'warning', default => 'danger'
                     }),
                 ]),
             ]),
             InfolistSection::make('Detalhes')->schema([
-                InfolistGrid::make(3)->schema([
+                InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
                     TextEntry::make('numero_serie')->label('Número de Série'),
                     TextEntry::make('data_aquisicao')->label('Data de Aquisição')->date('d/m/Y'),
                     TextEntry::make('valor_aquisicao')->label('Valor')->money('BRL'),

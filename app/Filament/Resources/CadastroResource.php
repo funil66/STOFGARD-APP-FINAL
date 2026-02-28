@@ -35,11 +35,11 @@ class CadastroResource extends Resource
                 // ===== CABEÇALHO DO CADASTRO =====
                 Section::make()
                     ->schema([
-                        Grid::make(4)->schema([
+                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('nome')
                                 ->label('Nome / Razão Social')
                                 ->weight('bold')
-                                ->columnSpan(2)
+                                ->columnSpan(['default' => 1, 'sm' => 2])
                                 ->size(TextEntry\TextEntrySize::Large),
                             TextEntry::make('tipo')
                                 ->badge()
@@ -49,7 +49,7 @@ class CadastroResource extends Resource
                                 ->icon('heroicon-m-identification')
                                 ->copyable(),
                         ]),
-                        Grid::make(4)->schema([
+                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('telefone')
                                 ->label('WhatsApp')
                                 ->icon('heroicon-m-chat-bubble-left-right')
@@ -70,14 +70,14 @@ class CadastroResource extends Resource
                 // ===== ENDEREÇO (INTERATIVO) =====
                 Section::make('📍 Endereço')
                     ->schema([
-                        Grid::make(4)->schema([
+                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('endereco_completo')
                                 ->label('Endereço Completo')
                                 ->state(fn($record) => "{$record->logradouro}, {$record->numero} - {$record->bairro}")
                                 ->icon('heroicon-m-map-pin')
                                 ->url(fn($record) => "https://www.google.com/maps/search/?api=1&query=" . urlencode("{$record->logradouro}, {$record->numero} - {$record->bairro}, {$record->cidade} - {$record->estado}"), true)
                                 ->color('primary')
-                                ->columnSpan(2),
+                                ->columnSpan(['default' => 1, 'sm' => 2, 'lg' => 2]),
                             TextEntry::make('complemento')
                                 ->label('Complemento')
                                 ->placeholder('-'),
@@ -91,7 +91,7 @@ class CadastroResource extends Resource
                 // ===== RESUMO FINANCEIRO (CARDS) =====
                 Section::make('💰 Resumo Financeiro')
                     ->schema([
-                        Grid::make(5)->schema([
+                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 5])->schema([
                             TextEntry::make('total_receitas')
                                 ->label('💵 Total Recebido')
                                 ->money('BRL')
@@ -137,7 +137,7 @@ class CadastroResource extends Resource
                                 Infolists\Components\RepeatableEntry::make('orcamentos')
                                     ->label('')
                                     ->schema([
-                                        Grid::make(6)->schema([
+                                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 6])->schema([
                                             TextEntry::make('numero')
                                                 ->label('Nº')
                                                 ->weight('bold')
@@ -177,7 +177,7 @@ class CadastroResource extends Resource
                                 Infolists\Components\RepeatableEntry::make('ordensServico')
                                     ->label('')
                                     ->schema([
-                                        Grid::make(6)->schema([
+                                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 6])->schema([
                                             TextEntry::make('numero_os')
                                                 ->label('OS')
                                                 ->weight('bold')
@@ -217,7 +217,7 @@ class CadastroResource extends Resource
                                 Infolists\Components\RepeatableEntry::make('financeiros')
                                     ->label('')
                                     ->schema([
-                                        Grid::make(6)->schema([
+                                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 6])->schema([
                                             TextEntry::make('tipo')
                                                 ->badge()
                                                 ->color(fn($state) => $state === 'entrada' ? 'success' : 'danger')
@@ -254,7 +254,7 @@ class CadastroResource extends Resource
                                 Infolists\Components\RepeatableEntry::make('agendas')
                                     ->label('')
                                     ->schema([
-                                        Grid::make(5)->schema([
+                                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 5])->schema([
                                             TextEntry::make('titulo')->label('Evento')->weight('bold'),
                                             TextEntry::make('status')
                                                 ->badge()
@@ -285,7 +285,7 @@ class CadastroResource extends Resource
                                 Infolists\Components\RepeatableEntry::make('vendedores')
                                     ->label('')
                                     ->schema([
-                                        Grid::make(4)->schema([
+                                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                                             TextEntry::make('nome')->label('Vendedor')->weight('bold'),
                                             TextEntry::make('telefone')->label('Telefone'),
                                             TextEntry::make('email')->label('E-mail'),
@@ -342,7 +342,7 @@ class CadastroResource extends Resource
                                 Infolists\Components\RepeatableEntry::make('audits')
                                     ->label('')
                                     ->schema([
-                                        Grid::make(4)->schema([
+                                        Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                                             TextEntry::make('user.name')
                                                 ->label('Usuário')
                                                 ->icon('heroicon-m-user')
@@ -427,7 +427,8 @@ class CadastroResource extends Resource
                             'loja', 'orcamento' => 'info',
                             default => 'gray',
                         }
-                    ),
+                    )
+                    ->visibleFrom('sm'),
                 Tables\Columns\TextColumn::make('documento')
                     ->label('CPF/CNPJ')
                     ->searchable()
@@ -458,7 +459,8 @@ class CadastroResource extends Resource
                             ->icon('heroicon-o-document-text')
                             ->color('success')
                             ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->openUrlInNewTab()
+                            ->hidden(fn() => request()->header('user-agent') && preg_match('/Mobile|Android|iPhone/i', request()->header('user-agent'))),
                     ]
                 )
             )

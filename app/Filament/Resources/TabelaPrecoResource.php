@@ -240,7 +240,7 @@ class TabelaPrecoResource extends Resource
             ->schema([
                 InfolistSection::make('Informações do Serviço ou Produto')
                     ->schema([
-                        InfolistGrid::make(3)
+                        InfolistGrid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 TextEntry::make('nome_item')
                                     ->label('Nome do Item/Serviço')

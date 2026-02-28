@@ -99,7 +99,7 @@ class NotaFiscalResource extends Resource
                                     ->default('NFe'),
                             ]),
 
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('chave_acesso')
                                     ->label('Chave de Acesso')
@@ -115,7 +115,7 @@ class NotaFiscalResource extends Resource
 
                 Forms\Components\Section::make('Valores')
                     ->schema([
-                        Forms\Components\Grid::make(4)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])
                             ->schema([
                                 Forms\Components\TextInput::make('valor_produtos')
                                     ->label('Valor Produtos')
@@ -156,7 +156,7 @@ class NotaFiscalResource extends Resource
                                     ->dehydrated(),
                             ]),
 
-                        Forms\Components\Grid::make(4)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])
                             ->schema([
                                 Forms\Components\TextInput::make('valor_icms')
                                     ->label('ICMS')
@@ -234,7 +234,7 @@ class NotaFiscalResource extends Resource
                 // ===== CABEÇALHO DA NOTA FISCAL =====
                 Infolists\Components\Section::make()
                     ->schema([
-                        Infolists\Components\Grid::make(4)->schema([
+                        Infolists\Components\Grid::make(['default' => 1, 'md' => 2, 'lg' => 4])->schema([
                             Infolists\Components\TextEntry::make('numero_nf')
                                 ->label('Número da NF')
                                 ->weight('bold')
@@ -260,7 +260,7 @@ class NotaFiscalResource extends Resource
                                     default => 'gray',
                                 }),
                         ]),
-                        Infolists\Components\Grid::make(4)->schema([
+                        Infolists\Components\Grid::make(['default' => 1, 'md' => 2, 'lg' => 4])->schema([
                             Infolists\Components\TextEntry::make('cadastro.nome')
                                 ->label('Cliente/Fornecedor')
                                 ->icon('heroicon-m-user')
@@ -286,7 +286,7 @@ class NotaFiscalResource extends Resource
                 // ===== RESUMO DE VALORES =====
                 Infolists\Components\Section::make('💰 Valores')
                     ->schema([
-                        Infolists\Components\Grid::make(4)->schema([
+                        Infolists\Components\Grid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             Infolists\Components\TextEntry::make('valor_produtos')
                                 ->label('📦 Produtos')
                                 ->money('BRL'),
@@ -336,7 +336,7 @@ class NotaFiscalResource extends Resource
                 // ===== INFORMAÇÕES DO SISTEMA =====
                 Infolists\Components\Section::make('ℹ️ Informações do Sistema')
                     ->schema([
-                        Infolists\Components\Grid::make(3)->schema([
+                        Infolists\Components\Grid::make(['default' => 1, 'sm' => 3])->schema([
                             Infolists\Components\TextEntry::make('created_at')
                                 ->label('Criado em')
                                 ->dateTime('d/m/Y H:i'),
@@ -360,13 +360,14 @@ class NotaFiscalResource extends Resource
                     ->label('Número NF')
                     ->searchable()
                     ->sortable()
+                    ->description(fn($record) => $record->cadastro?->nome ?? '-')
                     ->weight(FontWeight::Bold),
 
                 Tables\Columns\TextColumn::make('serie')
                     ->label('Série')
                     ->searchable()
                     ->toggleable()
-                    ->visibleFrom('lg'),
+                    ->visibleFrom('md'),
 
                 Tables\Columns\TextColumn::make('cadastro.nome')
                     ->label('Cadastro')

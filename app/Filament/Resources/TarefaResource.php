@@ -46,7 +46,7 @@ class TarefaResource extends Resource
                             ->rows(3)
                             ->columnSpanFull(),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 Forms\Components\Select::make('responsavel_id')
                                     ->label('Responsável')
@@ -180,7 +180,7 @@ class TarefaResource extends Resource
             ->schema([
                 InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(2)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
                             TextEntry::make('titulo')
                                 ->label('Título da Tarefa')
                                 ->size(TextEntry\TextEntrySize::Large)
@@ -200,7 +200,7 @@ class TarefaResource extends Resource
                         TextEntry::make('descricao')
                             ->label('Descrição')
                             ->columnSpanFull(),
-                        InfolistGrid::make(3)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
                             TextEntry::make('data_vencimento')
                                 ->label('Vencimento')
                                 ->date('d/m/Y'),

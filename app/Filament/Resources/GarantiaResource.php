@@ -66,7 +66,7 @@ class GarantiaResource extends Resource
                             ->required()
                             ->disabled(),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 Forms\Components\DatePicker::make('data_inicio')
                                     ->label('Data Início')
@@ -265,7 +265,8 @@ class GarantiaResource extends Resource
                             ->icon('heroicon-o-document-text')
                             ->color('info')
                             ->url(fn(Garantia $record) => route('garantia.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->openUrlInNewTab()
+                            ->hidden(fn() => request()->header('user-agent') && preg_match('/Mobile|Android|iPhone/i', request()->header('user-agent'))),
 
                         Tables\Actions\Action::make('download')
                             ->label('Baixar PDF')
@@ -273,7 +274,8 @@ class GarantiaResource extends Resource
                             ->icon('heroicon-o-arrow-down-tray')
                             ->color('success')
                             ->url(fn(Garantia $record) => route('garantia.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->openUrlInNewTab()
+                            ->hidden(fn() => request()->header('user-agent') && preg_match('/Mobile|Android|iPhone/i', request()->header('user-agent'))),
                     ]
                 )
             )
@@ -290,7 +292,7 @@ class GarantiaResource extends Resource
             ->schema([
                 InfolistSection::make('Informações da Garantia')
                     ->schema([
-                        InfolistGrid::make(2)
+                        InfolistGrid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 TextEntry::make('numero_garantia')->label('Número da Garantia'),
                                 TextEntry::make('status')->label('Status')->badge(),
