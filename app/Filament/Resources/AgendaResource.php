@@ -177,17 +177,20 @@ class AgendaResource extends Resource
                         Forms\Components\Repeater::make('extra_attributes.tarefas')
                             ->label('Lista de Tarefas')
                             ->schema([
-                                Forms\Components\TextInput::make('descricao')
-                                    ->label('Descrição da Tarefa')
-                                    ->required()
-                                    ->placeholder('Ex: Separar equipamentos, Confirmar com cliente, Preparar materiais')
-                                    ->columnSpan(2),
-                                Forms\Components\Checkbox::make('concluida')
-                                    ->label('Concluída')
-                                    ->default(false)
-                                    ->inline(false),
+                                Forms\Components\Grid::make(['default' => 1, 'sm' => 3])->schema([
+                                    Forms\Components\TextInput::make('descricao')
+                                        ->label('Descrição da Tarefa')
+                                        ->required()
+                                        ->placeholder('Ex: Separar equipamentos, Confirmar com cliente...')
+                                        ->columnSpan(['default' => 1, 'sm' => 2]),
+                                    Forms\Components\Checkbox::make('concluida')
+                                        ->label('Concluída')
+                                        ->default(false)
+                                        ->inline(false)
+                                        ->columnSpan(1),
+                                ]),
                             ])
-                            ->columns(['default' => 1, 'sm' => 3])
+                            ->columns(1)
                             ->defaultItems(0)
                             ->addActionLabel('➕ Adicionar Nova Tarefa')
                             ->reorderable()
@@ -203,7 +206,7 @@ class AgendaResource extends Resource
                     ->description('Receba um lembrete antes do agendamento acontecer')
                     ->collapsible()
                     ->schema([
-                        Forms\Components\Grid::make(2)->schema([
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])->schema([
                             Forms\Components\Select::make('minutos_antes_lembrete')
                                 ->label('⏰ Enviar Lembrete')
                                 ->options([
@@ -464,7 +467,7 @@ class AgendaResource extends Resource
                 // ===== CABEÇALHO DO AGENDAMENTO =====
                 InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('titulo')
                                 ->label('Título')
                                 ->weight('bold')->columnSpan(2)
@@ -501,7 +504,7 @@ class AgendaResource extends Resource
                                     default => $state,
                                 }),
                         ]),
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('data_hora_inicio')
                                 ->label('Início')
                                 ->dateTime('d/m/Y H:i')
@@ -532,7 +535,7 @@ class AgendaResource extends Resource
                 // ===== RESUMO =====
                 InfolistSection::make('📊 Resumo do Agendamento')
                     ->schema([
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('duracao')
                                 ->label('⏱️ Duração')
                                 ->weight('bold')
@@ -574,7 +577,7 @@ class AgendaResource extends Resource
                         // ABA 1: DETALHES
                         \Filament\Infolists\Components\Tabs\Tab::make('📝 Detalhes')
                             ->schema([
-                                InfolistGrid::make(1)->schema([
+                                InfolistGrid::make(['default' => 1])->schema([
                                     TextEntry::make('local')
                                         ->label('Local')
                                         ->icon('heroicon-m-map-pin')
@@ -594,7 +597,7 @@ class AgendaResource extends Resource
                         // ABA 2: VINCULAÇÕES
                         \Filament\Infolists\Components\Tabs\Tab::make('🔗 Vinculações')
                             ->schema([
-                                InfolistGrid::make(2)->schema([
+                                InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
                                     TextEntry::make('orcamento.numero')
                                         ->label('Orçamento')
                                         ->icon('heroicon-m-document-text')
@@ -657,19 +660,23 @@ class AgendaResource extends Resource
                                 \Filament\Infolists\Components\RepeatableEntry::make('extra_attributes.tarefas')
                                     ->label('')
                                     ->schema([
-                                        \Filament\Infolists\Components\IconEntry::make('concluida')
-                                            ->label('')
-                                            ->boolean()
-                                            ->trueIcon('heroicon-o-check-circle')
-                                            ->falseIcon('heroicon-o-x-circle')
-                                            ->trueColor('success')
-                                            ->falseColor('gray'),
-                                        TextEntry::make('descricao')
-                                            ->label('Tarefa')
-                                            ->weight(fn($record) => $record['concluida'] ?? false ? 'normal' : 'bold')
-                                            ->color(fn($record) => $record['concluida'] ?? false ? 'gray' : 'primary'),
+                                        InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
+                                            \Filament\Infolists\Components\IconEntry::make('concluida')
+                                                ->label('')
+                                                ->boolean()
+                                                ->trueIcon('heroicon-o-check-circle')
+                                                ->falseIcon('heroicon-o-x-circle')
+                                                ->trueColor('success')
+                                                ->falseColor('gray')
+                                                ->columnSpan(1),
+                                            TextEntry::make('descricao')
+                                                ->label('Tarefa')
+                                                ->weight(fn($record) => $record['concluida'] ?? false ? 'normal' : 'bold')
+                                                ->color(fn($record) => $record['concluida'] ?? false ? 'gray' : 'primary')
+                                                ->columnSpan(1),
+                                        ])
                                     ])
-                                    ->columns(2)
+                                    ->columns(1)
                                     ->columnSpanFull()
                                     ->hidden(fn($record) => empty($record->extra_attributes['tarefas'] ?? [])),
                                 TextEntry::make('tarefas_vazio')
@@ -686,7 +693,7 @@ class AgendaResource extends Resource
                                 \Filament\Infolists\Components\RepeatableEntry::make('audits')
                                     ->label('')
                                     ->schema([
-                                        InfolistGrid::make(4)->schema([
+                                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                                             TextEntry::make('user.name')
                                                 ->label('Usuário')
                                                 ->icon('heroicon-m-user')

@@ -32,18 +32,18 @@ class RecentTransactionsWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('tipo')
                     ->label('Tipo')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'entrada' => 'success',
                         'saida' => 'danger',
                     })
-                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
                 Tables\Columns\TextColumn::make('valor')
                     ->label('Valor')
                     ->money('BRL')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn(string $state): string => match ($state) {
                         'pago' => 'success',
                         'pendente' => 'warning',
                         'atrasado' => 'danger',
@@ -59,7 +59,7 @@ class RecentTransactionsWidget extends BaseWidget
                     ->label('Editar')
                     ->modalHeading('Editar Transação Rápida')
                     ->form([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('descricao')
                                     ->label('Descrição')

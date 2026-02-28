@@ -523,7 +523,7 @@ class OrdemServicoResource extends Resource
                 // ===== CABEÇALHO DA OS =====
                 InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('numero_os')
                                 ->label('Número da OS')
                                 ->weight('bold')
@@ -547,7 +547,7 @@ class OrdemServicoResource extends Resource
                                 ->label('Data Abertura')
                                 ->date('d/m/Y'),
                         ]),
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('cliente.nome')
                                 ->label('Cliente')
                                 ->icon('heroicon-m-user')
@@ -570,7 +570,7 @@ class OrdemServicoResource extends Resource
                                 ->placeholder('-'),
                         ]),
 
-                        InfolistGrid::make(1)->schema([
+                        InfolistGrid::make(['default' => 1])->schema([
                             TextEntry::make('endereco_cliente')
                                 ->label('📍 Local do Serviço (Endereço do Cliente)')
                                 ->state(fn($record) => $record->cliente ? "{$record->cliente->logradouro}, {$record->cliente->numero} - {$record->cliente->bairro}, {$record->cliente->cidade}/{$record->cliente->estado}" : 'Endereço não cadastrado')
@@ -585,7 +585,7 @@ class OrdemServicoResource extends Resource
                 // ===== RESUMO DE VALORES =====
                 InfolistSection::make('💰 Resumo Financeiro')
                     ->schema([
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('valor_total')
                                 ->label('💵 Valor Total')
                                 ->money('BRL')
@@ -660,7 +660,7 @@ class OrdemServicoResource extends Resource
                                 RepeatableEntry::make('itens')
                                     ->label('')
                                     ->schema([
-                                        InfolistGrid::make(4)->schema([
+                                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                                             TextEntry::make('descricao')->label('Item')->weight('bold'),
                                             TextEntry::make('quantidade')->label('Qtd')->alignCenter(),
                                             TextEntry::make('valor_unitario')->label('Unit.')->money('BRL'),
@@ -680,7 +680,7 @@ class OrdemServicoResource extends Resource
                                 RepeatableEntry::make('produtosUtilizados')
                                     ->label('')
                                     ->schema([
-                                        InfolistGrid::make(3)->schema([
+                                        InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
                                             TextEntry::make('item')->label('Produto')->weight('bold'),
                                             TextEntry::make('pivot.quantidade_utilizada')
                                                 ->label('Qtd')
@@ -693,7 +693,7 @@ class OrdemServicoResource extends Resource
 
                         Infolists\Components\Tabs\Tab::make('📸 Evidências e Arquivos')
                             ->schema([
-                                InfolistGrid::make(2)->schema([
+                                InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
                                     Infolists\Components\SpatieMediaLibraryImageEntry::make('fotos_antes')
                                         ->label('Fotos Antes')
                                         ->collection('fotos_antes')
@@ -733,7 +733,7 @@ class OrdemServicoResource extends Resource
 
                         Infolists\Components\Tabs\Tab::make('💰 Financeiro')
                             ->schema([
-                                InfolistGrid::make(3)->schema([
+                                InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
                                     TextEntry::make('financeiro.status')
                                         ->label('Status')
                                         ->badge()
@@ -750,7 +750,7 @@ class OrdemServicoResource extends Resource
                                 RepeatableEntry::make('audits')
                                     ->label('')
                                     ->schema([
-                                        InfolistGrid::make(4)->schema([
+                                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                                             TextEntry::make('user.name')
                                                 ->label('Usuário')
                                                 ->icon('heroicon-m-user'),

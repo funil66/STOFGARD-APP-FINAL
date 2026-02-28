@@ -40,7 +40,7 @@ class ListaDesejoResource extends Resource
                 Forms\Components\Section::make('Item Desejado')
                     ->icon('heroicon-o-gift')
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 Forms\Components\TextInput::make('nome')
                                     ->label('Nome do Item')
@@ -67,7 +67,7 @@ class ListaDesejoResource extends Resource
                             ->rows(2)
                             ->columnSpanFull(),
 
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 Forms\Components\TextInput::make('quantidade_desejada')
                                     ->label('Quantidade')
@@ -251,7 +251,7 @@ class ListaDesejoResource extends Resource
             ->schema([
                 InfolistSection::make('Item Desejado')
                     ->schema([
-                        InfolistGrid::make(2)
+                        InfolistGrid::make(['default' => 1, 'sm' => 2])
                             ->schema([
                                 TextEntry::make('nome')->label('Nome do Item'),
                                 TextEntry::make('prioridade')->label('Prioridade')->badge(),

@@ -68,7 +68,7 @@
                         Últimos Serviços
                     </x-slot>
 
-                    <div class="responsive-table-container">
+                    <div class="responsive-table-container overflow-x-auto w-full">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-800">
                                 <tr>
@@ -152,7 +152,7 @@
                         Transações Recentes
                     </x-slot>
 
-                    <div class="responsive-table-container">
+                    <div class="responsive-table-container overflow-x-auto w-full">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-800">
                                 <tr>
@@ -239,7 +239,7 @@
                         Top 10 Clientes (Por Quantidade de Serviços)
                     </x-slot>
 
-                    <div class="responsive-table-container">
+                    <div class="responsive-table-container overflow-x-auto w-full">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-800">
                                 <tr>

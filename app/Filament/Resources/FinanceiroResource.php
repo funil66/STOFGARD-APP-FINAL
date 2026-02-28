@@ -630,7 +630,7 @@ class FinanceiroResource extends Resource
                 // ===== CABEÇALHO =====
                 InfolistSection::make()
                     ->schema([
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('tipo')
                                 ->label('Tipo')
                                 ->badge()
@@ -654,7 +654,7 @@ class FinanceiroResource extends Resource
                                 ->badge()
                                 ->color('info'),
                         ]),
-                        InfolistGrid::make(4)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                             TextEntry::make('cadastro.nome')
                                 ->label('Cliente/Fornecedor')
                                 ->icon('heroicon-m-user')
@@ -690,7 +690,7 @@ class FinanceiroResource extends Resource
                 // ===== RESUMO FINANCEIRO =====
                 InfolistSection::make('💰 Resumo de Valores')
                     ->schema([
-                        InfolistGrid::make(5)->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 5])->schema([
                             TextEntry::make('valor')
                                 ->label('💵 Valor')
                                 ->money('BRL')
@@ -730,7 +730,7 @@ class FinanceiroResource extends Resource
                         // ABA 1: INFORMAÇÕES
                         \Filament\Infolists\Components\Tabs\Tab::make('📋 Informações')
                             ->schema([
-                                InfolistGrid::make(2)->schema([
+                                InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
                                     TextEntry::make('descricao')
                                         ->label('Descrição')
                                         ->columnSpanFull()
@@ -751,7 +751,7 @@ class FinanceiroResource extends Resource
                         // ABA 2: VINCULAÇÕES
                         \Filament\Infolists\Components\Tabs\Tab::make('🔗 Vinculações')
                             ->schema([
-                                InfolistGrid::make(2)->schema([
+                                InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
                                     TextEntry::make('ordemServico.numero_os')
                                         ->label('Ordem de Serviço')
                                         ->icon('heroicon-m-clipboard-document-check')
@@ -808,7 +808,7 @@ class FinanceiroResource extends Resource
                                 \Filament\Infolists\Components\RepeatableEntry::make('audits')
                                     ->label('')
                                     ->schema([
-                                        InfolistGrid::make(4)->schema([
+                                        InfolistGrid::make(['default' => 1, 'sm' => 2, 'lg' => 4])->schema([
                                             TextEntry::make('user.name')
                                                 ->label('Usuário')
                                                 ->icon('heroicon-m-user')
