@@ -112,7 +112,7 @@ class FinanceiroService
             'ordem_servico_id' => $record->ordem_servico_id,
             'id_parceiro' => $record->id_parceiro,
             'tipo' => $record->tipo,
-            'is_comissao' => $record->is_comissao,
+            'is_comissao' => $record->is_comissao ?? false,
             'descricao' => $record->descricao . ' (Saldo restante)',
             'observacoes' => '📌 Saldo restante de pagamento parcial (Ref. #' . $record->id . '). Original: R$ ' . number_format($valorOriginal, 2, ',', '.') . ', Pago: R$ ' . number_format($valorPago, 2, ',', '.'),
             'categoria_id' => $record->categoria_id,

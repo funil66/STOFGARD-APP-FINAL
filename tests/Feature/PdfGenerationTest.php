@@ -31,7 +31,7 @@ class PdfGenerationTest extends TestCase
                 ->andReturn(response('PDF Content', 200, ['Content-Type' => 'application/pdf']));
         });
 
-        $response = $this->actingAs($user)->get(route('orcamento.pdf', $orcamento));
+        $response = $this->actingAsSuperAdmin()->get(route('orcamento.pdf', $orcamento));
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/pdf');
@@ -39,7 +39,6 @@ class PdfGenerationTest extends TestCase
 
     public function test_financeiro_pdf_uses_service()
     {
-        $user = User::factory()->create();
         $financeiro = Financeiro::factory()->create();
 
         $this->mock(PdfService::class, function (MockInterface $mock) {
@@ -51,15 +50,13 @@ class PdfGenerationTest extends TestCase
                 ->andReturn(response('PDF Content', 200, ['Content-Type' => 'application/pdf']));
         });
 
-        $response = $this->actingAs($user)->get(route('financeiro.pdf', $financeiro));
+        $response = $this->actingAsSuperAdmin()->get(route('financeiro.pdf', $financeiro));
 
         $response->assertOk();
     }
 
     public function test_financeiro_relatorio_mensal_uses_service()
     {
-        $user = User::factory()->create();
-
         $this->mock(PdfService::class, function (MockInterface $mock) {
             $mock->shouldReceive('generate')
                 ->once()
@@ -69,7 +66,7 @@ class PdfGenerationTest extends TestCase
                 ->andReturn(response('PDF Content', 200, ['Content-Type' => 'application/pdf']));
         });
 
-        $response = $this->actingAs($user)->get(route('financeiro.relatorio_mensal'));
+        $response = $this->actingAsSuperAdmin()->get(route('financeiro.relatorio_mensal'));
 
         $response->assertOk();
     }

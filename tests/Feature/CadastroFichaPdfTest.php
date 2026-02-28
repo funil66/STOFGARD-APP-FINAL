@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Cadastro;
 use App\Models\User;
+use App\Services\PdfService;
+use Mockery\MockInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -23,8 +25,21 @@ class CadastroFichaPdfTest extends TestCase
             'tipo' => 'cliente',
         ]);
 
+        // Mock do PdfService para interceptar a geração do PDF e retornar um PDF dummy
+        $this->mock(PdfService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('generate')
+                ->once()
+                ->withArgs(function ($view, $data, $filename, $download) {
+                    return $view === 'pdf.cadastro_ficha'
+                        && str_contains($filename, 'Ficha-Cadastral-')
+                        && $download === true;
+                })
+                ->andReturn(response('PDF Content', 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="Ficha-Cadastral.pdf"']));
+        });
+
         // Testar se a rota do PDF funciona
-        $response = $this->actingAs($user)->get("/cadastro/{$cadastro->id}/pdf");
+        $this->withoutExceptionHandling();
+        $response = $this->actingAsSuperAdmin()->get("/cadastro/{$cadastro->id}/pdf");
 
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/pdf');

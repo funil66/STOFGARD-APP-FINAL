@@ -12,9 +12,7 @@ class AdminAccessTest extends TestCase
 
     public function test_non_admin_cannot_access_configuracoes()
     {
-        $user = User::factory()->create(['is_admin' => false]);
-
-        $response = $this->actingAs($user)->get('/admin/configuracoes');
+        $response = $this->actingAsCliente()->get('/admin/configuracoes');
 
         // Expect Forbidden (403)
         $response->assertForbidden();
@@ -22,9 +20,7 @@ class AdminAccessTest extends TestCase
 
     public function test_admin_can_access_configuracoes()
     {
-        $user = User::factory()->create(['is_admin' => true]);
-
-        $response = $this->actingAs($user)->get('/admin/configuracoes');
+        $response = $this->actingAsSuperAdmin()->get('/admin/configuracoes');
 
         // Expect OK (200)
         $response->assertOk();
