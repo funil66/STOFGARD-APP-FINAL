@@ -50,11 +50,10 @@ class ClientePanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                // Multi-Tenancy: resolve tenant from authenticated user or subdomain
-                \App\Http\Middleware\InitializeTenant::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
+                \App\Http\Middleware\InitializeTenant::class, // ⚙️ MAGIA DO TENANT: Identifica o banco do cliente logo após o login
             ]);
     }
 }
