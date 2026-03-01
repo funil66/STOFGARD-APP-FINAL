@@ -4,7 +4,6 @@ namespace App\Actions;
 
 use App\Models\OrdemServico;
 use App\Models\Orcamento;
-use App\Services\PdfGeneratorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -25,9 +24,8 @@ use Illuminate\Support\Facades\Storage;
  */
 class FinalizeAssinaturaAction
 {
-    public function __construct(
-        private readonly PdfGeneratorService $pdfService
-    ) {
+    public function __construct()
+    {
     }
 
     /**

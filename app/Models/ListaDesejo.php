@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Models;
-use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +9,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ListaDesejo extends Model
 {
     use SoftDeletes;
-    use BelongsToTenant;
 
     protected $table = 'lista_desejos';
 

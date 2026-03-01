@@ -50,10 +50,11 @@ class ClientePanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
+                \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
-                \App\Http\Middleware\InitializeTenant::class, // ⚙️ MAGIA DO TENANT: Identifica o banco do cliente logo após o login
             ]);
     }
 }

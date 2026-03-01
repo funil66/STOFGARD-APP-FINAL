@@ -31,7 +31,8 @@
         "spatie/laravel-backup": "^9.4",
         "spatie/laravel-medialibrary": "^11.17",
         "spatie/laravel-pdf": "^1.8",
-        "spatie/laravel-permission": "^6.24"
+        "spatie/laravel-permission": "^6.24",
+        "stancl/tenancy": "*"
     },
     "require-dev": {
         "laravel/dusk": "^8.3",

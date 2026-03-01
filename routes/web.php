@@ -3,7 +3,6 @@
 use App\Http\Controllers\CadastroPdfController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\LeadController;
-use App\Http\Controllers\OrcamentoPdfController;
 use App\Http\Controllers\PagamentoController;
 use App\Http\Controllers\PixWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -47,9 +46,9 @@ Route::post('/solicitar-orcamento', [LeadController::class, 'store'])
     ->name('solicitar.orcamento.post');
 
 // Rota pública para visualizar PDF do orçamento via link assinado (WhatsApp)
-Route::get('/orcamento/{orcamento}/compartilhar', [OrcamentoPdfController::class, 'stream'])
-    ->middleware('signed')
-    ->name('orcamento.compartilhar');
+Route::get('/orcamento/{orcamento}/compartilhar', function ($orcamento) {
+    return "Em breve";
+})->middleware('signed')->name('orcamento.compartilhar');
 
 // Rotas de autenticação do Google Calendar
 Route::middleware(['auth'])->group(function () {
@@ -57,9 +56,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('google.auth');
     Route::get('/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback'])
         ->name('google.callback');
-    // Rota para visualizar PDF do orçamento
-    Route::get('/orcamento/{orcamento}/pdf', [OrcamentoPdfController::class, 'gerarPdf'])
-        ->name('orcamento.pdf');
+    // Rota para visualizar PDF do orçamento removida
 
     // Rota para visualizar PDF da OS
     Route::get('/os/{record}/pdf', [\App\Http\Controllers\OrdemServicoPdfController::class, 'gerarPdf'])
@@ -116,9 +113,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/estoque/{estoque}/pdf', [\App\Http\Controllers\EstoquePdfController::class, 'gerarPdf'])
         ->name('estoque.pdf');
 
-    // Rota para gerar e salvar PDF (inclui opção include_pix e persist)
-    Route::post('/orcamento/{orcamento}/generate-pdf', [OrcamentoPdfController::class, 'generateAndSave'])
-        ->name('orcamento.generate');
+    // Rota para gerar e salvar PDF (inclui opção include_pix e persist) removida
 
     // Arquivos (download / delete) - genérico para modelos que armazenam `arquivos` como JSON
     Route::get('/admin/files/download/{model}/{record}/{path}', [\App\Http\Controllers\ArquivosController::class, 'download'])
@@ -152,9 +147,9 @@ Route::get('/download/{disk}/{encodedPath}', [\App\Http\Controllers\FileDownload
     ->name('file.download');
 
 // Rota pública assinada para o cliente baixar o PDF
-Route::get('/orcamento/{orcamento}/publico', [OrcamentoPdfController::class, 'stream'])
-    ->name('orcamento.public_stream')
-    ->middleware('signed');
+Route::get('/orcamento/{orcamento}/publico', function (\App\Models\Orcamento $orcamento) {
+    return response()->json(['message' => 'Visualização de PDF em background disponível em breve']);
+})->name('orcamento.public_stream')->middleware('signed');
 
 // Relatórios financeiros (autenticado)
 Route::middleware(['auth'])->group(function () {

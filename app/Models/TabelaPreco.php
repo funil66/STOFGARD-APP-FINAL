@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Models;
-use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +9,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class TabelaPreco extends Model
 {
     use SoftDeletes;
-    use BelongsToTenant;
 
     protected $table = 'tabela_precos';
 

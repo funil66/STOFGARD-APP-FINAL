@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Models\Orcamento;
-use App\Services\PdfGeneratorService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -43,7 +42,7 @@ class GenerateAndSendPdfJob implements ShouldQueue
     ) {
     }
 
-    public function handle(PdfGeneratorService $pdfService): void
+    public function handle(): void
     {
         $orcamento = Orcamento::findOrFail($this->orcamentoId);
 
@@ -52,7 +51,17 @@ class GenerateAndSendPdfJob implements ShouldQueue
             'attempt' => $this->attempts(),
         ]);
 
-        $path = $pdfService->gerarESalvarOrcamento($orcamento);
+        $path = "orcamentos/orcamento-{$orcamento->id}-" . now()->format('YmdHis') . '.pdf';
+
+        $pdf = \Spatie\LaravelPdf\Facades\Pdf::view('pdf.orcamento', ['orcamento' => $orcamento])
+            ->format('a4')
+            ->name("Orcamento-{$orcamento->id}.pdf")
+            ->withBrowsershot(function ($browsershot) {
+                app(\App\Services\PdfService::class)->configureBrowsershotPublic($browsershot);
+            });
+
+        $content = base64_decode($pdf->base64());
+        \Illuminate\Support\Facades\Storage::put($path, $content);
 
         Log::info("[PdfJob] PDF gerado e salvo em {$path}");
 
