@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Agenda;
 use App\Models\Estoque;
 use App\Models\OrdemServico;
+use App\Jobs\EnviarSolicitacaoAvaliacaoJob;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -63,12 +64,27 @@ class OrdemServicoObserver
     /**
      * Handle the OrdemServico "updated" event.
      * Cria garantia automaticamente ao concluir a OS.
+     * Fase 4: Dispara solicitação de avaliação GMB 24h após conclusão + pagamento.
      */
     public function updated(OrdemServico $os): void
     {
         // Só cria garantia na primeira conclusão
         if ($os->status === 'concluida' && $os->wasChanged('status')) {
             $this->criarGarantiaAutomatica($os);
+
+            // === FASE 4: Solicitação de Avaliação GMB ===
+            // Se já está pago, agenda o ZAP de avaliação para 24h depois.
+            // Se ainda não está pago, o FinanceiroObserver/webhook cuida disso.
+            $financeiro = $os->financeiro;
+            if ($financeiro && $financeiro->status === 'pago') {
+                EnviarSolicitacaoAvaliacaoJob::dispatch($os->id)
+                    ->delay(now()->addHours(24));
+
+                Log::info('[OrdemServicoObserver] Job de avaliação GMB agendado para 24h', [
+                    'os_id' => $os->id,
+                    'os_numero' => $os->numero_os,
+                ]);
+            }
         }
     }
 

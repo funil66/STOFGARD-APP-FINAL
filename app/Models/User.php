@@ -33,6 +33,8 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'tenant_id',
         'cadastro_id',
         'last_login_at',
+        'role',               // Fase 3: dono | funcionario | secretaria
+        'acesso_financeiro',  // Fase 3: controle granular de permissão
     ];
 
     /**
@@ -59,7 +61,30 @@ class User extends Authenticatable implements FilamentUser, HasMedia
             'is_cliente' => 'boolean',
             'is_super_admin' => 'boolean',
             'last_login_at' => 'datetime',
+            'acesso_financeiro' => 'boolean',
         ];
+    }
+
+    // === HELPERS DE ROLE (Fase 3) ===
+
+    public function isDono(): bool
+    {
+        return $this->role === 'dono' || (bool) $this->is_super_admin;
+    }
+
+    public function isSecretaria(): bool
+    {
+        return $this->role === 'secretaria';
+    }
+
+    public function isFuncionario(): bool
+    {
+        return $this->role === 'funcionario';
+    }
+
+    public function temAcessoFinanceiro(): bool
+    {
+        return $this->isDono() || (bool) $this->acesso_financeiro;
     }
 
     public function cadastro(): \Illuminate\Database\Eloquent\Relations\BelongsTo

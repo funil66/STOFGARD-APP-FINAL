@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\SuspenderTenantInadimplenteJob;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -62,3 +63,21 @@ if (class_exists(\App\Console\Commands\IronCheck::class)) {
         ->runInBackground()
         ->description('Verificação de integridade do sistema');
 }
+
+/*
+|--------------------------------------------------------------------------
+| 💰 Fase 1 — Billing Engine
+|--------------------------------------------------------------------------
+*/
+
+// 🚫 "Já pagou o aluguel, Seu Madruga?"
+// Bloqueia tenants inadimplentes (carência 5 dias) e expira trials automaticamente.
+Schedule::job(new SuspenderTenantInadimplenteJob)
+    ->dailyAt('08:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->description('Suspender tenants inadimplentes e expirar trials');
+
+// 💀 O KILLSWITCH: Verifica e bloqueia caloteiros todo dia de madrugada
+Schedule::command('iron:lock-caloteiros')->dailyAt('01:00')->timezone('America/Sao_Paulo');
