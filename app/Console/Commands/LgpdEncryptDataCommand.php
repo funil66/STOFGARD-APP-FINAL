@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
+use App\Casts\EncryptedWithHash;
 
 class LgpdEncryptDataCommand extends Command
 {
@@ -15,11 +16,9 @@ class LgpdEncryptDataCommand extends Command
     {
         $this->info("🛡️ Iniciando Protocolo LGPD: Criptografia de Dados Sensíveis...");
 
-        // Ajuste o nome da sua tabela e colunas conforme sua modelagem real
-        $tabela = 'cadastros'; // ou 'clientes', dependendo do seu schema
         $colunasSensiveis = ['documento', 'telefone', 'celular', 'email'];
 
-        $registros = DB::table($tabela)->get();
+        $registros = \App\Models\Cadastro::on('tenant')->get();
         $bar = $this->output->createProgressBar(count($registros));
         $bar->start();
 
@@ -31,12 +30,14 @@ class LgpdEncryptDataCommand extends Command
                     // Evita criptografar algo que já foi criptografado (começa com eyJpdi...)
                     if (!str_starts_with($registro->$coluna, 'eyJpdi')) {
                         $updateData[$coluna] = Crypt::encryptString($registro->$coluna);
+                        $updateData["{$coluna}_hash"] = EncryptedWithHash::makeHash($registro->$coluna);
                     }
                 }
             }
 
             if (!empty($updateData)) {
-                DB::table($tabela)->where('id', $registro->id)->update($updateData);
+                // Update silencioso via Eloquent para evitar triggers de data errados
+                $registro->updateQuietly($updateData);
             }
 
             $bar->advance();

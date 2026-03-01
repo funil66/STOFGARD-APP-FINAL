@@ -7,19 +7,13 @@ use Exception;
 
 class AuditObserver
 {
-    /**
-     * Trava nível "Headshot de AWP". Ninguém altera log.
-     */
     public function updating(Audit $audit)
     {
-        throw new Exception('Acesso Negado: Registros de auditoria são imutáveis por força de Compliance (LGPD).');
+        throw new Exception('Acesso Negado: Registos de auditoria são imutáveis (LGPD).');
     }
 
-    /**
-     * Deletar prova? Aqui não, estagiário.
-     */
     public function deleting(Audit $audit)
     {
-        throw new Exception('Acesso Negado: Registros de auditoria não podem ser excluídos do sistema.');
+        throw new Exception('Acesso Negado: Registros de auditoria estruturais de LGPD não podem ser deletados da base.');
     }
 }

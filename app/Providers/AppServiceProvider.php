@@ -48,6 +48,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \OwenIt\Auditing\Models\Audit::observe(\App\Observers\AuditObserver::class);
+
         // Forçar HTTPS em produção para evitar erros de Mixed Content
         if ($this->app->environment('production')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
