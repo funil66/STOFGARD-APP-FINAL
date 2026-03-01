@@ -17,7 +17,7 @@ class RecalculateOrcamentos extends Command
         $count = 0;
         Orcamento::withTrashed()->chunk(100, function ($orcamentos) use (&$count) {
             foreach ($orcamentos as $orcamento) {
-                $orcamento->calcularTotal();
+                app(\App\Actions\Financeiro\CalculateOrcamentoTotalsAction::class)->execute($orcamento);
                 $orcamento->saveQuietly();
                 $count++;
             }
