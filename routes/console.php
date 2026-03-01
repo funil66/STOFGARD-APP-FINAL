@@ -8,12 +8,28 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// 💰 A MÁQUINA DE DINHEIRO: Roda todo dia 5 de cada mês, às 09:00 da manhã
+Schedule::command('iron:charge-tenants')
+    ->monthlyOn(5, '09:00')
+    ->timezone('America/Sao_Paulo');
+
+// 🪂 O PARAQUEDAS (BACKUP): Faz o dump do banco toda madrugada às 03:00 e envia pro seu cloud
+Schedule::command('backup:run --only-db')
+    ->dailyAt('03:00')
+    ->timezone('America/Sao_Paulo')
+    ->onOneServer();
+
+// Limpa backups muito velhos (mantém só das últimas semanas pra não lotar o disco)
+Schedule::command('backup:clean')
+    ->dailyAt('04:00')
+    ->timezone('America/Sao_Paulo')
+    ->onOneServer();
+
 /*
 |--------------------------------------------------------------------------
 | Agendamento de Tarefas (Schedule)
 |--------------------------------------------------------------------------
 | Configuração dos cron jobs do sistema.
-| Para ativar, adicione ao crontab do servidor:
 | * * * * * cd /path-to-project && php artisan schedule:run >> /dev/null 2>&1
 |--------------------------------------------------------------------------
 */

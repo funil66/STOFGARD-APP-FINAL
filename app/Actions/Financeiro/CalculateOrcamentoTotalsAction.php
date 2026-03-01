@@ -12,26 +12,39 @@ class CalculateOrcamentoTotalsAction
      */
     public function execute(Orcamento $orcamento): void
     {
-        // Pega a soma de todos os itens do orçamento (relação já deve existir)
+        // Pega a soma de todos os itens do orçamento
         $subtotal = $orcamento->itens()->sum('subtotal');
 
-        // Pega o desconto, se não existir é 0
-        $desconto = $orcamento->desconto_valor ?? 0;
+        $valorEditado = floatval($orcamento->valor_final_editado);
+        $desconto = 0;
 
-        // Calcula o Total
-        $total = $subtotal - $desconto;
+        if ($valorEditado > 0) {
+            $desconto = $subtotal - $valorEditado;
+            $baseCalculo = $valorEditado;
+        } else {
+            $baseCalculo = $subtotal;
+        }
 
-        // Lógica de Pró-labore e Comissão
-        $comissao = 0;
-        if ($orcamento->taxa_comissao > 0) {
-            $comissao = $total * ($orcamento->taxa_comissao / 100);
+        // Lógica de Comissão
+        $comissaoVendedor = 0;
+        if ($orcamento->vendedor && floatval($orcamento->vendedor->comissao_percentual) > 0) {
+            $comissaoVendedor = ($baseCalculo * floatval($orcamento->vendedor->comissao_percentual)) / 100;
+        }
+
+        $comissaoLoja = 0;
+        if ($orcamento->loja && floatval($orcamento->loja->comissao_percentual) > 0) {
+            $comissaoLoja = ($baseCalculo * floatval($orcamento->loja->comissao_percentual)) / 100;
         }
 
         // Atualiza 'quietly' para não disparar os Observers infinitamente e causar loop
         $orcamento->updateQuietly([
-            'valor_subtotal' => $subtotal,
-            'valor_total' => $total,
-            'valor_comissao' => $comissao,
+            'valor_total' => $subtotal,
+            'desconto_prestador' => $desconto,
+            'comissao_vendedor' => $comissaoVendedor,
+            'comissao_loja' => $comissaoLoja,
         ]);
+
+        // Chama a sincronização com Financeiro e OS se necessário
+        \App\Services\OrcamentoFormService::sincronizarValorModulos($orcamento->fresh());
     }
 }

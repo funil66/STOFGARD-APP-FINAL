@@ -17,20 +17,20 @@ class RenderOrcamentoHtml extends Command
 
         if ($id) {
             $orc = Orcamento::find($id);
-            if (! $orc) {
-                $this->error('Orçamento não encontrado: '.$id);
+            if (!$orc) {
+                $this->error('Orçamento não encontrado: ' . $id);
                 return 1;
             }
         } else {
             $orc = Orcamento::latest()->first();
-            if (! $orc) {
+            if (!$orc) {
                 $this->error('Nenhum orçamento encontrado no banco.');
                 return 1;
             }
         }
 
         $orc->load(['cliente', 'itens.tabelaPreco', 'parceiro']);
-        $orc->calcularTotal();
+        app(\App\Actions\Financeiro\CalculateOrcamentoTotalsAction::class)->execute($orc);
 
         $pixService = app(PixService::class);
         $chavePix = \App\Services\ConfiguracaoService::financeiro('pix_chave') ?: env('PIX_CHAVE');
@@ -75,7 +75,7 @@ class RenderOrcamentoHtml extends Command
         $htmlPath = $debugDir . "/orcamento-{$orc->id}.html";
         file_put_contents($htmlPath, $html);
 
-        $this->info('HTML renderizado: '.$htmlPath);
+        $this->info('HTML renderizado: ' . $htmlPath);
 
         return 0;
     }

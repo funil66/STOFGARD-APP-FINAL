@@ -22,6 +22,7 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
     use SoftDeletes;
     use HasSequentialNumber;
     use HasAuditTrail;
+    use \App\Traits\HasLegalSignature;
     use \OwenIt\Auditing\Auditable;
 
     protected static function boot()
@@ -92,16 +93,7 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
         'pdf_parcelamento_custom' => 'array',
     ];
 
-    // --- FUNÇÃO QUE FALTAVA (CORREÇÃO DO ERRO) ---
-    public function calcularTotal()
-    {
-        // Recalcula a soma dos itens vinculados
-        $total = $this->itens()->sum('subtotal');
-        $this->valor_total = $total;
-
-        // Salva sem disparar eventos novamente para evitar loop infinito
-        $this->saveQuietly();
-    }
+    // Obsoleto: calcularTotal foi removido na Fase 2 (Dieta do Nhonho)
 
     // --- ACESSORES FINANCEIROS CENTRALIZADOS ---
 

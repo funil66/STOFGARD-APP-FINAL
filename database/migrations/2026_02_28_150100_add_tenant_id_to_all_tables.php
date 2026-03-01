@@ -26,7 +26,7 @@ return new class extends Migration {
     private array $businessTables = [
         'cadastros',
         'orcamentos',
-        'orcamentos_itens',
+        'orcamento_items',
         'ordens_servico',
         'ordem_servico_items',
         'ordem_servico_estoques',
@@ -40,6 +40,7 @@ return new class extends Migration {
         'nota_fiscals',
         'pdf_generations',
         'produtos',
+        'estoques',
         'sequencias',
         'tabela_precos',
         'whatsapp_messages',

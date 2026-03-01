@@ -1,0 +1,35 @@
+name: 🚀 Deploy de Produção Premium (Iron Code)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: 🚁 Deploy no Servidor
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Download do Código
+        uses: actions/checkout@v4
+
+      - name: 🔧 Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, dom, filter, libxml, bcmath
+      
+      # (Opcional) Aqui você poderia plugar o 'php artisan test' e o 'vendor/bin/pint' pra checar a sujeira.
+
+      - name: 💣 Disparar C4 na VPS (SSH)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          # ou use key: ${{ secrets.SERVER_SSH_KEY }} no lugar do password
+          port: 22
+          script: |
+            cd /var/www/stofgard
+            ./deploy.sh

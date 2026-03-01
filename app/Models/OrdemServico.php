@@ -14,7 +14,7 @@ use App\Traits\HasAuditTrail;
 
 class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
-    use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail, \OwenIt\Auditing\Auditable;
+    use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail, \App\Traits\HasLegalSignature, \OwenIt\Auditing\Auditable;
     use BelongsToTenant;
 
     protected static function boot()

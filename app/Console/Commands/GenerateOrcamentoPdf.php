@@ -34,7 +34,7 @@ class GenerateOrcamentoPdf extends Command
         }
 
         $orc->load(['cliente', 'itens.tabelaPreco', 'loja']);
-        $orc->calcularTotal();
+        app(\App\Actions\Financeiro\CalculateOrcamentoTotalsAction::class)->execute($orc);
 
         // Usar cache em memória temporariamente
         config(['cache.default' => 'array']);

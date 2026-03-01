@@ -17,7 +17,7 @@ class CreateOrcamento extends CreateRecord
         $data['numero'] = Orcamento::gerarNumeroOrcamento();
 
         // CORREÇÃO DO ERRO 1364: Define a data de emissão como HOJE se não vier do form
-        if (! isset($data['data_orcamento'])) {
+        if (!isset($data['data_orcamento'])) {
             $data['data_orcamento'] = now();
         }
 
@@ -27,5 +27,10 @@ class CreateOrcamento extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function afterCreate(): void
+    {
+        app(\App\Actions\Financeiro\CalculateOrcamentoTotalsAction::class)->execute($this->record);
     }
 }

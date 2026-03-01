@@ -658,13 +658,38 @@ class OrcamentoResource extends Resource
                     edit: true,
                     delete: true,
                     extraActions: [
-                        Tables\Actions\Action::make('pdf')
-                            ->label('PDF')
-                            ->icon('heroicon-s-document-text')
+                        Tables\Actions\Action::make('gerar_pdf_background')
+                            ->label('Gerar PDF (Fila)')
+                            ->icon('heroicon-o-document-arrow-down')
                             ->color('success')
-                            ->tooltip('Gerar PDF')
-                            ->url(fn(Orcamento $record) => route('orcamento.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->requiresConfirmation()
+                            ->modalHeading('Gerar Documento Pesado')
+                            ->modalDescription('O PDF será gerado em segundo plano para não travar sua tela. Você receberá uma notificação quando estiver pronto.')
+                            ->action(function (Orcamento $record) {
+                                $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
+                                $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
+                                foreach ($jsonFields as $k) {
+                                    if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
+                                        $settingsArray[$k] = json_decode($settingsArray[$k], true);
+                                    }
+                                }
+                                $config = (object) $settingsArray;
+
+                                $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
+
+                                \App\Jobs\ProcessPdfJob::dispatch(
+                                    $record->id,
+                                    'orcamento',
+                                    auth()->id(),
+                                    $htmlContent
+                                );
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title('🚀 Fogo na Bomba!')
+                                    ->body('O PDF está sendo gerado no servidor. Continue trabalhando, avisaremos quando estiver pronto.')
+                                    ->success()
+                                    ->send();
+                            }),
 
                         // #5: Aprovar e Gerar OS direto da lista (Unificado)
                         \App\Filament\Actions\OrcamentoActions::getAprovarTableAction(),
