@@ -63,7 +63,6 @@ class SuperAdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                \Stancl\Tenancy\Middleware\PreventAccessFromTenantDomains::class,
                 // Middleware de autorização: somente super admins
                 \App\Http\Middleware\EnsureSuperAdmin::class,
             ])
