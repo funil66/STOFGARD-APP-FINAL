@@ -8,7 +8,6 @@ use App\Services\PdfGeneratorService;
 use App\Jobs\GenerateAndSendPdfJob;
 use App\Jobs\SendWhatsAppMessageJob;
 use App\Jobs\SendEmailNotificationJob;
-use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -24,9 +23,8 @@ use Illuminate\Support\Facades\Log;
  */
 class SendOrcamentoPdfAction
 {
-    public function __construct(
-        private readonly WhatsAppService $whatsAppService,
-    ) {
+    public function __construct()
+    {
     }
 
     /**
@@ -57,7 +55,9 @@ class SendOrcamentoPdfAction
         // Link WhatsApp (gerado de forma síncrona — é só texto, não bloqueia)
         $whatsappLink = null;
         if (in_array($via, ['whatsapp', 'both']) && $cliente->celular) {
-            $whatsappLink = $this->whatsAppService->getProposalLink($orcamento);
+            $pdfUrl = \Illuminate\Support\Facades\URL::signedRoute('orcamento.public_stream', ['orcamento' => $orcamento->id], now()->addDays(7));
+            $phone = preg_replace('/[^0-9]/', '', $cliente->celular ?? '');
+            $whatsappLink = "https://wa.me/55{$phone}?text=" . urlencode("Segue o link do orçamento #{$orcamento->numero}: {$pdfUrl}");
 
             // Armazena histórico da mensagem de forma assíncrona
             SendWhatsAppMessageJob::dispatch(

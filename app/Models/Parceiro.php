@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +13,6 @@ use Spatie\MediaLibrary\HasMedia;
 class Parceiro extends Model implements HasMedia
 {
     use HasFactory, SoftDeletes, HasArquivos;
-    use BelongsToTenant;
 
     protected $table = 'parceiros';
 

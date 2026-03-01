@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,7 +13,6 @@ use Spatie\MediaLibrary\HasMedia;
 class Cliente extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
     use HasFactory, SoftDeletes, HasArquivos, \OwenIt\Auditing\Auditable;
-    use BelongsToTenant;
 
     protected $fillable = [
         'uuid',

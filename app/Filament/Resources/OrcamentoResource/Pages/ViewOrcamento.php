@@ -27,12 +27,13 @@ class ViewOrcamento extends ViewRecord
             // #5: Aprovar e Gerar OS (Unificado)
             \App\Filament\Actions\OrcamentoActions::getAprovarAction(),
 
-            Actions\Action::make('gerar_pdf')
-                ->label('Gerar PDF')
-                ->icon('heroicon-o-document-text')
+            Actions\Action::make('gerar_pdf_background')
+                ->label('Gerar PDF (Fila)')
+                ->icon('heroicon-o-document-arrow-down')
                 ->color('secondary')
-                ->modalHeading('Gerar PDF do Orçamento')
-                ->modalWidth('md')
+                ->requiresConfirmation()
+                ->modalHeading('Gerar Documento Pesado')
+                ->modalDescription('O PDF será gerado em segundo plano para não travar sua tela. Você receberá uma notificação quando estiver pronto.')
                 ->form([
                     Forms\Components\Toggle::make('include_pix')
                         ->label('Incluir QR Code PIX')
@@ -44,62 +45,91 @@ class ViewOrcamento extends ViewRecord
                         ->default(false),
                 ])
                 ->action(function ($record, array $data) {
-                    // Atualizar preferência de PIX se solicitado
                     if ($data['persist'] ?? false) {
                         $record->update([
                             'pdf_incluir_pix' => $data['include_pix'] ?? true,
                         ]);
                     } else {
-                        // Apenas atualiza temporariamente para esta geração
                         $record->pdf_incluir_pix = $data['include_pix'] ?? true;
                     }
 
-                    // Gerar PDF usando o controller
-                    try {
-                        $controller = app(OrcamentoPdfController::class);
-
-                        return $controller->gerarPdf($record);
-                    } catch (\Throwable $e) {
-                        Notification::make()
-                            ->danger()
-                            ->title('Erro ao gerar PDF')
-                            ->body($e->getMessage())
-                            ->send();
-
-                        return null;
+                    $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
+                    $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
+                    foreach ($jsonFields as $k) {
+                        if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
+                            $settingsArray[$k] = json_decode($settingsArray[$k], true);
+                        }
                     }
+                    $config = (object) $settingsArray;
+
+                    // Lógica do PIX movida temporariamente para gerar HTML completo
+                    if ($record->pdf_incluir_pix && $record->pix_chave_selecionada) {
+                        try {
+                            $percentualPix = $record->pdf_desconto_pix_percentual !== null ? floatval($record->pdf_desconto_pix_percentual) : floatval($settingsArray['financeiro_desconto_avista'] ?? 10);
+                            $descontos = $record->getValorComDescontos($percentualPix);
+                            $valorFinal = $descontos['valor_final'];
+                            $chavesPix = $config->financeiro_pix_keys ?? [];
+                            $titular = $settingsArray['nome_sistema'] ?? 'Stofgard';
+                            if (is_array($chavesPix)) {
+                                foreach ($chavesPix as $keyItem) {
+                                    if ($keyItem['chave'] === $record->pix_chave_selecionada) {
+                                        $titular = $keyItem['titular'] ?? $titular;
+                                        break;
+                                    }
+                                }
+                            }
+                            $pixService = new \App\Services\Pix\PixMasterService();
+                            $pixData = $pixService->gerarQrCode($record->pix_chave_selecionada, $titular, 'Ribeirao Preto', $record->numero ?? 'ORC', $valorFinal);
+                            $record->pix_qrcode_base64 = $pixData['qr_code_img'];
+                            $record->pix_copia_cola = $pixData['payload_pix'];
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::error("Erro gerar PIX PDF Background: " . $e->getMessage());
+                        }
+                    }
+
+                    $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
+
+                    \App\Jobs\ProcessPdfJob::dispatch($record->id, 'orcamento', auth()->id(), $htmlContent);
+
+                    Notification::make()
+                        ->title('🚀 Fogo na Bomba!')
+                        ->body('O PDF do Orçamento está sendo gerado no servidor. Continue trabalhando, avisaremos quando estiver pronto.')
+                        ->success()
+                        ->send();
                 }),
 
             Actions\DeleteAction::make(),
-            \Filament\Actions\Action::make('whatsapp')
-                ->label('Enviar WhatsApp')
+
+            \Filament\Actions\Action::make('whatsapp_background')
+                ->label('Enviar WhatsApp (Fila)')
                 ->icon('heroicon-o-chat-bubble-left-right')
                 ->color('success')
-                ->url(fn(Orcamento $record) => $this->getWhatsappUrl($record))
-                ->openUrlInNewTab(),
+                ->requiresConfirmation()
+                ->modalHeading('Disparar WhatsApp Automático')
+                ->modalDescription('O link mágico deste orçamento será enviado automaticamente para o WhatsApp do cliente através da API Evolution.')
+                ->action(function (Orcamento $record) {
+                    $pdfUrl = \Illuminate\Support\Facades\URL::signedRoute('orcamento.public_stream', ['orcamento' => $record->id], now()->addDays(7));
+                    $phone = preg_replace('/[^0-9]/', '', $record->cliente->telefone ?? '');
+
+                    if (empty($phone)) {
+                        Notification::make()
+                            ->danger()
+                            ->title('Telefone Inválido')
+                            ->body('O cliente não possui um telefone cadastrado para envio.')
+                            ->send();
+                        return;
+                    }
+
+                    $text = "Olá {$record->cliente->nome}, aqui está o seu orçamento #{$record->id} da Stofgard.\n\nClique para visualizar: {$pdfUrl}";
+
+                    \App\Jobs\SendWhatsAppJob::dispatch($phone, $text, 'default');
+
+                    Notification::make()
+                        ->title('📱 Disparo Autorizado!')
+                        ->body("A mensagem foi enviada para a fila de disparo do WhatsApp para o número {$phone}.")
+                        ->success()
+                        ->send();
+                }),
         ];
-    }
-
-    // Método auxiliar para gerar o Link Mágico
-    protected function getWhatsappUrl(Orcamento $record): string
-    {
-        // 1. Gera o Link Público Assinado (válido por 7 dias, por exemplo)
-        $pdfUrl = \Illuminate\Support\Facades\URL::signedRoute(
-            'orcamento.public_stream',
-            ['orcamento' => $record->id],
-            now()->addDays(7)
-        );
-
-        // 2. Formata o telefone (remove caracteres não numéricos)
-        $phone = preg_replace('/[^0-9]/', '', $record->cliente->telefone ?? '');
-
-        // 3. Monta a mensagem
-        $text = urlencode("Olá {$record->cliente->nome}, aqui está o seu orçamento #{$record->id} da Stofgard.\n\nClique para visualizar: {$pdfUrl}");
-
-        // 4. Retorna link do WhatsApp API
-        // Se não tiver telefone, abre apenas a janela para escolher o contato
-        return $phone
-            ? "https://wa.me/55{$phone}?text={$text}"
-            : "https://wa.me/?text={$text}";
     }
 }

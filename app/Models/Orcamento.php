@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Models;
-use App\Traits\BelongsToTenant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -17,7 +16,6 @@ use App\Traits\HasAuditTrail;
 class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
     use HasFactory;
-    use BelongsToTenant;
     use HasArquivos;
     use SoftDeletes;
     use HasSequentialNumber;
