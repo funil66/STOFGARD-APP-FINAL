@@ -53,4 +53,24 @@ return [
         'default_city' => env('OPENWEATHER_DEFAULT_CITY', 'São Paulo'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | 💰 Asaas — Gateway de Pagamento (Super Admin)
+    |--------------------------------------------------------------------------
+    | ASAAS_API_KEY      → Token de acesso da conta Asaas do Super Admin
+    | ASAAS_WEBHOOK_TOKEN → Token para validar os webhooks recebidos do Asaas
+    | ASAAS_SANDBOX      → true = usa sandbox (testes), false = produção
+    |
+    | Sandbox:    https://sandbox.asaas.com/api/v3
+    | Produção:   https://api.asaas.com/v3
+    */
+    'asaas' => [
+        'api_key' => env('ASAAS_API_KEY', ''),
+        'webhook_token' => env('ASAAS_WEBHOOK_TOKEN', ''),
+        'base_url' => env('ASAAS_SANDBOX', true)
+            ? 'https://sandbox.asaas.com/api/v3'
+            : 'https://api.asaas.com/v3',
+    ],
+
 ];
+

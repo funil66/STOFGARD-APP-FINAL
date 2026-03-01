@@ -4,6 +4,9 @@ namespace App\Observers;
 
 use App\Models\Configuracao;
 use App\Models\Orcamento;
+use App\Jobs\EnviarMagicLinkJob;
+use App\Jobs\SendWhatsAppJob;
+use App\Services\GatewayService;
 use App\Services\Pix\PixMasterService;
 use Illuminate\Support\Facades\Log;
 
@@ -102,15 +105,28 @@ class OrcamentoObserver
     }
 
     /**
-     * Handle the Orcamento "saved" event.
-     */
-    /**
      * Handle the Orcamento "updated" event.
      * Synchronizes changes to related records (Financeiro, OS, Agenda).
+     * Fase 1: Dispara cobrança via gateway ao aprovar (Asaas/EFI).
      */
     public function updated(Orcamento $orcamento): void
     {
-        // Só sincroniza se já foi aprovado e tem registros vinculados
+        // === FASE 1: Cobrança via Gateway ao Aprovar ===
+        // Se o status mudou PARA aprovado, tenta gerar cobrança dinâmica via gateway
+        if ($orcamento->wasChanged('status') && $orcamento->status === \App\Enums\OrcamentoStatus::Aprovado->value) {
+            $this->dispararCobrancaGateway($orcamento);
+
+            // === FASE 3: Magic Link — envia acesso ao portal do cliente via WhatsApp ===
+            if ($orcamento->cadastro_id) {
+                \App\Jobs\EnviarMagicLinkJob::dispatch(
+                    $orcamento->cadastro_id,
+                    'orcamento',
+                    $orcamento->id
+                );
+            }
+        }
+
+        // Só sincroniza os demais dados se já foi aprovado e tem registros vinculados
         if ($orcamento->status !== \App\Enums\OrcamentoStatus::Aprovado->value) {
             return;
         }
@@ -130,6 +146,114 @@ class OrcamentoObserver
         if ($orcamento->isDirty('observacoes')) {
             $this->syncObservacoes($orcamento);
         }
+    }
+
+    /**
+     * Dispara cobrança via gateway de pagamento ao aprovar orçamento.
+     * Gera PIX dinâmico (com confirmação via webhook) e envia por WhatsApp.
+     */
+    protected function dispararCobrancaGateway(Orcamento $orcamento): void
+    {
+        // Só dispara se gateway estiver configurado
+        if (!GatewayService::estaConfigurado()) {
+            Log::info('[OrcamentoObserver] Gateway não configurado, pulando cobrança dinâmica.', [
+                'orcamento_id' => $orcamento->id,
+            ]);
+            return;
+        }
+
+        // Não regera se já existe cobrança (idempotência)
+        if (!empty($orcamento->gateway_cobranca_id)) {
+            Log::info('[OrcamentoObserver] Cobrança já existe, pulando.', ['orcamento_id' => $orcamento->id]);
+            return;
+        }
+
+        try {
+            $pixData = GatewayService::gerarPix($orcamento);
+
+            // Salva os dados da cobrança no orçamento
+            $orcamento->withoutObserver(static::class, function () use ($orcamento, $pixData) {
+                // Se o gateway retornou dados de cobrança, salva no banco
+                if (!empty($pixData['cobranca_id'])) {
+                    $orcamento->update([
+                        'gateway_cobranca_id' => $pixData['cobranca_id'],
+                    ]);
+                }
+
+                // Salva PIX copia-e-cola se ainda não existia (gateway sobrescreve o estático)
+                if (!empty($pixData['pix_copia_cola']) && !$pixData['fallback_manual']) {
+                    $orcamento->update([
+                        'pix_copia_cola' => $pixData['pix_copia_cola'],
+                        'pix_qrcode_base64' => $pixData['qr_code_base64'] ?? $orcamento->pix_qrcode_base64,
+                    ]);
+                }
+            });
+
+            Log::info('[OrcamentoObserver] Cobrança gerada via gateway', [
+                'orcamento_id' => $orcamento->id,
+                'provider' => GatewayService::getProvider(),
+                'cobranca_id' => $pixData['cobranca_id'] ?? null,
+                'fallback' => $pixData['fallback_manual'] ?? false,
+            ]);
+
+            // Envia PIX para o cliente via WhatsApp
+            $this->enviarPixWhatsApp($orcamento, $pixData);
+
+        } catch (\Throwable $e) {
+            Log::error('[OrcamentoObserver] Erro ao gerar cobrança via gateway', [
+                'orcamento_id' => $orcamento->id,
+                'error' => $e->getMessage(),
+            ]);
+            // Não bloqueia o salvamento do orçamento
+        }
+    }
+
+    /**
+     * Envia o PIX copia-e-cola para o cliente via WhatsApp.
+     */
+    protected function enviarPixWhatsApp(Orcamento $orcamento, array $pixData): void
+    {
+        $cliente = $orcamento->cliente;
+
+        if (!$cliente || !$cliente->celular) {
+            return;
+        }
+
+        $config = Configuracao::first();
+        $nomeEmpresa = $config?->empresa_nome ?? 'Stofgard';
+        $valorFmt = 'R$ ' . number_format($orcamento->valor_total, 2, ',', '.');
+
+        if (!empty($pixData['fallback_manual']) && !empty($pixData['pix_copia_cola'])) {
+            // Modo manual: apenas a chave PIX
+            $mensagem = "⚡ *Orçamento Aprovado!*\n\n"
+                . "Olá, {$cliente->nome}!\n"
+                . "Seu orçamento *#{$orcamento->numero_orcamento}* foi aprovado! 🎉\n"
+                . "Valor: *{$valorFmt}*\n\n"
+                . "*Pagamento via PIX:*\n"
+                . "`{$pixData['pix_copia_cola']}`\n\n"
+                . "Após confirmar o pagamento, prosseguiremos com o serviço!\n\n"
+                . "_{$nomeEmpresa}_";
+        } elseif (!empty($pixData['pix_copia_cola'])) {
+            // Modo gateway: PIX dinâmico
+            $mensagem = "⚡ *Orçamento Aprovado!*\n\n"
+                . "Olá, {$cliente->nome}!\n"
+                . "Seu orçamento *#{$orcamento->numero_orcamento}* foi aprovado! 🎉\n"
+                . "Valor: *{$valorFmt}*\n\n"
+                . "*PIX Copia e Cola:*\n"
+                . "`{$pixData['pix_copia_cola']}`\n\n"
+                . "⏰ Este PIX expira em 24 horas.\n"
+                . "Após o pagamento, você receberá a confirmação automática!\n\n"
+                . "_{$nomeEmpresa}_";
+        } else {
+            return; // Sem dados de PIX para enviar
+        }
+
+        SendWhatsAppJob::dispatch($cliente->celular, $mensagem);
+
+        Log::info('[OrcamentoObserver] PIX enviado via WhatsApp', [
+            'orcamento_id' => $orcamento->id,
+            'celular' => substr($cliente->celular, 0, 4) . '****',
+        ]);
     }
 
     private function syncFinanceiro(Orcamento $orcamento): void

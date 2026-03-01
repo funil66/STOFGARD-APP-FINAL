@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ConfiguracaoResource\Pages;
 
 use App\Filament\Resources\ConfiguracaoResource;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Support\Str;
 
 class EditConfiguracao extends EditRecord
 {
@@ -35,4 +36,19 @@ class EditConfiguracao extends EditRecord
             // Removemos o DeleteAction para evitar deletar a configuração única acidentalmente
         ];
     }
+
+    /**
+     * Gera o webhook_token UUID automaticamente se não existir.
+     * Garante que cada tenant tenha um URL único para receber webhooks PIX.
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Gera webhook_token apenas se: provedor selecionado E token ainda não existe
+        if (!empty($data['gateway_provider']) && empty($this->getRecord()->gateway_webhook_token)) {
+            $data['gateway_webhook_token'] = (string) Str::uuid();
+        }
+
+        return $data;
+    }
 }
+

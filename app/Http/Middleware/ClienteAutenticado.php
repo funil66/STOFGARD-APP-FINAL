@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Models\ClienteAcesso;
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
+
+/**
+ * ClienteAutenticado — Middleware para o portal do cliente final.
+ * Verifica se a sessão tem um acesso válido (via magic link).
+ */
+class ClienteAutenticado
+{
+    public function handle(Request $request, Closure $next)
+    {
+        $acessoId = Session::get('cliente_acesso_id');
+
+        if (!$acessoId) {
+            return redirect()->route('magic-link.invalido')
+                ->with('erro', 'Acesso necessário. Use o link enviado via WhatsApp.');
+        }
+
+        // Verifica se o acesso ainda existe na base
+        $acesso = ClienteAcesso::find($acessoId);
+
+        if (!$acesso) {
+            Session::forget(['cliente_acesso_id', 'cliente_cadastro_id']);
+            return redirect()->route('magic-link.invalido')
+                ->with('erro', 'Sessão inválida. Use o link enviado via WhatsApp.');
+        }
+
+        // Compartilha o acesso com a requisição
+        $request->merge(['cliente_acesso' => $acesso]);
+
+        return $next($request);
+    }
+}

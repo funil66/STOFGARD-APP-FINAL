@@ -216,6 +216,33 @@ class OrdemServicoResource extends Resource
                                 SpatieMediaLibraryFileUpload::make('fotos_antes')->label('Antes')->multiple()->disk('public')->directory('os-fotos'),
                                 SpatieMediaLibraryFileUpload::make('fotos_depois')->label('Depois')->multiple()->disk('public')->directory('os-fotos'),
                             ]),
+
+                        // === FASE 2: FORMULÁRIO DINÂMICO ===
+                        Tab::make('📋 Formulário')
+                            ->icon('heroicon-o-document-text')
+                            ->badge(fn($record) => $record?->formulario_id ? '✓' : null)
+                            ->badgeColor('success')
+                            ->schema([
+                                Forms\Components\Select::make('formulario_id')
+                                    ->label('Formulário de Anamnese / Vistoria')
+                                    ->relationship('formulario', 'nome')
+                                    ->searchable()
+                                    ->preload()
+                                    ->nullable()
+                                    ->live()
+                                    ->helperText('Selecione o formulário apropriado para este serviço. Cada tipo de serviço pode ter seu próprio formulário configurado em Formulários Dinâmicos.')
+                                    ->afterStateUpdated(fn(Forms\Set $set) => $set('respostas_formulario', [])),
+
+                                Forms\Components\KeyValue::make('respostas_formulario')
+                                    ->label('Respostas')
+                                    ->keyLabel('Campo')
+                                    ->valueLabel('Resposta')
+                                    ->reorderable(false)
+                                    ->addActionLabel('Adicionar resposta manual')
+                                    ->helperText('Preencha as respostas do formulário selecionado.')
+                                    ->visible(fn(Forms\Get $get) => !empty($get('formulario_id')))
+                                    ->columnSpanFull(),
+                            ]),
                     ])->columnSpanFull(),
 
                 Section::make('📦 Produtos do Estoque')

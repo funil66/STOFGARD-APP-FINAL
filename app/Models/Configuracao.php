@@ -25,6 +25,16 @@ class Configuracao extends Model
         'formas_pagamento_personalizado',
         'cores_pdf',
         'config_prazo_garantia',
+        'gateway_provider',
+        'gateway_token_encrypted',
+        'gateway_webhook_token',
+        'pix_chave',
+        'pix_tipo_chave',
+        'gmb_link',
+        'mensagem_avaliacao',
+        'habilitar_avaliacao_automatica',
+        'cor_primaria_cliente',
+        'logo_cliente_path',
     ];
 
     protected $casts = [
@@ -35,6 +45,8 @@ class Configuracao extends Model
         'formas_pagamento_personalizado' => 'array',
         'cores_pdf' => 'array',
         'config_prazo_garantia' => 'array',
+        'habilitar_avaliacao_automatica' => 'boolean',
+        'gateway_token_encrypted' => 'encrypted',
     ];
 
     public function tabela_precos()

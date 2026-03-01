@@ -46,6 +46,10 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
         'id_parceiro',
         'origem',
         'extra_attributes',
+        'formulario_id',        // Fase 2
+        'respostas_formulario', // Fase 2
+        'avaliacao_enviada',    // Fase 4
+        'avaliacao_enviada_em', // Fase 4
     ];
 
     protected $casts = [
@@ -55,6 +59,9 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
         'valor_total' => 'decimal:2',
         'valor_desconto' => 'decimal:2',
         'extra_attributes' => 'array',
+        'respostas_formulario' => 'array',  // Fase 2
+        'avaliacao_enviada' => 'boolean',   // Fase 4
+        'avaliacao_enviada_em' => 'datetime', // Fase 4
     ];
 
     // --- GARANTIA ---
@@ -139,6 +146,14 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
     public function agenda(): BelongsTo
     {
         return $this->belongsTo(Agenda::class);
+    }
+
+    /**
+     * Formulário dinâmico vinculado a esta OS (Fase 2).
+     */
+    public function formulario(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\FormularioDinamico::class, 'formulario_id');
     }
 
     public function garantias(): HasMany

@@ -22,6 +22,41 @@ Route::view('/', 'welcome');
 // Rota de login (redireciona para Filament)
 Route::redirect('/login', '/admin/login')->name('login');
 
+// --- FASE 2: AGENDAMENTO PÚBLICO (Clone Calendly) ---
+// URL: stofgard.com.br/agendar/{slug-do-tenant}
+Route::prefix('agendar')->name('agendamento.')->group(function () {
+    Route::get('/{slug}', [\App\Http\Controllers\AgendamentoPublicoController::class, 'show'])
+        ->name('publico');
+    Route::get('/{slug}/horarios', [\App\Http\Controllers\AgendamentoPublicoController::class, 'horariosDisponiveis'])
+        ->name('horarios');
+    Route::post('/{slug}/reservar', [\App\Http\Controllers\AgendamentoPublicoController::class, 'reservar'])
+        ->name('reservar');
+});
+
+// --- FASE 3: PORTAL DO CLIENTE FINAL (Magic Link) ---
+// O cliente não tem senha — acessa via link temporário enviado no WhatsApp
+Route::prefix('cliente')->name('cliente.')->group(function () {
+    // Consumir o magic link
+    Route::get('/acesso/{token}', [\App\Http\Controllers\MagicLinkController::class, 'consumir'])
+        ->name('magic-link.consumir');
+    Route::get('/link-invalido', [\App\Http\Controllers\MagicLinkController::class, 'invalido'])
+        ->name('magic-link.invalido');
+    Route::post('/logout', [\App\Http\Controllers\MagicLinkController::class, 'logout'])
+        ->name('logout');
+
+    // Portal (protegido pelo middleware cliente.autenticado)
+    Route::middleware([\App\Http\Middleware\ClienteAutenticado::class])->group(function () {
+        Route::get('/', [\App\Http\Controllers\PortalClienteController::class, 'index'])
+            ->name('portal');
+        Route::get('/orcamento/{id}', [\App\Http\Controllers\PortalClienteController::class, 'orcamento'])
+            ->name('orcamento');
+        Route::get('/os/{id}', [\App\Http\Controllers\PortalClienteController::class, 'ordemServico'])
+            ->name('os');
+        Route::get('/nota-fiscal/{id}', [\App\Http\Controllers\PortalClienteController::class, 'notaFiscal'])
+            ->name('nota-fiscal');
+    });
+});
+
 // --- DESENVOLVIMENTO LOCAL ---
 if (app()->isLocal()) {
     Route::get('/dev-login', function () {

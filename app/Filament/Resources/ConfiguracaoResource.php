@@ -133,9 +133,106 @@ class ConfiguracaoResource extends Resource
                                 Forms\Components\RichEditor::make('pdf_header')->label('Cabeçalho'),
                                 Forms\Components\RichEditor::make('termos_garantia')->label('Termos de Garantia'),
                             ]),
+
+                        Forms\Components\Tabs\Tab::make('💳 Gateway de Pagamento')
+                            ->schema([
+                                Forms\Components\Section::make('Provedor de Pagamento')
+                                    ->description('Configure para enviar PIX/Boleto automático para clientes ao aprovar orçamentos.')
+                                    ->schema([
+                                        Forms\Components\Select::make('gateway_provider')
+                                            ->label('Provedor')
+                                            ->options([
+                                                'asaas' => '🏦 Asaas (Recomendado)',
+                                                'efipay' => '🏦 EFI / Gerencianet',
+                                                'mercadopago' => '🏦 Mercado Pago',
+                                            ])
+                                            ->placeholder('Não configurado (PIX manual)')
+                                            ->helperText('Selecione o banco/fintech onde você tem conta como autônomo/empresa.')
+                                            ->live(),
+
+                                        Forms\Components\TextInput::make('gateway_token_encrypted')
+                                            ->label('API Key / Token de Acesso')
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('Cole aqui o token da sua conta no provedor escolhido. Ele é armazenado de forma segura (criptografado).')
+                                            ->dehydrateStateUsing(fn($state) => filled($state) ? encrypt($state) : null)
+                                            ->afterStateHydrated(function ($component, $state) {
+                                                try {
+                                                    $component->state(filled($state) ? decrypt($state) : '');
+                                                } catch (\Exception) {
+                                                    $component->state('');
+                                                }
+                                            })
+                                            ->visible(fn($get) => filled($get('gateway_provider'))),
+
+                                        Forms\Components\Placeholder::make('gateway_webhook_token_display')
+                                            ->label('Seu Link de Webhook PIX')
+                                            ->content(function ($record) {
+                                                if (!$record || !$record->gateway_webhook_token) {
+                                                    return 'Salve as configurações para gerar o link de webhook.';
+                                                }
+                                                $url = url("/api/webhooks/pix/{$record->gateway_webhook_token}");
+                                                return "Configure no painel do seu banco: {$url}";
+                                            })
+                                            ->helperText('Cole esta URL no campo de webhook do seu provedor de pagamento para receber confirmações automáticas.')
+                                            ->visible(fn($get) => filled($get('gateway_provider'))),
+                                    ])
+                                    ->columns(2),
+
+                                Forms\Components\Section::make('PIX Manual (Fallback)')
+                                    ->description('Se não usar gateway, cliente recebe apenas a chave PIX para pagar manualmente.')
+                                    ->schema([
+                                        Forms\Components\Select::make('pix_tipo_chave')
+                                            ->label('Tipo da Chave PIX')
+                                            ->options([
+                                                'cpf' => 'CPF',
+                                                'cnpj' => 'CNPJ',
+                                                'email' => 'E-mail',
+                                                'telefone' => 'Telefone',
+                                                'aleatoria' => 'Chave Aleatória (EVP)',
+                                            ]),
+
+                                        Forms\Components\TextInput::make('pix_chave')
+                                            ->label('Chave PIX')
+                                            ->placeholder('Ex: joao@exemplo.com ou 123.456.789-00')
+                                            ->helperText('Esta chave é enviada por WhatsApp quando não há gateway configurado.'),
+                                    ])
+                                    ->columns(2),
+                            ]),
+
+                        Forms\Components\Tabs\Tab::make('📣 Marketing')
+                            ->schema([
+                                Forms\Components\Section::make('⭐ Máquina de Avaliações Google')
+                                    ->description('24h após uma OS ser concluída e paga, o cliente recebe um WhatsApp pedindo avaliação no Google.')
+                                    ->schema([
+                                        Forms\Components\Toggle::make('habilitar_avaliacao_automatica')
+                                            ->label('Habilitar envio automático de solicitação de avaliação')
+                                            ->helperText('Liga/desliga o envio automático. Quando ligado, funciona 24h por dia sem intervenção.')
+                                            ->columnSpanFull()
+                                            ->live(),
+
+                                        Forms\Components\TextInput::make('gmb_link')
+                                            ->label('Link do Google Meu Negócio (Avaliação Direta)')
+                                            ->placeholder('https://g.page/r/..../review')
+                                            ->url()
+                                            ->helperText('Para obter: Google Maps → sua empresa → Compartilhar → Escrever uma avaliação → copiar link.')
+                                            ->columnSpanFull()
+                                            ->visible(fn($get) => $get('habilitar_avaliacao_automatica')),
+
+                                        Forms\Components\Textarea::make('mensagem_avaliacao')
+                                            ->label('Mensagem Personalizada (WhatsApp)')
+                                            ->rows(6)
+                                            ->placeholder("Olá, {nome_cliente}! 😊\n\nO serviço de *{nome_empresa}* atendeu suas expectativas?\n\nDeixe sua avaliação ⭐⭐⭐⭐⭐:\n{link_gmb}")
+                                            ->helperText('Variáveis disponíveis: {nome_cliente}, {nome_empresa}, {link_gmb}, {numero_os}')
+                                            ->columnSpanFull()
+                                            ->visible(fn($get) => $get('habilitar_avaliacao_automatica')),
+                                    ])
+                                    ->columns(1),
+                            ]),
                     ])->columnSpanFull(),
             ]);
     }
+
 
     public static function getRelations(): array
     {

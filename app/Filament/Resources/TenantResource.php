@@ -24,39 +24,77 @@ class TenantResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Dados do Cliente (Banco Isolado)')
-                    ->schema([
-                        Forms\Components\TextInput::make('id')
-                            ->label('Identificador Único (Slug)')
-                            ->required()
-                            ->unique(ignoreRecord: true)
-                            ->disabled(fn(string $operation): bool => $operation === 'edit')
-                            ->helperText('Não use espaços. Ex: loja-do-chaves. Isso será usado para nomear o banco de dados fisico.'),
-
-                        // O pacote Tenancy salva dados extras em JSON. Vamos colocar o 'name'
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nome Fantasia / Razão Social')
-                            ->required(),
-
-                        Forms\Components\Toggle::make('is_active')
-                            ->label('Cliente Ativo? (Mensalidade em dia)')
-                            ->default(true)
-                            ->helperText('Desmarque para bloquear o acesso do cliente ao sistema.'),
-                    ])->columns(2),
-
-                Section::make('Domínios Associados')
-                    ->schema([
-                        Forms\Components\Repeater::make('domains')
-                            ->relationship()
+                Forms\Components\Tabs::make('Tabs')
+                    ->tabs([
+                        Forms\Components\Tabs\Tab::make('🏢 Dados do Cliente')
                             ->schema([
-                                Forms\Components\TextInput::make('domain')
-                                    ->label('URL de Acesso')
+                                Forms\Components\TextInput::make('id')
+                                    ->label('Identificador Único (Slug)')
                                     ->required()
                                     ->unique(ignoreRecord: true)
-                                    ->helperText('Ex: cliente.stofgard.com.br ou app.cliente.com.br'),
-                            ])
-                            ->addActionLabel('Adicionar Domínio')
-                    ]),
+                                    ->disabled(fn(string $operation): bool => $operation === 'edit')
+                                    ->helperText('Não use espaços. Ex: loja-do-chaves.'),
+
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nome Fantasia / Razão Social')
+                                    ->required(),
+
+                                Forms\Components\Toggle::make('is_active')
+                                    ->label('Acesso Liberado?')
+                                    ->default(true),
+                            ])->columns(2),
+
+                        Forms\Components\Tabs\Tab::make('🌐 Domínios')
+                            ->schema([
+                                Forms\Components\Repeater::make('domains')
+                                    ->relationship()
+                                    ->schema([
+                                        Forms\Components\TextInput::make('domain')
+                                            ->label('URL de Acesso')
+                                            ->required()
+                                            ->unique(ignoreRecord: true)
+                                            ->helperText('Ex: cliente.stofgard.com.br'),
+                                    ])
+                            ]),
+
+                        Forms\Components\Tabs\Tab::make('💳 Assinatura e Faturamento')
+                            ->schema([
+                                Forms\Components\Select::make('status_pagamento')
+                                    ->label('Status da Assinatura')
+                                    ->options([
+                                        'ativo' => '✅ Ativo (Em Dia)',
+                                        'trial' => '⏳ Em Período de Testes',
+                                        'inadimplente' => '⚠️ Inadimplente',
+                                        'cancelado' => '❌ Cancelado / Suspenso',
+                                    ])
+                                    ->default('trial')
+                                    ->required(),
+
+                                Forms\Components\TextInput::make('limite_os_mes')
+                                    ->label('Limite de OS por Mês')
+                                    ->numeric()
+                                    ->default(50)
+                                    ->helperText('Use 999999 para ilimitado'),
+
+                                Forms\Components\DatePicker::make('data_vencimento')
+                                    ->label('Data de Vencimento (Próxima Cobrança)'),
+
+                                Forms\Components\DatePicker::make('trial_termina_em')
+                                    ->label('Fim do Período de Testes'),
+
+                                Forms\Components\TextInput::make('gateway_customer_id')
+                                    ->label('Asaas Customer ID')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->helperText('Preenchido automaticamente pelo Asaas API'),
+
+                                Forms\Components\TextInput::make('gateway_subscription_id')
+                                    ->label('Asaas Subscription ID')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->helperText('Preenchido automaticamente pelo Asaas API'),
+                            ])->columns(2),
+                    ])->columnSpanFull()
             ]);
     }
 
@@ -79,8 +117,20 @@ class TenantResource extends Resource
                     ->badge()
                     ->color('info'),
 
+                Tables\Columns\TextColumn::make('status_pagamento')
+                    ->label('Status Assinatura')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'ativo' => 'success',
+                        'trial' => 'info',
+                        'inadimplente' => 'warning',
+                        'cancelado' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn(string $state): string => ucfirst($state)),
+
                 Tables\Columns\ToggleColumn::make('is_active')
-                    ->label('Ativo'),
+                    ->label('Acesso Liberado'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
