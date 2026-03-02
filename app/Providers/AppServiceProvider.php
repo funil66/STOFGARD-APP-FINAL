@@ -52,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Forçar HTTPS em produção para evitar erros de Mixed Content
         if ($this->app->environment('production')) {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
+            // \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
         // O "Modo Deus". Se retornar true aqui, ignora as Policies.
