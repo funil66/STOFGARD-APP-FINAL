@@ -73,9 +73,9 @@ export default defineConfig({
                 ]
             },
             manifest: {
-                name: 'Sistema Stofgard',
-                short_name: 'Stofgard',
-                description: 'Sistema de Gestão Stofgard',
+                name: 'Sistema Autonomia Ilimitada',
+                short_name: 'Autonomia Ilimitada',
+                description: 'Sistema de Gestão Autonomia Ilimitada',
                 start_url: '/admin', // <--- Garante que abre no painel, evita erro 403 no /build/
                 theme_color: '#F59E0B', // Amber do Filament
                 background_color: '#ffffff',

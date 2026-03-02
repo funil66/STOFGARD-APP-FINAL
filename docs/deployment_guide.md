@@ -1,4 +1,4 @@
-# Stofgard Deployment Guide
+# Autonomia Ilimitada Deployment Guide
 
 ## Docker Infrastructure
 The application has been containerized using `php:8.2-fpm` and `nginx`.

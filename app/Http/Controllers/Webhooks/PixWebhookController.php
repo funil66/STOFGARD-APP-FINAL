@@ -183,7 +183,7 @@ class PixWebhookController extends Controller
             . "Olá, {$cliente->nome}! 🎉\n"
             . "Recebemos o pagamento do seu orçamento *#{$orcamento->numero}*.\n\n"
             . "Entraremos em contato em breve para agendar o serviço.\n\n"
-            . "_Equipe " . (Configuracao::first()->empresa_nome ?? 'STOFGARD') . "_";
+            . "_Equipe " . (Configuracao::first()->empresa_nome ?? 'AUTONOMIA ILIMITADA') . "_";
 
         SendWhatsAppJob::dispatch($cliente->celular, $mensagem);
     }

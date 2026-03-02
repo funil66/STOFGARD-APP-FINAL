@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Gestão de Cadastros - StofGard">
-    <title>Cadastros | StofGard</title>
+    <meta name="description" content="Gestão de Cadastros - Autonomia Ilimitada">
+    <title>Cadastros | Autonomia Ilimitada</title>
     <link href="/css/app.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 min-h-screen">

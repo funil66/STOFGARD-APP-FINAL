@@ -70,7 +70,7 @@ class GenerateAndSendPdfJob implements ShouldQueue
             // para não bloquear o Job de PDF se o SMTP falhar.
             SendEmailNotificationJob::dispatch(
                 email: $this->sendToEmail,
-                subject: "Orçamento #{$orcamento->numero} - STOFGARD",
+                subject: "Orçamento #{$orcamento->numero} - AUTONOMIA ILIMITADA",
                 body: "Segue em anexo o orçamento #{$orcamento->numero}.",
                 attachmentPath: $path,
             );

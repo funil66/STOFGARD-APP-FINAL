@@ -1,6 +1,6 @@
-# 📖 Manual de Operação STOFGARD
+# 📖 Manual de Operação AUTONOMIA ILIMITADA
 
-Manual completo para operação do sistema de gestão STOFGARD.
+Manual completo para operação do sistema de gestão AUTONOMIA ILIMITADA.
 
 ---
 

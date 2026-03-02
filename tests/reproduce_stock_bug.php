@@ -2,7 +2,7 @@
 
 use App\Models\Estoque;
 use App\Models\OrdemServico;
-use App\Services\StofgardSystem;
+use App\Services\Autonomia IlimitadaSystem;
 use Illuminate\Support\Facades\DB;
 use App\Models\Cadastro;
 use Illuminate\Support\Facades\Log;
@@ -74,7 +74,7 @@ try {
 
     // 5. Finalizar OS
     echo "Finalizando OS...\n";
-    $sistema = app(StofgardSystem::class);
+    $sistema = app(Autonomia IlimitadaSystem::class);
     $sistema->finalizarOS($os);
     echo "[DEBUG] OS Finalizada.\n";
 

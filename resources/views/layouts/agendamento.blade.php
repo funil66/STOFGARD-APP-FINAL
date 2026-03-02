@@ -120,7 +120,7 @@
 
     {{-- Footer --}}
     <footer class="text-center py-8 text-xs text-gray-400">
-        <p>Agendamento seguro powered by <span class="font-medium text-gray-500">Stofgard</span></p>
+        <p>Agendamento seguro powered by <span class="font-medium text-gray-500">Autonomia Ilimitada</span></p>
     </footer>
 
     @livewireScripts

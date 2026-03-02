@@ -1,6 +1,6 @@
-# 🏗️ Arquitetura do Sistema STOFGARD
+# 🏗️ Arquitetura do Sistema AUTONOMIA ILIMITADA
 
-Este documento descreve a arquitetura técnica do sistema de gestão STOFGARD.
+Este documento descreve a arquitetura técnica do sistema de gestão AUTONOMIA ILIMITADA.
 
 ## 📊 Visão Geral da Arquitetura
 

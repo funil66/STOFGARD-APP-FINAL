@@ -69,7 +69,7 @@ class ViewOrcamento extends ViewRecord
                             $descontos = $record->getValorComDescontos($percentualPix);
                             $valorFinal = $descontos['valor_final'];
                             $chavesPix = $config->financeiro_pix_keys ?? [];
-                            $titular = $settingsArray['nome_sistema'] ?? 'Stofgard';
+                            $titular = $settingsArray['nome_sistema'] ?? 'Autonomia Ilimitada';
                             if (is_array($chavesPix)) {
                                 foreach ($chavesPix as $keyItem) {
                                     if ($keyItem['chave'] === $record->pix_chave_selecionada) {
@@ -120,7 +120,7 @@ class ViewOrcamento extends ViewRecord
                         return;
                     }
 
-                    $text = "Olá {$record->cliente->nome}, aqui está o seu orçamento #{$record->id} da Stofgard.\n\nClique para visualizar: {$pdfUrl}";
+                    $text = "Olá {$record->cliente->nome}, aqui está o seu orçamento #{$record->id} da Autonomia Ilimitada.\n\nClique para visualizar: {$pdfUrl}";
 
                     \App\Jobs\SendWhatsAppJob::dispatch($phone, $text, 'default');
 

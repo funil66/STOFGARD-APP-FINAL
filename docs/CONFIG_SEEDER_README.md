@@ -1,13 +1,13 @@
 # ConfigSeed - Seeder de Configurações Personalizadas
 
-Este seeder preserva todas as configurações customizadas do sistema STOFGARD que foram definidas pelo usuário.
+Este seeder preserva todas as configurações customizadas do sistema AUTONOMIA ILIMITADA que foram definidas pelo usuário.
 
 ## 📋 O que o ConfigSeed faz
 
 O seeder contém **todas as configurações necessárias** para restaurar o sistema após um reset da base de dados:
 
 ### 🏢 Dados da Empresa
-- Nome: STOFGARD HIGIENIZAÇÃO E IMPERMEABILIZAÇÃO
+- Nome: AUTONOMIA ILIMITADA HIGIENIZAÇÃO E IMPERMEABILIZAÇÃO
 - CNPJ: 58.794.846/0001-20
 - Telefone: (16) 99753-9698
 - Email: contato@stofgard.com.br

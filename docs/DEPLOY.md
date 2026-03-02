@@ -1,4 +1,4 @@
-# 🚀 Guia de Deploy - STOFGARD
+# 🚀 Guia de Deploy - AUTONOMIA ILIMITADA
 
 Documentação completa para deploy em VPS (Contabo + Ubuntu + Nginx).
 
@@ -20,7 +20,7 @@ Execute como root ou com sudo:
 ```bash
 #!/bin/bash
 # provision-server.sh
-# Provisionamento completo para STOFGARD
+# Provisionamento completo para AUTONOMIA ILIMITADA
 
 set -e
 
@@ -300,7 +300,7 @@ sudo crontab -u www-data -e
 ```
 
 ```cron
-# STOFGARD - Scheduler Laravel
+# AUTONOMIA ILIMITADA - Scheduler Laravel
 * * * * * cd /var/www/stofgard && php artisan schedule:run >> /dev/null 2>&1
 
 # Renovação SSL (mensal)

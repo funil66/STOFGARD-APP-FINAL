@@ -35,7 +35,7 @@ class PixGatewayService
             'success' => true,
             'pix_copia_cola' => '00020101021126580014br.gov.bcb.pix0136suachave@pix.com.br520400005303999540510.005802BR5909SAO PAULO62070503***63041234540500.00',
             'link_visualizacao' => 'https://pix.efi.com/v/simulacao12345',
-            'txid' => 'STOFGARD' . time()
+            'txid' => 'AUTONOMIA ILIMITADA' . time()
         ];
     }
 }

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STOFGARD - O Sistema Definitivo para Autónomos</title>
+    <title>AUTONOMIA ILIMITADA - O Sistema Definitivo para Autónomos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -88,7 +88,7 @@
                 <div
                     class="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl blur opacity-30">
                 </div>
-                <img src="/images/dashboard-reference.png" alt="Ecrã do Sistema STOFGARD"
+                <img src="/images/dashboard-reference.png" alt="Ecrã do Sistema AUTONOMIA ILIMITADA"
                     class="relative rounded-xl shadow-2xl border border-slate-200 w-full bg-slate-900 min-h-[400px] object-cover object-top"
                     onerror="this.src='https://placehold.co/1200x600/1e293b/ffffff?text=Ecrã+do+Dashboard+Aqui'">
             </div>
@@ -256,7 +256,7 @@
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7"></path>
-                            </svg> Sem marca de água STOFGARD nos PDFs</li>
+                            </svg> Sem marca de água AUTONOMIA ILIMITADA nos PDFs</li>
                     </ul>
                     <a href="https://wa.me/5511999999999?text=Quero%20assinar%20o%20plano%20ELITE"
                         class="block w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 text-center font-bold rounded-lg transition"
@@ -281,7 +281,7 @@
             </div>
         </div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 text-sm text-center md:text-left">
-            &copy; {{ date('Y') }} STOFGARD. Todos os direitos reservados.
+            &copy; {{ date('Y') }} AUTONOMIA ILIMITADA. Todos os direitos reservados.
         </div>
     </footer>
 

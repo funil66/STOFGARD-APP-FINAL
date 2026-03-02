@@ -227,7 +227,7 @@ class GarantiaResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions(
-                \App\Support\Filament\StofgardTable::defaultActions(
+                \App\Support\Filament\Autonomia IlimitadaTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,

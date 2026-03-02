@@ -10,7 +10,7 @@ class ConfiguracaoSeeder extends Seeder
     public function run(): void
     {
         $payload = [
-            'empresa_nome' => 'Stofgard - Higienização e Impermeabilização',
+            'empresa_nome' => 'Autonomia Ilimitada - Higienização e Impermeabilização',
             'empresa_cnpj' => '00.000.000/0001-00',
             'empresa_telefone' => '(16) 99999-9999',
             'empresa_email' => 'contato@stofgard.com.br',
@@ -39,7 +39,7 @@ class ConfiguracaoSeeder extends Seeder
             ],
             // Cores para o PDF
             'cores_pdf' => [
-                'primaria' => '#1e3a8a', // Azul Stofgard
+                'primaria' => '#1e3a8a', // Azul Autonomia Ilimitada
                 'secundaria' => '#475569', // Cinza
             ],
 

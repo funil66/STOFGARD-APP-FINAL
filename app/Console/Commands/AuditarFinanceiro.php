@@ -28,7 +28,7 @@ class AuditarFinanceiro extends Command
      */
     public function handle()
     {
-        $this->info('🔍 AUDITORIA DO SISTEMA FINANCEIRO - STOFGARD');
+        $this->info('🔍 AUDITORIA DO SISTEMA FINANCEIRO - AUTONOMIA ILIMITADA');
         $this->info('═══════════════════════════════════════════════════');
         $this->newLine();
 

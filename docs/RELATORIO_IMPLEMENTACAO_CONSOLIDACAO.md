@@ -88,7 +88,7 @@
 
 **Exemplo de saída:**
 ```
-🔍 AUDITORIA DO SISTEMA FINANCEIRO - STOFGARD
+🔍 AUDITORIA DO SISTEMA FINANCEIRO - AUTONOMIA ILIMITADA
 
 1️⃣  Verificando estrutura da tabela financeiros...
    ✅ cadastro_id (integer FK): Sim
@@ -249,6 +249,6 @@ php artisan financeiro:auditar --export
 
 ---
 
-**✅ Implementação Concluída por:** Auditoria Técnica STOFGARD  
+**✅ Implementação Concluída por:** Auditoria Técnica AUTONOMIA ILIMITADA  
 **📅 Data:** 01/02/2026  
 **🔐 Status:** Pronto para execução controlada em produção

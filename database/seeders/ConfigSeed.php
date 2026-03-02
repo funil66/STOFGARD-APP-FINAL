@@ -9,7 +9,7 @@ use Illuminate\Database\Seeder;
 class ConfigSeed extends Seeder
 {
     /**
-     * Seeder das configurações personalizadas do sistema STOFGARD
+     * Seeder das configurações personalizadas do sistema AUTONOMIA ILIMITADA
      * Preserva todas as configurações definidas pelo usuário
      */
     public function run(): void
@@ -48,11 +48,11 @@ class ConfigSeed extends Seeder
             // Informações da Empresa
             [
                 'key' => 'nome_sistema',
-                'value' => 'STOFGARD',
+                'value' => 'AUTONOMIA ILIMITADA',
             ],
             [
                 'key' => 'empresa_nome',
-                'value' => 'STOFGARD HIGIENIZAÇÃO E IMPERMEABILIZAÇÃO',
+                'value' => 'AUTONOMIA ILIMITADA HIGIENIZAÇÃO E IMPERMEABILIZAÇÃO',
             ],
             [
                 'key' => 'empresa_logo',

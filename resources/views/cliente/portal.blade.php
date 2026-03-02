@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal do Cliente — {{ $config?->empresa_nome ?? 'Stofgard' }}</title>
+    <title>Portal do Cliente — {{ $config?->empresa_nome ?? 'Autonomia Ilimitada' }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -42,7 +42,7 @@
                             class="text-white font-bold text-sm">{{ strtoupper(substr($config?->empresa_nome ?? 'S', 0, 1)) }}</span>
                     </div>
                 @endif
-                <span class="font-semibold text-gray-900 text-sm">{{ $config?->empresa_nome ?? 'Stofgard' }}</span>
+                <span class="font-semibold text-gray-900 text-sm">{{ $config?->empresa_nome ?? 'Autonomia Ilimitada' }}</span>
             </div>
             <form action="{{ route('cliente.logout') }}" method="POST">
                 @csrf

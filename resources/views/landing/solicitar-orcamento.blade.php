@@ -4,8 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Solicite um orçamento gratuito para serviços de estofados - StofGard">
-    <title>Solicitar Orçamento | StofGard</title>
+    <meta name="description" content="Solicite um orçamento gratuito para serviços de estofados - Autonomia Ilimitada">
+    <title>Solicitar Orçamento | Autonomia Ilimitada</title>
     <link href="/css/app.css" rel="stylesheet">
 </head>
 
@@ -16,7 +16,7 @@
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
                 {{-- Header --}}
                 <div class="bg-blue-600 p-8 text-center">
-                    <h1 class="text-3xl font-bold text-white mb-2">StofGard</h1>
+                    <h1 class="text-3xl font-bold text-white mb-2">Autonomia Ilimitada</h1>
                     <p class="text-blue-100">Especialistas em Estofados</p>
                 </div>
 
@@ -131,7 +131,7 @@
 
             {{-- Footer --}}
             <p class="text-center text-gray-400 text-xs mt-6">
-                © {{ date('Y') }} StofGard. Todos os direitos reservados.
+                © {{ date('Y') }} Autonomia Ilimitada. Todos os direitos reservados.
             </p>
         </div>
     </div>

@@ -95,7 +95,7 @@
 
     <div class="footer">
         Este documento é um relatório gerencial e não substitui documentos fiscais.<br>
-        Sistema STOFGARD 2026
+        Sistema AUTONOMIA ILIMITADA 2026
     </div>
 
     <!-- FILTROS -->

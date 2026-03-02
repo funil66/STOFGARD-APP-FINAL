@@ -280,7 +280,7 @@
                 if ($logoPath && !file_exists($logoPath)) {
                     $logoPath = storage_path('app/public/' . $logoPath);
                 }
-                $nomeSistema = $config->nome_sistema ?? 'Stofgard';
+                $nomeSistema = $config->nome_sistema ?? 'Autonomia Ilimitada';
             @endphp
             @if($logoPath && file_exists($logoPath))
                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
@@ -312,7 +312,7 @@
             Documento gerado automaticamente pelo sistema de gestão
         </div>
         <div class="footer-sistema">
-            {{ $config->nome_sistema ?? 'Stofgard' }} - Sistema Integrado de Gestão | {{ \Carbon\Carbon::now()->format('d/m/Y H:i') }}
+            {{ $config->nome_sistema ?? 'Autonomia Ilimitada' }} - Sistema Integrado de Gestão | {{ \Carbon\Carbon::now()->format('d/m/Y H:i') }}
         </div>
     </div>
 

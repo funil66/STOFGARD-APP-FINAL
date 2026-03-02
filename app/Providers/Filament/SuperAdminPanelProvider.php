@@ -34,7 +34,7 @@ class SuperAdminPanelProvider extends PanelProvider
             ->id('super-admin')
             ->path('super-admin')
             ->login()
-            ->brandName('Stofgard — Super Admin')
+            ->brandName('Autonomia Ilimitada — Super Admin')
             ->brandLogoHeight('2.5rem')
             ->colors([
                 'primary' => Color::hex('#7c3aed'), // Roxo — distingue do painel principal

@@ -146,7 +146,7 @@ class OrcamentoCalculator
             $chavesPix = $config['financeiro_pix_keys'] ?? [];
 
             // Encontrar titular da chave
-            $titular = $config['nome_sistema'] ?? 'Stofgard';
+            $titular = $config['nome_sistema'] ?? 'Autonomia Ilimitada';
             $cidade = 'Ribeirao Preto';
 
             if (is_array($chavesPix)) {

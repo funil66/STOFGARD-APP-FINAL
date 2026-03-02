@@ -27,7 +27,7 @@ class TenantSeeder extends Seeder
             ['slug' => 'default'],
             [
                 'id' => 1,
-                'name' => 'Stofgard (Padrão)',
+                'name' => 'Autonomia Ilimitada (Padrão)',
                 'plan' => 'pro',
                 'is_active' => true,
                 'settings' => [

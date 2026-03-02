@@ -31,7 +31,7 @@ class Configuracoes extends Page implements HasForms
 
     protected static string $view = 'filament.pages.configuracoes';
 
-    protected static ?string $title = 'Central de Comando Stofgard';
+    protected static ?string $title = 'Central de Comando Autonomia Ilimitada';
 
     protected static ?string $slug = 'configuracoes';
 

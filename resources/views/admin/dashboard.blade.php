@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Dashboard Administrativo - StofGard">
-    <title>Dashboard | StofGard</title>
+    <meta name="description" content="Dashboard Administrativo - Autonomia Ilimitada">
+    <title>Dashboard | Autonomia Ilimitada</title>
     <link href="/css/app.css" rel="stylesheet">
     @livewireStyles
 </head>
@@ -70,7 +70,7 @@
     <footer class="bg-white border-t border-gray-200 mt-auto">
         <div class="max-w-5xl mx-auto px-6 py-4">
             <p class="text-sm text-gray-500 text-center">
-                © {{ date('Y') }} StofGard. Todos os direitos reservados.
+                © {{ date('Y') }} Autonomia Ilimitada. Todos os direitos reservados.
             </p>
         </div>
     </footer>

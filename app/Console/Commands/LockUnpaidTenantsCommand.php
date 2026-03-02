@@ -35,7 +35,7 @@ class LockUnpaidTenantsCommand extends Command
             $this->error("🎯 Headshot: O inquilino {$tenant->id} foi pro saco.");
 
             // Se você tiver o número do admin do tenant, dispara o aviso do luto
-            // $mensagem = "Fala chefe! O acesso ao sistema STOFGARD foi bloqueado por falta de pagamento. Regularize o PIX para religarmos as máquinas.";
+            // $mensagem = "Fala chefe! O acesso ao sistema AUTONOMIA ILIMITADA foi bloqueado por falta de pagamento. Regularize o PIX para religarmos as máquinas.";
             // SendWhatsAppJob::dispatch($tenant->telefone_admin, $mensagem);
         }
 

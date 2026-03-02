@@ -653,7 +653,7 @@ class OrcamentoResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions(
-                \App\Support\Filament\StofgardTable::defaultActions(
+                \App\Support\Filament\Autonomia IlimitadaTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,
@@ -710,7 +710,7 @@ class OrcamentoResource extends Resource
                                 );
                                 $phone = preg_replace('/[^0-9]/', '', $record->cliente?->telefone ?? '');
                                 $nomeCliente = $record->cliente?->nome ?? 'Cliente';
-                                $text = urlencode("Olá {$nomeCliente}, aqui está o seu orçamento #{$record->id} da Stofgard.\n\nClique para visualizar: {$pdfUrl}");
+                                $text = urlencode("Olá {$nomeCliente}, aqui está o seu orçamento #{$record->id} da Autonomia Ilimitada.\n\nClique para visualizar: {$pdfUrl}");
                                 return $phone
                                     ? "https://wa.me/55{$phone}?text={$text}"
                                     : "https://wa.me/?text={$text}";
