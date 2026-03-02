@@ -17,50 +17,78 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Limpa o banco em memória (SQLite/PgSQL) para os testes que usam RefreshDatabase
-        // Se usar sqlite, não precisa do setval, mas por segurança tenta pegar
         $this->setupDefaultTenant();
+    }
+
+    // Hook executado pelo Trait RefreshDatabase logo após "migrate:fresh"
+    protected function afterRefreshingDatabase()
+    {
+        $this->artisan('migrate', [
+            '--path' => 'database/migrations/tenant',
+            '--force' => true,
+        ]);
     }
 
     protected function setupDefaultTenant(): void
     {
+        // Desativando separação em arquivos (banco híbrido in-memory)
+        config([
+            'tenancy.database.managers.sqlite' => null,
+            'tenancy.database.managers.mysql' => null,
+            'tenancy.database.managers.pgsql' => null,
+        ]);
+
+        // O SEGREDO DO SQLITE IN-MEMORY MULTI-TENANT: 
+        // Impedimos que o bootstrapper crie uma NOVA conexão ':memory:' (pois gera banco vazio limpo)
+        $bootstrappers = config('tenancy.bootstrappers');
+        $filtered = array_filter($bootstrappers, fn($b) => $b !== \Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class);
+        config(['tenancy.bootstrappers' => array_values($filtered)]);
+
         if (!\Illuminate\Support\Facades\Schema::hasTable('tenants')) {
-            return;
+            $this->artisan('migrate', [
+                '--path' => ['database/migrations', 'database/migrations/tenant'],
+                '--force' => true
+            ]);
         }
 
         $this->defaultTenant = Tenant::firstOrCreate(
-            ['slug' => 'default'],
+            ['id' => 'foo'],
             [
                 'name' => 'Stofgard Test Tenant',
-                'plan' => 'pro',
                 'is_active' => true,
-                'domain' => 'default.localhost',
+                'data_vencimento' => '2099-12-31',
+                'limite_os_mes' => 9999
             ]
         );
 
-        // Define o tenant ativo para o contexto global (TenantScope)
-        app(TenantContext::class)->set($this->defaultTenant);
+        if ($this->defaultTenant->domains()->count() === 0) {
+            $this->defaultTenant->domains()->create(['domain' => 'localhost']);
+        }
+
+        tenancy()->initialize($this->defaultTenant);
     }
 
     protected function actingAsSuperAdmin(): self
     {
         $user = User::factory()->create([
+            'name' => 'Super Admin',
             'is_admin' => true,
             'is_super_admin' => true,
-            'tenant_id' => $this->defaultTenant->id ?? null,
         ]);
-
         return $this->actingAs($user);
     }
 
     protected function actingAsAdmin(): self
     {
+        if (!\Spatie\Permission\Models\Role::where('name', 'dono')->exists()) {
+            \Spatie\Permission\Models\Role::create(['name' => 'dono', 'guard_name' => 'web']);
+        }
+
         $user = User::factory()->create([
+            'name' => 'Admin test',
             'is_admin' => true,
-            'is_super_admin' => false,
-            'tenant_id' => $this->defaultTenant->id ?? null,
         ]);
+        $user->assignRole('dono');
 
         return $this->actingAs($user);
     }
@@ -69,9 +97,7 @@ abstract class TestCase extends BaseTestCase
     {
         $user = User::factory()->create([
             'is_cliente' => true,
-            'tenant_id' => $this->defaultTenant->id ?? null,
         ]);
-
         return $this->actingAs($user);
     }
 }
