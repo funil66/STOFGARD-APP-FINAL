@@ -63,11 +63,11 @@ class SuperAdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                // Middleware de autorização: somente super admins
-                \App\Http\Middleware\EnsureSuperAdmin::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
+                // Middleware de autorização: somente super admins
+                \App\Http\Middleware\EnsureSuperAdmin::class,
             ]);
     }
 }
