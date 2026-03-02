@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('configuracoes', function (Blueprint $table) {
-            $table->string('empresa_nome')->default('Stofgard');
+            $table->string('empresa_nome')->default('Autonomia Ilimitada');
             $table->string('empresa_cnpj')->nullable();
             $table->string('empresa_telefone')->nullable();
             $table->string('empresa_logo')->nullable();

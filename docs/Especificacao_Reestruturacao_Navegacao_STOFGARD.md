@@ -1,4 +1,4 @@
-# **🔩 Especificação Técnica: Consolidação de Navegação STOFGARD**
+# **🔩 Especificação Técnica: Consolidação de Navegação AUTONOMIA ILIMITADA**
 
 **Autor:** Iron Code (p/ Allisson Sousa)
 

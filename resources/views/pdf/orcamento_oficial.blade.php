@@ -254,10 +254,10 @@
                 @if(!empty($config['empresa_logo']) && file_exists(public_path('storage/' . $config['empresa_logo'])))
                     <img src="{{ asset('storage/' . $config['empresa_logo']) }}" class="logo-img">
                 @else
-                    <h2 class="text-blue" style="margin:0;">{{ $config['empresa_nome'] ?? 'STOFGARD' }}</h2>
+                    <h2 class="text-blue" style="margin:0;">{{ $config['empresa_nome'] ?? 'AUTONOMIA ILIMITADA' }}</h2>
                 @endif
                 <div class="text-slate" style="font-size:9px; margin-top:5px;">
-                    {{ $config['empresa_nome'] ?? 'Stofgard' }}<br>
+                    {{ $config['empresa_nome'] ?? 'Autonomia Ilimitada' }}<br>
                     CNPJ: {{ $config['empresa_cnpj'] ?? '' }}<br>
                     {{ $config['empresa_telefone'] ?? '' }}
                 </div>
@@ -364,7 +364,7 @@
             'img' => $orcamento->pix_qrcode_base64 ?? null,
             'payload' => $orcamento->pix_copia_cola ?? null,
             'txid' => $orcamento->numero ?? 'N/A',
-            'beneficiario' => $config['empresa_nome'] ?? 'Stofgard',
+            'beneficiario' => $config['empresa_nome'] ?? 'Autonomia Ilimitada',
         ];
     @endphp
 

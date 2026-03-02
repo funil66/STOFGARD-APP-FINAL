@@ -32,13 +32,13 @@ class UserSeeder extends Seeder
             [
                 'name' => 'Jaelsa Maria Silva',
                 'email' => 'jaelsa@stofgard.com.br',
-                'password' => Hash::make('Stofgard2026'),
+                'password' => Hash::make('Autonomia Ilimitada2026'),
                 'is_admin' => false,
             ],
             [
                 'name' => 'Raelcia Maria Silva',
                 'email' => 'raelcia@stofgard.com.br',
-                'password' => Hash::make('Stofgard2026'),
+                'password' => Hash::make('Autonomia Ilimitada2026'),
                 'is_admin' => false,
             ],
         ];

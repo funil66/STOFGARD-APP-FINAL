@@ -46,7 +46,7 @@ class GenerateOrcamentoPdf extends Command
         if ($chavePix && $orc->valor_total > 0) {
             $pixData = $pixService->gerarQrCode(
                 $chavePix,
-                \App\Services\ConfiguracaoService::empresa('razao_social', 'Stofgard'),
+                \App\Services\ConfiguracaoService::empresa('razao_social', 'Autonomia Ilimitada'),
                 \App\Services\ConfiguracaoService::empresa('cidade', 'Ribeirao Preto'),
                 $orc->numero ?? 'ORC',
                 $orc->valor_total

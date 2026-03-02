@@ -2,7 +2,7 @@
 
 use App\Models\Cliente;
 use App\Models\Orcamento;
-use App\Services\StofgardSystem;
+use App\Services\Autonomia IlimitadaSystem;
 use App\Services\EstoqueService;
 use App\Models\Financeiro;
 use App\Models\OrdemServico;
@@ -36,7 +36,7 @@ try {
     echo "Orcamento created (ID: {$orc->id}). Approving...\n";
 
     // 2. Approve 
-    $sys = new StofgardSystem(new EstoqueService());
+    $sys = new Autonomia IlimitadaSystem(new EstoqueService());
     $sys->aprovarOrcamento($orc, 1, ["data_servico" => now()->addDays(2), "hora_inicio" => "09:00"]);
 
     $orc->refresh();

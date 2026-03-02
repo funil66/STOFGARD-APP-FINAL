@@ -8,7 +8,7 @@ return new class extends Migration {
     /**
      * Adiciona colunas de controle de acesso do Super Admin.
      *
-     * is_super_admin: TRUE apenas para membros da equipe técnica Stofgard.
+     * is_super_admin: TRUE apenas para membros da equipe técnica Autonomia Ilimitada.
      *   Ativa acesso ao painel /super-admin (SuperAdminPanelProvider).
      *
      * last_login_at: Timestamp do último login para auditoria de tenants.

@@ -79,7 +79,7 @@ class OrcamentoObserver
 
         // Generate PIX
         // Get Company Name/City from Settings
-        $beneficiario = \App\Models\Setting::get('empresa_nome', 'STOFGARD');
+        $beneficiario = \App\Models\Setting::get('empresa_nome', 'AUTONOMIA ILIMITADA');
         $cidade = \App\Models\Setting::get('empresa_cidade', 'SAO PAULO');
 
         $result = $pixService->gerarPix(
@@ -220,7 +220,7 @@ class OrcamentoObserver
         }
 
         $config = Configuracao::first();
-        $nomeEmpresa = $config?->empresa_nome ?? 'Stofgard';
+        $nomeEmpresa = $config?->empresa_nome ?? 'Autonomia Ilimitada';
         $valorFmt = 'R$ ' . number_format($orcamento->valor_total, 2, ',', '.');
 
         if (!empty($pixData['fallback_manual']) && !empty($pixData['pix_copia_cola'])) {

@@ -99,7 +99,7 @@
     <div class="footer">
         <div class="footer-legal">
             Documento gerado automaticamente pelo sistema.<br>
-            <strong>Stofgard Manager</strong> - Gestão Inteligente
+            <strong>Autonomia Ilimitada Manager</strong> - Gestão Inteligente
         </div>
     </div>
 

@@ -29,7 +29,7 @@ class GoogleCalendarService
     protected function getClient(): GoogleClient
     {
         $client = new GoogleClient;
-        $client->setApplicationName('Stofgard App');
+        $client->setApplicationName('Autonomia Ilimitada App');
         $client->setScopes([Calendar::CALENDAR]);
         $client->setAccessType('offline');
         $client->setPrompt('consent');

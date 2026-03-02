@@ -448,7 +448,7 @@ class OrdemServicoResource extends Resource
                     }),
             ])
             ->actions(
-                \App\Support\Filament\StofgardTable::defaultActions(
+                \App\Support\Filament\Autonomia IlimitadaTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,
@@ -544,7 +544,7 @@ class OrdemServicoResource extends Resource
                 )
             )
             ->bulkActions(
-                \App\Support\Filament\StofgardTable::defaultBulkActions([
+                \App\Support\Filament\Autonomia IlimitadaTable::defaultBulkActions([
                     Tables\Actions\BulkAction::make('marcar_agendada')
                         ->label('Marcar como Agendada')
                         ->icon('heroicon-m-calendar')

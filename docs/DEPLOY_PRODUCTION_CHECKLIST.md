@@ -1,4 +1,4 @@
-# 🚀 STOFGARD - Checklist de Deploy em Produção
+# 🚀 AUTONOMIA ILIMITADA - Checklist de Deploy em Produção
 
 **Data:** 5 de fevereiro de 2026  
 **Versão:** 1.0  
@@ -70,7 +70,7 @@
 **Arquivo `.env` no servidor de produção DEVE ter:**
 
 ```bash
-APP_NAME="STOFGARD"
+APP_NAME="AUTONOMIA ILIMITADA"
 APP_ENV=production
 APP_KEY=base64:... # Use: php artisan key:generate
 APP_DEBUG=false
@@ -138,12 +138,12 @@ PIX_CERTIFICATE_PATH=
 ```php
 // Linha 17: senha 'admin' - OK para dev@local
 // Linha 23: senha vem de .env - CONFIGURAR NO SERVIDOR
-// Linhas 28, 33, 38: senha 'Stofgard2026' - TROCAR URGENTE
+// Linhas 28, 33, 38: senha 'Autonomia Ilimitada2026' - TROCAR URGENTE
 ```
 
 **Ação:**
 1. Editar `database/seeders/UserSeeder.php`
-2. Trocar `'Stofgard2026'` por senhas fortes individuais ou variáveis de ambiente
+2. Trocar `'Autonomia Ilimitada2026'` por senhas fortes individuais ou variáveis de ambiente
 3. Após deploy inicial, forçar troca de senha no primeiro login
 
 ### 3. Build de Produção

@@ -17,7 +17,7 @@ use App\Services\FinanceiroService;
 use Filament\Tables;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Table;
-use App\Support\Filament\StofgardTable;
+use App\Support\Filament\Autonomia IlimitadaTable;
 
 class FinanceiroResource extends Resource
 {
@@ -497,7 +497,7 @@ class FinanceiroResource extends Resource
                     ),
             ])
             ->actions(
-                StofgardTable::defaultActions(
+                Autonomia IlimitadaTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,
@@ -606,7 +606,7 @@ class FinanceiroResource extends Resource
                 )
             )
             ->bulkActions(
-                StofgardTable::defaultBulkActions([
+                Autonomia IlimitadaTable::defaultBulkActions([
                     Tables\Actions\BulkAction::make('baixar_selecionados')
                         ->label('Baixar Selecionados')
                         ->icon('heroicon-o-check-circle')

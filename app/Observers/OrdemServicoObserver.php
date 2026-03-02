@@ -18,9 +18,9 @@ class OrdemServicoObserver
     public function created(OrdemServico $os): void
     {
         // Verifica se já existe uma agenda para esta OS
-        // (evita duplicação quando criada via aprovação de orçamento que já lida com a criação de agenda e financeiro no StofgardSystem)
+        // (evita duplicação quando criada via aprovação de orçamento que já lida com a criação de agenda e financeiro no Autonomia IlimitadaSystem)
         if ($os->orcamento_id) {
-            return; // Veio de um orçamento: StofgardSystem/OrdemServicoService já cuidam disso.
+            return; // Veio de um orçamento: Autonomia IlimitadaSystem/OrdemServicoService já cuidam disso.
         }
 
         DB::transaction(function () use ($os) {

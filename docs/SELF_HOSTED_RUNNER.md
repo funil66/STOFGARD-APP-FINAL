@@ -1,4 +1,4 @@
-Self-hosted runner for Laravel Dusk (Stofgard)
+Self-hosted runner for Laravel Dusk (Autonomia Ilimitada)
 ===============================================
 
 Overview

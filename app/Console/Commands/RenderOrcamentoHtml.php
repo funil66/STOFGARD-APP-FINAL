@@ -40,7 +40,7 @@ class RenderOrcamentoHtml extends Command
             $payload = $pixService->gerarPayloadPix(
                 $chavePix,
                 $orc->valor_total,
-                \App\Services\ConfiguracaoService::empresa('razao_social', 'Stofgard'),
+                \App\Services\ConfiguracaoService::empresa('razao_social', 'Autonomia Ilimitada'),
                 \App\Services\ConfiguracaoService::empresa('cidade', 'Ribeirao Preto'),
                 $orc->id
             );

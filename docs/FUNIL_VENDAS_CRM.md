@@ -347,7 +347,7 @@ database/
 
 ---
 
-**Desenvolvido para:** STOFGARD  
+**Desenvolvido para:** AUTONOMIA ILIMITADA  
 **Versão:** 2.0.0  
 **Data:** 05 de Fevereiro de 2026  
 **Status:** ✅ Produção

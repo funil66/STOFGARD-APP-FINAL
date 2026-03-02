@@ -84,7 +84,7 @@ class AsaasService
             'value' => $valor,
             'nextDueDate' => now()->addDays(1)->format('Y-m-d'), // 1º cobrança amanhã
             'cycle' => 'MONTHLY',
-            'description' => "STOFGARD - Plano {$plano}",
+            'description' => "AUTONOMIA ILIMITADA - Plano {$plano}",
             'externalReference' => $plano,
         ]);
 

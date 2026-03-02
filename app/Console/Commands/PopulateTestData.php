@@ -35,7 +35,7 @@ class PopulateTestData extends Command
         }
 
         // Mostrar informações sobre o que será feito
-        $this->info('🚀 Comando para Popular Dados de Teste - STOFGARD');
+        $this->info('🚀 Comando para Popular Dados de Teste - AUTONOMIA ILIMITADA');
         $this->newLine();
         
         $this->warn('⚠️  ATENÇÃO: Este comando irá criar centenas de registros de teste!');

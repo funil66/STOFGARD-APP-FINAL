@@ -8,7 +8,7 @@
                         <path
                             d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                     </svg>
-                    <span class="text-lg font-semibold">Sistema Stofgard 2026</span>
+                    <span class="text-lg font-semibold">Sistema Autonomia Ilimitada 2026</span>
                 </div>
 
                 <div class="flex items-center gap-3 mt-3">
@@ -222,7 +222,7 @@
 
             <div class="prose dark:prose-invert max-w-none">
                 <p class="text-gray-700 dark:text-gray-300">
-                    O <strong>Sistema Stofgard 2026</strong> é uma solução completa para gestão de empresas de
+                    O <strong>Sistema Autonomia Ilimitada 2026</strong> é uma solução completa para gestão de empresas de
                     impermeabilização e higienização.
                     Desenvolvido com tecnologias modernas (Laravel + Filament), oferece controle total sobre clientes,
                     ordens de serviço,
@@ -235,7 +235,7 @@
                         🚀 Desenvolvido em Janeiro de 2026
                     </p>
                     <p class="text-sm text-primary-800 dark:text-primary-200">
-                        Todos os direitos reservados © Stofgard 2026
+                        Todos os direitos reservados © Autonomia Ilimitada 2026
                     </p>
                 </div>
             </div>

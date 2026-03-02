@@ -14,7 +14,7 @@ use App\Models\Orcamento;
 use App\Models\OrcamentoItem;
 use App\Models\OrdemServico;
 use App\Models\User;
-use App\Services\StofgardSystem;
+use App\Services\Autonomia IlimitadaSystem;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -38,7 +38,7 @@ class VerifySystemIntegrity extends Command
     /**
      * Execute the console command.
      */
-    public function handle(StofgardSystem $system)
+    public function handle(Autonomia IlimitadaSystem $system)
     {
         $this->info('🚀 Starting System Integrity Verification...');
 
@@ -96,7 +96,7 @@ class VerifySystemIntegrity extends Command
             $this->assert($orcamento->numero_orcamento !== null, 'Orcamento generated number (Observer works)');
             $this->info("Orcamento ID: {$orcamento->id} / Number: {$orcamento->numero_orcamento}");
 
-            // 3. Approve Orcamento (Triggers StofgardSystem)
+            // 3. Approve Orcamento (Triggers Autonomia IlimitadaSystem)
             $this->info('Testing Step 2: Orcamento Approval -> OS Generation...');
 
             // Calling service
@@ -138,7 +138,7 @@ class VerifySystemIntegrity extends Command
 
             $this->assert($receita->status === 'pago', 'Revenue marked as Paid');
             // Assuming status transitions: Aberta -> Em Execucao
-            // Note: StofgardSystem::confirmarPagamento sets status to 'em_execucao' if OS exists
+            // Note: Autonomia IlimitadaSystem::confirmarPagamento sets status to 'em_execucao' if OS exists
             $this->assert($os->status === 'em_execucao', "OS status advanced to In Execution (Current: {$os->status})");
 
             // 5. Finalize OS

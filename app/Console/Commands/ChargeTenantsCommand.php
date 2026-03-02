@@ -26,7 +26,7 @@ class ChargeTenantsCommand extends Command
             // TODO: No futuro, criar um campo de telefone_admin no Tenant. Vamos usar um placeholder.
             $telefoneDono = "5511999999999";
 
-            $mensagem = "Fala mestre! Aqui é do sistema STOFGARD. 🚀\n\n";
+            $mensagem = "Fala mestre! Aqui é do sistema AUTONOMIA ILIMITADA. 🚀\n\n";
             $mensagem .= "Sua mensalidade vence hoje. Pra não ter o sistema bloqueado e a galera ficar sem emitir Orçamento, faz o PIX da mensalidade:\n\n";
             $mensagem .= "Valor: R$ 150,00\n";
             $mensagem .= "Chave PIX (CNPJ): 12.345.678/0001-99\n\n";

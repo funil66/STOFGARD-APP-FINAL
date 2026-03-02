@@ -29,7 +29,7 @@ class NotificationSeeder extends Seeder
                     'data' => json_encode([
                         'type' => 'success',
                         'title' => 'Sistema iniciado com sucesso!',
-                        'message' => 'O sistema STOFGARD foi configurado e está pronto para uso.',
+                        'message' => 'O sistema AUTONOMIA ILIMITADA foi configurado e está pronto para uso.',
                         'module' => 'sistema',
                     ]),
                     'read_at' => null,
@@ -43,7 +43,7 @@ class NotificationSeeder extends Seeder
                     'notifiable_id' => $admin->id,
                     'data' => json_encode([
                         'type' => 'info',
-                        'title' => 'Bem-vindo ao STOFGARD 2026',
+                        'title' => 'Bem-vindo ao AUTONOMIA ILIMITADA 2026',
                         'message' => 'Configure os módulos e comece a gerenciar seus clientes e ordens de serviço.',
                         'module' => 'dashboard',
                     ]),

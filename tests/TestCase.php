@@ -54,7 +54,7 @@ abstract class TestCase extends BaseTestCase
         $this->defaultTenant = Tenant::firstOrCreate(
             ['id' => 'foo'],
             [
-                'name' => 'Stofgard Test Tenant',
+                'name' => 'Autonomia Ilimitada Test Tenant',
                 'is_active' => true,
                 'data_vencimento' => '2099-12-31',
                 'limite_os_mes' => 9999

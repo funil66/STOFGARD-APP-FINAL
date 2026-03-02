@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Editar Cadastro - StofGard">
-    <title>Editar: {{ $item->nome ?? 'Cadastro' }} | StofGard</title>
+    <meta name="description" content="Editar Cadastro - Autonomia Ilimitada">
+    <title>Editar: {{ $item->nome ?? 'Cadastro' }} | Autonomia Ilimitada</title>
     <link href="/css/app.css" rel="stylesheet">
     @livewireStyles
 </head>

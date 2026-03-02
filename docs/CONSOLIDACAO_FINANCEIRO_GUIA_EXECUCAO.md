@@ -1,7 +1,7 @@
 # 🚀 Guia de Execução - Consolidação do Sistema Financeiro
 
 **Data:** 01/02/2026  
-**Autor:** Auditoria Técnica STOFGARD  
+**Autor:** Auditoria Técnica AUTONOMIA ILIMITADA  
 **Status:** ⚠️ **CRÍTICO - REQUER BACKUP ANTES DE EXECUTAR**
 
 ---
@@ -61,7 +61,7 @@ Recomendado: Execute **PRIMEIRO** em ambiente de desenvolvimento/staging com có
 #### Passo 1.1: Rodar Migrations Seguras
 
 ```bash
-cd "/home/funil/Área de trabalho/STOFGARD/APP STOFGARD 2026"
+cd "/home/funil/Área de trabalho/AUTONOMIA ILIMITADA/APP AUTONOMIA ILIMITADA 2026"
 
 # Executar migrations de índices e auditoria
 php artisan migrate --path=database/migrations/2026_02_01_062306_add_composite_indexes_to_financeiros_table.php
@@ -418,4 +418,4 @@ DB::table('financeiros')->chunk(1000, function($rows) {
 ---
 
 **✅ Documento Gerado em:** 01/02/2026  
-**🔒 Confidencial:** Uso Interno STOFGARD
+**🔒 Confidencial:** Uso Interno AUTONOMIA ILIMITADA
