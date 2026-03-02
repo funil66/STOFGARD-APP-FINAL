@@ -6,7 +6,7 @@ use Filament\Tables;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Support\Colors\Color;
 
-class Autonomia IlimitadaTable
+class StofgardTable
 {
     /**
      * Retorna o padrão de ações para todas as tabelas do sistema.

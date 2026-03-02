@@ -653,7 +653,7 @@ class OrcamentoResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions(
-                \App\Support\Filament\Autonomia IlimitadaTable::defaultActions(
+                \App\Support\Filament\StofgardTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,

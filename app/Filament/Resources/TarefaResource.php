@@ -154,7 +154,7 @@ class TarefaResource extends Resource
                     ->relationship('responsavel', 'name'),
             ])
             ->actions(
-                \App\Support\Filament\Autonomia IlimitadaTable::defaultActions(
+                \App\Support\Filament\StofgardTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,
@@ -170,7 +170,7 @@ class TarefaResource extends Resource
                 )
             )
             ->bulkActions(
-                \App\Support\Filament\Autonomia IlimitadaTable::defaultBulkActions()
+                \App\Support\Filament\StofgardTable::defaultBulkActions()
             );
     }
 
