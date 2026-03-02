@@ -16,7 +16,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use App\Support\Filament\Autonomia IlimitadaTable;
+use App\Support\Filament\StofgardTable;
 
 class AgendaResource extends Resource
 {
@@ -389,7 +389,7 @@ class AgendaResource extends Resource
                     }),
             ])
             ->actions(
-                Autonomia IlimitadaTable::defaultActions(
+                StofgardTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,
@@ -400,8 +400,8 @@ class AgendaResource extends Resource
                             ->tooltip('Marcar Concluído')
                             ->icon('heroicon-o-check-circle')
                             ->color('success')
-                            // ->iconButton() // Removed iconButton to fit better in dropdown or keep if preferred, but Autonomia IlimitadaTable handles basic ones. Custom ones can stay as is.
-                            // Actually, Autonomia IlimitadaTable merges extraActions. If we want them in the dropdown, we just pass them.
+                            // ->iconButton() // Removed iconButton to fit better in dropdown or keep if preferred, but StofgardTable handles basic ones. Custom ones can stay as is.
+                            // Actually, StofgardTable merges extraActions. If we want them in the dropdown, we just pass them.
                             ->visible(fn(Agenda $record) => !in_array($record->status, ['concluido', 'cancelado']))
                             ->requiresConfirmation()
                             ->action(function (Agenda $record) {
@@ -432,7 +432,7 @@ class AgendaResource extends Resource
                 )
             )
             ->bulkActions(
-                Autonomia IlimitadaTable::defaultBulkActions([
+                StofgardTable::defaultBulkActions([
                     Tables\Actions\BulkAction::make('marcar_concluido')
                         ->label('Marcar como Concluído')
                         ->icon('heroicon-o-check-circle')

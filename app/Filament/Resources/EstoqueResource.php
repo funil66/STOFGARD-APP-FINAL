@@ -155,7 +155,7 @@ class EstoqueResource extends Resource
             ])
             ->defaultSort('item')
             ->actions(
-                \App\Support\Filament\Autonomia IlimitadaTable::defaultActions(
+                \App\Support\Filament\StofgardTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,
@@ -202,7 +202,7 @@ class EstoqueResource extends Resource
                 )
             )
             ->bulkActions(
-                \App\Support\Filament\Autonomia IlimitadaTable::defaultBulkActions()
+                \App\Support\Filament\StofgardTable::defaultBulkActions()
             );
     }
 
