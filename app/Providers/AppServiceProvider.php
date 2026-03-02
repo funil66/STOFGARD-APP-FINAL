@@ -57,10 +57,19 @@ class AppServiceProvider extends ServiceProvider
 
         // O "Modo Deus". Se retornar true aqui, ignora as Policies.
         Gate::before(function (\App\Models\User $user, string $ability) {
+            if ($user->is_super_admin) {
+                return true;
+            }
             if ($user->is_admin) {
                 return true;
             }
         });
+
+        // HACK DE TESTE: Para o SQLite in-memory funcionar com o RefreshDatabase do Laravel,
+        // o framework precisa enxergar as migrations do Inquilino como se fossem nativas.
+        if ($this->app->environment('testing')) {
+            $this->loadMigrationsFrom(database_path('migrations/tenant'));
+        }
         // Allow environment overrides for Node & PDF generator script during tests/CI.
         // Tests call putenv('NODE_BINARY=...') / putenv('PDF_GENERATOR_SCRIPT=...') and
         // some parts of the app read config('app.node_binary') -- ensure the runtime

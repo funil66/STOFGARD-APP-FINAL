@@ -238,7 +238,11 @@ class Cadastro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Aud
     protected static function booted(): void
     {
         static::creating(function ($model) {
-            $model->pdf_mostrar_documentos = $model->pdf_mostrar_documentos ?? \App\Models\Setting::get('pdf_mostrar_documentos_global', true);
+            if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+                $model->pdf_mostrar_documentos = $model->pdf_mostrar_documentos ?? \App\Models\Setting::get('pdf_mostrar_documentos_global', true);
+            } else {
+                $model->pdf_mostrar_documentos = $model->pdf_mostrar_documentos ?? true;
+            }
         });
     }
 }
