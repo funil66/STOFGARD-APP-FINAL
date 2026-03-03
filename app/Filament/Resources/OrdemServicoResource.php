@@ -213,8 +213,27 @@ class OrdemServicoResource extends Resource
                         Tab::make('Evidências')
                             ->icon('heroicon-o-camera')
                             ->schema([
-                                SpatieMediaLibraryFileUpload::make('fotos_antes')->label('Antes')->multiple()->disk('public')->directory('os-fotos'),
-                                SpatieMediaLibraryFileUpload::make('fotos_depois')->label('Depois')->multiple()->disk('public')->directory('os-fotos'),
+                                SpatieMediaLibraryFileUpload::make('fotos_antes')
+                                    ->label('Antes')
+                                    ->multiple()
+                                    ->disk('public')
+                                    ->directory('os-fotos')
+                                    ->imageResizeMode('contain')
+                                    ->imageResizeTargetWidth('1200')
+                                    ->imageResizeTargetHeight('1200')
+                                    ->maxFiles(fn() => tenancy()->tenant?->plan === 'START' ? 3 : 20)
+                                    ->helperText(fn() => tenancy()->tenant?->plan === 'START' ? 'Limite: 3 fotos por OS. Faça upgrade para o plano PRO para uploads ilimitados.' : 'Upload de fotos de evidência.'),
+
+                                SpatieMediaLibraryFileUpload::make('fotos_depois')
+                                    ->label('Depois')
+                                    ->multiple()
+                                    ->disk('public')
+                                    ->directory('os-fotos')
+                                    ->imageResizeMode('contain')
+                                    ->imageResizeTargetWidth('1200')
+                                    ->imageResizeTargetHeight('1200')
+                                    ->maxFiles(fn() => tenancy()->tenant?->plan === 'START' ? 3 : 20)
+                                    ->helperText(fn() => tenancy()->tenant?->plan === 'START' ? 'Limite: 3 fotos por OS. Faça upgrade para o plano PRO para uploads ilimitados.' : 'Upload de fotos de evidência.'),
                             ]),
 
                         // === FASE 2: FORMULÁRIO DINÂMICO ===

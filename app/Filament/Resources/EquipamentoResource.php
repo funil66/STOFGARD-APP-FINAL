@@ -284,4 +284,9 @@ class EquipamentoResource extends Resource
             'view' => Pages\ViewEquipamento::route('/{record}'),
         ];
     }
+
+    public static function canAccess(): bool
+    {
+        return !auth()->user()?->isFuncionario();
+    }
 }

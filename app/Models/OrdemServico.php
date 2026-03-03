@@ -14,6 +14,7 @@ use App\Traits\HasAuditTrail;
 class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Auditable
 {
     use HasFactory, SoftDeletes, HasArquivos, HasAuditTrail, \App\Traits\HasLegalSignature, \OwenIt\Auditing\Auditable;
+    use \Spatie\MediaLibrary\InteractsWithMedia;
 
     protected static function boot()
     {
@@ -260,5 +261,37 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
 
             return $ano . '.' . str_pad($novaSequencia, 4, '0', STR_PAD_LEFT);
         });
+    }
+
+    /**
+     * Define the media collections and optimization rules.
+     */
+    public function registerMediaCollections(): void
+    {
+        // Limitando o tamanho original que fica no disco para economizar espaço
+        $this->addMediaCollection('fotos_antes')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])
+            ->useDisk('public');
+
+        $this->addMediaCollection('fotos_depois')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])
+            ->useDisk('public');
+    }
+
+    /**
+     * Define the conversions for images (resizing to max 1200px width).
+     */
+    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(300)
+            ->height(300)
+            ->performOnCollections('fotos_antes', 'fotos_depois')
+            ->nonQueued(); // Fast generation for filament previews
+
+        $this->addMediaConversion('optimized')
+            ->width(1200)
+            ->performOnCollections('fotos_antes', 'fotos_depois')
+            ->nonQueued();
     }
 }

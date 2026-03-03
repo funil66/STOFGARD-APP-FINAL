@@ -686,7 +686,49 @@ class OrcamentoResource extends Resource
 
                                 \Filament\Notifications\Notification::make()
                                     ->title('🚀 Fogo na Bomba!')
-                                    ->body('O PDF está sendo gerado no servidor. Continue trabalhando, avisaremos quando estiver pronto.')
+                                    ->body('O PDF do Orçamento está sendo gerado no servidor. Avisaremos quando estiver pronto.')
+                                    ->success()
+                                    ->send();
+                            }),
+
+                        Tables\Actions\Action::make('gerar_contrato_background')
+                            ->label('Gerar Contrato (Fila)')
+                            ->icon('heroicon-o-scale')
+                            ->color('info')
+                            ->requiresConfirmation()
+                            ->modalHeading('Gerar Contrato Jurídico')
+                            ->modalDescription('O contrato será gerado usando o layout e os textos definidos em Configurações. Deseja iniciar a geração em background?')
+                            ->visible(fn() => in_array(tenancy()->tenant?->plan, ['PRO', 'ELITE']))
+                            ->action(function (Orcamento $record) {
+                                $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
+                                $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
+                                foreach ($jsonFields as $k) {
+                                    if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
+                                        $settingsArray[$k] = json_decode($settingsArray[$k], true);
+                                    }
+                                }
+                                $config = (object) $settingsArray;
+                                // Adiciona as configurações do tenant
+                                $tenantConfig = \App\Models\Configuracao::first();
+                                $config->empresa_logo = $tenantConfig->empresa_logo ?? null;
+                                $config->empresa_nome = $tenantConfig->empresa_nome ?? null;
+                                $config->empresa_cnpj = $tenantConfig->empresa_cnpj ?? null;
+                                $config->cores_pdf = $tenantConfig->cores_pdf ?? ['primaria' => '#2563eb'];
+                                $config->texto_contrato_padrao = $tenantConfig->texto_contrato_padrao ?? null;
+                                $config->termos_garantia = $tenantConfig->termos_garantia ?? null;
+
+                                $htmlContent = view('pdf.contrato', ['orcamento' => $record, 'config' => $config])->render();
+
+                                \App\Jobs\ProcessPdfJob::dispatch(
+                                    $record->id,
+                                    'contrato',
+                                    auth()->id(),
+                                    $htmlContent
+                                );
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title('⚖️ A Lei é Dura, Mas é a Lei')
+                                    ->body('O Contrato está sendo gerado em background. Avisaremos assim que o PDF estiver pronto.')
                                     ->success()
                                     ->send();
                             }),
@@ -696,26 +738,75 @@ class OrcamentoResource extends Resource
 
                         // #5: Enviar WhatsApp direto da lista
 
-                        // #5: Enviar WhatsApp direto da lista
-                        Tables\Actions\Action::make('whatsapp')
-                            ->label('WhatsApp')
+                        // #5: Enviar WhatsApp com Script via Evolution API
+                        Tables\Actions\Action::make('whatsapp_evolution')
+                            ->label('WhatsApp (Scripts)')
                             ->icon('heroicon-o-chat-bubble-left-right')
                             ->color('success')
-                            ->tooltip('Enviar por WhatsApp')
-                            ->url(function (Orcamento $record) {
-                                $pdfUrl = \Illuminate\Support\Facades\URL::signedRoute(
-                                    'orcamento.public_stream',
-                                    ['orcamento' => $record->id],
-                                    now()->addDays(7)
-                                );
+                            ->tooltip('Disparar Zap via Evolution API')
+                            ->form([
+                                Forms\Components\Select::make('script')
+                                    ->label('Escolha um Script de Vendas')
+                                    ->options([
+                                        'cobranca' => 'Agitar Fechamento (Cobrança)',
+                                        'promocao' => 'Desconto de Oportunidade',
+                                        'vencido' => 'Orçamento Expirando',
+                                        'personalizado' => 'Personalizado',
+                                    ])
+                                    ->default('cobranca')
+                                    ->live()
+                                    ->afterStateUpdated(function (Forms\Set $set, $state, Orcamento $record) {
+                                        $nomeCliente = $record->cliente?->nome ?? 'Cliente';
+                                        $linkPdf = \Illuminate\Support\Facades\URL::signedRoute(
+                                            'orcamento.public_stream',
+                                            ['orcamento' => $record->id],
+                                            now()->addDays(7)
+                                        );
+
+                                        $textos = [
+                                            'cobranca' => "Olá {$nomeCliente}, tudo bem? Aqui é a equipe da " . ($record->loja->nome ?? 'Autonomia Ilimitada') . "!\n\nTe mandei um orçamento e queria saber se você conseguiu analisar a nossa proposta. Podemos fechar?\n\n📄 Veja o seu orçamento:\n{$linkPdf}",
+                                            'promocao' => "E aí {$nomeCliente}, tudo joia? Tenho uma boa notícia hoje.\n\nSe a gente fechar esse serviço do orçamento #{$record->id} hoje, consigo te dar um desconto especial ou uma condição melhor.\nVamos nessa?\n\n📄 Confira sua proposta aqui:\n{$linkPdf}",
+                                            'vencido' => "Oi {$nomeCliente}! Seu orçamento conosco está prestes a expirar. Como os materiais variam bastante de preço, se não fecharmos logo o valor pode subir na próxima semana.\n\nAinda faz sentido pra você organizar isso?\n\n📄 Lembrando que o seu link é este:\n{$linkPdf}",
+                                            'personalizado' => "Olá {$nomeCliente}, segue o orçamento: \n\n{$linkPdf}"
+                                        ];
+
+                                        $set('mensagem', $textos[$state] ?? $textos['personalizado']);
+                                    }),
+
+                                Forms\Components\Textarea::make('mensagem')
+                                    ->label('Mensagem a Enviar')
+                                    ->rows(8)
+                                    ->required()
+                                    ->default(function (Orcamento $record) {
+                                        $nomeCliente = $record->cliente?->nome ?? 'Cliente';
+                                        $linkPdf = \Illuminate\Support\Facades\URL::signedRoute(
+                                            'orcamento.public_stream',
+                                            ['orcamento' => $record->id],
+                                            now()->addDays(7)
+                                        );
+                                        return "Olá {$nomeCliente}, tudo bem? Aqui é a equipe da " . ($record->loja->nome ?? 'nossa empresa') . "!\n\nTe mandei um orçamento e queria saber se você conseguiu analisar a nossa proposta. Podemos fechar?\n\n📄 Veja o seu orçamento:\n{$linkPdf}";
+                                    }),
+                            ])
+                            ->action(function (array $data, Orcamento $record) {
                                 $phone = preg_replace('/[^0-9]/', '', $record->cliente?->telefone ?? '');
-                                $nomeCliente = $record->cliente?->nome ?? 'Cliente';
-                                $text = urlencode("Olá {$nomeCliente}, aqui está o seu orçamento #{$record->id} da Autonomia Ilimitada.\n\nClique para visualizar: {$pdfUrl}");
-                                return $phone
-                                    ? "https://wa.me/55{$phone}?text={$text}"
-                                    : "https://wa.me/?text={$text}";
-                            })
-                            ->openUrlInNewTab(),
+
+                                if (empty($phone) || strlen($phone) < 10) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Telefone Inválido')
+                                        ->body('O cliente precisa ter um número de WhatsApp cadastrado corretamente.')
+                                        ->danger()
+                                        ->send();
+                                    return;
+                                }
+
+                                \App\Jobs\SendWhatsAppJob::dispatch($phone, $data['mensagem'], tenancy()->tenant?->slug ?? 'default');
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Zap a caminho!')
+                                    ->body("O script de vendas foi jogado na fila da Evolution para {$phone}!")
+                                    ->success()
+                                    ->send();
+                            }),
 
                         // #6a: Editar Valor Final direto da lista
                         Tables\Actions\Action::make('editar_valor')
@@ -770,5 +861,10 @@ class OrcamentoResource extends Resource
             'edit' => Pages\EditOrcamento::route('/{record}/edit'),
             'view' => Pages\ViewOrcamento::route('/{record}'),
         ];
+    }
+
+    public static function canAccess(): bool
+    {
+        return !auth()->user()?->isFuncionario();
     }
 }

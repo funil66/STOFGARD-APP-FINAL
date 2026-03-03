@@ -246,4 +246,9 @@ class FormularioDinamicoResource extends Resource
             'edit' => \App\Filament\Resources\FormularioDinamicoResource\Pages\EditFormularioDinamico::route('/{record}/edit'),
         ];
     }
+
+    public static function canAccess(): bool
+    {
+        return !auth()->user()?->isFuncionario();
+    }
 }

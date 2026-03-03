@@ -64,6 +64,16 @@ if (class_exists(\App\Console\Commands\IronCheck::class)) {
         ->description('Verificação de integridade do sistema');
 }
 
+// 🎯 FASE 3: A MÁQUINA DE RETENÇÃO
+// Roda toda manhã para buscar clientes de meses atrás e avisar tenants sobre manutenção
+Schedule::command('cofre:retencao-preditiva --meses=6')
+    ->dailyAt('09:30')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->runInBackground()
+    ->description('A Máquina de Retenção (Manutenção Preditiva) - Pro/Elite');
+
 /*
 |--------------------------------------------------------------------------
 | 💰 Fase 1 — Billing Engine

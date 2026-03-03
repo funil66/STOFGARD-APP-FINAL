@@ -317,4 +317,9 @@ class ProdutoResource extends Resource
             'view' => Pages\ViewProduto::route('/{record}'),
         ];
     }
+
+    public static function canAccess(): bool
+    {
+        return !auth()->user()?->isFuncionario();
+    }
 }

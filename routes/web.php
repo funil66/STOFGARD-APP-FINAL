@@ -22,6 +22,11 @@ Route::view('/', 'welcome');
 // Rota de login (redireciona para Filament)
 Route::redirect('/login', '/admin/login')->name('login');
 
+// --- FASE 1: VITRINE PÚBLICA (Link na Bio) ---
+// URL: stofgard.com.br/v/{slug-do-tenant}
+Route::get('/v/{slug}', [\App\Http\Controllers\PublicProfileController::class, 'show'])
+    ->name('tenant.profile');
+
 // --- FASE 2: AGENDAMENTO PÚBLICO (Clone Calendly) ---
 // URL: stofgard.com.br/agendar/{slug-do-tenant}
 Route::prefix('agendar')->name('agendamento.')->group(function () {

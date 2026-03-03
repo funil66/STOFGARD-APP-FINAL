@@ -300,4 +300,9 @@ class CategoriaResource extends Resource
             'view' => Pages\ViewCategoria::route('/{record}'),
         ];
     }
+
+    public static function canAccess(): bool
+    {
+        return !auth()->user()?->isFuncionario();
+    }
 }
