@@ -27,58 +27,47 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
-            ->path('admin')
+            ->path('portal')
             ->login()
-            ->brandName('Autonomia Ilimitada Manager')
+            ->brandName('STOFGARD')
             ->brandLogo(asset('images/logo.png'))
             ->brandLogoHeight('3rem')
             ->favicon(asset('images/logo.png'))
             ->sidebarCollapsibleOnDesktop(false)
-            ->navigationItems([
-                \Filament\Navigation\NavigationItem::make('Site p/ Clientes')
-                    ->url('/solicitar-orcamento', shouldOpenInNewTab: true)
-                    ->icon('heroicon-o-globe-alt')
-                    ->group('Comercial')
-                    ->sort(99),
-            ])
-            ->navigationGroups([
-                \Filament\Navigation\NavigationGroup::make()
-                    ->label('Comercial')
-                    ->icon('heroicon-o-shopping-bag')
-                    ->collapsed(false),
-                \Filament\Navigation\NavigationGroup::make()
-                    ->label('Operacional')
-                    ->icon('heroicon-o-wrench-screwdriver')
-                    ->collapsed(false),
-                \Filament\Navigation\NavigationGroup::make()
-                    ->label('Financeiro')
-                    ->icon('heroicon-o-banknotes')
-                    ->collapsed(true),
-                \Filament\Navigation\NavigationGroup::make()
-                    ->label('Configurações')
-                    ->icon('heroicon-o-cog-6-tooth')
-                    ->collapsed(true),
-            ])
             ->colors([
-                'primary' => Color::hex('#2563eb'), // Azul royal do logo Autonomia Ilimitada
-                'secondary' => Color::hex('#06b6d4'), // Azul ciano do logo
-                'gray' => Color::hex('#64748b'), // Cinza metálico do logo
-
-                // Cores para ações (dark mode compatible)
-                'success' => Color::hex('#10b981'), // Verde para PDF, Receber, Baixar
-                'warning' => Color::hex('#f59e0b'), // Amarelo/Laranja para Editar
-                'danger' => Color::hex('#ef4444'), // Vermelho para Excluir
-                'info' => Color::hex('#3b82f6'), // Azul para Ver
+                'primary' => Color::Emerald,
+                'danger' => Color::Rose,
+                'info' => Color::Blue,
+                'warning' => Color::Amber,
             ])
             ->font('Inter')
+            ->navigationGroups([
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('Comercial & Vendas')
+                    ->icon('heroicon-o-currency-dollar'),
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('Operação')
+                    ->icon('heroicon-o-wrench-screwdriver'),
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('Financeiro')
+                    ->icon('heroicon-o-banknotes'),
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('Cadastros')
+                    ->icon('heroicon-o-users'),
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('Gestão & Configurações')
+                    ->icon('heroicon-o-cog-6-tooth'),
+            ])
             ->maxContentWidth('full')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 \Filament\Pages\Dashboard::class,
             ])
+            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                \App\Filament\Widgets\DashboardShortcutsWidget::class, // Atalhos + Clima + Saudação
+                Widgets\AccountWidget::class,
+                \App\Filament\Widgets\DashboardShortcutsWidget::class,
             ])
             ->plugins([
                 FilamentFullCalendarPlugin::make(),
@@ -98,7 +87,6 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-                \App\Http\Middleware\EnsureSuperAdmin::class, // 🛡️ BLINDAGEM IRON CODE: Apenas o Super Admin passa daqui
             ])
             ->renderHook(
                 PanelsRenderHook::HEAD_START,

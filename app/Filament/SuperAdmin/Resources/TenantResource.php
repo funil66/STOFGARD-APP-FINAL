@@ -265,22 +265,13 @@ class TenantResource extends Resource
                     }),
 
                 // Impersonate (Acessar a conta)
-                Tables\Actions\Action::make('acessar_conta')
-                    ->label('Login Mágico')
+                Tables\Actions\Action::make('impersonate')
+                    ->label('Logar como Inquilino')
                     ->icon('heroicon-o-arrow-right-on-rectangle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Acessar Painel do Inquilino')
-                    ->modalDescription('Você fará login automaticamente como o proprietário deste tenant e será redirecionado para o painel de administração.')
-                    ->action(function (Tenant $record) {
-                        $user = \App\Models\User::where('tenant_id', $record->id)->first();
-                        if ($user) {
-                            \Illuminate\Support\Facades\Auth::login($user);
-                            return redirect('/admin');
-                        } else {
-                            Notification::make()->title('Este inquilino não possui nenhum usuário cadastrado.')->danger()->send();
-                        }
-                    }),
+                    ->color('warning')
+                    ->url(fn(Tenant $record) => "http://{$record->domains->first()?->domain}/portal")
+                    ->openUrlInNewTab()
+                    ->tooltip('Cuidado: Qualquer alteração será feita no banco de dados real do cliente.'),
 
                 // Iniciar assinatura no Asaas
                 Tables\Actions\Action::make('iniciar_assinatura')
