@@ -23,6 +23,8 @@ class OrcamentoResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-plus';
 
+    protected static ?string $navigationGroup = 'Comercial';
+
     protected static ?string $label = 'Orçamento';
 
     public static function form(Form $form): Form

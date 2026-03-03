@@ -264,6 +264,24 @@ class TenantResource extends Resource
                         Notification::make()->title('Tenant suspenso.')->warning()->send();
                     }),
 
+                // Impersonate (Acessar a conta)
+                Tables\Actions\Action::make('acessar_conta')
+                    ->label('Login Mágico')
+                    ->icon('heroicon-o-arrow-right-on-rectangle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Acessar Painel do Inquilino')
+                    ->modalDescription('Você fará login automaticamente como o proprietário deste tenant e será redirecionado para o painel de administração.')
+                    ->action(function (Tenant $record) {
+                        $user = \App\Models\User::where('tenant_id', $record->id)->first();
+                        if ($user) {
+                            \Illuminate\Support\Facades\Auth::login($user);
+                            return redirect('/admin');
+                        } else {
+                            Notification::make()->title('Este inquilino não possui nenhum usuário cadastrado.')->danger()->send();
+                        }
+                    }),
+
                 // Iniciar assinatura no Asaas
                 Tables\Actions\Action::make('iniciar_assinatura')
                     ->label('Iniciar Assinatura (Asaas)')

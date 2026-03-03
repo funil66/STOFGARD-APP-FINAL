@@ -53,7 +53,9 @@ class SuperAdminPanelProvider extends PanelProvider
             ->pages([
                 \App\Filament\SuperAdmin\Pages\SuperAdminDashboard::class,
             ])
-            ->widgets([])
+            ->widgets([
+                \App\Filament\SuperAdmin\Widgets\SaaSMrrWidget::class,
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

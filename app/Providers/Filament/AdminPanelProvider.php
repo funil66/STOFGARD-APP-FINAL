@@ -41,6 +41,24 @@ class AdminPanelProvider extends PanelProvider
                     ->group('Comercial')
                     ->sort(99),
             ])
+            ->navigationGroups([
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('Comercial')
+                    ->icon('heroicon-o-shopping-bag')
+                    ->collapsed(false),
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('Operacional')
+                    ->icon('heroicon-o-wrench-screwdriver')
+                    ->collapsed(false),
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('Financeiro')
+                    ->icon('heroicon-o-banknotes')
+                    ->collapsed(true),
+                \Filament\Navigation\NavigationGroup::make()
+                    ->label('Configurações')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->collapsed(true),
+            ])
             ->colors([
                 'primary' => Color::hex('#2563eb'), // Azul royal do logo Autonomia Ilimitada
                 'secondary' => Color::hex('#06b6d4'), // Azul ciano do logo

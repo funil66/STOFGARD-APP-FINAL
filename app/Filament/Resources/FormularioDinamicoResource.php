@@ -25,7 +25,7 @@ class FormularioDinamicoResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Formulários Dinâmicos';
 
-    protected static ?string $navigationGroup = 'Operações';
+    protected static ?string $navigationGroup = 'Operacional';
 
     protected static ?int $navigationSort = 40;
 
