@@ -886,4 +886,9 @@ class FinanceiroResource extends Resource
 
         ];
     }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->temAcessoFinanceiro() ?? false;
+    }
 }

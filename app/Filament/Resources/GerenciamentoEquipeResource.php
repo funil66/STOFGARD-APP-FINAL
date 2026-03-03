@@ -53,6 +53,11 @@ class GerenciamentoEquipeResource extends Resource
         return auth()->user()?->role === 'dono' || auth()->user()?->is_admin;
     }
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->role === 'dono' || auth()->user()?->is_admin;
+    }
+
     public static function form(Form $form): Form
     {
         return $form

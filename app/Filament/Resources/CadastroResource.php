@@ -461,6 +461,41 @@ class CadastroResource extends Resource
                             ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
                             ->openUrlInNewTab()
                             ->hidden(fn() => request()->header('user-agent') && preg_match('/Mobile|Android|iPhone/i', request()->header('user-agent'))),
+
+                        Tables\Actions\Action::make('criar_acesso')
+                            ->label('Gerar Acesso')
+                            ->tooltip('Criar login para o Portal do Cliente')
+                            ->icon('heroicon-o-key')
+                            ->color('warning')
+                            ->form([
+                                Forms\Components\TextInput::make('email')
+                                    ->label('E-mail de Acesso')
+                                    ->email()
+                                    ->required()
+                                    ->default(fn(Cadastro $record) => $record->email),
+                                Forms\Components\TextInput::make('password')
+                                    ->label('Senha Inicial')
+                                    ->password()
+                                    ->required()
+                                    ->minLength(6),
+                            ])
+                            ->action(function (Cadastro $record, array $data) {
+                                \App\Models\User::updateOrCreate(
+                                    ['email' => $data['email']],
+                                    [
+                                        'name' => $record->nome,
+                                        'password' => bcrypt($data['password']),
+                                        'is_cliente' => true,
+                                        'cadastro_id' => $record->id,
+                                        'tenant_id' => auth()->user()->tenant_id,
+                                    ]
+                                );
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Acesso do cliente criado com sucesso!')
+                                    ->success()
+                                    ->send();
+                            }),
                     ]
                 )
             )
@@ -484,5 +519,10 @@ class CadastroResource extends Resource
             'view' => Pages\ViewCadastro::route('/{record}'),
             'edit' => Pages\EditCadastro::route('/{record}/edit'),
         ];
+    }
+
+    public static function canAccess(): bool
+    {
+        return !auth()->user()?->isFuncionario();
     }
 }

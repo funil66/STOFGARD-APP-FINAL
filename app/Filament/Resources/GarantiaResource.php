@@ -321,4 +321,9 @@ class GarantiaResource extends Resource
             'edit' => Pages\EditGarantia::route('/{record}/edit'),
         ];
     }
+
+    public static function canAccess(): bool
+    {
+        return !auth()->user()?->isFuncionario();
+    }
 }

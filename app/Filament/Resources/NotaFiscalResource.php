@@ -504,4 +504,9 @@ class NotaFiscalResource extends Resource
             'edit' => Pages\EditNotaFiscal::route('/{record}/edit'),
         ];
     }
+
+    public static function canAccess(): bool
+    {
+        return !auth()->user()?->isFuncionario();
+    }
 }

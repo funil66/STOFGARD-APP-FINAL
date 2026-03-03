@@ -130,8 +130,11 @@ class ConfiguracaoResource extends Resource
 
                         Forms\Components\Tabs\Tab::make('📄 Textos Legais')
                             ->schema([
-                                Forms\Components\RichEditor::make('pdf_header')->label('Cabeçalho'),
-                                Forms\Components\RichEditor::make('termos_garantia')->label('Termos de Garantia'),
+                                Forms\Components\RichEditor::make('pdf_header')->label('Cabeçalho (PDF)'),
+                                Forms\Components\RichEditor::make('termos_garantia')->label('Termos de Garantia (Geral)'),
+                                Forms\Components\RichEditor::make('texto_contrato_padrao')
+                                    ->label('Modelo de Contrato de Serviço (Avançado)')
+                                    ->helperText('Contrato gerado automaticamente nos Orçamentos e OS aprovadas. Variáveis suportadas: {cliente_nome}, {cliente_doc}, {valor_total}, {itens}.'),
                             ]),
 
                         Forms\Components\Tabs\Tab::make('💳 Gateway de Pagamento')

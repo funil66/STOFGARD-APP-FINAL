@@ -388,4 +388,9 @@ class EstoqueResource extends Resource
             \App\Filament\Resources\ProdutoResource\Widgets\EstoqueVisualWidget::class,
         ];
     }
+
+    public static function canAccess(): bool
+    {
+        return !auth()->user()?->isFuncionario();
+    }
 }
