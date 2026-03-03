@@ -20,7 +20,7 @@ class OrcamentosKanbanBoard extends KanbanBoard
     protected static string $recordStatusAttribute = 'status';
 
     protected static ?string $navigationIcon = 'heroicon-o-queue-list';
-    protected static ?string $navigationGroup = 'Vendas';
+    protected static ?string $navigationGroup = 'Comercial';
     protected static ?int $navigationSort = 1;
 
     // Apenas visível para planos PRO e ELITE

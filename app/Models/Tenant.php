@@ -76,7 +76,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     {
         return $this->status_pagamento === 'trial'
             && $this->trial_termina_em
-            && $this->trial_termina_em->isFuture();
+            && \Carbon\Carbon::parse($this->trial_termina_em)->isFuture();
     }
 
     /**
@@ -88,7 +88,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             return null;
         }
 
-        return (int) now()->diffInDays($this->trial_termina_em);
+        return (int) now()->diffInDays(\Carbon\Carbon::parse($this->trial_termina_em));
     }
 
     /**
