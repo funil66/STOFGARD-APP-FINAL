@@ -698,7 +698,7 @@ class OrcamentoResource extends Resource
                             ->requiresConfirmation()
                             ->modalHeading('Gerar Contrato Jurídico')
                             ->modalDescription('O contrato será gerado usando o layout e os textos definidos em Configurações. Deseja iniciar a geração em background?')
-                            ->visible(fn() => in_array(tenancy()->tenant?->plan, ['PRO', 'ELITE']))
+                            ->visible(fn() => tenancy()->tenant?->temAcessoPremium() ?? true)
                             ->action(function (Orcamento $record) {
                                 $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
                                 $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
@@ -744,6 +744,7 @@ class OrcamentoResource extends Resource
                             ->icon('heroicon-o-chat-bubble-left-right')
                             ->color('success')
                             ->tooltip('Disparar Zap via Evolution API')
+                            ->visible(fn() => tenancy()->tenant?->temAcessoPremium() ?? true)
                             ->form([
                                 Forms\Components\Select::make('script')
                                     ->label('Escolha um Script de Vendas')

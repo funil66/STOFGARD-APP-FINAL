@@ -103,7 +103,17 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         }
 
         if ($panel->getId() === 'cliente') {
-            return $this->is_cliente;
+            if (!$this->is_cliente) {
+                return false;
+            }
+
+            // Verifica se o tenant atual permite portal do cliente (PRO/ELITE)
+            $tenant = $this->tenant ?? tenancy()->tenant;
+            if ($tenant && !$tenant->temAcessoPremium()) {
+                return false;
+            }
+
+            return true;
         }
 
         return true;

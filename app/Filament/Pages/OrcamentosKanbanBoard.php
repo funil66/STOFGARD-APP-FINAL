@@ -26,8 +26,8 @@ class OrcamentosKanbanBoard extends KanbanBoard
     // Apenas visível para planos PRO e ELITE
     public static function canAccess(): bool
     {
-        $plan = tenancy()->tenant?->plan ?? 'START';
-        return in_array($plan, ['PRO', 'ELITE']);
+        $tenant = tenancy()->tenant;
+        return $tenant ? $tenant->temAcessoPremium() : true;
     }
 
     protected function statuses(): Collection

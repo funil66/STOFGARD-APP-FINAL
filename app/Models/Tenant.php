@@ -110,4 +110,30 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     {
         $this->increment('os_criadas_mes_atual');
     }
+
+    /**
+     * Tiers helper methods
+     */
+    public function isStart(): bool
+    {
+        return strtolower($this->plan) === 'start';
+    }
+
+    public function isPro(): bool
+    {
+        return strtolower($this->plan) === 'pro';
+    }
+
+    public function isElite(): bool
+    {
+        return strtolower($this->plan) === 'elite';
+    }
+
+    /**
+     * Verifica se o Tenant tem acesso ao menos ao plano PRO ou superior
+     */
+    public function temAcessoPremium(): bool
+    {
+        return in_array(strtolower($this->plan), ['pro', 'elite']);
+    }
 }

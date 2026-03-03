@@ -467,6 +467,7 @@ class CadastroResource extends Resource
                             ->tooltip('Criar login para o Portal do Cliente')
                             ->icon('heroicon-o-key')
                             ->color('warning')
+                            ->visible(fn() => tenancy()->tenant?->temAcessoPremium() ?? true)
                             ->form([
                                 Forms\Components\TextInput::make('email')
                                     ->label('E-mail de Acesso')

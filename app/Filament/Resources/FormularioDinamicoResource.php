@@ -249,6 +249,9 @@ class FormularioDinamicoResource extends Resource
 
     public static function canAccess(): bool
     {
-        return !auth()->user()?->isFuncionario();
+        $tenant = tenancy()->tenant;
+        $isPremium = $tenant ? $tenant->temAcessoPremium() : true;
+
+        return $isPremium && !auth()->user()?->isFuncionario();
     }
 }

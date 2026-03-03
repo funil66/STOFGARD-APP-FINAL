@@ -221,8 +221,8 @@ class OrdemServicoResource extends Resource
                                     ->imageResizeMode('contain')
                                     ->imageResizeTargetWidth('1200')
                                     ->imageResizeTargetHeight('1200')
-                                    ->maxFiles(fn() => tenancy()->tenant?->plan === 'START' ? 3 : 20)
-                                    ->helperText(fn() => tenancy()->tenant?->plan === 'START' ? 'Limite: 3 fotos por OS. Faça upgrade para o plano PRO para uploads ilimitados.' : 'Upload de fotos de evidência.'),
+                                    ->maxFiles(fn() => !tenancy()->tenant?->temAcessoPremium() ? 3 : 20)
+                                    ->helperText(fn() => !tenancy()->tenant?->temAcessoPremium() ? 'Limite: 3 fotos por OS. Faça upgrade para o plano PRO para uploads ilimitados.' : 'Upload de fotos de evidência.'),
 
                                 SpatieMediaLibraryFileUpload::make('fotos_depois')
                                     ->label('Depois')
@@ -232,8 +232,8 @@ class OrdemServicoResource extends Resource
                                     ->imageResizeMode('contain')
                                     ->imageResizeTargetWidth('1200')
                                     ->imageResizeTargetHeight('1200')
-                                    ->maxFiles(fn() => tenancy()->tenant?->plan === 'START' ? 3 : 20)
-                                    ->helperText(fn() => tenancy()->tenant?->plan === 'START' ? 'Limite: 3 fotos por OS. Faça upgrade para o plano PRO para uploads ilimitados.' : 'Upload de fotos de evidência.'),
+                                    ->maxFiles(fn() => !tenancy()->tenant?->temAcessoPremium() ? 3 : 20)
+                                    ->helperText(fn() => !tenancy()->tenant?->temAcessoPremium() ? 'Limite: 3 fotos por OS. Faça upgrade para o plano PRO para uploads ilimitados.' : 'Upload de fotos de evidência.'),
                             ]),
 
                         // === FASE 2: FORMULÁRIO DINÂMICO ===
