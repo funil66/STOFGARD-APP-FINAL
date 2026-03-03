@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Hash;
  */
 class GerenciamentoEquipeResource extends Resource
 {
+    use \App\Traits\RestrictsAccessByTier {
+        canAccess as traitCanAccess;
+    }
+
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
@@ -55,10 +59,7 @@ class GerenciamentoEquipeResource extends Resource
 
     public static function canAccess(): bool
     {
-        $tenant = tenancy()->tenant;
-        $isPremium = $tenant ? $tenant->temAcessoPremium() : true;
-
-        return $isPremium && (auth()->user()?->role === 'dono' || auth()->user()?->is_admin);
+        return self::traitCanAccess() && (auth()->user()?->role === 'dono' || auth()->user()?->is_admin);
     }
 
     public static function form(Form $form): Form

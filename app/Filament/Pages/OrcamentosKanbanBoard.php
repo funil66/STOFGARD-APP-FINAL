@@ -10,6 +10,8 @@ use Illuminate\Support\Collection;
 
 class OrcamentosKanbanBoard extends KanbanBoard
 {
+    use \App\Traits\RestrictsAccessByTier;
+
     protected static ?string $title = 'Kanban de Orçamentos';
 
     protected static string $model = Orcamento::class;
@@ -23,12 +25,7 @@ class OrcamentosKanbanBoard extends KanbanBoard
     protected static ?string $navigationGroup = 'Comercial';
     protected static ?int $navigationSort = 1;
 
-    // Apenas visível para planos PRO e ELITE
-    public static function canAccess(): bool
-    {
-        $tenant = tenancy()->tenant;
-        return $tenant ? $tenant->temAcessoPremium() : true;
-    }
+    // Apenas visível para planos PRO e ELITE (via Trait)
 
     protected function statuses(): Collection
     {
