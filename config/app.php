@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Autonomia Ilimitada'),
 
     /*
     |--------------------------------------------------------------------------
@@ -130,7 +130,7 @@ return [
     | Allow overriding the Node binary or the PDF generator script via env vars
     | (useful for tests and CI). Tests set NODE_BINARY and PDF_GENERATOR_SCRIPT.
     */
-    'node_binary' => env('NODE_BINARY', 'node'),
+    // 'node_binary' de cima já define o caminho
     'pdf_generator_script' => env('PDF_GENERATOR_SCRIPT', base_path('scripts/generate-pdf.js')),
 
     /*

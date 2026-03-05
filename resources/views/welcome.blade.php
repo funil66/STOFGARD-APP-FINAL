@@ -28,8 +28,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 <div class="flex items-center">
-                    <span class="text-2xl font-extrabold tracking-tighter text-slate-900">STOF<span
-                            class="text-emerald-500">GARD</span></span>
+                    <span class="text-2xl font-extrabold tracking-tighter text-slate-900">AUTONOMIA <span
+                            class="text-emerald-500">ILIMITADA</span></span>
                 </div>
                 <div class="hidden md:flex space-x-8 items-center">
                     <a href="#funcionalidades"
@@ -270,8 +270,8 @@
     <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
             <div class="mb-4 md:mb-0">
-                <span class="text-xl font-extrabold tracking-tighter text-white">STOF<span
-                        class="text-emerald-500">GARD</span></span>
+                <span class="text-xl font-extrabold tracking-tighter text-white">AUTONOMIA <span
+                        class="text-emerald-500">ILIMITADA</span></span>
                 <p class="text-sm mt-2">Tecnologia Premium para Profissionais e Autónomos.</p>
             </div>
             <div class="flex space-x-6">

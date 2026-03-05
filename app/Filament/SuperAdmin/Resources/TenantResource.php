@@ -48,7 +48,7 @@ class TenantResource extends Resource
                                     ->label('Slug (subdomínio)')
                                     ->required()
                                     ->unique(ignoreRecord: true)
-                                    ->helperText('Ex: "joao-eletricista" → joao-eletricista.stofgard.com.br')
+                                    ->helperText('Ex: "joao-eletricista" → joao-eletricista.autonomiailimitada.com.br')
                                     ->alphaDash()
                                     ->maxLength(100),
 
