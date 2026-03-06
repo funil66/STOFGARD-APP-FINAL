@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Configuracao;
 use App\Models\Tenant;
+use App\Models\Produto;
 use App\Services\ServiceTypeManager;
 use Illuminate\Http\Request;
 
@@ -31,13 +32,19 @@ class PublicProfileController extends Controller
         // 4. Busca os serviços ativos oferecidos pelo tenant
         $servicos = ServiceTypeManager::getAll();
 
-        // 5. Finaliza o escopo para não vazar a tenancy
+        // 5. Busca até 12 produtos para usar como Vitrine
+        $produtos = class_exists(Produto::class)
+            ? Produto::with('media')->orderByDesc('created_at')->limit(12)->get()
+            : collect();
+
+        // 6. Finaliza o escopo para não vazar a tenancy
         tenancy()->end();
 
         return view('tenant.profile', [
             'tenant' => $tenant,
             'config' => $config,
             'servicos' => $servicos,
+            'produtos' => $produtos,
             'slug' => $slug,
         ]);
     }
