@@ -122,6 +122,39 @@
             </div>
         @endif
 
+        <!-- Grade de Produtos (Vitrine) -->
+        @if(isset($produtos) && $produtos->count() > 0)
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-4">
+                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Nossos Produtos / Peças</h2>
+
+                <div class="grid grid-cols-2 gap-3">
+                    @foreach($produtos as $produto)
+                        <div
+                            class="flex flex-col items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center gap-2 hover:shadow-md transition-shadow cursor-default">
+                            <div
+                                class="w-16 h-16 rounded-lg bg-white shadow-sm flex items-center justify-center overflow-hidden">
+                                @if($produto->getFirstMediaUrl('arquivos', 'thumb'))
+                                    <img src="{{ $produto->getFirstMediaUrl('arquivos', 'thumb') }}" alt="{{ $produto->nome }}"
+                                        class="object-cover w-full h-full">
+                                @else
+                                    <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                @endif
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-semibold text-slate-700 leading-tight">
+                                    {{ mb_strimwidth($produto->nome, 0, 25, '...') }}</h3>
+                                <p class="text-sm font-bold text-emerald-600 mt-1">R$
+                                    {{ number_format($produto->preco_venda, 2, ',', '.') }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <!-- Rodapé Viral Autonomia Ilimitada -->
         <div class="mt-8 text-center pb-8">
             <a href="https://autonomiailimitada.com.br" target="_blank"

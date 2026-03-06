@@ -7,6 +7,8 @@ use App\Models\Configuracao;
 use App\Models\Orcamento;
 use App\Models\OrdemServico;
 use App\Models\NotaFiscal;
+use App\Models\Financeiro;
+use App\Models\Garantia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -42,10 +44,58 @@ class PortalClienteController extends Controller
                 ->get()
             : collect();
 
+        $faturas = Financeiro::where('cadastro_id', $cadastroId)
+            ->where('tipo', 'entrada') // Apenas o que o cliente nos deve ou pagou
+            ->orderBy('status', 'asc') // Pendentes primeiro
+            ->orderByDesc('data_vencimento')
+            ->limit(15)
+            ->get();
+
+        $garantias = Garantia::whereHas('ordemServico', function ($q) use ($cadastroId) {
+            $q->where('cadastro_id', $cadastroId);
+        })
+            ->with(['ordemServico.itens'])
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
+
+        $alertasAcao = collect();
+
+        foreach ($orcamentos as $orc) {
+            if (empty($orc->assinatura_hash) && $orc->status === 'pendente') {
+                $alertasAcao->push([
+                    'tipo' => 'Orçamento',
+                    'numero' => $orc->numero_orcamento,
+                    'mensagem' => 'Aguardando sua Assinatura Digital para aprovação.',
+                    'link' => route('cliente.orcamento', $orc->id),
+                    'cor' => 'yellow'
+                ]);
+            }
+        }
+
+        foreach ($ordensServico as $os) {
+            if (empty($os->assinatura_hash) && in_array($os->status, ['concluida', 'aguardando'])) {
+                $mensagem = $os->status === 'concluida'
+                    ? 'Serviço concluído! Assine o termo de entrega.'
+                    : 'Aguardando sua assinatura para autorizar o serviço.';
+
+                $alertasAcao->push([
+                    'tipo' => 'Ordem de Serviço',
+                    'numero' => $os->numero_os,
+                    'mensagem' => $mensagem,
+                    'link' => route('cliente.os', $os->id),
+                    'cor' => 'blue'
+                ]);
+            }
+        }
+
         return view('cliente.portal', compact(
             'orcamentos',
             'ordensServico',
             'notasFiscais',
+            'faturas',
+            'garantias',
+            'alertasAcao',
             'config',
             'acesso'
         ));
