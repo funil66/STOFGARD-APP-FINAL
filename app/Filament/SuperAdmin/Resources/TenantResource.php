@@ -11,6 +11,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 /**
  * TenantResource — Gerenciamento completo de tenants/empresas do SaaS.
@@ -264,14 +266,95 @@ class TenantResource extends Resource
                         Notification::make()->title('Tenant suspenso.')->warning()->send();
                     }),
 
-                // Impersonate (Acessar a conta)
+                // Impersonate (Acessar a conta real do Dono)
                 Tables\Actions\Action::make('impersonate')
                     ->label('Logar como Inquilino')
                     ->icon('heroicon-o-arrow-right-on-rectangle')
                     ->color('warning')
-                    ->url(fn(Tenant $record) => "http://{$record->domains->first()?->domain}/portal")
+                    ->requiresConfirmation()
+                    ->modalHeading('Acessar como dono do Inquilino?')
+                    ->modalDescription('Você será redirecionado para o painel de administração dele, com total controle. Suas ações serão feitas em nome do Dono da Empresa.')
+                    ->action(function (Tenant $record) {
+                        try {
+                            $superAdminId = Auth::id();
+
+                            // 1. Busca o dono do Tenant (quem idealmente criou a conta, via relacionamento cascade)
+                            // Acessamos o banco do tenant
+                            tenancy()->initialize($record);
+
+                            // O ID do dono idealmente é is_super_admin = false e role = dono. Se não achar, pega o user mais antigo (primeiro criado)
+                            $dono = \App\Models\User::where('tenant_id', $record->id)
+                                ->where('role', 'dono')
+                                ->first();
+
+                            if (!$dono) {
+                                $dono = \App\Models\User::where('tenant_id', $record->id)->orderBy('id', 'asc')->first();
+                            }
+
+                            if (!$dono) {
+                                tenancy()->end();
+                                Notification::make()
+                                    ->title('Nenhum usuário encontrado neste Tenant')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
+                            // 2. Faz o backup do Super Admin e Log da Ação (Audit)
+                            Log::warning('[SuperAdmin] Impersonação de Tenant iniciada', [
+                                'super_admin_id' => $superAdminId,
+                                'target_tenant_id' => $record->id,
+                                'target_user_id' => $dono->id,
+                                'ip' => request()->ip(),
+                            ]);
+
+                            session()->put('impersonating_super_admin_id', $superAdminId);
+                            session()->put('impersonated_at', now()->toIso8601String());
+
+                            // 3. Força o login com as credenciais do Dono do Tenant
+                            Auth::guard('web')->login($dono);
+
+                            // Como a URL do tenant está no DB, precisamos apontar para ela e garantir a sessão
+                            $domain = $record->domains->first()?->domain ?? env('APP_URL');
+                            $url = "http://{$domain}/admin";
+
+                            // Dica para reverter: O usuário precisará usar o Sair padrão, o middleware Global não detectará imediatamente o super-admin cross-domain sem session driver unificado
+                            return redirect()->away($url);
+
+                        } catch (\Exception $e) {
+                            tenancy()->end();
+                            Notification::make()
+                                ->title('Erro ao impersonar')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->tooltip('Acessar a conta do administrador deste tenant.'),
+
+                // Suporte Direto via WhatsApp
+                Tables\Actions\Action::make('suporte_whatsapp')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
+                    ->color('success')
+                    ->url(function (Tenant $record) {
+                        try {
+                            tenancy()->initialize($record);
+                            $telefone = \App\Models\Configuracao::first()?->empresa_telefone;
+                            tenancy()->end();
+
+                            if (!$telefone) {
+                                return '#';
+                            }
+                            $numero = preg_replace('/[^0-9]/', '', $telefone);
+                            return "https://wa.me/55{$numero}?text=Ol%C3%A1%2C%20aqui%20%C3%A9%20o%20suporte%20da%20Autonomia%20Ilimitada.%20Como%20podemos%20ajudar%3F";
+                        } catch (\Exception $e) {
+                            tenancy()->end();
+                            return '#';
+                        }
+                    })
                     ->openUrlInNewTab()
-                    ->tooltip('Cuidado: Qualquer alteração será feita no banco de dados real do cliente.'),
+                    ->tooltip('Abrir conversa no WhatsApp com o dono do tenant.'),
 
                 // Iniciar assinatura no Asaas
                 Tables\Actions\Action::make('iniciar_assinatura')
