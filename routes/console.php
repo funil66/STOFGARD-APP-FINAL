@@ -74,14 +74,10 @@ Schedule::command('cofre:retencao-preditiva --meses=6')
     ->runInBackground()
     ->description('A Máquina de Retenção (Manutenção Preditiva) - Pro/Elite');
 
-// Confirmação Automática de Agendamentos (Phase 3.2)
-Schedule::command('agendas:enviar-confirmacoes')
-    ->dailyAt('10:00')
-    ->timezone('America/Sao_Paulo')
-    ->withoutOverlapping()
-    ->onOneServer()
-    ->runInBackground()
-    ->description('A Máquina de Vendas - Confirmação Automática');
+// 🤖 BOT DE VENDAS: Dispara as confirmações de agenda para o dia seguinte todos os dias às 18:00
+Schedule::command('iron:agenda-confirmations')
+    ->dailyAt('18:00')
+    ->timezone('America/Sao_Paulo');
 
 /*
 |--------------------------------------------------------------------------
