@@ -68,6 +68,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
                 \App\Filament\Widgets\DashboardShortcutsWidget::class,
+                \App\Filament\Widgets\OracleWidget::class,
             ])
             ->plugins([
                 FilamentFullCalendarPlugin::make(),

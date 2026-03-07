@@ -152,6 +152,17 @@ class OrcamentoResource extends Resource
                         Forms\Components\Repeater::make('itens')
                             ->relationship('itens')
                             ->schema([
+                                Forms\Components\Select::make('opcao')
+                                    ->label('Opção')
+                                    ->options([
+                                        'A' => 'A',
+                                        'B' => 'B',
+                                        'C' => 'C',
+                                    ])
+                                    ->default('A')
+                                    ->selectablePlaceholder(false)
+                                    ->columnSpan(['default' => 1, 'md' => 1]),
+
                                 Forms\Components\Select::make('item_nome')
                                     ->label('Item')
                                     ->options(fn() => \App\Models\TabelaPreco::where('ativo', true)->pluck('nome_item', 'nome_item'))
@@ -174,7 +185,7 @@ class OrcamentoResource extends Resource
                                         // Trigger parent recalculate
                                         self::recalcularTotalFromRepeaterItem($set, $get, $livewire);
                                     })
-                                    ->columnSpan(['default' => 1, 'md' => 4]),
+                                    ->columnSpan(['default' => 1, 'md' => 3]),
 
                                 Forms\Components\Select::make('servico_tipo')
                                     ->label('Tipo de Serviço')

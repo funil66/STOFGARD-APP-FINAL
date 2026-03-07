@@ -19,8 +19,8 @@ class PublicProfileController extends Controller
         // 1. Busca o tenant ativo pelo slug
         $tenant = Tenant::findBySlug($slug);
 
-        if (!$tenant) {
-            abort(404, 'Página não encontrada ou inativa.');
+        if (!$tenant || !$tenant->temAcessoPremium()) {
+            abort(404, 'Página não encontrada ou plano incompatível.');
         }
 
         // 2. Inicializa o contexto do banco de dados do tenant

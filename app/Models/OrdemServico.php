@@ -51,6 +51,10 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
         'respostas_formulario', // Fase 2
         'avaliacao_enviada',    // Fase 4
         'avaliacao_enviada_em', // Fase 4
+        'checkin_lat',          // Fase 2.1
+        'checkin_lng',          // Fase 2.1
+        'checkin_ip',           // Fase 2.1
+        'checkin_time',         // Fase 2.1
     ];
 
     protected $casts = [
@@ -59,6 +63,9 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
         'data_conclusao' => 'datetime',
         'valor_total' => 'decimal:2',
         'valor_desconto' => 'decimal:2',
+        'checkin_lat' => 'decimal:8',
+        'checkin_lng' => 'decimal:8',
+        'checkin_time' => 'datetime',
         'extra_attributes' => 'array',
         'respostas_formulario' => 'array',  // Fase 2
         'avaliacao_enviada' => 'boolean',   // Fase 4
@@ -221,9 +228,16 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
 
         static::updated(function ($model) {
             // Verifica se o status mudou para 'concluida'
-            // O isDirty('status') garante que só executa quando o status muda, evitando duplicidade se salvar sem mudar status
             if ($model->isDirty('status') && $model->status === 'concluida') {
                 \App\Services\EstoqueService::baixarEstoquePorOS($model);
+
+                // Dispara o Job de Indicação para o dia seguinte (Delay de 24h)
+                if (tenant() && tenant()->isElite()) {
+                    \App\Jobs\SendReferralMessageJob::dispatch(
+                        $model->id,
+                        tenant()->getTenantKey()
+                    )->delay(now()->addDays(1)); // Envia amanhã
+                }
             }
         });
     }

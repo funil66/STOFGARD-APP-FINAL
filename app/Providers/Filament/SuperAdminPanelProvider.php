@@ -49,12 +49,15 @@ class SuperAdminPanelProvider extends PanelProvider
             ->resources([
                 \App\Filament\SuperAdmin\Resources\TenantResource::class,
                 \App\Filament\SuperAdmin\Resources\UserImpersonationResource::class,
+                \App\Filament\SuperAdmin\Resources\TicketSuporteResource::class,
             ])
             ->pages([
                 \App\Filament\SuperAdmin\Pages\SuperAdminDashboard::class,
+                \App\Filament\SuperAdmin\Pages\HorizonPage::class,
             ])
             ->widgets([
                 \App\Filament\SuperAdmin\Widgets\SaaSMrrWidget::class,
+                \App\Filament\SuperAdmin\Widgets\TenantStorageWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

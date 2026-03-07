@@ -101,6 +101,14 @@ class EstoqueResource extends Resource
                                     ->numeric()
                                     ->default(10)
                                     ->helperText('Alerta quando atingir este nível'),
+
+                                Forms\Components\Select::make('local_estoque_id')
+                                    ->label('Almoxarifado / Local')
+                                    ->relationship('localEstoque', 'nome')
+                                    ->searchable()
+                                    ->preload()
+                                    ->nullable()
+                                    ->helperText('Opcional. Ex: Loja Matriz, Carrinha do Técnico.'),
                             ]),
                     ])->columnSpan(1),
             ])->columns(3);
@@ -117,6 +125,13 @@ class EstoqueResource extends Resource
                     ->weight('bold')
                     ->icon('heroicon-o-cube')
                     ->description(fn(Estoque $record) => $record->observacoes ? \Illuminate\Support\Str::limit($record->observacoes, 30) : null),
+
+                Tables\Columns\TextColumn::make('localEstoque.nome')
+                    ->label('Local')
+                    ->badge()
+                    ->color('info')
+                    ->sortable()
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('quantidade')
                     ->label('Estoque')

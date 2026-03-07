@@ -71,6 +71,7 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
         'pdf_desconto_pix_percentual', // #2b: Alíquota PIX per-orçamento
         'pdf_parcelamento_custom',     // #2b: Parcelamento customizado per-orçamento
         'etapa_funil',
+        'opcao_aprovada',              // Multi-opção: qual opção o cliente aprovou (A/B/C)
     ];
 
     protected $casts = [
@@ -174,6 +175,27 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
     public function itens(): HasMany
     {
         return $this->hasMany(\App\Models\OrcamentoItem::class, 'orcamento_id');
+    }
+
+    /**
+     * Filtra itens por opção (A, B ou C).
+     */
+    public function itensOpcao(string $opcao): HasMany
+    {
+        return $this->itens()->where('opcao', $opcao);
+    }
+
+    /**
+     * Retorna as opções disponíveis neste orçamento (ex: ['A', 'B']).
+     */
+    public function getOpcoesDisponiveis(): array
+    {
+        return $this->itens()
+            ->select('opcao')
+            ->distinct()
+            ->orderBy('opcao')
+            ->pluck('opcao')
+            ->toArray();
     }
 
     public function ordemServico(): HasOne

@@ -59,6 +59,9 @@ Route::prefix('cliente')->name('cliente.')->group(function () {
             ->name('os');
         Route::get('/nota-fiscal/{id}', [\App\Http\Controllers\PortalClienteController::class, 'notaFiscal'])
             ->name('nota-fiscal');
+        Route::get('/orcamento/{orcamento}/aprovar/{opcao}', [\App\Http\Controllers\PortalClienteController::class, 'aprovarOpcao'])
+            ->name('aprovar_opcao')
+            ->where('opcao', '[ABC]');
     });
 });
 

@@ -35,12 +35,29 @@ class GerarCobrancaPixJob implements ShouldQueue
             $dadosPix = $gateway->gerarCobrancaPix($this->valorCobranca, $this->documentoReferencia, $this->nomeCliente);
 
             if ($dadosPix['success']) {
-                $mensagem = "Fala {$this->nomeCliente}! Tudo certo? 🚀\n\n";
-                $mensagem .= "Segue o PIX para pagamento referente a {$this->documentoReferencia}:\n\n";
-                $mensagem .= "Valor: R$ " . number_format($this->valorCobranca, 2, ',', '.') . "\n";
-                $mensagem .= "Link para QR Code: {$dadosPix['link_visualizacao']}\n\n";
-                $mensagem .= "PIX Copia e Cola 👇\n";
-                $mensagem .= $dadosPix['pix_copia_cola'];
+                // Template configurável — lê de Settings, fallback para texto padrão
+                $template = settings('texto_cobranca_pix');
+
+                if (empty($template)) {
+                    $template = "Fala {nome}! Tudo certo? 🚀\n\n"
+                        . "Segue o PIX para pagamento referente a {documento}:\n\n"
+                        . "Valor: R$ {valor}\n"
+                        . "Link para QR Code: {link}\n\n"
+                        . "PIX Copia e Cola 👇\n"
+                        . "{pix_copia_cola}";
+                }
+
+                $mensagem = str_replace(
+                    ['{nome}', '{documento}', '{valor}', '{link}', '{pix_copia_cola}'],
+                    [
+                        $this->nomeCliente,
+                        $this->documentoReferencia,
+                        number_format($this->valorCobranca, 2, ',', '.'),
+                        $dadosPix['link_visualizacao'],
+                        $dadosPix['pix_copia_cola'],
+                    ],
+                    $template
+                );
 
                 // Despacha pro WhatsApp Job que já temos rodando nas trincheiras
                 SendWhatsAppJob::dispatch($this->telefoneCliente, $mensagem);

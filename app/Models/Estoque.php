@@ -20,6 +20,7 @@ class Estoque extends Model implements Auditable
         'preco_interno',
         'preco_venda',
         'observacoes',
+        'local_estoque_id',
     ];
 
     protected $casts = [
@@ -28,6 +29,12 @@ class Estoque extends Model implements Auditable
         'preco_interno' => 'decimal:2',
         'preco_venda' => 'decimal:2',
     ];
+
+    // Relacionamento com Local de Estoque
+    public function localEstoque(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(LocalEstoque::class, 'local_estoque_id');
+    }
 
     // Verifica se está abaixo do mínimo
     public function isAbaixoDoMinimo(): bool

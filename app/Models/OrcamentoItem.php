@@ -1,14 +1,17 @@
 <?php
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model; use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class OrcamentoItem extends Model {
+class OrcamentoItem extends Model
+{
     // Define explicitamente a tabela criada na migration
     protected $table = 'orcamento_items';
 
     protected $fillable = [
         'orcamento_id',
+        'opcao',
         'item_nome',
         'descricao',
         'servico_tipo',

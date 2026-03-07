@@ -90,29 +90,109 @@
                 @endif
             </p>
 
-            {{-- Itens / Serviços --}}
+            {{-- Itens / Serviços (Multi-Opção) --}}
             @if($orcamento->itens && $orcamento->itens->count() > 0)
-                <table class="w-full text-sm mb-6">
-                    <thead>
-                        <tr class="border-b border-gray-100 text-left text-gray-500">
-                            <th class="pb-3 font-medium">Serviço</th>
-                            <th class="pb-3 font-medium text-right">Qtd</th>
-                            <th class="pb-3 font-medium text-right">Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($orcamento->itens as $item)
-                            <tr class="border-b border-gray-50">
-                                <td class="py-3 text-gray-800">{{ $item->nome_item ?? $item->descricao ?? '-' }}</td>
-                                <td class="py-3 text-right text-gray-600">{{ $item->quantidade ?? 1 }}</td>
-                                <td class="py-3 text-right font-medium text-gray-900">
-                                    R$
-                                    {{ number_format((float) ($item->valor_total ?? $item->valor_unitario ?? 0), 2, ',', '.') }}
-                                </td>
-                            </tr>
+                @php
+                    $opcoes = $orcamento->itens->pluck('opcao')->unique()->sort()->values();
+                    $temMultiOpcao = $opcoes->count() > 1;
+                @endphp
+
+                @if($temMultiOpcao)
+                    {{-- Multi-Opção: Tabs A/B/C --}}
+                    <div x-data="{ opcaoAtiva: '{{ $orcamento->opcao_aprovada ?? $opcoes->first() }}' }" class="mb-6">
+                        <p class="text-sm text-gray-500 mb-3">Este orçamento possui <strong>{{ $opcoes->count() }}
+                                opções</strong>. Compare e escolha a melhor para você:</p>
+
+                        {{-- Tab Buttons --}}
+                        <div class="flex gap-2 mb-4">
+                            @foreach($opcoes as $opc)
+                                <button @click="opcaoAtiva = '{{ $opc }}'" :class="opcaoAtiva === '{{ $opc }}'
+                                                    ? 'bg-brand text-white shadow-md'
+                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                                    class="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all">
+                                    Opção {{ $opc }}
+                                    @if($orcamento->opcao_aprovada === $opc)
+                                        <span class="ml-1">✅</span>
+                                    @endif
+                                </button>
+                            @endforeach
+                        </div>
+
+                        {{-- Tab Content --}}
+                        @foreach($opcoes as $opc)
+                            <div x-show="opcaoAtiva === '{{ $opc }}'" x-transition
+                                class="bg-white rounded-xl border border-gray-100 p-4">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b border-gray-100 text-left text-gray-500">
+                                            <th class="pb-3 font-medium">Serviço</th>
+                                            <th class="pb-3 font-medium text-right">Qtd</th>
+                                            <th class="pb-3 font-medium text-right">Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php $totalOpcao = 0; @endphp
+                                        @foreach($orcamento->itens->where('opcao', $opc) as $item)
+                                            @php $totalOpcao += (float) ($item->subtotal ?? $item->valor_unitario ?? 0); @endphp
+                                            <tr class="border-b border-gray-50">
+                                                <td class="py-3 text-gray-800">{{ $item->item_nome ?? $item->descricao ?? '-' }}</td>
+                                                <td class="py-3 text-right text-gray-600">{{ $item->quantidade ?? 1 }}</td>
+                                                <td class="py-3 text-right font-medium text-gray-900">
+                                                    R$
+                                                    {{ number_format((float) ($item->subtotal ?? $item->valor_unitario ?? 0), 2, ',', '.') }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="border-t border-gray-200">
+                                            <td colspan="2" class="pt-3 font-semibold text-gray-700">Total Opção {{ $opc }}</td>
+                                            <td class="pt-3 text-right font-bold text-lg text-gray-900">
+                                                R$ {{ number_format($totalOpcao, 2, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+
+                                @if(!$orcamento->opcao_aprovada && in_array($orcamento->status, ['pendente', 'rascunho', 'enviado']))
+                                    <div class="mt-4 pt-4 border-t border-gray-100">
+                                        <a href="{{ route('cliente.aprovar_opcao', ['orcamento' => $orcamento->id, 'opcao' => $opc]) }}"
+                                            class="block w-full bg-brand text-white text-center py-3 px-4 rounded-xl font-semibold text-sm hover:opacity-90 transition-all"
+                                            onclick="return confirm('Confirma a aprovação da Opção {{ $opc }}?')">
+                                            ✅ Aprovar Opção {{ $opc }}
+                                        </a>
+                                    </div>
+                                @elseif($orcamento->opcao_aprovada === $opc)
+                                    <div class="mt-4 pt-4 border-t border-green-100 bg-green-50 rounded-lg p-3 text-center">
+                                        <span class="text-green-700 font-semibold text-sm">✅ Esta opção foi aprovada</span>
+                                    </div>
+                                @endif
+                            </div>
                         @endforeach
-                    </tbody>
-                </table>
+                    </div>
+                @else
+                    {{-- Opção Única (backward compatible) --}}
+                    <table class="w-full text-sm mb-6">
+                        <thead>
+                            <tr class="border-b border-gray-100 text-left text-gray-500">
+                                <th class="pb-3 font-medium">Serviço</th>
+                                <th class="pb-3 font-medium text-right">Qtd</th>
+                                <th class="pb-3 font-medium text-right">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($orcamento->itens as $item)
+                                <tr class="border-b border-gray-50">
+                                    <td class="py-3 text-gray-800">{{ $item->item_nome ?? $item->descricao ?? '-' }}</td>
+                                    <td class="py-3 text-right text-gray-600">{{ $item->quantidade ?? 1 }}</td>
+                                    <td class="py-3 text-right font-medium text-gray-900">
+                                        R$ {{ number_format((float) ($item->subtotal ?? $item->valor_unitario ?? 0), 2, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
             @endif
 
             {{-- Observações --}}

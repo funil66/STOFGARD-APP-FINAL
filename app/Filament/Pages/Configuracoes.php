@@ -648,6 +648,31 @@ class Configuracoes extends Page implements HasForms
                                             ->reorderableWithButtons(),
                                     ]),
                             ]),
+
+                        // 9. WHATSAPP / MENSAGENS
+                        Tabs\Tab::make('WhatsApp / Mensagens')
+                            ->visible(fn() => filament()->getTenant()->temAcessoPremium())
+                            ->icon('heroicon-m-chat-bubble-left-right')
+                            ->schema([
+                                Section::make('Template de Cobrança PIX')
+                                    ->description('Mensagem enviada automaticamente ao gerar cobrança PIX. Variáveis disponíveis: {nome}, {documento}, {valor}, {link}, {pix_copia_cola}')
+                                    ->schema([
+                                        Textarea::make('texto_cobranca_pix')
+                                            ->label('Mensagem de Cobrança PIX')
+                                            ->rows(8)
+                                            ->placeholder("Fala {nome}! Tudo certo? 🚀\n\nSegue o PIX para pagamento referente a {documento}:\n\nValor: R$ {valor}\nLink para QR Code: {link}\n\nPIX Copia e Cola 👇\n{pix_copia_cola}")
+                                            ->helperText('Deixe vazio para usar o texto padrão do sistema.'),
+                                    ]),
+                                Section::make('Template de OS Concluída')
+                                    ->description('Mensagem enviada ao cliente quando uma Ordem de Serviço é finalizada. Variáveis: {nome}, {numero_os}, {tipo_servico}')
+                                    ->schema([
+                                        Textarea::make('texto_os_concluida')
+                                            ->label('Mensagem de OS Concluída')
+                                            ->rows(6)
+                                            ->placeholder("Olá {nome}! 👋\n\nSua Ordem de Serviço #{numero_os} ({tipo_servico}) foi concluída com sucesso! ✅\n\nQualquer dúvida, estamos à disposição.")
+                                            ->helperText('Deixe vazio para usar o texto padrão do sistema.'),
+                                    ]),
+                            ]),
                     ])->columnSpanFull(),
             ])->statePath('data');
     }

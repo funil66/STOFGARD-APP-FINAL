@@ -40,3 +40,7 @@ Route::post('/webhooks/asaas', [\App\Http\Controllers\Webhooks\AsaasWebhookContr
 Route::post('/webhooks/pix/{webhookToken}', [\App\Http\Controllers\Webhooks\PixWebhookController::class, 'handle'])
     ->name('webhooks.pix')
     ->where('webhookToken', '[a-f0-9\-]{36}'); // UUID format
+
+// Webhook para retorno da Prefeitura/SEFAZ (via provedor de NFS-e)
+Route::post('/webhooks/nfse/{tenant_id}', [\App\Http\Controllers\WebhookNFSeController::class, 'handle'])
+    ->name('webhooks.nfse');

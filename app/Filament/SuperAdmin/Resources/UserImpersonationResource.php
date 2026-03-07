@@ -89,8 +89,12 @@ class UserImpersonationResource extends Resource
                         // Troca o usuário autenticado
                         Auth::login($targetUser);
 
-                        // Redireciona para o painel principal
-                        return redirect('/admin');
+                        // Redireciona para o painel principal (HTTPS em produção)
+                        $url = url('/admin');
+                        if (app()->environment('production')) {
+                            $url = str_replace('http://', 'https://', $url);
+                        }
+                        return redirect($url);
                     })
                     ->visible(fn(User $record) => $record->id !== Auth::id()),
 
@@ -115,7 +119,11 @@ class UserImpersonationResource extends Resource
                             ]);
                         }
 
-                        return redirect('/super-admin');
+                        $url = url('/super-admin');
+                        if (app()->environment('production')) {
+                            $url = str_replace('http://', 'https://', $url);
+                        }
+                        return redirect($url);
                     }),
             ]);
     }

@@ -23,6 +23,12 @@ class PortalClienteController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\Tenant $tenant */
+        $tenant = tenant();
+        if ($tenant && !$tenant->temAcessoPremium()) {
+            abort(403, 'Portal do Cliente Indisponível (Exclusivo PRO/ELITE).');
+        }
+
         $cadastroId = Session::get('cliente_cadastro_id');
         $acesso = $request->get('cliente_acesso');
         $config = Configuracao::first();
@@ -149,5 +155,31 @@ class PortalClienteController extends Controller
             ->firstOrFail();
 
         return view('cliente.nota-fiscal', compact('nf', 'config'));
+    }
+
+    /**
+     * Aprovação de opção pelo cliente (Multi-opção A/B/C).
+     */
+    public function aprovarOpcao(Request $request, int $orcamento, string $opcao)
+    {
+        $cadastroId = Session::get('cliente_cadastro_id');
+
+        $orc = Orcamento::where('id', $orcamento)
+            ->where('cadastro_id', $cadastroId)
+            ->firstOrFail();
+
+        // Só permite aprovar se ainda não tem opção aprovada
+        if ($orc->opcao_aprovada) {
+            return redirect()->route('cliente.orcamento', $orc->id)
+                ->with('warning', 'Este orçamento já tem uma opção aprovada.');
+        }
+
+        $orc->update([
+            'opcao_aprovada' => $opcao,
+            'status' => 'aprovado',
+        ]);
+
+        return redirect()->route('cliente.orcamento', $orc->id)
+            ->with('success', "Opção {$opcao} aprovada com sucesso! ✅");
     }
 }
