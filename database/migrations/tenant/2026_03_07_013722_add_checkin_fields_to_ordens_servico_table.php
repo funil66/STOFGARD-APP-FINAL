@@ -5,26 +5,20 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
         Schema::table('ordens_servico', function (Blueprint $table) {
-            $table->decimal('checkin_lat', 10, 8)->nullable();
-            $table->decimal('checkin_lng', 11, 8)->nullable();
-            $table->string('checkin_ip', 45)->nullable();
-            $table->timestamp('checkin_time')->nullable();
+            $table->string('checkin_latitude')->nullable()->after('assinatura_ip');
+            $table->string('checkin_longitude')->nullable()->after('checkin_latitude');
+            $table->timestamp('checkin_at')->nullable()->after('checkin_longitude');
+            $table->string('checkin_ip')->nullable()->after('checkin_at');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::table('ordens_servico', function (Blueprint $table) {
-            $table->dropColumn(['checkin_lat', 'checkin_lng', 'checkin_ip', 'checkin_time']);
+            $table->dropColumn(['checkin_latitude', 'checkin_longitude', 'checkin_at', 'checkin_ip']);
         });
     }
 };
