@@ -74,6 +74,15 @@ Schedule::command('cofre:retencao-preditiva --meses=6')
     ->runInBackground()
     ->description('A Máquina de Retenção (Manutenção Preditiva) - Pro/Elite');
 
+// Confirmação Automática de Agendamentos (Phase 3.2)
+Schedule::command('agendas:enviar-confirmacoes')
+    ->dailyAt('10:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->runInBackground()
+    ->description('A Máquina de Vendas - Confirmação Automática');
+
 /*
 |--------------------------------------------------------------------------
 | 💰 Fase 1 — Billing Engine

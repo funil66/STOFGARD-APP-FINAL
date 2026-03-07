@@ -33,3 +33,11 @@ DEV_CREDENTIALS.md
 # Local artifacts
 storage/serve.pid
 storage/*.pid
+
+# Test/verification junk — never commit to root
+test_*.php
+verify_*.php
+reproduce_*.php
+verification_output*.txt
+test_output*.txt
+mudancas_*.txt

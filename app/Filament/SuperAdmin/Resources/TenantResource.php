@@ -449,6 +449,45 @@ class TenantResource extends Resource
                                 ->send();
                         }
                     }),
+
+                // 🔴 Botão do Pânico — Limpar Cache do Inquilino
+                Tables\Actions\Action::make('limpar_cache')
+                    ->label('Limpar Cache')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->modalHeading('Limpar Cache do Inquilino')
+                    ->modalDescription('Isso vai limpar o cache de views, rotas e config deste tenant. Pode resolver problemas de exibição ou configurações que não atualizam.')
+                    ->action(function (Tenant $record) {
+                        try {
+                            tenancy()->initialize($record);
+
+                            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+                            \Illuminate\Support\Facades\Artisan::call('view:clear');
+                            \Illuminate\Support\Facades\Artisan::call('route:clear');
+                            \Illuminate\Support\Facades\Artisan::call('config:clear');
+
+                            tenancy()->end();
+
+                            Log::info('[SuperAdmin] Cache limpo para tenant', [
+                                'tenant_id' => $record->id,
+                                'super_admin_id' => Auth::id(),
+                            ]);
+
+                            Notification::make()
+                                ->title("Cache limpo para \"{$record->name}\"!")
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            tenancy()->end();
+                            Notification::make()
+                                ->title('Erro ao limpar cache')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->tooltip('Limpar cache, views e rotas deste tenant.'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

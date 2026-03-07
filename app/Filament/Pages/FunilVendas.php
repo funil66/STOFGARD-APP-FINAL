@@ -24,6 +24,13 @@ class FunilVendas extends Page
 
     protected static ?int $navigationSort = 1;
 
+    public static function canAccess(): bool
+    {
+        /** @var \App\Models\Tenant $tenant */
+        $tenant = filament()->getTenant();
+        return $tenant && $tenant->temAcessoPremium();
+    }
+
     // Filtros públicos
     public ?string $busca = '';
 

@@ -59,6 +59,12 @@ class GerenciamentoEquipeResource extends Resource
 
     public static function canAccess(): bool
     {
+        /** @var \App\Models\Tenant $tenant */
+        $tenant = filament()->getTenant();
+        if (!$tenant || !$tenant->isElite()) {
+            return false;
+        }
+
         return self::traitCanAccess() && (auth()->user()?->role === 'dono' || auth()->user()?->is_admin);
     }
 
@@ -110,6 +116,15 @@ class GerenciamentoEquipeResource extends Resource
                             ->helperText('Se desativado, o usuário não verá valores, recebimentos ou relatórios financeiros.')
                             ->default(false)
                             ->visible(fn(Forms\Get $get) => $get('role') !== 'dono'),
+
+                        Forms\Components\Select::make('local_estoque_id')
+                            ->label('Local de Estoque (Almoxarifado)')
+                            ->relationship('localEstoque', 'nome')
+                            ->searchable()
+                            ->preload()
+                            ->nullable()
+                            ->helperText('Opcional. Vincule um local de estoque para baixa automática (Ex: Viatura do Técnico).')
+                            ->columnSpanFull(),
                     ])
                     ->columns(2),
             ]);
@@ -138,6 +153,14 @@ class GerenciamentoEquipeResource extends Resource
                         'funcionario' => '🔧 Funcionário',
                         default => $state,
                     }),
+
+                Tables\Columns\TextColumn::make('localEstoque.nome')
+                    ->label('Almoxarifado')
+                    ->badge()
+                    ->color('info')
+                    ->sortable()
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\IconColumn::make('acesso_financeiro')
                     ->label('Financeiro')

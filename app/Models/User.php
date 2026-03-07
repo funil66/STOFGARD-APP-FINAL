@@ -35,6 +35,7 @@ class User extends Authenticatable implements FilamentUser, HasMedia
         'last_login_at',
         'role',               // Fase 3: dono | funcionario | secretaria
         'acesso_financeiro',  // Fase 3: controle granular de permissão
+        'local_estoque_id',   // Fase 2.2: multi-almoxarifado
     ];
 
     /**
@@ -90,6 +91,11 @@ class User extends Authenticatable implements FilamentUser, HasMedia
     public function cadastro(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Cadastro::class);
+    }
+
+    public function localEstoque(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(LocalEstoque::class, 'local_estoque_id');
     }
 
     public function canAccessPanel(Panel $panel): bool

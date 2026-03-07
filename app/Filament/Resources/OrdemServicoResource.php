@@ -277,10 +277,17 @@ class OrdemServicoResource extends Resource
                                     ->label('Produto')
                                     ->options(
                                         fn() => \App\Models\Estoque::query()
+                                            ->with('localEstoque')
+                                            ->when(auth()->user()?->local_estoque_id, function ($query, $localId) {
+                                                if (auth()->user()?->isFuncionario()) {
+                                                    return $query->where('local_estoque_id', $localId);
+                                                }
+                                                return $query;
+                                            })
                                             ->orderBy('item')
                                             ->get()
                                             ->mapWithKeys(fn($e) => [
-                                                $e->id => $e->item . ' (Disponível: ' . number_format($e->quantidade, 2, ',', '.') . ' ' . $e->unidade . ')',
+                                                $e->id => $e->item . ($e->localEstoque ? ' - ' . $e->localEstoque->nome : '') . ' (Disponível: ' . number_format($e->quantidade, 2, ',', '.') . ' ' . $e->unidade . ')',
                                             ])
                                     )
                                     ->required()
@@ -482,7 +489,34 @@ class OrdemServicoResource extends Resource
                             ->url(fn(?OrdemServico $record) => $record ? route('os.pdf', $record) : null)
                             ->openUrlInNewTab(),
 
-                        // 4. Baixar/Receber (Verde escuro)
+                        // 2. Iniciar Serviço (GPS)
+                        Tables\Actions\Action::make('iniciar_servico')
+                            ->label('Iniciar Serviço')
+                            ->icon('heroicon-s-play')
+                            ->color('warning')
+                            ->visible(fn(?OrdemServico $record) => $record && filament()->getTenant()->isElite() && !$record->checkin_time && $record->status !== 'concluida')
+                            ->form([
+                                Forms\Components\Hidden::make('checkin_lat'),
+                                Forms\Components\Hidden::make('checkin_lng'),
+                                Forms\Components\ViewField::make('gps_tracker')
+                                    ->label('Localização GPS')
+                                    ->view('filament.forms.components.gps-tracker')
+                            ])
+                            ->modalHeading('📍 Iniciar Serviço')
+                            ->modalDescription('O sistema irá capturar sua localização atual para validar o início do serviço no local do cliente.')
+                            ->modalSubmitActionLabel('Confirmar Início')
+                            ->action(function (OrdemServico $record, array $data) {
+                                $record->update([
+                                    'checkin_lat' => $data['checkin_lat'] ?? null,
+                                    'checkin_lng' => $data['checkin_lng'] ?? null,
+                                    'checkin_ip' => request()->ip(),
+                                    'checkin_time' => now(),
+                                    'status' => 'em_andamento',
+                                ]);
+                                \Filament\Notifications\Notification::make()->title('Serviço Iniciado com Sucesso!')->success()->send();
+                            }),
+
+                        // 3. Baixar/Receber (Verde escuro)
                         Tables\Actions\Action::make('baixar')
                             ->label('Receber')
                             ->tooltip('Receber Pagamento')

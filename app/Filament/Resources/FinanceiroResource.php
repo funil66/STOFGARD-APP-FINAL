@@ -602,6 +602,28 @@ class FinanceiroResource extends Resource
                             // ->iconButton()
                             ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
                             ->openUrlInNewTab(),
+
+                        // Gerar Recibo (apenas para entradas pagas)
+                        Tables\Actions\Action::make('recibo')
+                            ->label('Recibo')
+                            ->tooltip('Gerar Recibo de Pagamento (PDF)')
+                            ->icon('heroicon-s-receipt-percent')
+                            ->color('info')
+                            ->visible(fn(Financeiro $record) => $record->status === 'pago' && $record->tipo === 'entrada')
+                            ->action(function (Financeiro $record) {
+                                $record->load(['cadastro', 'categoria', 'orcamento', 'ordemServico']);
+                                $config = \App\Models\Configuracao::first();
+
+                                return app(\App\Services\PdfService::class)->generate(
+                                    'pdf.recibo',
+                                    [
+                                        'financeiro' => $record,
+                                        'config' => $config,
+                                    ],
+                                    "Recibo-{$record->id}.pdf",
+                                    download: true,
+                                );
+                            }),
                     ]
                 )
             )
