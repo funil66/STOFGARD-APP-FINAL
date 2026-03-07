@@ -16,6 +16,9 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Tabs\Tab;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ViewField;
+use Filament\Forms\Components\Placeholder;
+use Illuminate\Support\HtmlString;
 use Filament\Forms\Form;
 use Filament\Infolists;
 use Filament\Infolists\Components\Grid as InfolistGrid;
@@ -47,6 +50,45 @@ class OrdemServicoResource extends Resource
     {
         return $form
             ->schema([
+                Section::make('Controlo Operacional (Plano ELITE)')
+                    ->schema([
+                        // O Botão de Magia do AlpineJS
+                        ViewField::make('gps_widget')
+                            ->view('filament.forms.components.gps-checkin')
+                            ->hiddenLabel()
+                            ->columnSpanFull()
+                            ->hidden(fn($record) => $record && $record->checkin_at !== null), // Esconde o botão se já fez checkin
+
+                        // Mostra o resultado do GPS se já houver registo
+                        Placeholder::make('dados_checkin')
+                            ->label('Prova de Check-in GPS')
+                            ->content(function ($record) {
+                                if (!$record || !$record->checkin_at)
+                                    return 'Sem registo.';
+
+                                $data = \Carbon\Carbon::parse($record->checkin_at)->format('d/m/Y às H:i:s');
+                                $linkGoogle = "https://www.google.com/maps/search/?api=1&query={$record->checkin_latitude},{$record->checkin_longitude}";
+
+                                return new HtmlString("
+                                    <div class='text-sm space-y-1'>
+                                        <p><strong>Hora:</strong> {$data}</p>
+                                        <p><strong>IP da Rede:</strong> {$record->checkin_ip}</p>
+                                        <p><a href='{$linkGoogle}' target='_blank' class='text-indigo-600 underline font-bold'>📍 Abrir Localização no Google Maps</a></p>
+                                    </div>
+                                ");
+                            })
+                            ->visible(fn($record) => $record && $record->checkin_at !== null),
+
+                        // Campos ocultos que o AlpineJS vai preencher
+                        Hidden::make('checkin_latitude'),
+                        Hidden::make('checkin_longitude'),
+                        Hidden::make('checkin_at'),
+                    ])
+                    ->icon('heroicon-o-satellite')
+                    ->collapsible()
+                    // A TRANCA: Só aparece se o plano for ELITE
+                    ->visible(fn() => in_array(tenant()->plano ?? 'start', ['elite'])),
+
                 Section::make('Identificação e Origem')
                     ->description('Defina o cliente tomador e a origem comercial da venda.')
                     ->icon('heroicon-o-user')

@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\Log;
 class OrdemServicoObserver
 {
     /**
+     * Handle the OrdemServico "saving" event.
+     */
+    public function saving(OrdemServico $ordemServico): void
+    {
+        // Se a latitude foi preenchida agora e o IP ainda está vazio
+        if ($ordemServico->isDirty('checkin_latitude') && empty($ordemServico->checkin_ip)) {
+            $ordemServico->checkin_ip = request()->ip();
+        }
+    }
+    /**
      * Handle the OrdemServico "created" event.
      */
     public function created(OrdemServico $os): void
