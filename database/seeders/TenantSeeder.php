@@ -40,10 +40,7 @@ class TenantSeeder extends Seeder
             ]
         );
 
-        // Atualizar a sequência no PostgreSQL
-        if (\Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql') {
-            \Illuminate\Support\Facades\DB::statement("SELECT setval(pg_get_serial_sequence('tenants', 'id'), coalesce(max(id), 1), true) FROM tenants;");
-        }
+        // (sequence update removed since id is a string)
 
         $this->command->info("✅ Tenant padrão criado: {$default->name} (ID: {$default->id})");
 
