@@ -89,9 +89,9 @@ Route::post('/solicitar-orcamento', [LeadController::class, 'store'])
     ->name('solicitar.orcamento.post');
 
 // Rota pública para visualizar PDF do orçamento via link assinado (WhatsApp)
-Route::get('/orcamento/{orcamento}/compartilhar', function ($orcamento) {
-    return "Em breve";
-})->middleware('signed')->name('orcamento.compartilhar');
+Route::get('/orcamento/{orcamento}/compartilhar', [\App\Http\Controllers\OrcamentoPdfController::class, 'gerarPdf'])
+    ->middleware('signed')
+    ->name('orcamento.compartilhar');
 
 // Rotas de autenticação do Google Calendar
 Route::middleware(['auth'])->group(function () {
@@ -190,10 +190,7 @@ Route::get('/download/{disk}/{encodedPath}', [\App\Http\Controllers\FileDownload
     ->where(['encodedPath' => '.*'])
     ->name('file.download');
 
-// Rota pública assinada para o cliente baixar o PDF
-Route::get('/orcamento/{orcamento}/publico', function (\App\Models\Orcamento $orcamento) {
-    return response()->json(['message' => 'Visualização de PDF em background disponível em breve']);
-})->name('orcamento.public_stream')->middleware('signed');
+// Rota pública assinada removida, utilizar orcamento.compartilhar
 
 // Relatórios financeiros (autenticado)
 Route::middleware(['auth'])->group(function () {

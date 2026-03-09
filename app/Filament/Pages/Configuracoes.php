@@ -649,7 +649,69 @@ class Configuracoes extends Page implements HasForms
                                     ]),
                             ]),
 
-                        // 9. WHATSAPP / MENSAGENS
+                        // 9. GATEWAY DE PAGAMENTO
+                        Tabs\Tab::make('Gateway de Pagamento')
+                            ->icon('heroicon-m-credit-card')
+                            ->schema([
+                                Section::make('Provedor de Pagamento')
+                                    ->description('Configure o gateway para cobranças automáticas (PIX dinâmico, Boleto e Link de pagamento)')
+                                    ->schema([
+                                        Select::make('gateway_provider')
+                                            ->label('Gateway')
+                                            ->options([
+                                                '' => '🚫 Nenhum (PIX Manual)',
+                                                'asaas' => '💳 Asaas',
+                                                'efipay' => '💰 EFI Pay (Gerencianet)',
+                                                'mercadopago' => '🟡 Mercado Pago',
+                                            ])
+                                            ->default('')
+                                            ->helperText('Selecione o gateway de pagamento. Se "Nenhum", o sistema usa somente as chaves PIX manuais configuradas acima.')
+                                            ->live(),
+                                        TextInput::make('gateway_token')
+                                            ->label('Token / API Key')
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('Token de acesso à API do gateway selecionado. Este valor é criptografado no banco.')
+                                            ->visible(fn ($get) => !empty($get('gateway_provider'))),
+                                        TextInput::make('gateway_webhook_token')
+                                            ->label('Token do Webhook')
+                                            ->password()
+                                            ->revealable()
+                                            ->helperText('Token para autenticar os webhooks (callbacks) do gateway.')
+                                            ->visible(fn ($get) => !empty($get('gateway_provider'))),
+                                        Toggle::make('gateway_auto_cobrar')
+                                            ->label('Cobrar automaticamente ao aprovar orçamento')
+                                            ->default(true)
+                                            ->helperText('Quando ativo, ao aprovar um orçamento, o sistema gera cobrança PIX automática via gateway e envia ao cliente por WhatsApp.')
+                                            ->visible(fn ($get) => !empty($get('gateway_provider'))),
+                                    ])->columns(1),
+                            ]),
+
+                        // 10. MARKETING & AVALIAÇÃO
+                        Tabs\Tab::make('Marketing & Avaliação')
+                            ->icon('heroicon-m-star')
+                            ->schema([
+                                Section::make('Avaliação Automática (Google Meu Negócio)')
+                                    ->description('Envie automaticamente uma solicitação de avaliação 5★ ao cliente 24h após a OS ser concluída e paga.')
+                                    ->schema([
+                                        Toggle::make('habilitar_avaliacao_automatica')
+                                            ->label('Habilitar avaliação automática')
+                                            ->default(false)
+                                            ->helperText('Quando ativo, o sistema envia WhatsApp 24h após OS concluída + paga pedindo avaliação no Google Maps.'),
+                                        TextInput::make('gmb_link')
+                                            ->label('Link do Google Meu Negócio')
+                                            ->url()
+                                            ->placeholder('https://g.page/r/SEU-LINK/review')
+                                            ->helperText('Cole aqui o link de avaliação do seu Google Meu Negócio. Encontre em: Google Maps → Sua Empresa → Solicitar Avaliações.'),
+                                        Textarea::make('mensagem_avaliacao')
+                                            ->label('Template da Mensagem de Avaliação')
+                                            ->rows(8)
+                                            ->placeholder("Olá, {nome_cliente}! 😊\n\nO serviço de *{nome_empresa}* atendeu suas expectativas?\n\nSe ficou satisfeito, nos ajude com uma avaliação de ⭐⭐⭐⭐⭐ no Google:\n{link_gmb}\n\nLeva menos de 1 minuto! 🙏\n\n_Equipe {nome_empresa}_")
+                                            ->helperText('Variáveis: {nome_cliente}, {nome_empresa}, {link_gmb}, {numero_os}. Deixe vazio para usar o padrão.'),
+                                    ])->columns(1),
+                            ]),
+
+                        // 11. WHATSAPP / MENSAGENS
                         Tabs\Tab::make('WhatsApp / Mensagens')
                             ->visible(fn() => filament()->getTenant()->temAcessoPremium())
                             ->icon('heroicon-m-chat-bubble-left-right')

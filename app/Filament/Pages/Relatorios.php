@@ -2,10 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Cadastro;
 use App\Models\Cliente;
+use App\Models\Estoque;
 use App\Models\Financeiro;
 use App\Models\OrdemServico;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Response;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -27,6 +30,14 @@ class Relatorios extends Page implements HasForms
     protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 10;
+
+    /**
+     * Relatórios financeiros: requer acesso financeiro (dono ou flag acesso_financeiro).
+     */
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->temAcessoFinanceiro() ?? false;
+    }
 
     protected static string $view = 'filament.pages.relatorios';
 
@@ -290,35 +301,240 @@ class Relatorios extends Page implements HasForms
 
     private function relatorioEstoque(): array
     {
+        $estoques = Estoque::orderBy('item')->get();
+
+        // Itens abaixo do mínimo
+        $abaixoMinimo = $estoques->filter(fn ($e) => $e->isAbaixoDoMinimo())
+            ->map(fn ($e) => [
+                'id' => $e->id,
+                'item' => $e->item,
+                'quantidade' => (float) $e->quantidade,
+                'unidade' => $e->unidade ?? 'un',
+                'minimo_alerta' => (float) $e->minimo_alerta,
+                'preco_interno' => (float) $e->preco_interno,
+                'preco_venda' => (float) $e->preco_venda,
+                'cor' => $e->cor,
+                'local' => $e->localEstoque?->nome ?? 'Geral',
+            ])->values();
+
+        // Consumo no período (via pivot ordem_servico_estoque)
+        $consumo = \DB::table('ordem_servico_estoque')
+            ->join('estoques', 'estoques.id', '=', 'ordem_servico_estoque.estoque_id')
+            ->join('ordens_servico', 'ordens_servico.id', '=', 'ordem_servico_estoque.ordem_servico_id')
+            ->whereBetween('ordem_servico_estoque.created_at', [
+                Carbon::parse($this->dataInicio)->startOfDay(),
+                Carbon::parse($this->dataFim)->endOfDay(),
+            ])
+            ->select(
+                'estoques.item',
+                'estoques.unidade',
+                \DB::raw('SUM(ordem_servico_estoque.quantidade_utilizada) as total_consumido'),
+                \DB::raw('COUNT(DISTINCT ordem_servico_estoque.ordem_servico_id) as total_os'),
+            )
+            ->groupBy('estoques.id', 'estoques.item', 'estoques.unidade')
+            ->orderByDesc('total_consumido')
+            ->limit(20)
+            ->get()
+            ->map(fn ($c) => [
+                'item' => $c->item,
+                'unidade' => $c->unidade ?? 'un',
+                'total_consumido' => (float) $c->total_consumido,
+                'total_os' => (int) $c->total_os,
+            ])->values();
+
+        // Valor total em estoque
+        $valorTotalInterno = $estoques->sum(fn ($e) => (float) $e->quantidade * (float) $e->preco_interno);
+        $valorTotalVenda = $estoques->sum(fn ($e) => (float) $e->quantidade * (float) $e->preco_venda);
+
         return [
-            'mensagem' => 'Relatório de movimentação de estoque em desenvolvimento',
+            'total_itens' => $estoques->count(),
+            'total_abaixo_minimo' => $abaixoMinimo->count(),
+            'valor_total_interno' => $valorTotalInterno,
+            'valor_total_venda' => $valorTotalVenda,
+            'abaixo_minimo' => $abaixoMinimo,
+            'consumo_periodo' => $consumo,
         ];
     }
 
     private function relatorioComissoes(): array
     {
+        $query = Financeiro::where('is_comissao', true)
+            ->whereBetween('data', [
+                Carbon::parse($this->dataInicio)->startOfDay(),
+                Carbon::parse($this->dataFim)->endOfDay(),
+            ]);
+
+        $comissoes = $query->get();
+
+        $totalPendente = $comissoes->where('comissao_paga', false)->sum('valor');
+        $totalPago = $comissoes->where('comissao_paga', true)->sum('valor');
+
+        // Agrupar por parceiro
+        $porParceiro = $comissoes->groupBy('cadastro_id')
+            ->map(function ($grupo) {
+                $cadastro = $grupo->first()->cadastro;
+                return [
+                    'nome' => $cadastro?->nome ?? 'Desconhecido',
+                    'tipo' => $cadastro?->tipo ?? 'parceiro',
+                    'total' => (float) $grupo->sum('valor'),
+                    'pago' => (float) $grupo->where('comissao_paga', true)->sum('valor'),
+                    'pendente' => (float) $grupo->where('comissao_paga', false)->sum('valor'),
+                    'qtd' => $grupo->count(),
+                ];
+            })
+            ->sortByDesc('total')
+            ->values();
+
+        // Lista detalhada
+        $lista = $comissoes->sortByDesc('data')->take(20)
+            ->map(fn ($c) => [
+                'data' => $c->data?->format('d/m/Y') ?? '-',
+                'parceiro' => $c->cadastro?->nome ?? 'N/A',
+                'descricao' => $c->descricao,
+                'valor' => (float) $c->valor,
+                'status' => $c->comissao_paga ? 'Paga' : 'Pendente',
+                'data_pagamento' => $c->comissao_data_pagamento?->format('d/m/Y') ?? '-',
+            ])->values();
+
         return [
-            'mensagem' => 'Relatório de comissões em desenvolvimento',
+            'total_geral' => (float) ($totalPago + $totalPendente),
+            'total_pago' => (float) $totalPago,
+            'total_pendente' => (float) $totalPendente,
+            'qtd_comissoes' => $comissoes->count(),
+            'por_parceiro' => $porParceiro,
+            'lista' => $lista,
         ];
     }
 
     public function exportarPDF(): void
     {
-        // Implementar exportação em PDF
         \Filament\Notifications\Notification::make()
-            ->title('Exportação PDF')
-            ->body('Funcionalidade em desenvolvimento')
-            ->info()
+            ->title('PDF sendo gerado...')
+            ->body('O download iniciará em instantes.')
+            ->success()
             ->send();
+
+        // Redirect to PDF generation route with current filters
+        $this->redirect(route('relatorio.pdf', [
+            'tipo' => $this->form->getState()['relatorio'] ?? 'servicos',
+            'inicio' => $this->dataInicio,
+            'fim' => $this->dataFim,
+        ]));
     }
 
-    public function exportarExcel(): void
+    public function exportarExcel()
     {
-        // Implementar exportação em Excel
-        \Filament\Notifications\Notification::make()
-            ->title('Exportação Excel')
-            ->body('Funcionalidade em desenvolvimento')
-            ->info()
-            ->send();
+        $relatorio = $this->form->getState()['relatorio'] ?? 'servicos';
+        $dados = $this->dadosRelatorio;
+
+        // Build CSV content based on report type
+        $csv = $this->gerarCSV($relatorio, $dados);
+
+        $nomeArquivo = "relatorio_{$relatorio}_" . now()->format('Y-m-d') . '.csv';
+
+        return Response::streamDownload(function () use ($csv) {
+            echo $csv;
+        }, $nomeArquivo, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    private function gerarCSV(string $tipo, array $dados): string
+    {
+        $output = chr(0xEF) . chr(0xBB) . chr(0xBF); // UTF-8 BOM for Excel
+
+        switch ($tipo) {
+            case 'servicos':
+                $output .= "Data;Cliente;Tipo;Status;Valor\n";
+                if (!empty($dados['servicos'])) {
+                    foreach ($dados['servicos'] as $s) {
+                        $output .= implode(';', [
+                            $s->created_at->format('d/m/Y'),
+                            $s->cadastro?->nome ?? $s->cliente?->nome ?? 'N/A',
+                            $s->tipo ?? '',
+                            ucfirst($s->status),
+                            number_format((float) $s->valor_total, 2, ',', '.'),
+                        ]) . "\n";
+                    }
+                }
+                break;
+
+            case 'financeiro':
+                $output .= "Data;Cadastro;Descrição;Tipo;Status;Valor\n";
+                if (!empty($dados['transacoes'])) {
+                    foreach ($dados['transacoes'] as $t) {
+                        $output .= implode(';', [
+                            $t->data_vencimento ? Carbon::parse($t->data_vencimento)->format('d/m/Y') : '',
+                            $t->cadastro?->nome ?? 'N/A',
+                            str_replace(';', ',', $t->descricao ?? ''),
+                            ucfirst($t->tipo),
+                            ucfirst($t->status),
+                            number_format((float) $t->valor, 2, ',', '.'),
+                        ]) . "\n";
+                    }
+                }
+                break;
+
+            case 'estoque':
+                $output .= "Item;Quantidade;Unidade;Mínimo;Preço Interno;Preço Venda;Local;Status\n";
+                if (!empty($dados['abaixo_minimo'])) {
+                    foreach ($dados['abaixo_minimo'] as $e) {
+                        $output .= implode(';', [
+                            $e['item'],
+                            number_format($e['quantidade'], 2, ',', '.'),
+                            $e['unidade'],
+                            number_format($e['minimo_alerta'], 2, ',', '.'),
+                            number_format($e['preco_interno'], 2, ',', '.'),
+                            number_format($e['preco_venda'], 2, ',', '.'),
+                            $e['local'],
+                            'ABAIXO DO MÍNIMO',
+                        ]) . "\n";
+                    }
+                }
+                if (!empty($dados['consumo_periodo'])) {
+                    $output .= "\nConsumo no Período\nItem;Unidade;Total Consumido;Total OS\n";
+                    foreach ($dados['consumo_periodo'] as $c) {
+                        $output .= implode(';', [
+                            $c['item'],
+                            $c['unidade'],
+                            number_format($c['total_consumido'], 2, ',', '.'),
+                            $c['total_os'],
+                        ]) . "\n";
+                    }
+                }
+                break;
+
+            case 'comissoes':
+                $output .= "Parceiro;Total;Pago;Pendente;Qtd\n";
+                if (!empty($dados['por_parceiro'])) {
+                    foreach ($dados['por_parceiro'] as $p) {
+                        $output .= implode(';', [
+                            $p['nome'],
+                            number_format($p['total'], 2, ',', '.'),
+                            number_format($p['pago'], 2, ',', '.'),
+                            number_format($p['pendente'], 2, ',', '.'),
+                            $p['qtd'],
+                        ]) . "\n";
+                    }
+                }
+                break;
+
+            case 'clientes':
+                $output .= "#;Nome;Tipo;Telefone;Total Serviços\n";
+                if (!empty($dados['top_clientes'])) {
+                    foreach ($dados['top_clientes'] as $i => $c) {
+                        $output .= implode(';', [
+                            $i + 1,
+                            $c['nome'] ?? 'N/A',
+                            $c['tipo'] ?? '',
+                            $c['telefone'] ?? '',
+                            $c['total_servicos'] ?? 0,
+                        ]) . "\n";
+                    }
+                }
+                break;
+        }
+
+        return $output;
     }
 }
