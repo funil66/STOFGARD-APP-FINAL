@@ -108,10 +108,26 @@
                                             {{ ucfirst($fatura->status) }}
                                         </span>
                                         @if($fatura->status === 'pendente' || $fatura->status === 'atrasado')
-                                            <!-- Pix Link / Botão genérico caso o sistema gere link no futuro -->
-                                            <button onclick="alert('Funcionalidade de pagamento online será ativada em breve. Por favor, contate o atendimento para o link PIX.')" class="text-xs bg-brand hover:opacity-90 text-white px-3 py-1 rounded-full font-medium transition-colors">
-                                                Pagar Agora
-                                            </button>
+                                            @if($fatura->link_pagamento_hash)
+                                                {{-- Link de pagamento existente (página PIX completa) --}}
+                                                <a href="{{ route('pagamento.pix', $fatura->link_pagamento_hash) }}"
+                                                   target="_blank"
+                                                   class="text-xs bg-brand hover:opacity-90 text-white px-3 py-1 rounded-full font-medium transition-colors inline-flex items-center gap-1">
+                                                    💳 Pagar Agora
+                                                </a>
+                                            @elseif($fatura->pix_copia_cola)
+                                                {{-- PIX Copia e Cola disponível --}}
+                                                <button onclick="abrirModalPix('{{ addslashes($fatura->pix_copia_cola) }}', 'R$ {{ number_format($fatura->valor, 2, ',', '.') }}')"
+                                                        class="text-xs bg-brand hover:opacity-90 text-white px-3 py-1 rounded-full font-medium transition-colors inline-flex items-center gap-1">
+                                                    ⚡ Pagar com PIX
+                                                </button>
+                                            @else
+                                                {{-- Sem link de pagamento --}}
+                                                <button onclick="alert('Para pagar esta fatura, entre em contato com a empresa pelo WhatsApp.')"
+                                                        class="text-xs bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded-full font-medium transition-colors">
+                                                    Solicitar PIX
+                                                </button>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
@@ -218,6 +234,53 @@
         @endif
 
     </main>
+
+    {{-- Modal PIX Copia e Cola --}}
+    <div id="modalPix" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4" onclick="fecharModalPix(event)">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative" onclick="event.stopPropagation()">
+            <button onclick="fecharModalPix()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            <div class="text-center mb-4">
+                <div class="text-4xl mb-2">⚡</div>
+                <h3 class="text-lg font-bold text-gray-900">Pagamento PIX</h3>
+                <p class="text-2xl font-bold text-brand mt-1" id="pixValor"></p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                <label class="block text-xs font-medium text-gray-500 mb-2">PIX Copia e Cola:</label>
+                <div class="bg-white border border-gray-200 rounded-lg p-3 text-xs text-gray-700 break-all font-mono max-h-24 overflow-y-auto" id="pixCodigo"></div>
+            </div>
+            <button onclick="copiarPix()" class="w-full bg-brand hover:opacity-90 text-white font-semibold py-3 rounded-xl transition-colors text-sm" id="btnCopiar">
+                📋 Copiar Código PIX
+            </button>
+            <p class="text-xs text-gray-400 text-center mt-3">Abra o app do seu banco e cole na área PIX.</p>
+        </div>
+    </div>
+
+    <script>
+        function abrirModalPix(codigo, valor) {
+            document.getElementById('pixCodigo').textContent = codigo;
+            document.getElementById('pixValor').textContent = valor;
+            document.getElementById('btnCopiar').textContent = '📋 Copiar Código PIX';
+            const modal = document.getElementById('modalPix');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function fecharModalPix(event) {
+            if (event && event.target !== document.getElementById('modalPix')) return;
+            const modal = document.getElementById('modalPix');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function copiarPix() {
+            const codigo = document.getElementById('pixCodigo').textContent;
+            navigator.clipboard.writeText(codigo).then(() => {
+                const btn = document.getElementById('btnCopiar');
+                btn.textContent = '✅ Copiado!';
+                setTimeout(() => btn.textContent = '📋 Copiar Código PIX', 2000);
+            });
+        }
+    </script>
 </body>
 
 </html>
