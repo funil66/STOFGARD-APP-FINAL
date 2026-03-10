@@ -50,6 +50,10 @@ class TenantResource extends Resource
                                     ->label('Slug (subdomínio)')
                                     ->required()
                                     ->unique(ignoreRecord: true)
+                                    ->notIn(['app', 'admin', 'super-admin', 'sistema', 'suporte', 'api', 'www', 'mail', 'painel'])
+                                    ->validationMessages([
+                                        'not_in' => 'Este subdomínio é reservado e não pode ser usado.',
+                                    ])
                                     ->helperText('Ex: "joao-eletricista" → joao-eletricista.autonomiailimitada.com.br')
                                     ->alphaDash()
                                     ->maxLength(100),
