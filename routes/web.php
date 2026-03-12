@@ -19,6 +19,18 @@ use Illuminate\Support\Facades\Route;
 // Página inicial
 Route::view('/', 'welcome');
 
+Route::post('/ping', function() {
+    return response()->json(['status' => 'pong']);
+});
+
+// Forçando Livewire a usar a URL correta no proxy Cloudflare
+\Livewire\Livewire::setUpdateRoute(function ($handle) {
+    return Route::post('/livewire/update', $handle);
+});
+\Livewire\Livewire::setScriptRoute(function ($handle) {
+    return Route::get('/livewire/livewire.js', $handle);
+});
+
 // Rota de login (redireciona para Filament)
 Route::redirect('/login', '/admin/login')->name('login');
 
