@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'America/Sao_Paulo'),
 
     /*
     |--------------------------------------------------------------------------
@@ -105,8 +105,8 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'admin_email' => env('FILAMENT_ADMIN_EMAIL', 'allisson@stofgard.com.br'),
-    'admin_password' => env('FILAMENT_ADMIN_PASSWORD', 'Swordfish'),
+    'admin_email' => env('FILAMENT_ADMIN_EMAIL'),
+    'admin_password' => env('FILAMENT_ADMIN_PASSWORD'),
 
     /*
     |--------------------------------------------------------------------------

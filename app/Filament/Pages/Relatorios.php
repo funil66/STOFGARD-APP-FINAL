@@ -3,7 +3,6 @@
 namespace App\Filament\Pages;
 
 use App\Models\Cadastro;
-use App\Models\Cliente;
 use App\Models\Estoque;
 use App\Models\Financeiro;
 use App\Models\OrdemServico;
@@ -120,10 +119,7 @@ class Relatorios extends Page implements HasForms
                             ->label('Cadastro')
                             ->searchable()
                             ->options(function () {
-                                $clientes = \App\Models\Cliente::orderBy('nome')->get()->mapWithKeys(fn ($c) => ['cliente_'.$c->id => $c->nome]);
-                                $parceiros = \App\Models\Parceiro::orderBy('nome')->get()->mapWithKeys(fn ($p) => ['parceiro_'.$p->id => $p->nome]);
-
-                                return $clientes->merge($parceiros)->toArray();
+                                return Cadastro::orderBy('nome')->get()->mapWithKeys(fn ($c) => [$c->id => $c->nome])->toArray();
                             })
                             ->placeholder('Todos')
                             ->visible(fn ($get) => in_array($get('relatorio'), ['servicos', 'financeiro', 'clientes']))
@@ -247,44 +243,32 @@ class Relatorios extends Page implements HasForms
         // Usar contagens com withCount e respeitar filtro de cadastro (se selecionado)
         $cadastroFiltro = $this->form->getState()['cadastro_id'] ?? null;
 
-        $clientes = \App\Models\Cliente::withCount('ordensServico')->get();
-        $parceiros = \App\Models\Parceiro::withCount('ordensServico')->get();
+        $query = Cadastro::withCount('ordensServico');
 
         if ($cadastroFiltro) {
-            if (str_starts_with($cadastroFiltro, 'cliente_')) {
-                $id = (int) str_replace('cliente_', '', $cadastroFiltro);
-                $clientes = $clientes->where('id', $id)->values();
-                $parceiros = collect();
-            } elseif (str_starts_with($cadastroFiltro, 'parceiro_')) {
-                $id = (int) str_replace('parceiro_', '', $cadastroFiltro);
-                $parceiros = $parceiros->where('id', $id)->values();
-                $clientes = collect();
-            }
+            $query->where('id', $cadastroFiltro);
         }
 
-        $total = $clientes->count() + $parceiros->count();
+        $cadastros = $query->get();
 
-        $novos_periodo = $clientes->whereBetween('created_at', [
-            Carbon::parse($this->dataInicio)->startOfDay(),
-            Carbon::parse($this->dataFim)->endOfDay(),
-        ])->count() + $parceiros->whereBetween('created_at', [
+        $total = $cadastros->count();
+
+        $novos_periodo = $cadastros->whereBetween('created_at', [
             Carbon::parse($this->dataInicio)->startOfDay(),
             Carbon::parse($this->dataFim)->endOfDay(),
         ])->count();
 
-        $com_servicos = $clientes->where('ordens_servico_count', '>', 0)->count() +
-            $parceiros->where('ordens_servico_count', '>', 0)->count();
+        $com_servicos = $cadastros->where('ordens_servico_count', '>', 0)->count();
 
-        $inativos = $clientes->where('ordens_servico_count', 0)->count() +
-            $parceiros->where('ordens_servico_count', 0)->count();
+        $inativos = $cadastros->where('ordens_servico_count', 0)->count();
 
         // Top por quantidade de serviços - transformar em arrays para evitar problems de serialização no Livewire
-        $top_unificados = $clientes->concat($parceiros)
+        $top_unificados = $cadastros
             ->sortByDesc('ordens_servico_count')
             ->take(10)
             ->map(fn ($m) => [
                 'nome' => $m->nome,
-                'tipo' => $m instanceof Cliente ? 'Cliente' : (ucfirst($m->tipo ?? 'Parceiro')),
+                'tipo' => ucfirst($m->tipo ?? 'Cadastro'),
                 'total_servicos' => $m->ordens_servico_count,
                 'telefone' => $m->celular ?? $m->telefone ?? null,
             ])

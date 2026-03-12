@@ -51,15 +51,17 @@ abstract class TestCase extends BaseTestCase
             ]);
         }
 
-        $this->defaultTenant = Tenant::firstOrCreate(
-            ['id' => 'foo'],
-            [
-                'name' => 'Autonomia Ilimitada Test Tenant',
-                'is_active' => true,
-                'data_vencimento' => '2099-12-31',
-                'limite_os_mes' => 9999
-            ]
-        );
+        $this->defaultTenant = Tenant::withoutEvents(function () {
+            return Tenant::firstOrCreate(
+                ['id' => 'foo'],
+                [
+                    'name' => 'Autonomia Ilimitada Test Tenant',
+                    'is_active' => true,
+                    'data_vencimento' => '2099-12-31',
+                    'limite_os_mes' => 9999,
+                ]
+            );
+        });
 
         if ($this->defaultTenant->domains()->count() === 0) {
             $this->defaultTenant->domains()->create(['domain' => 'localhost']);

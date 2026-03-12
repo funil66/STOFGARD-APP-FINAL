@@ -9,11 +9,17 @@ class ConfiguracaoSeeder extends Seeder
 {
     public function run(): void
     {
+        // Use tenant name if available, otherwise default
+        $tenantName = 'Minha Empresa';
+        if (function_exists('tenant') && tenant()) {
+            $tenantName = tenant()->name ?? $tenantName;
+        }
+
         $payload = [
-            'empresa_nome' => 'Autonomia Ilimitada - Higienização e Impermeabilização',
+            'empresa_nome' => $tenantName,
             'empresa_cnpj' => '00.000.000/0001-00',
-            'empresa_telefone' => '(16) 99999-9999',
-            'empresa_email' => 'contato@stofgard.com.br',
+            'empresa_telefone' => '(00) 00000-0000',
+            'empresa_email' => 'contato@minhaempresa.com.br',
             'desconto_pix' => 10.00, // 10%
 
             // Taxas de Mercado (Simulação)

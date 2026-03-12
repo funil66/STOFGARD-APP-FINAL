@@ -26,7 +26,7 @@ class FinanceiroResource extends Resource
     {
         return parent::getEloquentQuery()
             ->where('cadastro_id', auth()->user()->cadastro_id ?? -1)
-            ->where('tipo', 'receita') // O cliente só vê suas faturas mensais/receitas da empresa
+            ->where('tipo', 'entrada') // O cliente só vê suas faturas (entradas da empresa = cobrança ao cliente)
         ;
     }
 

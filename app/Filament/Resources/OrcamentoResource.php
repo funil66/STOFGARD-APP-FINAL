@@ -623,6 +623,7 @@ class OrcamentoResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['cliente', 'vendedor', 'loja']))
             ->columns([
                 Tables\Columns\TextColumn::make('numero')
                     ->label('Orçamento')

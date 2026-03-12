@@ -19,6 +19,16 @@ use Illuminate\Support\Facades\Route;
 // Página inicial
 Route::view('/', 'welcome');
 
+// Self-service company registration
+Route::get('/registro-empresa', \App\Livewire\RegistroEmpresa::class)
+    ->name('registro.empresa')
+    ->middleware('throttle:10,1');
+
+// Avaliação pública NPS (via token único enviado ao cliente)
+Route::get('/avaliacao/{token}', \App\Livewire\AvaliacaoPublica::class)
+    ->name('avaliacao.publica')
+    ->middleware('throttle:30,1');
+
 Route::post('/ping', function() {
     return response()->json(['status' => 'pong']);
 });
@@ -187,11 +197,12 @@ Route::get('/pagamento/{hash}', [PagamentoController::class, 'pix'])
 Route::get('/pagamento/{hash}/verificar', [PagamentoController::class, 'verificarStatus'])
     ->name('pagamento.verificar');
 
-// Webhook PIX (EFI/Gerencianet)
-Route::post('/webhook/pix', [PixWebhookController::class, 'handle'])
-    ->name('webhook.pix');
-Route::get('/webhook/pix/status', [PixWebhookController::class, 'status'])
-    ->name('webhook.pix.status');
+// Webhook PIX (EFI/Gerencianet) — rate limited
+Route::middleware('throttle:60,1')->group(function () {
+    Route::post('/webhook/pix', [PixWebhookController::class, 'handle'])
+        ->name('webhook.pix');
+});
+// PIX status endpoint removed — use api/webhooks/pix instead
 
 // NOTE: public debug PDF route removed for security. If you need a local-only test, use
 // `scripts/generate-pdf.js` with debug HTML files under `storage/debug` or run the

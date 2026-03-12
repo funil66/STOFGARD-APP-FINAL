@@ -16,6 +16,8 @@ class GoogleToken extends Model
     ];
 
     protected $casts = [
+        'access_token' => 'encrypted',
+        'refresh_token' => 'encrypted',
         'expires_at' => 'datetime',
     ];
 

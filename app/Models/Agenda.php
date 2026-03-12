@@ -44,24 +44,12 @@ class Agenda extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Audit
         'extra_attributes',
     ];
 
-    // Unified Cadastro Accessor
-    public function getCadastroAttribute()
+    /**
+     * Cadastro vinculado (Cliente, Loja ou Vendedor).
+     */
+    public function cadastro(): BelongsTo
     {
-        if (!$this->cadastro_id) {
-            return null;
-        }
-
-        if (str_starts_with($this->cadastro_id, 'cliente_')) {
-            $id = (int) str_replace('cliente_', '', $this->cadastro_id);
-            return Cliente::find($id);
-        }
-
-        if (str_starts_with($this->cadastro_id, 'parceiro_')) {
-            $id = (int) str_replace('parceiro_', '', $this->cadastro_id);
-            return Parceiro::find($id);
-        }
-
-        return null;
+        return $this->belongsTo(Cadastro::class);
     }
 
     public function getCadastroUrlAttribute(): ?string
@@ -71,15 +59,7 @@ class Agenda extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Audit
             return null;
         }
 
-        if ($cad instanceof Cliente) {
-            return \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $cad]);
-        }
-
-        if ($cad instanceof Parceiro) {
-            return \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $cad]);
-        }
-
-        return null;
+        return \App\Filament\Resources\CadastroResource::getUrl('view', ['record' => $cad]);
     }
 
     public function getEnderecoMapsAttribute(): ?string
@@ -102,9 +82,10 @@ class Agenda extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Audit
     ];
 
     // Relacionamentos
+    // NOTE: cliente() is an alias for backwards compat, prefer cadastro()
     public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(Cadastro::class, 'cliente_id');
     }
 
     public function ordemServico(): BelongsTo

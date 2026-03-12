@@ -25,7 +25,7 @@ return [
     */
 
     'browserless_url' => env('BROWSERLESS_URL', 'http://browserless:3000'),
-    'browserless_token' => env('BROWSERLESS_TOKEN', 'localtoken'),
+    'browserless_token' => env('BROWSERLESS_TOKEN'),
 
     /*
     |--------------------------------------------------------------------------

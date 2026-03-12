@@ -29,6 +29,8 @@ public/test-*.html
 
 # Credentials
 DEV_CREDENTIALS.md
+.env.prod
+.env.staging
 
 # Local artifacts
 storage/serve.pid

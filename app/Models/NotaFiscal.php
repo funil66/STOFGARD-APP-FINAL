@@ -37,24 +37,12 @@ class NotaFiscal extends Model
         'motivo_cancelamento',
     ];
 
-    // Unified Cadastro Accessor
-    public function getCadastroAttribute()
+    /**
+     * Cadastro vinculado (Cliente, Loja ou Vendedor).
+     */
+    public function cadastro(): BelongsTo
     {
-        if (! $this->cadastro_id) {
-            return null;
-        }
-
-        if (str_starts_with($this->cadastro_id, 'cliente_')) {
-            $id = (int) str_replace('cliente_', '', $this->cadastro_id);
-            return \App\Models\Cliente::find($id);
-        }
-
-        if (str_starts_with($this->cadastro_id, 'parceiro_')) {
-            $id = (int) str_replace('parceiro_', '', $this->cadastro_id);
-            return \App\Models\Parceiro::find($id);
-        }
-
-        return null;
+        return $this->belongsTo(\App\Models\Cadastro::class);
     }
 
     protected $casts = [
@@ -72,7 +60,7 @@ class NotaFiscal extends Model
 
     public function cliente(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class);
+        return $this->belongsTo(\App\Models\Cadastro::class, 'cliente_id');
     }
 
     public function ordemServico(): BelongsTo

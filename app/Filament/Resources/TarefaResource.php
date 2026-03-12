@@ -101,6 +101,7 @@ class TarefaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['responsavel']))
             ->columns([
                 Tables\Columns\TextColumn::make('titulo')
                     ->searchable()

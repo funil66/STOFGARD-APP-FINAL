@@ -55,6 +55,7 @@ class ClientePanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                \App\Http\Middleware\EnsureIsCliente::class,
             ]);
     }
 }

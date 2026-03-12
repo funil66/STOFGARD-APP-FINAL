@@ -341,16 +341,7 @@
         <div class="section-header">👤 DADOS DO DESTINATÁRIO</div>
         <div class="section-content">
             @php
-                $cliente = null;
-                if (str_starts_with($notaFiscal->cadastro_id, 'cliente_')) {
-                    $id = (int) str_replace('cliente_', '', $notaFiscal->cadastro_id);
-                    $cliente = \App\Models\Cliente::find($id);
-                } elseif (str_starts_with($notaFiscal->cadastro_id, 'parceiro_')) {
-                    $id = (int) str_replace('parceiro_', '', $notaFiscal->cadastro_id);
-                    $cliente = \App\Models\Parceiro::find($id);
-                } else {
-                    $cliente = \App\Models\Cadastro::find($notaFiscal->cadastro_id);
-                }
+                $cliente = \App\Models\Cadastro::find($notaFiscal->cadastro_id);
             @endphp
 
             @if ($cliente)

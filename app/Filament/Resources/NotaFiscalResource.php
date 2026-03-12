@@ -41,14 +41,14 @@ class NotaFiscalResource extends Resource
                         Forms\Components\Select::make('cadastro_id')
                             ->label('Cadastro (Cliente, Loja ou Vendedor)')
                             ->options(function () {
-                                $clientes = \App\Models\Cliente::all()->mapWithKeys(fn($c) => [
-                                    'cliente_' . $c->id => '🧑 Cliente: ' . $c->nome,
-                                ]);
-                                $parceiros = \App\Models\Parceiro::all()->mapWithKeys(fn($p) => [
-                                    'parceiro_' . $p->id => ($p->tipo === 'loja' ? '🏪 Loja: ' : '🧑‍💼 Vendedor: ') . $p->nome,
-                                ]);
-
-                                return $clientes->union($parceiros)->toArray();
+                                return \App\Models\Cadastro::orderBy('nome')->get()->mapWithKeys(fn($c) => [
+                                    $c->id => match($c->tipo) {
+                                        'cliente' => '🧑 Cliente: ',
+                                        'loja' => '🏪 Loja: ',
+                                        'vendedor' => '🧑‍💼 Vendedor: ',
+                                        default => '📌 ',
+                                    } . $c->nome,
+                                ])->toArray();
                             })
                             ->searchable()
                             ->required(false),
@@ -355,6 +355,7 @@ class NotaFiscalResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['cadastro', 'ordemServico']))
             ->columns([
                 Tables\Columns\TextColumn::make('numero_nf')
                     ->label('Número NF')

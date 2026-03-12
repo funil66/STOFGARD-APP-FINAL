@@ -123,6 +123,7 @@ class GarantiaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['ordemServico.cliente']))
             ->description('💡 Garantias são **criadas automaticamente** ao concluir OSs. Configure os prazos por tipo de serviço em **Configurações**.')
             ->columns([
                 Tables\Columns\TextColumn::make('ordemServico.numero_os')
