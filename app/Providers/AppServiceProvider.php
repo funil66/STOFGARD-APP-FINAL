@@ -19,6 +19,7 @@ use App\Models\Financeiro;
 use App\Services\TenantContext;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use OwenIt\Auditing\Models\Audit;
 
 class AppServiceProvider extends ServiceProvider
@@ -41,6 +42,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Helpers\SettingsHelper::class, function ($app) {
             return new \App\Helpers\SettingsHelper();
         });
+
+        // Custom Login Response with debug logging to trace Filament::getUrl() deadlock
+        $this->app->bind(LoginResponseContract::class, \App\Http\Responses\Auth\CustomLoginResponse::class);
     }
 
     /**
@@ -50,9 +54,15 @@ class AppServiceProvider extends ServiceProvider
     {
         \OwenIt\Auditing\Models\Audit::observe(\App\Observers\AuditObserver::class);
 
-        // Forçar HTTPS em produção para evitar erros de Mixed Content
         if ($this->app->environment('production')) {
-            // \Illuminate\Support\Facades\URL::forceScheme('https');
+            $appUrl = config('app.url');
+            // Só força HTTPS se o APP_URL realmente usar https (evita forçar HTTPS em IP direto)
+            if (str_starts_with($appUrl, 'https')) {
+                \Illuminate\Support\Facades\URL::forceScheme('https');
+            }
+            // Força o root URL a usar exatamente o APP_URL, evitando que headers
+            // X-Forwarded-Port (ex: 8080 do nginx) contaminem a geração de URLs
+            \Illuminate\Support\Facades\URL::forceRootUrl($appUrl);
         }
 
         // O "Modo Deus". Se retornar true aqui, ignora as Policies.
