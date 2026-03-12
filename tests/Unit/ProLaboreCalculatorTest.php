@@ -91,8 +91,6 @@ class ProLaboreCalculatorTest extends TestCase
 
         settings()->set('socios_config', json_encode($socios));
 
-        dump(settings()->get('socios_config'));
-
         $distribuicao = $calculator->calcularDistribuicao($lucroDisponivel);
 
         $this->assertCount(2, $distribuicao);

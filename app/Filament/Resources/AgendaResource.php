@@ -257,6 +257,7 @@ class AgendaResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['cadastro', 'ordemServico', 'orcamento']))
             ->columns([
                 // MOBILE: Data + Título combinados
                 Tables\Columns\TextColumn::make('data_hora_inicio')

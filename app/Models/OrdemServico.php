@@ -55,6 +55,10 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
         'checkin_longitude',
         'checkin_ip',
         'checkin_at',
+        'checklist_itens',
+        'prazo_sla_horas',
+        'sla_alerta_enviado_em',
+        'contrato_servico_id',
     ];
 
     protected $casts = [
@@ -70,6 +74,8 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
         'respostas_formulario' => 'array',  // Fase 2
         'avaliacao_enviada' => 'boolean',   // Fase 4
         'avaliacao_enviada_em' => 'datetime', // Fase 4
+        'checklist_itens' => 'array',
+        'sla_alerta_enviado_em' => 'datetime',
     ];
 
     // --- GARANTIA ---
@@ -138,7 +144,7 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
      */
     public function parceiro()
     {
-        return $this->belongsTo(Cadastro::class, 'parceiro_id'); // Legacy?
+        return $this->belongsTo(Cadastro::class, 'id_parceiro');
     }
 
     public function itens(): HasMany
@@ -167,6 +173,16 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
     public function garantias(): HasMany
     {
         return $this->hasMany(Garantia::class, 'ordem_servico_id');
+    }
+
+    public function avaliacoes(): HasMany
+    {
+        return $this->hasMany(Avaliacao::class, 'ordem_servico_id');
+    }
+
+    public function contratoServico(): BelongsTo
+    {
+        return $this->belongsTo(ContratoServico::class);
     }
 
     public function loja(): BelongsTo
@@ -230,6 +246,19 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
             // Verifica se o status mudou para 'concluida'
             if ($model->isDirty('status') && $model->status === 'concluida') {
                 \App\Services\EstoqueService::baixarEstoquePorOS($model);
+
+                if (! $model->avaliacao_enviada) {
+                    \App\Models\Avaliacao::create([
+                        'ordem_servico_id' => $model->id,
+                        'cadastro_id' => $model->cadastro_id,
+                        'token' => \Illuminate\Support\Str::random(48),
+                    ]);
+
+                    $model->updateQuietly([
+                        'avaliacao_enviada' => true,
+                        'avaliacao_enviada_em' => now(),
+                    ]);
+                }
 
                 // Dispara o Job de Indicação para o dia seguinte (Delay de 24h)
                 if (tenant() && tenant()->isElite()) {

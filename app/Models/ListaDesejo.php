@@ -45,7 +45,7 @@ class ListaDesejo extends Model
     // Relacionamentos
     public function parceiro(): BelongsTo
     {
-        return $this->belongsTo(Parceiro::class);
+        return $this->belongsTo(Cadastro::class, 'parceiro_id');
     }
 
     // Métodos auxiliares

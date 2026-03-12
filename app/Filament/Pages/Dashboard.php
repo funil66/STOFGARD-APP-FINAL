@@ -2,7 +2,10 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\EstoqueBaixoWidget;
 use App\Filament\Widgets\DashboardShortcutsWidget;
+use App\Filament\Widgets\KpiStatsWidget;
+use App\Filament\Widgets\NpsScoreWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
@@ -20,6 +23,9 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            KpiStatsWidget::class,
+            NpsScoreWidget::class,
+            EstoqueBaixoWidget::class,
             DashboardShortcutsWidget::class,
         ];
     }

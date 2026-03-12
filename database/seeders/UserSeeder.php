@@ -10,6 +10,12 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // Only seed development users in local/testing environments
+        if (! app()->environment('local', 'testing')) {
+            $this->command?->info('⚠️  UserSeeder skipped in non-local environment.');
+            return;
+        }
+
         $users = [
             [
                 'name' => 'Admin Dev',

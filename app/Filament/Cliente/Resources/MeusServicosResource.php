@@ -134,7 +134,11 @@ class MeusServicosResource extends Resource
                 Tables\Actions\Action::make('whatsapp')
                     ->label('Suporte')
                     ->icon('heroicon-o-chat-bubble-left-right')
-                    ->url('https://wa.me/5541999999999?text=Preciso%20de%20ajuda%20com%20minha%20OS') // Ajustar número depois
+                    ->url(function () {
+                        $telefone = \App\Models\Configuracao::first()?->empresa_telefone;
+                        $numero = $telefone ? preg_replace('/\D/', '', $telefone) : '';
+                        return 'https://wa.me/55' . $numero . '?text=Preciso%20de%20ajuda%20com%20minha%20OS';
+                    })
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([]);

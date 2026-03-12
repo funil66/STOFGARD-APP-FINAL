@@ -13,8 +13,7 @@ use App\Policies\CadastroPolicy;
 use App\Policies\FinanceiroPolicy;
 use App\Policies\OrcamentoPolicy;
 use App\Policies\OrdemServicoPolicy;
-use App\Models\Cliente;
-use App\Models\Parceiro;
+use App\Models\Cadastro;
 use App\Models\Financeiro;
 use App\Services\TenantContext;
 use Illuminate\Support\Facades\Gate;
@@ -52,7 +51,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \OwenIt\Auditing\Models\Audit::observe(\App\Observers\AuditObserver::class);
+        // AuditObserver registrado apenas no AuditServiceProvider (evita duplicata)
 
         if ($this->app->environment('production')) {
             $appUrl = config('app.url');
@@ -99,10 +98,8 @@ class AppServiceProvider extends ServiceProvider
         // No early redirect middleware registered for /admin/login; allow the
         // dedicated POST route to handle authentication (with CSRF protection).
 
-        // Register policy for cadastro models (cliente and parceiro)
+        // Register policy for cadastro models
         Gate::policy(\App\Models\Cadastro::class, CadastroPolicy::class);
-        Gate::policy(Cliente::class, CadastroPolicy::class);
-        Gate::policy(Parceiro::class, CadastroPolicy::class);
 
         // Register policies for financial security
         Gate::policy(Financeiro::class, FinanceiroPolicy::class);

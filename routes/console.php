@@ -14,31 +14,12 @@ Schedule::command('iron:charge-tenants')
     ->monthlyOn(5, '09:00')
     ->timezone('America/Sao_Paulo');
 
-// 🪂 O PARAQUEDAS (BACKUP): Faz o dump do banco toda madrugada às 03:00 e envia pro seu cloud
-Schedule::command('backup:run --only-db')
-    ->dailyAt('03:00')
-    ->timezone('America/Sao_Paulo')
-    ->onOneServer();
-
-// Limpa backups muito velhos (mantém só das últimas semanas pra não lotar o disco)
-Schedule::command('backup:clean')
-    ->dailyAt('04:00')
-    ->timezone('America/Sao_Paulo')
-    ->onOneServer();
-
-/*
-|--------------------------------------------------------------------------
-| Agendamento de Tarefas (Schedule)
-|--------------------------------------------------------------------------
-| Configuração dos cron jobs do sistema.
-| * * * * * cd /path-to-project && php artisan schedule:run >> /dev/null 2>&1
-|--------------------------------------------------------------------------
-*/
-
-// Backup diário completo (BD + arquivos) às 2h da manhã
+// 🪂 BACKUP: Full backup (DB + arquivos) — madrugada às 02:00
 Schedule::command('backup:run')
     ->dailyAt('02:00')
+    ->timezone('America/Sao_Paulo')
     ->withoutOverlapping()
+    ->onOneServer()
     ->runInBackground()
     ->onSuccess(function () {
         logger()->info('Backup diário executado com sucesso');
@@ -50,8 +31,10 @@ Schedule::command('backup:run')
 
 // Limpeza de backups antigos (manter últimos 7 dias)
 Schedule::command('backup:clean')
-    ->dailyAt('03:00')
+    ->dailyAt('04:00')
+    ->timezone('America/Sao_Paulo')
     ->withoutOverlapping()
+    ->onOneServer()
     ->runInBackground()
     ->description('Limpa backups antigos');
 
@@ -96,3 +79,18 @@ Schedule::job(new SuspenderTenantInadimplenteJob)
 
 // 💀 O KILLSWITCH: Verifica e bloqueia caloteiros todo dia de madrugada
 Schedule::command('iron:lock-caloteiros')->dailyAt('01:00')->timezone('America/Sao_Paulo');
+
+// 🔄 CONTRATOS RECORRENTES: Processa contratos de serviço recorrente toda manhã
+Schedule::job(new \App\Jobs\ProcessarContratosRecorrentes)
+    ->dailyAt('07:00')
+    ->timezone('America/Sao_Paulo')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->description('Processar contratos de serviço recorrente');
+
+// ⏰ SLA ALERTS: Verifica OS próximas do vencimento SLA
+Schedule::command('os:verificar-sla')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->description('Verificar ordens de serviço com SLA próximo do vencimento');

@@ -134,6 +134,15 @@ class OrdemServicoResource extends Resource
                             ->helperText('Quem realizou o serviço?')
                             ->columnSpan(2),
 
+                        Select::make('contrato_servico_id')
+                            ->label('Contrato Recorrente')
+                            ->relationship('contratoServico', 'titulo')
+                            ->searchable()
+                            ->preload()
+                            ->nullable()
+                            ->helperText('Vincule a um contrato recorrente, se aplicável.')
+                            ->columnSpan(2),
+
                         Forms\Components\TextInput::make('id_parceiro')
                             ->label('ID Parceiro')
                             ->placeholder('Identificação da loja/vendedor')
@@ -250,6 +259,11 @@ class OrdemServicoResource extends Resource
                                 Forms\Components\DateTimePicker::make('data_prevista')->label('Data Agendada')->minDate(now()),
                                 DatePicker::make('data_conclusao')->label('Conclusão'),
                                 TextInput::make('dias_garantia')->label('Garantia (Dias)')->numeric()->default(90),
+                                TextInput::make('prazo_sla_horas')
+                                    ->label('Prazo SLA (horas)')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->helperText('Use para alertas automáticos de SLA.'),
                             ])->columns(['default' => 1, 'sm' => 2, 'lg' => 4]),
 
                         Tab::make('Evidências')
@@ -302,6 +316,44 @@ class OrdemServicoResource extends Resource
                                     ->addActionLabel('Adicionar resposta manual')
                                     ->helperText('Preencha as respostas do formulário selecionado.')
                                     ->visible(fn(Forms\Get $get) => !empty($get('formulario_id')))
+                                    ->columnSpanFull(),
+                            ]),
+
+                        Tab::make('✅ Checklist')
+                            ->icon('heroicon-o-check-circle')
+                            ->schema([
+                                Repeater::make('checklist_itens')
+                                    ->label('Itens do Checklist')
+                                    ->schema([
+                                        TextInput::make('titulo')
+                                            ->label('Item')
+                                            ->required()
+                                            ->maxLength(255),
+
+                                        Forms\Components\Toggle::make('concluido')
+                                            ->label('Concluído')
+                                            ->default(false),
+
+                                        Forms\Components\DateTimePicker::make('concluido_em')
+                                            ->label('Concluído em')
+                                            ->seconds(false),
+
+                                        Forms\Components\FileUpload::make('foto_path')
+                                            ->label('Foto')
+                                            ->image()
+                                            ->disk('public')
+                                            ->directory('os-checklist')
+                                            ->maxSize(4096),
+
+                                        Textarea::make('observacao')
+                                            ->label('Observação')
+                                            ->rows(2)
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->columns(2)
+                                    ->addActionLabel('Adicionar item')
+                                    ->reorderableWithButtons()
+                                    ->collapsible()
                                     ->columnSpanFull(),
                             ]),
                     ])->columnSpanFull(),
@@ -408,6 +460,7 @@ class OrdemServicoResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['cliente', 'vendedor', 'loja', 'parceiro']))
             ->columns([
                 Tables\Columns\TextColumn::make('numero_os')
                     ->label('OS')

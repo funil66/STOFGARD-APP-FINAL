@@ -52,7 +52,7 @@ class Parceiro extends Model implements HasMedia
     // Relationships
     public function ordensServico(): HasMany
     {
-        return $this->hasMany(OrdemServico::class);
+        return $this->hasMany(OrdemServico::class, 'id_parceiro');
     }
 
     // If this is a vendor, it belongs to a Loja (parceiro)
