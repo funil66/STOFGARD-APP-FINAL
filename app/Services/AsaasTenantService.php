@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Configuracao;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -19,7 +17,7 @@ class AsaasTenantService
 
     public function __construct(string $apiKey)
     {
-        $this->apiKey = $apiKey;
+        $this->apiKey = trim($apiKey);
         $this->baseUrl = config('services.asaas.base_url', 'https://sandbox.asaas.com/api/v3');
     }
 
@@ -145,26 +143,61 @@ class AsaasTenantService
      */
     private function request(string $method, string $endpoint, array $data = []): array
     {
+        if ($this->apiKey === '') {
+            throw new \RuntimeException('Token Asaas do tenant não configurado.');
+        }
+
         $url = rtrim($this->baseUrl, '/') . $endpoint;
 
-        $http = Http::withHeaders([
-            'access_token' => $this->apiKey,
-            'Content-Type' => 'application/json',
-        ])->timeout(15);
+        $curl = curl_init();
+        $httpMethod = strtoupper($method);
 
-        $result = match (strtoupper($method)) {
-            'GET' => $http->get($url, $data),
-            'POST' => $http->post($url, $data),
-            'PUT' => $http->put($url, $data),
-            'DELETE' => $http->delete($url),
-        };
+        if ($httpMethod === 'GET' && !empty($data)) {
+            $query = http_build_query($data);
+            $url .= (str_contains($url, '?') ? '&' : '?') . $query;
+        }
 
-        if ($result->failed()) {
+        $payload = null;
+        if (in_array($httpMethod, ['POST', 'PUT'], true)) {
+            $payload = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_CUSTOMREQUEST => $httpMethod,
+            CURLOPT_USERAGENT => 'STOFGARD-APP/1.0',
+            CURLOPT_HTTPHEADER => [
+                'accept: application/json',
+                'content-type: application/json',
+                'User-Agent: STOFGARD-APP/1.0',
+                "access_token:{$this->apiKey}",
+            ],
+        ]);
+
+        if ($payload !== null) {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
+        }
+
+        $body = curl_exec($curl);
+        $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+
+        if ($body === false || $curlError !== '') {
+            throw new \RuntimeException('Erro de conexão com Asaas tenant: ' . $curlError);
+        }
+
+        $json = json_decode($body, true);
+        $isFailed = $status >= 400;
+
+        if ($isFailed) {
             throw new \RuntimeException(
-                "Asaas Tenant API Error [{$result->status()}]: " . ($result->json('errors.0.description') ?? $result->body())
+                "Asaas Tenant API Error [{$status}]: " . ($json['errors'][0]['description'] ?? $body)
             );
         }
 
-        return $result->json() ?? [];
+        return is_array($json) ? $json : [];
     }
 }
