@@ -53,9 +53,10 @@ class TenantResource extends Resource
                                     ->notIn(['app', 'admin', 'super-admin', 'sistema', 'suporte', 'api', 'www', 'mail', 'painel'])
                                     ->validationMessages([
                                         'not_in' => 'Este subdomínio é reservado e não pode ser usado.',
+                                        'regex' => 'O slug deve conter apenas letras, números, traços e pontos.'
                                     ])
-                                    ->helperText('Ex: "joao-eletricista" → joao-eletricista.autonomiailimitada.com.br')
-                                    ->alphaDash()
+                                    ->helperText('Ex: "joao-eletricista" ou "dominioproprio.com.br"')
+                                    ->regex('/^[a-zA-Z0-9.\-]+$/')
                                     ->maxLength(100),
 
                                 Forms\Components\Toggle::make('is_active')
@@ -380,6 +381,11 @@ class TenantResource extends Resource
                     ])
                     ->action(function (Tenant $record, array $data) {
                         try {
+                            $apiKey = trim((string) config('services.asaas.api_key', ''));
+                            if ($apiKey === '') {
+                                throw new \RuntimeException('ASAAS_API_KEY não está configurada no ambiente ativo.');
+                            }
+
                             $asaas = app(AsaasService::class);
 
                             // 1. Cria cliente no Asaas
