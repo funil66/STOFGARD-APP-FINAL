@@ -50,5 +50,17 @@ class EditConfiguracao extends EditRecord
 
         return $data;
     }
+    /**
+     * Sincroniza o webhook token com o banco central (Landlord)
+     * para que o PixWebhookController consiga localizar o tenant pelo token.
+     */
+    protected function afterSave(): void
+    {
+        $tenant = filament()->getTenant();
+        if ($tenant && current($this->getRecord()->only('gateway_webhook_token'))) {
+            $tenant->update(['webhook_token' => $this->getRecord()->gateway_webhook_token]);
+        }
+    }
+
 }
 
