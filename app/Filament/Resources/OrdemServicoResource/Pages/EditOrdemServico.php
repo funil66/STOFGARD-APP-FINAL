@@ -19,7 +19,7 @@ class EditOrdemServico extends EditRecord
             Actions\Action::make('iniciar_servico')
                 ->label('📍 Iniciar Serviço')
                 ->color('warning')
-                ->visible(fn() => filament()->getTenant()->isElite() && !$this->record->checkin_time && $this->record->status !== 'concluida')
+                ->visible(fn() => (filament()->getTenant()?->isElite() ?? false) && !$this->record->checkin_time && $this->record->status !== 'concluida')
                 ->form([
                     \Filament\Forms\Components\Hidden::make('checkin_lat'),
                     \Filament\Forms\Components\Hidden::make('checkin_lng'),

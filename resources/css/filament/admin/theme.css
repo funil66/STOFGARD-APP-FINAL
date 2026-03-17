@@ -47,153 +47,29 @@
   padding: 0.5rem 0.75rem;
 }
 
-/* ========================================
-   DARK MODE FIXES - Global Search & UI
-   ======================================== */
-
-/* Global Search Results - Improved visibility */
-.dark .fi-global-search-result-title,
-.dark .fi-global-search-result-details,
-.dark .fi-global-search-result-details-label,
-.dark .fi-global-search-result-details-value {
-  color: rgb(229, 231, 235) !important;
-  /* gray-200 */
+[x-cloak] {
+  display: none !important;
 }
 
-/* Ensure subtitles and secondary text are visible */
-.dark .fi-global-search-result-details dd,
-.dark .text-sm.text-gray-500,
-.dark .text-gray-600,
-.dark .text-gray-700 {
-  color: rgb(156, 163, 175) !important;
-  /* gray-400 - better contrast */
+.fi-top-left-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
 }
 
-/* Fix for muted/secondary text in dark mode */
-.dark .text-gray-500 {
-  color: rgb(156, 163, 175) !important;
-  /* gray-400 */
+.fi-top-left-logo img {
+  height: 2rem;
+  width: auto;
 }
 
-/* Buttons and actions visibility */
-.dark button,
-.dark a.fi-link,
-.dark .fi-btn {
-  color: rgb(229, 231, 235) !important;
-}
-
-/* Badges and labels in search results */
-.dark .fi-badge,
-.dark .fi-badge-label {
-  color: rgb(229, 231, 235) !important;
-}
-
-/* Table cells and content */
-.dark td,
-.dark th,
-.dark .fi-ta-text {
-  color: rgb(229, 231, 235) !important;
-}
-
-/* Form labels and inputs */
-.dark label,
-.dark .fi-fo-field-wrp-label {
-  color: rgb(229, 231, 235) !important;
-}
-
-/* Placeholder text */
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: rgb(107, 114, 128) !important;
-  /* gray-500 */
-}
-
-/* Cards and panels */
-.dark .fi-section-header-heading,
-.dark .fi-section-description {
-  color: rgb(229, 231, 235) !important;
-}
-
-/* Ensure all text in dark mode has minimum contrast */
-.dark {
-  --tw-prose-body: rgb(229, 231, 235);
-  --tw-prose-headings: rgb(243, 244, 246);
-  --tw-prose-links: rgb(96, 165, 250);
-  --tw-prose-bold: rgb(243, 244, 246);
-  --tw-prose-counters: rgb(156, 163, 175);
-  --tw-prose-bullets: rgb(75, 85, 99);
-}
-
-/* Specific fix for search result details (address, dates, etc) */
-.dark .fi-global-search-result-details-item,
-.dark [class*="text-"] {
-  color: rgb(209, 213, 219) !important;
-  /* gray-300 */
-}
-
-/* Make sure links are visible and distinguishable */
-.dark a:not(.fi-btn) {
-  color: rgb(96, 165, 250) !important;
-  /* blue-400 */
-}
-
-.dark a:not(.fi-btn):hover {
-  color: rgb(147, 197, 253) !important;
-  /* blue-300 */
-}
-
-/* ========================================
-   ACTION ICONS - Targeted fix for table actions
-   Only targets Filament action buttons, NOT all SVGs
-   ======================================== */
-
-/* Ensure action column cells are visible and have proper dimensions */
-.fi-ta-actions-cell {
-  min-width: 3rem !important;
-  width: auto !important;
-}
-
-/* Ensure the actions wrapper has proper display */
-.fi-ta-actions {
-  display: flex !important;
-  align-items: center !important;
-  gap: 0.25rem !important;
-}
-
-/* Action group dropdown trigger (3 dots button) */
-.fi-ta-actions .fi-dropdown-trigger button,
-.fi-ta-actions .fi-ac-group-trigger-btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  min-width: 2rem !important;
-  min-height: 2rem !important;
-  padding: 0.25rem !important;
-}
-
-/* SVG icons inside action buttons only */
-.fi-ta-actions svg,
-.fi-ta-actions button svg,
-.fi-dropdown-trigger svg {
-  display: inline-block !important;
-  width: 1.25rem !important;
-  height: 1.25rem !important;
-  min-width: 1.25rem !important;
-  min-height: 1.25rem !important;
-  flex-shrink: 0 !important;
-}
-
-/* Dropdown menu items (inside the 3-dots popup) */
-.fi-dropdown-list-item svg {
-  display: inline-block !important;
-  width: 1.25rem !important;
-  height: 1.25rem !important;
-  flex-shrink: 0 !important;
-}
-
-/* Header action buttons */
-.fi-header-actions svg {
-  display: inline-block !important;
-  width: 1.25rem !important;
-  height: 1.25rem !important;
-  flex-shrink: 0 !important;
+.fi-top-left-logo--simple {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 60;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
 }

@@ -18,7 +18,7 @@ class ClienteAutenticado
         $acessoId = Session::get('cliente_acesso_id');
 
         if (!$acessoId) {
-            return redirect()->route('magic-link.invalido')
+            return redirect()->route('cliente.magic-link.invalido')
                 ->with('erro', 'Acesso necessário. Use o link enviado via WhatsApp.');
         }
 
@@ -27,7 +27,7 @@ class ClienteAutenticado
 
         if (!$acesso) {
             Session::forget(['cliente_acesso_id', 'cliente_cadastro_id']);
-            return redirect()->route('magic-link.invalido')
+            return redirect()->route('cliente.magic-link.invalido')
                 ->with('erro', 'Sessão inválida. Use o link enviado via WhatsApp.');
         }
 

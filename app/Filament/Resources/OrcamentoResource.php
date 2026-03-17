@@ -73,7 +73,7 @@ class OrcamentoResource extends Resource
                         Forms\Components\Select::make('pix_chave_selecionada')
                             ->label('Selecionar Chave PIX')
                             ->options(function () {
-                                $setting = \App\Models\Setting::find('financeiro_pix_keys');
+                                $setting = \App\Models\Setting::where('key', 'financeiro_pix_keys')->first();
                                 $valor = $setting ? $setting->value : null;
                                 if (!$valor) {
                                     $valor = \Illuminate\Support\Facades\DB::table('settings')->where('key', 'financeiro_pix_keys')->value('value');

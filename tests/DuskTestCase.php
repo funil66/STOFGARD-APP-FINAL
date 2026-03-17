@@ -2,10 +2,12 @@
 
 namespace Tests;
 
+use App\Models\User;
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Illuminate\Support\Collection;
+use Laravel\Dusk\Browser;
 use Laravel\Dusk\TestCase as BaseTestCase;
 use PHPUnit\Framework\Attributes\BeforeClass;
 
@@ -64,5 +66,30 @@ abstract class DuskTestCase extends BaseTestCase
                 ChromeOptions::CAPABILITY, $options
             )
         );
+    }
+
+    protected function adminUser(): User
+    {
+        return User::query()->firstOrCreate(
+            ['email' => 'admin@test.com'],
+            [
+                'name' => 'Admin Dusk',
+                'password' => bcrypt('password'),
+                'is_admin' => true,
+            ]
+        );
+    }
+
+    protected function assertPanelPageLoads(Browser $browser, string $path): void
+    {
+        $baseUrl = rtrim((string) config('app.url', 'http://127.0.0.1:8000'), '/');
+        $absoluteUrl = str_starts_with($path, 'http') ? $path : $baseUrl . '/' . ltrim($path, '/');
+
+        $browser->loginAs($this->adminUser())
+            ->visit($absoluteUrl)
+            ->pause(800)
+            ->assertSourceHas('<html')
+            ->assertDontSee('Server Error')
+            ->assertDontSee('Not Found');
     }
 }

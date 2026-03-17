@@ -70,15 +70,15 @@
         </div>
 
         {{-- MENU DE CARDS (Grid Responsivo) --}}
-        <div class="responsive-grid-modules px-2 sm:px-4 pb-6 md:pb-10">
+        <div class="px-2 sm:px-4 pb-6 md:pb-10" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;">
             @if(isset($modules) && count($modules) > 0)
                 @foreach ($modules as $module)
                     <a href="{{ $module['route'] }}"
-                        class="responsive-module-card group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:-translate-y-1 w-full"
+                        class="responsive-module-card group flex h-full w-full flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:-translate-y-1"
                         style="text-decoration: none;">
-                        <div class="mb-2 md:mb-3 p-2 rounded-lg transition-colors duration-300 group-hover:bg-opacity-20"
+                        <div class="mb-2 md:mb-3 flex h-10 w-10 items-center justify-center rounded-lg transition-colors duration-300 group-hover:bg-opacity-20 md:h-12 md:w-12"
                             style="color: {{ $module['color'] }};">
-                            <x-icon :name="$module['icon']" class="w-8 h-8 md:w-10 md:h-10" />
+                            <x-filament::icon :icon="$module['icon']" class="block h-8 w-8 md:h-10 md:w-10" />
                         </div>
                         <span
                             class="text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors text-center px-1">

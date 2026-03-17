@@ -49,11 +49,7 @@
             </a>
 
             @php
-                try {
-                    $unreadCount = \App\Services\NotificationService::getUnreadCount(auth()->user());
-                } catch (\Throwable $e) {
-                    $unreadCount = 0;
-                }
+                $unreadCount = 0;
             @endphp
 
             <a href="{{ route('filament.admin.pages.notifications') }}"

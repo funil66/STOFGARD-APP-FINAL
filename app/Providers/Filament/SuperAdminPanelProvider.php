@@ -32,7 +32,7 @@ class SuperAdminPanelProvider extends PanelProvider
     {
         return $panel
             ->id('super-admin')
-            ->path('super-admin')
+            ->path('portal')
             ->login()
             ->brandName('Autonomia Ilimitada — Super Admin')
             ->brandLogoHeight('2.5rem')
