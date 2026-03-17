@@ -16,7 +16,7 @@
 @endphp
 
 <div
-    class="sticky top-16 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 -mx-4 px-4 mb-4 overflow-x-auto">
+    class="sticky top-16 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 mb-4 overflow-x-auto">
     <div class="flex items-center gap-1 py-2 min-w-max">
         @foreach($links as $link)
             @php

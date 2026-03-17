@@ -17,6 +17,7 @@ use App\Models\Cadastro;
 use App\Models\Financeiro;
 use App\Services\TenantContext;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use OwenIt\Auditing\Models\Audit;
@@ -53,15 +54,17 @@ class AppServiceProvider extends ServiceProvider
     {
         // AuditObserver registrado apenas no AuditServiceProvider (evita duplicata)
 
-        if ($this->app->environment('production')) {
-            $appUrl = config('app.url');
-            // Só força HTTPS se o APP_URL realmente usar https (evita forçar HTTPS em IP direto)
-            if (str_starts_with($appUrl, 'https')) {
-                \Illuminate\Support\Facades\URL::forceScheme('https');
+        if (! $this->app->runningInConsole() && $this->app->bound('request')) {
+            $request = $this->app->make('request');
+            $isHttps = $request->isSecure() || strtolower((string) $request->header('x-forwarded-proto')) === 'https';
+            $forwardedHost = trim((string) $request->header('x-forwarded-host'));
+            $host = $forwardedHost !== '' ? trim(explode(',', $forwardedHost)[0]) : $request->getHttpHost();
+
+            URL::forceRootUrl(($isHttps ? 'https' : 'http') . '://' . $host);
+
+            if ($isHttps) {
+                URL::forceScheme('https');
             }
-            // Força o root URL a usar exatamente o APP_URL, evitando que headers
-            // X-Forwarded-Port (ex: 8080 do nginx) contaminem a geração de URLs
-            \Illuminate\Support\Facades\URL::forceRootUrl($appUrl);
         }
 
         // O "Modo Deus". Se retornar true aqui, ignora as Policies.

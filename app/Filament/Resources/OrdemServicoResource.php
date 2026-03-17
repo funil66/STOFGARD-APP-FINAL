@@ -589,7 +589,7 @@ class OrdemServicoResource extends Resource
                             ->label('Iniciar Serviço')
                             ->icon('heroicon-s-play')
                             ->color('warning')
-                            ->visible(fn(?OrdemServico $record) => $record && filament()->getTenant()->isElite() && !$record->checkin_time && $record->status !== 'concluida')
+                            ->visible(fn(?OrdemServico $record) => $record && (filament()->getTenant()?->isElite() ?? false) && !$record->checkin_time && $record->status !== 'concluida')
                             ->form([
                                 Forms\Components\Hidden::make('checkin_lat'),
                                 Forms\Components\Hidden::make('checkin_lng'),

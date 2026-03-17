@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class SuperAdminDashboard extends Page
 {
+    protected static ?string $slug = '';
+
     protected static ?string $navigationIcon = 'heroicon-o-home';
 
     protected static ?string $title = 'Super Admin — Visão Geral';

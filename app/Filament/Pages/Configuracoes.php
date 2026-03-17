@@ -713,7 +713,7 @@ class Configuracoes extends Page implements HasForms
 
                         // 11. WHATSAPP / MENSAGENS
                         Tabs\Tab::make('WhatsApp / Mensagens')
-                            ->visible(fn() => filament()->getTenant()->temAcessoPremium())
+                            ->visible(fn() => filament()->getTenant()?->temAcessoPremium() ?? false)
                             ->icon('heroicon-m-chat-bubble-left-right')
                             ->schema([
                                 Section::make('Template de Cobrança PIX')

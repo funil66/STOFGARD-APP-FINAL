@@ -34,9 +34,13 @@ class SettingsHelper
     {
         $cacheKey = $this->cachePrefix . $key;
 
-        return Cache::remember($cacheKey, $this->cacheTtl, function () use ($key, $default) {
+        try {
+            return Cache::remember($cacheKey, $this->cacheTtl, function () use ($key, $default) {
+                return Setting::get($key, $default);
+            });
+        } catch (\Throwable) {
             return Setting::get($key, $default);
-        });
+        }
     }
 
     /**
@@ -45,7 +49,11 @@ class SettingsHelper
     public function set(string $key, mixed $value, string $group = 'geral', string $type = 'string'): void
     {
         Setting::set($key, $value, $group, $type);
-        Cache::forget($this->cachePrefix . $key);
+
+        try {
+            Cache::forget($this->cachePrefix . $key);
+        } catch (\Throwable) {
+        }
     }
 
     /**
@@ -53,9 +61,13 @@ class SettingsHelper
      */
     public function all(): array
     {
-        return Cache::remember($this->cachePrefix . 'all', $this->cacheTtl, function () {
+        try {
+            return Cache::remember($this->cachePrefix . 'all', $this->cacheTtl, function () {
+                return Setting::all()->pluck('value', 'key')->toArray();
+            });
+        } catch (\Throwable) {
             return Setting::all()->pluck('value', 'key')->toArray();
-        });
+        }
     }
 
     /**
@@ -65,9 +77,16 @@ class SettingsHelper
     {
         $settings = Setting::all();
         foreach ($settings as $setting) {
-            Cache::forget($this->cachePrefix . $setting->key);
+            try {
+                Cache::forget($this->cachePrefix . $setting->key);
+            } catch (\Throwable) {
+            }
         }
-        Cache::forget($this->cachePrefix . 'all');
+
+        try {
+            Cache::forget($this->cachePrefix . 'all');
+        } catch (\Throwable) {
+        }
     }
 
     /**

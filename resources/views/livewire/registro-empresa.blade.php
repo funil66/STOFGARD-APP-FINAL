@@ -58,6 +58,13 @@
                             <label class="block text-sm font-medium text-gray-700">Telefone</label>
                             <input type="text" wire:model="empresa_telefone" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Domínio/Subdomínio (opcional)</label>
+                            <input type="text" wire:model="dominio_personalizado" placeholder="controle.stofgard.com.br"
+                                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-emerald-500 focus:border-emerald-500">
+                            <p class="text-xs text-gray-500 mt-1">Se vazio, o sistema cria automaticamente com base no slug da empresa.</p>
+                            @error('dominio_personalizado') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
                     </div>
                 @endif
 
@@ -123,6 +130,8 @@
                             <div>{{ $empresa_email }}</div>
                             <div class="font-medium text-gray-500">Telefone:</div>
                             <div>{{ $empresa_telefone ?: '—' }}</div>
+                            <div class="font-medium text-gray-500">Domínio:</div>
+                            <div>{{ $dominio_personalizado ?: 'Automático' }}</div>
                         </div>
                         <div class="grid grid-cols-2 gap-2 p-4 bg-gray-50 rounded-lg">
                             <div class="font-medium text-gray-500">Administrador:</div>

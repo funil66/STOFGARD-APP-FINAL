@@ -29,12 +29,12 @@ class MagicLinkController extends Controller
         $acesso = ClienteAcesso::where('token', $token)->first();
 
         if (!$acesso) {
-            return redirect()->route('magic-link.invalido')
+            return redirect()->route('cliente.magic-link.invalido')
                 ->with('erro', 'Link inválido ou não encontrado.');
         }
 
         if (!$acesso->estaValido()) {
-            return redirect()->route('magic-link.invalido')
+            return redirect()->route('cliente.magic-link.invalido')
                 ->with('erro', 'Este link já foi utilizado ou expirou. Solicite um novo link.');
         }
 

@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\FinanceiroResource\Pages;
 
 use App\Filament\Pages\Relatorios;
-use App\Filament\Pages\RelatoriosAvancados;
 use App\Filament\Resources\FinanceiroResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -102,10 +101,6 @@ class ListFinanceiros extends ListRecords
                     ->label('Simples / Resumido')
                     ->icon('heroicon-o-chart-bar')
                     ->url(Relatorios::getUrl()),
-                Actions\Action::make('relatorioAvancado')
-                    ->label('Relatórios Gerenciais')
-                    ->icon('heroicon-o-chart-bar-square')
-                    ->url(RelatoriosAvancados::getUrl()),
 
                 // NOVO: Relatório Mensal PDF
                 Actions\Action::make('relatorioMensalPdf')

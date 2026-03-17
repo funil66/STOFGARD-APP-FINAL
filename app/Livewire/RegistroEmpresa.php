@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\TenantTemplateProvisioner;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -25,6 +26,7 @@ class RegistroEmpresa extends Component
     public string $empresa_cnpj = '';
     public string $empresa_email = '';
     public string $empresa_telefone = '';
+    public string $dominio_personalizado = '';
 
     // Step 2
     public string $admin_nome = '';
@@ -47,6 +49,7 @@ class RegistroEmpresa extends Component
                 'empresa_cnpj' => 'nullable|string|max:20',
                 'empresa_email' => 'required|email|max:255',
                 'empresa_telefone' => 'nullable|string|max:20',
+                'dominio_personalizado' => ['nullable', 'string', 'max:255', 'regex:/^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/'],
             ],
             2 => [
                 'admin_nome' => 'required|string|max:255',
@@ -110,11 +113,16 @@ class RegistroEmpresa extends Component
             ],
         ]);
 
-        // Create domain
-        $baseDomain = env('APP_DOMAIN', 'localhost');
+        // Create domain (custom domain has priority)
+        $baseDomain = env('TENANT_BASE_DOMAIN', env('APP_DOMAIN', parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost'));
+        $domain = $this->resolveDomain($slug, $baseDomain);
+
         $tenant->domains()->create([
-            'domain' => $slug . '.' . $baseDomain,
+            'domain' => $domain,
         ]);
+
+        // Garante baseline visual/funcional idêntico ao tenant referência (STOFGARD)
+        app(TenantTemplateProvisioner::class)->apply($tenant);
 
         // Create admin user inside tenant context
         $tenant->run(function () {
@@ -127,8 +135,24 @@ class RegistroEmpresa extends Component
             ]);
         });
 
-        $this->dominio_criado = $slug . '.' . $baseDomain;
+        $this->dominio_criado = $domain;
         $this->concluido = true;
+    }
+
+    protected function resolveDomain(string $slug, string $baseDomain): string
+    {
+        $customDomain = trim(strtolower($this->dominio_personalizado));
+
+        if ($customDomain !== '') {
+            $customDomain = preg_replace('#^https?://#', '', $customDomain);
+            $customDomain = explode('/', $customDomain)[0];
+
+            return $customDomain;
+        }
+
+        return str_contains($slug, '.')
+            ? $slug
+            : $slug . '.' . $baseDomain;
     }
 
     public function render()

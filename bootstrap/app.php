@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\InitializeTenancyForLivewire::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -525,7 +525,7 @@ a.fi-btn,
 
 /* Module cards */
 .responsive-module-card {
-    max-width: 100%;
+    width: 100%;
     height: auto;
     min-height: 120px;
     padding: 1rem;
@@ -533,7 +533,6 @@ a.fi-btn,
 
 @media (min-width: 640px) {
     .responsive-module-card {
-        max-width: 220px;
         min-height: 140px;
     }
 }

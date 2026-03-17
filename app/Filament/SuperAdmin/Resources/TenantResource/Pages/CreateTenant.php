@@ -2,6 +2,7 @@
 
 namespace App\Filament\SuperAdmin\Resources\TenantResource\Pages;
 
+use App\Services\TenantTemplateProvisioner;
 use App\Filament\SuperAdmin\Resources\TenantResource;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -29,12 +30,21 @@ class CreateTenant extends CreateRecord
     {
         $tenant = $this->record;
 
-        // Create domain from slug
+        // Create domain from slug (supports custom full domain/subdomain)
         if ($tenant->slug) {
-            $baseDomain = env('APP_DOMAIN', 'localhost');
+            $slug = trim(strtolower($tenant->slug));
+            $baseDomain = env('TENANT_BASE_DOMAIN', env('APP_DOMAIN', parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost'));
+
+            $domain = str_contains($slug, '.')
+                ? $slug
+                : "{$slug}.{$baseDomain}";
+
             $tenant->domains()->firstOrCreate([
-                'domain' => $tenant->slug . '.' . $baseDomain,
+                'domain' => $domain,
             ]);
         }
+
+        // Garante baseline visual/funcional idêntico ao tenant referência (STOFGARD)
+        app(TenantTemplateProvisioner::class)->apply($tenant);
     }
 }
