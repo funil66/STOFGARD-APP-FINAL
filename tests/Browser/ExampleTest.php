@@ -10,7 +10,7 @@ class ExampleTest extends DuskTestCase
     public function test_basic_example(): void
     {
         $this->browse(function (Browser $browser) {
-            $this->assertPanelPageLoads($browser, '/portal/login');
+            $this->assertPanelPageLoads($browser, '/admin/login');
         });
     }
 }

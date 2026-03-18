@@ -201,6 +201,8 @@ Route::get('/pagamento/{hash}/verificar', [PagamentoController::class, 'verifica
 Route::middleware('throttle:60,1')->group(function () {
     Route::post('/webhook/pix', [PixWebhookController::class, 'handle'])
         ->name('webhook.pix');
+    Route::get('/webhook/pix/status', [PixWebhookController::class, 'status'])
+        ->name('webhook.pix.status');
 });
 // PIX status endpoint removed — use api/webhooks/pix instead
 
@@ -213,7 +215,10 @@ Route::get('/download/{disk}/{encodedPath}', [\App\Http\Controllers\FileDownload
     ->where(['encodedPath' => '.*'])
     ->name('file.download');
 
-// Rota pública assinada removida, utilizar orcamento.compartilhar
+// Rota pública assinada para visualização inline de orçamento
+Route::get('/orcamento/{orcamento}/publico', [\App\Http\Controllers\OrcamentoPdfController::class, 'stream'])
+    ->middleware('signed')
+    ->name('orcamento.public_stream');
 
 // Relatórios financeiros (autenticado)
 Route::middleware(['auth'])->group(function () {
