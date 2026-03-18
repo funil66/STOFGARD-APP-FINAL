@@ -17,11 +17,7 @@ class DatabaseSeeder extends Seeder
         // Verifica se está rodando no contexto de um Tenant (via tenants:seed)
         if (tenancy()->initialized) {
             $this->call([
-                ConfiguracaoSeeder::class,
-                ConfigSeed::class, // Configurações personalizadas do sistema
-                AuxiliaryListsSeeder::class, // Listas auxiliares (unidades, tipos, etc.)
-                CadastroTipoSeeder::class,   // Categorias de cadastro (Cliente, Lead, etc.)
-                TabelaPrecosSeeder::class,
+                ProjectBaselineSeeder::class, // Seed único de funcionamento básico
                 CompleteTestDataSeeder::class,
             ]);
         } else {

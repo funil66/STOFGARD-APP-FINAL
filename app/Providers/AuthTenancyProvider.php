@@ -14,7 +14,6 @@ class AuthTenancyProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(TenancyInitialized::class, function (): void {
-            // Reset guards so auth uses the tenant connection in long-lived workers.
             Auth::forgetGuards();
         });
     }

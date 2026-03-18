@@ -77,6 +77,8 @@ services:
             args:
                 WWWGROUP: '${WWWGROUP}'
         image: sail-8.4/app
+        environment:
+            WWWUSER: '${WWWUSER}'
         command: [ 'php', '/var/www/html/artisan', 'horizon' ]
         restart: unless-stopped
         volumes:

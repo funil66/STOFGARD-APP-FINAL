@@ -14,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
+        $middleware->append(\App\Http\Middleware\DomainTopologyMiddleware::class);
+
+        $middleware->alias([
+            'tenant.jwt' => \App\Http\Middleware\AuthenticateTenantJwt::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'livewire/*',
             'super-admin/*'

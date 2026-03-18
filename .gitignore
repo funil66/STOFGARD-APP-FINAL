@@ -43,3 +43,7 @@ reproduce_*.php
 verification_output*.txt
 test_output*.txt
 mudancas_*.txt
+
+**/caddy
+frankenphp
+frankenphp-worker.php
