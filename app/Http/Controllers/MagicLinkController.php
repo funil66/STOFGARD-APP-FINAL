@@ -11,13 +11,13 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 /**
- * MagicLinkController — Autenticação do cliente final via link temporário.
+ * MagicLinkController — Autenticacao do cliente final via link temporario.
  *
  * Flow:
- * 1. Tenant aprova OS/Orçamento
- * 2. Sistema gera token → envia WhatsApp com link `/cliente/acesso/{token}`
- * 3. Cliente clica → token validado → sessão do cliente ativa
- * 4. Cliente acessa portal /cliente com suas OS, Orçamentos e NFs
+ * 1. Tenant aprova OS/Orcamento
+ * 2. Sistema gera token -> envia WhatsApp com link 
+ * 3. Cliente clica -> token validado -> sessao do cliente ativa
+ * 4. Cliente acessa portal /cliente com suas OS, Orcamentos e NFs
  */
 class MagicLinkController extends Controller
 {
@@ -30,12 +30,12 @@ class MagicLinkController extends Controller
 
         if (!$acesso) {
             return redirect()->route('cliente.magic-link.invalido')
-                ->with('erro', 'Link inválido ou não encontrado.');
+                ->with('erro', 'Link invalido ou nao encontrado.');
         }
 
         if (!$acesso->estaValido()) {
             return redirect()->route('cliente.magic-link.invalido')
-                ->with('erro', 'Este link já foi utilizado ou expirou. Solicite um novo link.');
+                ->with('erro', 'Este link ja foi utilizado ou expirou. Solicite um novo link.');
         }
 
         // Marca como usado
@@ -44,7 +44,7 @@ class MagicLinkController extends Controller
             $request->userAgent() ?? 'unknown'
         );
 
-        // Salva na sessão (autenticação do cliente, não usa auth() do Laravel)
+        // Salva na sessao (autenticacao do cliente, nao usa auth() do Laravel)
         Session::put('cliente_acesso_id', $acesso->id);
         Session::put('cliente_cadastro_id', $acesso->cadastro_id);
         Session::put('cliente_motivo', $acesso->motivo);
@@ -66,7 +66,7 @@ class MagicLinkController extends Controller
     }
 
     /**
-     * Página de link inválido/expirado.
+     * Pagina de link invalido/expirado.
      */
     public function invalido()
     {
@@ -79,6 +79,6 @@ class MagicLinkController extends Controller
     public function logout()
     {
         Session::forget(['cliente_acesso_id', 'cliente_cadastro_id', 'cliente_motivo']);
-        return redirect('/')->with('mensagem', 'Você saiu do portal.');
+        return redirect('/')->with('mensagem', 'Voce saiu do portal.');
     }
 }

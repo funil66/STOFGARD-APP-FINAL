@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Session;
 
 /**
  * ClienteAutenticado — Middleware para o portal do cliente final.
- * Verifica se a sessão tem um acesso válido (via magic link).
+ * Verifica se a sessao tem um acesso valido (via magic link).
  */
 class ClienteAutenticado
 {
@@ -19,7 +19,7 @@ class ClienteAutenticado
 
         if (!$acessoId) {
             return redirect()->route('cliente.magic-link.invalido')
-                ->with('erro', 'Acesso necessário. Use o link enviado via WhatsApp.');
+                ->with('erro', 'Acesso necessario. Use o link enviado via WhatsApp.');
         }
 
         // Verifica se o acesso ainda existe na base
@@ -28,10 +28,10 @@ class ClienteAutenticado
         if (!$acesso) {
             Session::forget(['cliente_acesso_id', 'cliente_cadastro_id']);
             return redirect()->route('cliente.magic-link.invalido')
-                ->with('erro', 'Sessão inválida. Use o link enviado via WhatsApp.');
+                ->with('erro', 'Sessao invalida. Use o link enviado via WhatsApp.');
         }
 
-        // Compartilha o acesso com a requisição
+        // Compartilha o acesso com a requisicao
         $request->merge(['cliente_acesso' => $acesso]);
 
         return $next($request);

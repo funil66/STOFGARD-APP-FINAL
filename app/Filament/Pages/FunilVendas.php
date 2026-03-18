@@ -26,9 +26,14 @@ class FunilVendas extends Page
 
     public static function canAccess(): bool
     {
-        /** @var \App\Models\Tenant $tenant */
-        $tenant = filament()->getTenant();
-        return $tenant && $tenant->temAcessoPremium();
+        /** @var \App\Models\Tenant|null $tenant */
+        $tenant = filament()->getTenant() ?? tenancy()->tenant;
+
+        if (! $tenant) {
+            return settings()->isAdmin(auth()->user());
+        }
+
+        return $tenant->temAcessoPremium();
     }
 
     // Filtros públicos

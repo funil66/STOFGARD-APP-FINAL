@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\EvolutionWebhookController;
+use App\Http\Controllers\Auth\TenantJwtLoginController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +18,14 @@ use App\Http\Controllers\Api\EvolutionWebhookController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::prefix('auth')->group(function () {
+    Route::post('/login', [TenantJwtLoginController::class, 'login'])
+        ->name('api.auth.login');
+
+    Route::middleware('tenant.jwt')->get('/me', [TenantJwtLoginController::class, 'me'])
+        ->name('api.auth.me');
 });
 
 // URL de Escuta: dominio.com/api/webhook/evolution

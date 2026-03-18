@@ -23,7 +23,7 @@ class ClientePanelProvider extends PanelProvider
     {
         return $panel
             ->id('cliente')
-            ->path('cliente')
+            ->path('cliente-panel')
             ->login()
             ->registration() // Permitir registro por enquanto (simplifica testes)
             ->passwordReset()
