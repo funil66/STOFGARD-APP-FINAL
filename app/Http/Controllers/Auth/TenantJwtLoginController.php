@@ -1,83 +1,63 @@
 <?php
+// ARQUIVO: app/Http/Controllers/Auth/TenantJwtLoginController.php
+// DESCRIÇÃO: Controlador que emite o "Passaporte" blindado pro Prestador
 
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Services\Auth\JwtService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class TenantJwtLoginController extends Controller
 {
-    public function __construct(private readonly JwtService $jwtService)
+    public function login(Request $request)
     {
-    }
-
-    public function login(Request $request): JsonResponse
-    {
-        $this->ensureProviderHost($request);
-
+        // Regra de segurança básica. Valida a porra dos dados antes de bater no banco.
         $credentials = $request->validate([
             'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
+            'password' => ['required'],
         ]);
 
-        /** @var User|null $user */
-        $user = User::query()->where('email', $credentials['email'])->first();
-
-        if (!$user || !Hash::check($credentials['password'], (string) $user->password)) {
-            return response()->json([
-                'message' => 'Credenciais inválidas.',
-            ], 401);
+        // Autentica via Guard de API do Laravel (assumindo que você instalou JWT-Auth ou Sanctum)
+        if (! $token = auth('api')->attempt($credentials)) {
+            return response()->json(['error' => 'Credenciais inválidas. Tenta de novo, amigão.'], 401);
         }
 
-        if (!$user->tenant_id) {
-            return response()->json([
-                'message' => 'Usuário sem tenant associado.',
-            ], 403);
+        $user = auth('api')->user();
+
+        // O PULO DO GATO: Se o usuário não tiver um cadastro_id, fodeu. Bloqueia.
+        if (!$user->cadastro_id) {
+            auth('api')->logout();
+            return response()->json(['error' => 'Usuário órfão sem empresa vinculada. Contate o suporte.'], 403);
         }
 
-        $role = $user->role ?: ($user->is_admin ? 'admin' : 'user');
+        // Retorna o token pro Frontend (React/Vue/Filament) guardar no LocalStorage ou Cookie HttpOnly
+        return $this->respondWithToken($token, $user);
+    }
 
-        $token = $this->jwtService->encode([
-            'userId' => $user->id,
-            'tenantId' => $user->tenant_id,
-            'role' => $role,
-            'email' => $user->email,
-            'name' => $user->name,
-        ]);
+    public function me()
+    {
+        return response()->json(auth('api')->user());
+    }
 
+    public function logout()
+    {
+        auth('api')->logout();
+        return response()->json(['message' => 'Deslogado com sucesso. Tchau e bença.']);
+    }
+
+    protected function respondWithToken($token, $user)
+    {
+        // Customizamos o Payload para ter certeza que o Frontend sabe quem é o dono do Token
         return response()->json([
-            'token_type' => 'Bearer',
             'access_token' => $token,
-            'expires_in' => (int) config('domain_routing.jwt.ttl_minutes', 480) * 60,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
             'user' => [
                 'id' => $user->id,
-                'name' => $user->name,
                 'email' => $user->email,
-                'tenantId' => $user->tenant_id,
-                'role' => $role,
-            ],
+                'tenant_id' => $user->cadastro_id,
+                'role' => $user->role ?? 'admin',
+            ]
         ]);
-    }
-
-    public function me(Request $request): JsonResponse
-    {
-        return response()->json([
-            'user' => $request->attributes->get('auth.user'),
-            'tenant_id' => $request->attributes->get('tenant_id'),
-        ]);
-    }
-
-    private function ensureProviderHost(Request $request): void
-    {
-        $host = strtolower($request->getHost());
-        $providerHost = strtolower(config('domain_routing.provider_subdomain', 'app') . '.' . config('domain_routing.base_domain', 'autonomia.app.br'));
-
-        if ($host !== $providerHost) {
-            abort(403, 'Login permitido apenas em ' . $providerHost);
-        }
     }
 }

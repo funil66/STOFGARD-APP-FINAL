@@ -20,6 +20,7 @@
         "masbug/flysystem-google-drive-ext": "^2.4",
         "mokhosh/filament-kanban": "^2.11",
         "owen-it/laravel-auditing": "^14.0",
+        "php-open-source-saver/jwt-auth": "^2.8",
         "saade/filament-autograph": "^3.2",
         "saade/filament-fullcalendar": "^3.0",
         "sabre/vobject": "^4.5",

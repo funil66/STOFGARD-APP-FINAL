@@ -5,6 +5,7 @@ use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\PagamentoController;
 use App\Http\Controllers\PixWebhookController;
+use App\Http\Controllers\Auth\JwtSessionBridgeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -41,8 +42,14 @@ Route::post('/ping', function() {
     return Route::get('/livewire/livewire.js', $handle);
 });
 
-// Rota de login (redireciona para Filament)
-Route::redirect('/login', '/admin/login')->name('login');
+// Rota de login JWT (Prestador)
+Route::view('/login', 'auth.jwt-login')->name('login');
+Route::post('/auth/session-login', [JwtSessionBridgeController::class, 'store'])
+    ->name('auth.session.login')
+    ->withoutMiddleware([
+        \App\Http\Middleware\VerifyCsrfToken::class,
+        \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+    ]);
 
 // --- FASE 1: VITRINE PÚBLICA (Link na Bio) ---
 // URL: stofgard.com.br/v/{slug-do-tenant}
