@@ -11,6 +11,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Spatie\MediaLibrary\HasMedia;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\Model;
 
 use App\Traits\HasArquivos;
 
@@ -129,6 +130,28 @@ class User extends Authenticatable implements FilamentUser, HasMedia, JWTSubject
     public function tenant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function canAccessTenant(Model $tenant): bool
+    {
+        if ($this->is_super_admin) {
+            return true;
+        }
+
+        if (!$tenant instanceof Tenant) {
+            return false;
+        }
+
+        $allowedTenantIds = array_filter([
+            $this->tenant_id,
+            $this->cadastro_id,
+        ], static fn ($value) => !is_null($value) && $value !== '');
+
+        if ($allowedTenantIds === []) {
+            return false;
+        }
+
+        return in_array((string) $tenant->getKey(), array_map(static fn ($id) => (string) $id, $allowedTenantIds), true);
     }
 
     public function getJWTIdentifier()

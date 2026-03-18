@@ -1,0 +1,51 @@
+services:
+  site-final:
+    container_name: site-final
+    image: ${SITE_FINAL_IMAGE:-site-final:latest}
+    restart: unless-stopped
+    ports:
+      - "8001:80"
+    networks:
+      - autonomia-public
+
+  stofgard:
+    container_name: stofgard
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - "8002:80"
+    networks:
+      - autonomia-public
+
+  autonomia-marketing:
+    container_name: autonomia-marketing
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "8003:80"
+    volumes:
+      - ./marketing-site:/usr/share/nginx/html:ro
+      - ./marketing-site/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - autonomia-public
+
+  autonomia-app:
+    container_name: autonomia-app
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    env_file:
+      - .env
+    restart: unless-stopped
+    ports:
+      - "8004:80"
+    networks:
+      - autonomia-public
+
+networks:
+  autonomia-public:
+    driver: bridge

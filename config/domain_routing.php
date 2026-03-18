@@ -7,7 +7,7 @@ return [
 
     'jwt' => [
         'secret' => env('JWT_SECRET', ''),
-        'ttl_minutes' => (int) env('JWT_TTL_MINUTES', 480),
+        'ttl_minutes' => (int) env('JWT_TTL_MINUTES', (int) env('SESSION_LIFETIME', 120)),
         'issuer' => env('JWT_ISSUER', env('APP_NAME', 'autonomia-app')),
     ],
 ];

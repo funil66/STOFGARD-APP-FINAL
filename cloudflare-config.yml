@@ -1,0 +1,15 @@
+tunnel: autonomia-app
+credentials-file: /etc/cloudflared/autonomia-app.json
+
+ingress:
+  - hostname: autonomia.app.br
+    service: http://localhost:8003
+  - hostname: www.autonomia.app.br
+    service: http://localhost:8003
+  - hostname: app.autonomia.app.br
+    service: http://localhost:8004
+  - hostname: api.autonomia.app.br
+    service: http://localhost:8004
+  - hostname: '*.autonomia.app.br'
+    service: http://localhost:8004
+  - service: http_status:404
