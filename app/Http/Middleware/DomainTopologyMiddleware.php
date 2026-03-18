@@ -15,9 +15,10 @@ class DomainTopologyMiddleware
         $host = $request->getHost();
         $baseDomain = 'autonomia.app.br';
         $appDomain = 'app.autonomia.app.br';
+        $apiDomain = 'api.autonomia.app.br';
 
-        // 1. O cara tá acessando o domínio do App/Dashboard (O QG do Prestador)
-        if ($host === $appDomain) {
+        // 1. O cara tá acessando domínios centrais do App/API
+        if ($host === $appDomain || $host === $apiDomain) {
             // Aqui dentro roda o Filament, rotas de API privadas e o Login. Tudo liberado.
             return $next($request);
         }
