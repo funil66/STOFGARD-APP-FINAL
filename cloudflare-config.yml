@@ -2,6 +2,14 @@ tunnel: autonomia-app
 credentials-file: /etc/cloudflared/autonomia-app.json
 
 ingress:
+  - hostname: allissonsousa.adv.br
+    service: http://localhost:8001
+  - hostname: www.allissonsousa.adv.br
+    service: http://localhost:8001
+  - hostname: stofgard.com.br
+    service: http://localhost:8002
+  - hostname: www.stofgard.com.br
+    service: http://localhost:8002
   - hostname: autonomia.app.br
     service: http://localhost:8003
   - hostname: www.autonomia.app.br

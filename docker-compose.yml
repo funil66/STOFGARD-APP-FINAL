@@ -1,23 +1,25 @@
 services:
   site-final:
     container_name: site-final
-    image: ${SITE_FINAL_IMAGE:-site-final:latest}
+    image: php:8.4-apache
+    command: >
+      bash -lc "a2enmod headers rewrite && apache2-foreground"
     restart: unless-stopped
     ports:
       - "8001:80"
+    volumes:
+      - ${SITE_FINAL_PATH:-./external/SITE-FINAL}:/var/www/html:ro
     networks:
       - autonomia-public
 
   stofgard:
     container_name: stofgard
-    build:
-      context: .
-      dockerfile: deploy/Dockerfile
-    env_file:
-      - .env
+    image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
       - "8002:80"
+    volumes:
+      - ${STOFGARD_PATH:-./external/STOFGARD}:/usr/share/nginx/html:ro
     networks:
       - autonomia-public
 
@@ -36,10 +38,12 @@ services:
   autonomia-app:
     container_name: autonomia-app
     build:
-      context: .
+      context: ${AUTONOMIA_APP_PATH:-.}
       dockerfile: deploy/Dockerfile
     env_file:
-      - .env
+      - ${AUTONOMIA_ENV_FILE:-.env}
+    command: >
+      sh -lc "php artisan key:generate --force >/dev/null 2>&1 || true; php artisan config:clear >/dev/null 2>&1 || true; php artisan serve --host=0.0.0.0 --port=80"
     restart: unless-stopped
     ports:
       - "8004:80"
