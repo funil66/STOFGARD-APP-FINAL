@@ -1,4 +1,6 @@
 <?php
+// ARQUIVO: app/Http/Middleware/DomainTopologyMiddleware.php
+// DESCRIÇÃO: Barreira de fogo para roteamento Multi-Tenant.
 
 namespace App\Http\Middleware;
 
@@ -10,62 +12,45 @@ class DomainTopologyMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $host = strtolower($request->getHost());
-        $baseDomain = strtolower((string) config('domain_routing.base_domain', 'autonomia.app.br'));
-        $providerSubdomain = strtolower((string) config('domain_routing.provider_subdomain', 'app'));
-        $providerHost = $providerSubdomain . '.' . $baseDomain;
+        $host = $request->getHost();
+        $baseDomain = 'autonomia.app.br';
+        $appDomain = 'app.autonomia.app.br';
 
-        $isProviderHost = $host === $providerHost;
-        $isWildcardClientHost = str_ends_with($host, '.' . $baseDomain) && !$isProviderHost;
-
-        if ($isProviderHost) {
-            $request->attributes->set('domain_area', 'provider_dashboard');
-
+        // 1. O cara tá acessando o domínio do App/Dashboard (O QG do Prestador)
+        if ($host === $appDomain) {
+            // Aqui dentro roda o Filament, rotas de API privadas e o Login. Tudo liberado.
             return $next($request);
         }
 
-        if ($isWildcardClientHost) {
-            $request->attributes->set('domain_area', 'client_showcase');
+        // 2. O cara tá acessando o Site de Marketing (Landing Page)
+        if ($host === $baseDomain) {
+            return $next($request);
+        }
 
-            if ($this->isAuthPath($request)) {
-                return redirect()->to($this->buildProviderUrl($request, $providerHost), 301);
+        // 3. O cara tá acessando um Subdomínio Wildcard (A Vitrine do Cliente)
+        // Exemplo: joao.autonomia.app.br
+        if (str_ends_with($host, '.' . $baseDomain)) {
+            $subdomain = str_replace('.' . $baseDomain, '', $host);
+
+            // Regra Inegociável: Vitrine NÃO TEM TELA DE LOGIN.
+            // Se o peão tentar burlar e digitar /login ou /admin, toma um 301 na testa.
+            $restrictedPaths = ['login', 'admin', 'app', 'register', 'api/auth/login', 'api/auth/register', 'api/auth/*'];
+            $currentPath = $request->path();
+
+            foreach ($restrictedPaths as $path) {
+                if ($request->is($path) || $request->is($path . '/*')) {
+                    // Redireciona o corno pro painel central
+                    return redirect()->to('https://' . $appDomain . '/login', 301);
+                }
             }
 
+            // Se passou, injeta o subdomínio na requisição para os Controllers usarem na Vitrine
+            $request->attributes->add(['tenant_subdomain' => $subdomain]);
+
             return $next($request);
         }
 
-        $request->attributes->set('domain_area', 'legacy_or_external');
-
-        return $next($request);
-    }
-
-    private function isAuthPath(Request $request): bool
-    {
-        $path = '/' . ltrim($request->path(), '/');
-
-        $authPaths = [
-            '/login',
-            '/register',
-            '/admin/login',
-            '/api/auth/login',
-            '/api/auth/register',
-        ];
-
-        return in_array($path, $authPaths, true);
-    }
-
-    private function buildProviderUrl(Request $request, string $providerHost): string
-    {
-        $scheme = (string) config('domain_routing.provider_scheme', 'https');
-        $path = '/' . ltrim($request->path(), '/');
-        $query = $request->getQueryString();
-
-        $url = $scheme . '://' . $providerHost . $path;
-
-        if ($query) {
-            $url .= '?' . $query;
-        }
-
-        return $url;
+        // 4. Fallback de segurança (se cair aqui é bot chinês scaneando IP direto)
+        abort(404, 'Domínio não reconhecido pela base Autonomia.');
     }
 }

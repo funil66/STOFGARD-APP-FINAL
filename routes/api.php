@@ -24,8 +24,13 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [TenantJwtLoginController::class, 'login'])
         ->name('api.auth.login');
 
-    Route::middleware('tenant.jwt')->get('/me', [TenantJwtLoginController::class, 'me'])
-        ->name('api.auth.me');
+    Route::middleware('auth:api')->group(function () {
+        Route::get('/me', [TenantJwtLoginController::class, 'me'])
+            ->name('api.auth.me');
+
+        Route::post('/logout', [TenantJwtLoginController::class, 'logout'])
+            ->name('api.auth.logout');
+    });
 });
 
 // URL de Escuta: dominio.com/api/webhook/evolution
