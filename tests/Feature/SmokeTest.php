@@ -13,7 +13,7 @@ class SmokeTest extends TestCase
 
     public function test_application_is_up()
     {
-        $response = $this->get('/');
+        $response = $this->get('/up');
         $response->assertStatus(200);
     }
 

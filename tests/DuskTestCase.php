@@ -7,13 +7,17 @@ use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
 use Laravel\Dusk\Browser;
 use Laravel\Dusk\TestCase as BaseTestCase;
 use PHPUnit\Framework\Attributes\BeforeClass;
+use RuntimeException;
 
 abstract class DuskTestCase extends BaseTestCase
 {
     use CreatesApplication;
+
+    protected static bool $duskDatabasePrepared = false;
 
     /**
      * Prepare for Dusk test execution.
@@ -32,6 +36,37 @@ abstract class DuskTestCase extends BaseTestCase
                 static::startChromeDriver(['--port=9515']);
             }
         }
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (! static::$duskDatabasePrepared) {
+            $this->prepareDuskDatabase();
+            static::$duskDatabasePrepared = true;
+        }
+    }
+
+    protected function prepareDuskDatabase(): void
+    {
+        $databasePath = base_path('database/dusk.sqlite');
+
+        if (! file_exists($databasePath)) {
+            if (! @touch($databasePath)) {
+                throw new RuntimeException("Não foi possível criar o arquivo do banco Dusk em: {$databasePath}");
+            }
+        }
+
+        config([
+            'database.default' => 'sqlite',
+            'database.connections.sqlite.database' => $databasePath,
+            'cache.default' => 'array',
+            'session.driver' => 'array',
+            'queue.default' => 'sync',
+        ]);
+
+        Artisan::call('migrate:fresh', ['--force' => true]);
     }
 
     /**
