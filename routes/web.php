@@ -5,6 +5,7 @@ use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\PagamentoController;
 use App\Http\Controllers\PixWebhookController;
+use App\Http\Controllers\SuperAdmin\TenantUserController;
 use App\Http\Controllers\Auth\JwtSessionBridgeController;
 use App\Http\Controllers\Auth\EmpresaPasswordResetController;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +45,14 @@ Route::post('/ping', function() {
 });
 \Livewire\Livewire::setScriptRoute(function ($handle) {
     return Route::get('/livewire/livewire.js', $handle);
+});
+
+Route::middleware([\App\Http\Middleware\EnsureSuperAdmin::class])->group(function () {
+    Route::get('/saas/tenant-users/create', [TenantUserController::class, 'create'])
+        ->name('super-admin.tenant-users.create');
+
+    Route::post('/saas/tenant-users', [TenantUserController::class, 'store'])
+        ->name('super-admin.tenant-users.store');
 });
 
 // Rota de login JWT (Prestador)
