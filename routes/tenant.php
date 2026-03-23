@@ -23,14 +23,6 @@ Route::middleware([
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
-    Route::get('/', function () {
-        return redirect('/admin');
-    });
-
-    Route::get('/login', function () {
-        return redirect('/admin/login');
-    });
-
     Route::prefix('cliente')->name('cliente.')->group(function () {
         Route::get('/acesso/{token}', [\App\Http\Controllers\MagicLinkController::class, 'consumir'])
             ->name('magic-link.consumir');

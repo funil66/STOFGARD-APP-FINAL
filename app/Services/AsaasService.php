@@ -74,15 +74,22 @@ class AsaasService
     /**
      * Cria uma assinatura recorrente mensal no Asaas.
      *
-     * @param string $customerId ID do cliente no Asaas
-     * @param float  $valor      Valor mensal da assinatura
-     * @param string $plano      Nome do plano (PRO, Elite)
+     * @param string $customerId  ID do cliente no Asaas
+     * @param float  $valor       Valor mensal da assinatura
+     * @param string $plano       Nome do plano (START, PRO, ELITE)
+     * @param string $billingType Forma de cobrança: CREDIT_CARD, PIX ou BOLETO
      */
-    public function criarAssinatura(string $customerId, float $valor, string $plano): array
+    public function criarAssinatura(string $customerId, float $valor, string $plano, string $billingType = 'CREDIT_CARD'): array
     {
+        $billingType = strtoupper($billingType);
+
+        if (!in_array($billingType, ['CREDIT_CARD', 'PIX', 'BOLETO'], true)) {
+            $billingType = 'CREDIT_CARD';
+        }
+
         $response = $this->request('POST', '/subscriptions', [
             'customer' => $customerId,
-            'billingType' => 'CREDIT_CARD', // ou 'BOLETO', 'PIX'
+            'billingType' => $billingType,
             'value' => $valor,
             'nextDueDate' => now()->addDays(1)->format('Y-m-d'), // 1º cobrança amanhã
             'cycle' => 'MONTHLY',
@@ -90,7 +97,11 @@ class AsaasService
             'externalReference' => $plano,
         ]);
 
-        Log::info('[AsaasService] Assinatura criada', ['customer' => $customerId, 'plano' => $plano]);
+        Log::info('[AsaasService] Assinatura criada', [
+            'customer' => $customerId,
+            'plano' => $plano,
+            'billingType' => $billingType,
+        ]);
 
         return $response;
     }

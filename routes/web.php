@@ -6,6 +6,7 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\PagamentoController;
 use App\Http\Controllers\PixWebhookController;
 use App\Http\Controllers\Auth\JwtSessionBridgeController;
+use App\Http\Controllers\Auth\EmpresaPasswordResetController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,6 +26,9 @@ Route::get('/registro-empresa', \App\Livewire\RegistroEmpresa::class)
     ->name('registro.empresa')
     ->middleware('throttle:10,1');
 
+Route::get('/assinatura/{tenant}/status', \App\Http\Controllers\PublicSubscriptionStatusController::class)
+    ->name('assinatura.status');
+
 // Avaliação pública NPS (via token único enviado ao cliente)
 Route::get('/avaliacao/{token}', \App\Livewire\AvaliacaoPublica::class)
     ->name('avaliacao.publica')
@@ -43,13 +47,22 @@ Route::post('/ping', function() {
 });
 
 // Rota de login JWT (Prestador)
-Route::view('/login', 'auth.jwt-login')->name('login');
+Route::view('/login', 'auth.jwt-login')->name('empresa.login');
 Route::post('/auth/session-login', [JwtSessionBridgeController::class, 'store'])
     ->name('auth.session.login')
     ->withoutMiddleware([
         \App\Http\Middleware\VerifyCsrfToken::class,
         \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
     ]);
+
+Route::get('/esqueci-senha', [EmpresaPasswordResetController::class, 'showRequestForm'])
+    ->name('empresa.password.reset.request');
+Route::post('/esqueci-senha', [EmpresaPasswordResetController::class, 'sendCode'])
+    ->name('empresa.password.reset.send-code');
+Route::get('/redefinir-senha', [EmpresaPasswordResetController::class, 'showResetForm'])
+    ->name('empresa.password.reset.form');
+Route::post('/redefinir-senha', [EmpresaPasswordResetController::class, 'reset'])
+    ->name('empresa.password.reset.update');
 
 // --- FASE 1: VITRINE PÚBLICA (Link na Bio) ---
 // URL: stofgard.com.br/v/{slug-do-tenant}
@@ -198,13 +211,13 @@ Route::middleware(['auth'])->group(function () {
         ->name('admin.files.delete');
 });
 
-// Rotas públicas de pagamento PIX
+// Rotas legadas de pagamento PIX (desativadas por padrão nos próprios controllers)
 Route::get('/pagamento/{hash}', [PagamentoController::class, 'pix'])
     ->name('pagamento.pix');
 Route::get('/pagamento/{hash}/verificar', [PagamentoController::class, 'verificarStatus'])
     ->name('pagamento.verificar');
 
-// Webhook PIX (EFI/Gerencianet) — rate limited
+// Webhook PIX legado (desativado por padrão no controller)
 Route::middleware('throttle:60,1')->group(function () {
     Route::post('/webhook/pix', [PixWebhookController::class, 'handle'])
         ->name('webhook.pix');

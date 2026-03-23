@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libzip-dev \
     libicu-dev \
+    libpq-dev \
     libmagickwand-dev \
     supervisor \
     cron \
@@ -53,7 +54,7 @@ RUN mkdir -p /etc/mysql/conf.d && \
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip
+    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd intl zip
 
 # Install Redis and Imagick extensions
 RUN pecl install redis imagick \
