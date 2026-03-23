@@ -5,6 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Esqueci minha senha - AUTONOMIA</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .ai-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 44px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            border: 0;
+            transition: opacity .2s ease;
+        }
+
+        .ai-btn:hover {
+            opacity: .92;
+        }
+
+        .ai-btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .ai-btn-secondary {
+            background: #0f172a;
+            color: #93c5fd;
+            border: 1px solid #334155;
+        }
+
+        .ai-btn-success {
+            background: #052e16;
+            color: #6ee7b7;
+            border: 1px solid #14532d;
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-xl shadow-2xl p-8">
@@ -37,14 +73,14 @@
                 @error('email') <p class="text-red-400 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
-            <button type="submit" class="w-full py-2.5 rounded bg-blue-600 hover:bg-blue-700 font-semibold">
+            <button type="submit" class="w-full py-2.5 rounded bg-blue-600 hover:bg-blue-700 font-semibold ai-btn ai-btn-primary">
                 Enviar código de recuperação
             </button>
         </form>
 
-        <div class="mt-6 text-center space-y-2">
-            <a href="{{ route('empresa.login') }}" class="block text-sm text-blue-300 hover:text-blue-200">Voltar para login</a>
-            <a href="{{ route('registro.empresa') }}" class="block text-sm text-emerald-300 hover:text-emerald-200">Criar nova empresa</a>
+        <div class="mt-6 space-y-3">
+            <a href="{{ route('empresa.login') }}" class="ai-btn ai-btn-secondary text-sm">Voltar para login</a>
+            <a href="{{ route('registro.empresa') }}" class="ai-btn ai-btn-success text-sm">Criar nova empresa</a>
         </div>
     </div>
 </body>
