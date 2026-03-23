@@ -17,14 +17,21 @@ class ListUserImpersonation extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('criar_usuario_tenant')
+            Actions\Action::make('criar_usuario_tenant_page')
                 ->label('Criar usuário do tenant')
                 ->icon('heroicon-o-user-plus')
                 ->color('primary')
                 ->form([
                     \Filament\Forms\Components\Select::make('tenant_id')
                         ->label('Tenant')
-                        ->options(fn () => Tenant::query()->orderBy('name')->pluck('name', 'id')->toArray())
+                        ->options(fn () => Tenant::query()
+                            ->orderBy('name')
+                            ->get()
+                            ->mapWithKeys(fn (Tenant $tenant) => [
+                                (string) $tenant->getKey() => sprintf('%s (%s)', $tenant->name, $tenant->getKey()),
+                            ])
+                            ->toArray())
+                        ->preload()
                         ->searchable()
                         ->required(),
                     \Filament\Forms\Components\TextInput::make('name')
@@ -43,12 +50,25 @@ class ListUserImpersonation extends ListRecords
                         ->minLength(8),
                 ])
                 ->action(function (array $data) {
+                    $initialized = false;
+
                     try {
-                        $tenant = Tenant::query()->find($data['tenant_id']);
+                        $tenantId = trim((string) ($data['tenant_id'] ?? ''));
+
+                        if ($tenantId === '') {
+                            Notification::make()
+                                ->title('Selecione um tenant')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        $tenant = Tenant::query()->find($tenantId);
 
                         if (! $tenant) {
                             Notification::make()
-                                ->title('Tenant não encontrado')
+                                ->title('Tenant não encontrado para o ID selecionado')
                                 ->danger()
                                 ->send();
 
@@ -56,6 +76,7 @@ class ListUserImpersonation extends ListRecords
                         }
 
                         tenancy()->initialize($tenant);
+                        $initialized = true;
 
                         $email = strtolower(trim($data['email']));
                         $exists = User::query()->where('email', $email)->exists();
@@ -90,7 +111,9 @@ class ListUserImpersonation extends ListRecords
                             ->danger()
                             ->send();
                     } finally {
-                        tenancy()->end();
+                        if ($initialized) {
+                            tenancy()->end();
+                        }
                     }
                 }),
         ];
