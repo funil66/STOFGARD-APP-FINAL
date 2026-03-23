@@ -8,6 +8,7 @@ use App\Models\Orcamento;
 use App\Models\OrdemServico;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class SuperAdminDashboard extends Page
 {
@@ -30,14 +31,33 @@ class SuperAdminDashboard extends Page
     {
         return [
             'stats' => [
-                'total_users' => User::count(),
-                'super_admins' => User::where('is_super_admin', true)->count(),
-                'total_cadastros' => Cadastro::count(),
-                'total_orcamentos' => Orcamento::count(),
-                'total_os' => OrdemServico::count(),
+                'total_users' => $this->safeCount(User::class, 'users'),
+                'super_admins' => $this->safeCount(User::class, 'users', ['is_super_admin' => true]),
+                'total_cadastros' => $this->safeCount(Cadastro::class, 'cadastros'),
+                'total_orcamentos' => $this->safeCount(Orcamento::class, 'orcamentos'),
+                'total_os' => $this->safeCount(OrdemServico::class, 'ordens_servico'),
                 'db_size_mb' => $this->getDatabaseSizeMB(),
             ],
         ];
+    }
+
+    private function safeCount(string $modelClass, string $table, array $where = []): int
+    {
+        try {
+            if (!Schema::hasTable($table)) {
+                return 0;
+            }
+
+            $query = $modelClass::query();
+
+            foreach ($where as $column => $value) {
+                $query->where($column, $value);
+            }
+
+            return (int) $query->count();
+        } catch (\Throwable) {
+            return 0;
+        }
     }
 
     private function getDatabaseSizeMB(): ?float
