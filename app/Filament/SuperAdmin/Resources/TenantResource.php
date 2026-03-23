@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -50,8 +51,10 @@ class TenantResource extends Resource
                                     ->label('Slug (subdomínio)')
                                     ->required()
                                     ->unique(ignoreRecord: true)
+                                    ->dehydrateStateUsing(fn (?string $state) => trim(strtolower((string) $state)))
                                     ->notIn(['app', 'admin', 'super-admin', 'sistema', 'suporte', 'api', 'www', 'mail', 'painel'])
                                     ->validationMessages([
+                                        'unique' => 'Este slug já está em uso por outro tenant.',
                                         'not_in' => 'Este subdomínio é reservado e não pode ser usado.',
                                         'regex' => 'O slug deve conter apenas letras, números, traços e pontos.'
                                     ])
@@ -240,6 +243,68 @@ class TenantResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Editar'),
+
+                Tables\Actions\Action::make('criar_usuario_admin')
+                    ->label('Criar usuário admin')
+                    ->icon('heroicon-o-user-plus')
+                    ->color('primary')
+                    ->form([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nome')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('email')
+                            ->label('E-mail')
+                            ->email()
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('password')
+                            ->label('Senha')
+                            ->password()
+                            ->required()
+                            ->minLength(8),
+                    ])
+                    ->action(function (Tenant $record, array $data) {
+                        try {
+                            tenancy()->initialize($record);
+
+                            $exists = \App\Models\User::query()
+                                ->where('email', strtolower($data['email']))
+                                ->exists();
+
+                            if ($exists) {
+                                Notification::make()
+                                    ->title('E-mail já existe neste tenant')
+                                    ->warning()
+                                    ->send();
+
+                                return;
+                            }
+
+                            \App\Models\User::query()->create([
+                                'name' => $data['name'],
+                                'email' => strtolower($data['email']),
+                                'password' => Hash::make($data['password']),
+                                'is_admin' => true,
+                                'role' => 'dono',
+                                'acesso_financeiro' => true,
+                                'email_verified_at' => now(),
+                            ]);
+
+                            Notification::make()
+                                ->title('Usuário admin criado com sucesso')
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Erro ao criar usuário')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        } finally {
+                            tenancy()->end();
+                        }
+                    }),
 
                 // Ativar tenant suspenso
                 Tables\Actions\Action::make('ativar')
