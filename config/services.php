@@ -72,5 +72,13 @@ return [
             : 'https://api.asaas.com/v3',
     ],
 
+    'paypal' => [
+        'client_id' => env('PAYPAL_CLIENT_ID', ''),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET', ''),
+        'base_url' => env('PAYPAL_SANDBOX', true)
+            ? 'https://api-m.sandbox.paypal.com'
+            : 'https://api-m.paypal.com',
+    ],
+
 ];
 

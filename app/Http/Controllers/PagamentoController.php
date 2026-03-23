@@ -13,6 +13,12 @@ class PagamentoController extends Controller
      */
     public function pix(string $hash)
     {
+        if (!config('payments.legacy_pix_flow_enabled', false)) {
+            return response()->view('pagamento.erro', [
+                'mensagem' => 'Este link de pagamento foi desativado. Solicite um novo link ao prestador.',
+            ], 410);
+        }
+
         try {
             $financeiro = Financeiro::where('link_pagamento_hash', $hash)
                 ->with('cliente')
@@ -56,6 +62,12 @@ class PagamentoController extends Controller
      */
     public function verificarStatus(string $hash)
     {
+        if (!config('payments.legacy_pix_flow_enabled', false)) {
+            return response()->json([
+                'error' => 'Fluxo legado de pagamento desativado',
+            ], 410);
+        }
+
         try {
             $financeiro = Financeiro::where('link_pagamento_hash', $hash)
                 ->firstOrFail();

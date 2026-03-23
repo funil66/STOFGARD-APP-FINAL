@@ -38,3 +38,24 @@ Após o script rodar, verifique se os serviços estão de pé:
 ```bash
 docker ps
 ```
+
+## Billing / PIX (importante)
+
+- O fluxo legado web (`/pagamento/{hash}` e `/webhook/pix`) está desativado por padrão.
+- Use o webhook canônico: `POST /api/webhooks/pix/{webhookToken}`.
+- No `.env`, mantenha:
+
+```dotenv
+LEGACY_PIX_FLOW_ENABLED=false
+LEGACY_PIX_WEBHOOK_ENABLED=false
+```
+
+## Smoke test pós-deploy
+
+- Checklist rápido: [docs/SMOKE_TEST_POS_DEPLOY.md](docs/SMOKE_TEST_POS_DEPLOY.md)
+- Execução automatizada:
+
+```bash
+chmod +x scripts/post_deploy_smoke.sh
+./scripts/post_deploy_smoke.sh
+```

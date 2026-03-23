@@ -13,9 +13,11 @@ class DomainTopologyMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $host = $request->getHost();
-        $baseDomain = 'autonomia.app.br';
-        $appDomain = 'app.autonomia.app.br';
-        $apiDomain = 'api.autonomia.app.br';
+        $baseDomain = (string) config('domain_routing.base_domain', 'autonomia.app.br');
+        $providerSubdomain = (string) config('domain_routing.provider_subdomain', 'app');
+        $appDomain = $providerSubdomain . '.' . $baseDomain;
+        $apiDomain = 'api.' . $baseDomain;
+        $wwwBaseDomain = 'www.' . $baseDomain;
 
         // 1. O cara tá acessando domínios centrais do App/API
         if ($host === $appDomain || $host === $apiDomain) {
@@ -26,6 +28,10 @@ class DomainTopologyMiddleware
         // 2. O cara tá acessando o Site de Marketing (Landing Page)
         if ($host === $baseDomain) {
             return $next($request);
+        }
+
+        if ($host === $wwwBaseDomain) {
+            return redirect()->to(config('domain_routing.provider_scheme', 'https') . '://' . $baseDomain . $request->getRequestUri(), 301);
         }
 
         // 3. O cara tá acessando um Subdomínio Wildcard (A Vitrine do Cliente)

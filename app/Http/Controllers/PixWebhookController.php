@@ -13,6 +13,13 @@ class PixWebhookController extends Controller
      */
     public function handle(Request $request)
     {
+        if (!config('payments.legacy_pix_webhook_enabled', false)) {
+            return response()->json([
+                'status' => 'disabled',
+                'message' => 'Webhook legado desativado. Use /api/webhooks/pix/{webhookToken}.',
+            ], 410);
+        }
+
         Log::info('Webhook PIX recebido', [
             'payload' => $request->all(),
             'headers' => $request->headers->all(),
@@ -52,6 +59,13 @@ class PixWebhookController extends Controller
      */
     public function status()
     {
+        if (!config('payments.legacy_pix_webhook_enabled', false)) {
+            return response()->json([
+                'status' => 'disabled',
+                'timestamp' => now()->toIso8601String(),
+            ], 410);
+        }
+
         return response()->json([
             'status' => 'online',
             'timestamp' => now()->toIso8601String(),

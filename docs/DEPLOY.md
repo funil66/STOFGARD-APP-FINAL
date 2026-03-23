@@ -239,6 +239,25 @@ sudo -u www-data php artisan view:cache
 sudo -u www-data php artisan icons:cache
 ```
 
+### Variáveis obrigatórias para billing e webhooks
+
+No `.env`, configure o trilho canônico e mantenha o legado desligado:
+
+```dotenv
+ASAAS_API_KEY=
+ASAAS_WEBHOOK_TOKEN=
+ASAAS_SANDBOX=true
+
+LEGACY_PIX_FLOW_ENABLED=false
+LEGACY_PIX_WEBHOOK_ENABLED=false
+```
+
+Webhook canônico de pagamento do cliente final:
+
+```text
+POST /api/webhooks/pix/{webhookToken}
+```
+
 ---
 
 ## 6️⃣ Script de Deploy Automático
@@ -324,6 +343,20 @@ php artisan queue:work --once
 
 # Verificar logs
 tail -f storage/logs/laravel.log
+```
+
+---
+
+## ✅ Smoke test pós-deploy (10 minutos)
+
+Após o deploy, rode o checklist completo e o script rápido:
+
+- Checklist manual: [docs/SMOKE_TEST_POS_DEPLOY.md](docs/SMOKE_TEST_POS_DEPLOY.md)
+
+```bash
+cd /var/www/stofgard
+chmod +x scripts/post_deploy_smoke.sh
+./scripts/post_deploy_smoke.sh
 ```
 
 ---
