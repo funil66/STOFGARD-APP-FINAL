@@ -67,7 +67,7 @@ class VerifyCsrfToken extends Middleware
         try {
             return parent::handle($request, $next);
         } catch (\Illuminate\Session\TokenMismatchException $e) {
-            if (app()->environment('local')) {
+            if (app()->environment('local') || $request->path() === 'livewire/update') {
                 try {
                     Log::error('CSRF TokenMismatchException', [
                         'path' => $request->path(),
