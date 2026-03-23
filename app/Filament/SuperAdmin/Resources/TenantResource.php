@@ -77,6 +77,27 @@ class TenantResource extends Resource
                                     ->required()
                                     ->default('free')
                                     ->live(),
+
+                                Forms\Components\Fieldset::make('Usuário administrador inicial')
+                                    ->schema([
+                                        Forms\Components\TextInput::make('owner_name')
+                                            ->label('Nome do administrador')
+                                            ->required(fn (string $operation): bool => $operation === 'create')
+                                            ->maxLength(255),
+                                        Forms\Components\TextInput::make('owner_email')
+                                            ->label('E-mail do administrador')
+                                            ->email()
+                                            ->required(fn (string $operation): bool => $operation === 'create')
+                                            ->maxLength(255),
+                                        Forms\Components\TextInput::make('owner_password')
+                                            ->label('Senha do administrador')
+                                            ->password()
+                                            ->revealable()
+                                            ->minLength(8)
+                                            ->required(fn (string $operation): bool => $operation === 'create'),
+                                    ])
+                                    ->visible(fn (string $operation): bool => $operation === 'create')
+                                    ->columns(3),
                             ])
                             ->columns(2),
 

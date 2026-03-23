@@ -25,7 +25,13 @@ class ListUserImpersonation extends ListRecords
                 ->form([
                     \Filament\Forms\Components\Select::make('tenant_id')
                         ->label('Tenant')
-                        ->options(fn () => $this->getProvisionedTenantOptions())
+                        ->options(fn () => Tenant::query()
+                            ->orderBy('name')
+                            ->get()
+                            ->mapWithKeys(fn (Tenant $tenant) => [
+                                (string) $tenant->getKey() => sprintf('%s (%s)', $tenant->name, $tenant->getKey()),
+                            ])
+                            ->toArray())
                         ->preload()
                         ->searchable()
                         ->required(),
@@ -122,37 +128,5 @@ class ListUserImpersonation extends ListRecords
                     }
                 }),
         ];
-    }
-
-    private function getProvisionedTenantOptions(): array
-    {
-        return Tenant::query()
-            ->orderBy('name')
-            ->get()
-            ->filter(function (Tenant $tenant): bool {
-                $initialized = false;
-
-                try {
-                    tenancy()->initialize($tenant);
-                    $initialized = true;
-                    User::query()->limit(1)->get();
-
-                    if ($initialized) {
-                        tenancy()->end();
-                    }
-
-                    return true;
-                } catch (\Throwable) {
-                    if ($initialized) {
-                        tenancy()->end();
-                    }
-
-                    return false;
-                }
-            })
-            ->mapWithKeys(fn (Tenant $tenant) => [
-                (string) $tenant->getKey() => sprintf('%s (%s)', $tenant->name, $tenant->getKey()),
-            ])
-            ->toArray();
     }
 }
