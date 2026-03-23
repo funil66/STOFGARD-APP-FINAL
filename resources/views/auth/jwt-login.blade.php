@@ -5,6 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Empresa - AUTONOMIA ILIMITADA</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .ai-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 46px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            border: 0;
+            transition: opacity .2s ease;
+        }
+
+        .ai-btn:hover {
+            opacity: .92;
+        }
+
+        .ai-btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .ai-btn-secondary {
+            background: #0f172a;
+            color: #93c5fd;
+            border: 1px solid #334155;
+        }
+
+        .ai-btn-success {
+            background: #052e16;
+            color: #6ee7b7;
+            border: 1px solid #14532d;
+        }
+    </style>
 </head>
 <body class="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
     <div class="max-w-md w-full bg-gray-800 rounded-xl shadow-2xl p-8 border border-gray-700">
@@ -60,7 +96,7 @@
 
             <button
                 type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex justify-center items-center"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex justify-center items-center ai-btn ai-btn-primary"
             >
                 <span id="btn-text">Entrar no Sistema</span>
                 <svg id="btn-spinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -70,9 +106,9 @@
             </button>
         </form>
 
-        <div class="mt-6 text-center space-y-2">
-            <a href="{{ route('empresa.password.reset.request') }}" class="block text-sm text-blue-400 hover:text-blue-300">Esqueceu a senha? Recuperar acesso</a>
-            <a href="{{ route('registro.empresa') }}" class="block text-sm text-emerald-400 hover:text-emerald-300">Ainda não tem empresa? Criar cadastro</a>
+        <div class="mt-6 space-y-3">
+            <a href="{{ route('empresa.password.reset.request') }}" class="ai-btn ai-btn-secondary text-sm">Esqueceu a senha? Recuperar acesso</a>
+            <a href="{{ route('registro.empresa') }}" class="ai-btn ai-btn-success text-sm">Ainda não tem empresa? Criar cadastro</a>
         </div>
     </div>
 
