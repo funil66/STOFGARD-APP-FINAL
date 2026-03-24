@@ -4,33 +4,42 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\AgendaResource;
 use App\Models\Agenda;
+use Illuminate\Support\Facades\Schema;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 
 class AgendaCalendarWidget extends FullCalendarWidget
 {
     public function fetchEvents(array $fetchInfo): array
     {
-        return Agenda::query()
-            ->with(['cliente', 'ordemServico'])
-            ->whereBetween('data_hora_inicio', [$fetchInfo['start'], $fetchInfo['end']])
-            ->get()
-            ->map(fn (Agenda $agenda) => [
-                'id' => $agenda->id,
-                'title' => $this->formatEventTitle($agenda), // Título simplificado
-                'start' => $agenda->data_hora_inicio,
-                'end' => $agenda->data_hora_fim,
-                'url' => AgendaResource::getUrl('view', ['record' => $agenda]),
-                'backgroundColor' => $this->getColorByStatus($agenda->status), // Mantendo Status como cor principal por enquanto
-                'borderColor' => $this->getColorByStatus($agenda->status),
-                'className' => 'agenda-event-'.$agenda->status, // Classe CSS útil
-                'extendedProps' => [
-                    'cliente' => $agenda->cliente?->nome,
-                    'local' => $agenda->local,
-                    'status' => $agenda->status,
-                    'tipo' => $agenda->tipo,
-                ],
-            ])
-            ->toArray();
+        try {
+            if (!Schema::hasTable((new Agenda())->getTable())) {
+                return [];
+            }
+
+            return Agenda::query()
+                ->with(['cliente', 'ordemServico'])
+                ->whereBetween('data_hora_inicio', [$fetchInfo['start'], $fetchInfo['end']])
+                ->get()
+                ->map(fn (Agenda $agenda) => [
+                    'id' => $agenda->id,
+                    'title' => $this->formatEventTitle($agenda),
+                    'start' => $agenda->data_hora_inicio,
+                    'end' => $agenda->data_hora_fim,
+                    'url' => AgendaResource::getUrl('view', ['record' => $agenda]),
+                    'backgroundColor' => $this->getColorByStatus($agenda->status),
+                    'borderColor' => $this->getColorByStatus($agenda->status),
+                    'className' => 'agenda-event-' . $agenda->status,
+                    'extendedProps' => [
+                        'cliente' => $agenda->cliente?->nome,
+                        'local' => $agenda->local,
+                        'status' => $agenda->status,
+                        'tipo' => $agenda->tipo,
+                    ],
+                ])
+                ->toArray();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     protected function formatEventTitle(Agenda $agenda): string
