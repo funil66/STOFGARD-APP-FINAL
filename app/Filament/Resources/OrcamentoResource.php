@@ -16,6 +16,8 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class OrcamentoResource extends Resource
 {
@@ -26,6 +28,15 @@ class OrcamentoResource extends Resource
     protected static ?string $navigationGroup = 'Comercial';
 
     protected static ?string $label = 'Orçamento';
+
+    protected static function hasItensTableAvailable(): bool
+    {
+        try {
+            return Schema::hasTable('orcamento_items');
+        } catch (Throwable) {
+            return false;
+        }
+    }
 
     public static function form(Form $form): Form
     {
@@ -150,7 +161,15 @@ class OrcamentoResource extends Resource
                     ->icon('heroicon-o-list-bullet')
                     ->schema([
                         Forms\Components\Repeater::make('itens')
-                            ->relationship('itens')
+                            ->when(
+                                static::hasItensTableAvailable(),
+                                fn(Forms\Components\Repeater $component) => $component->relationship('itens')
+                            )
+                            ->helperText(
+                                static::hasItensTableAvailable()
+                                    ? null
+                                    : 'Itens detalhados indisponíveis neste contexto (tabela de itens não encontrada).'
+                            )
                             ->schema([
                                 Forms\Components\Select::make('opcao')
                                     ->label('Opção')
@@ -165,7 +184,17 @@ class OrcamentoResource extends Resource
 
                                 Forms\Components\Select::make('item_nome')
                                     ->label('Item')
-                                    ->options(fn() => \App\Models\TabelaPreco::where('ativo', true)->pluck('nome_item', 'nome_item'))
+                                    ->options(function () {
+                                        try {
+                                            if (!Schema::hasTable((new \App\Models\TabelaPreco())->getTable())) {
+                                                return [];
+                                            }
+
+                                            return \App\Models\TabelaPreco::where('ativo', true)->pluck('nome_item', 'nome_item');
+                                        } catch (Throwable) {
+                                            return [];
+                                        }
+                                    })
                                     ->searchable()
                                     ->required()
                                     ->live()
