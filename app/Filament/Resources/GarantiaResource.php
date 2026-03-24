@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Throwable;
 
 class GarantiaResource extends Resource
 {
@@ -38,7 +39,11 @@ class GarantiaResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'ativa')->count();
+        try {
+            return (string) static::getModel()::where('status', 'ativa')->count();
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     public static function getNavigationBadgeColor(): ?string

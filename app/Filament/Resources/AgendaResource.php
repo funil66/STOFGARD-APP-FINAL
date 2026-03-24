@@ -17,6 +17,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use App\Support\Filament\StofgardTable;
+use Throwable;
 
 class AgendaResource extends Resource
 {
@@ -737,9 +738,13 @@ class AgendaResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'agendado')
-            ->whereDate('data_hora_inicio', '>=', now())
-            ->count();
+        try {
+            return (string) static::getModel()::where('status', 'agendado')
+                ->whereDate('data_hora_inicio', '>=', now())
+                ->count();
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     public static function getNavigationBadgeColor(): ?string

@@ -6,7 +6,9 @@ use App\Filament\Resources\FinanceiroResource;
 use App\Models\Financeiro;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Number;
+use Illuminate\Support\Facades\Schema;
 
 class FinanceiroOverview extends BaseWidget
 {
@@ -14,28 +16,40 @@ class FinanceiroOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        // Totais Gerais (Considerando Pagos)
-        // Totais Gerais (Considerando Pagos)
-        $entradasPagas = Financeiro::pago()->entrada()->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
-        $saidasPagas = Financeiro::pago()->saida()->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
-        $saldo = $entradasPagas - $saidasPagas;
+        $entradasPagas = 0;
+        $saidasPagas = 0;
+        $receitasMes = 0;
+        $despesasMes = 0;
+        $pendentesReceber = 0;
+        $pendentesPagar = 0;
 
-        // Mês Atual
+        // Totais Gerais (Considerando Pagos)
         $inicioMes = now()->startOfMonth();
         $fimMes = now()->endOfMonth();
 
-        // #8: Receitas/Despesas do Mês — SOMENTE PAGOS (não pendentes)
-        $receitasMes = Financeiro::entrada()->pago()
-            ->whereBetween('data_pagamento', [$inicioMes, $fimMes])
-            ->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
+        try {
+            if (Schema::hasTable((new Financeiro())->getTable())) {
+                $entradasPagas = Financeiro::pago()->entrada()->sum(DB::raw('COALESCE(valor_pago, valor)'));
+                $saidasPagas = Financeiro::pago()->saida()->sum(DB::raw('COALESCE(valor_pago, valor)'));
 
-        $despesasMes = Financeiro::saida()->pago()
-            ->whereBetween('data_pagamento', [$inicioMes, $fimMes])
-            ->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(valor_pago, valor)'));
+                // #8: Receitas/Despesas do Mês — SOMENTE PAGOS (não pendentes)
+                $receitasMes = Financeiro::entrada()->pago()
+                    ->whereBetween('data_pagamento', [$inicioMes, $fimMes])
+                    ->sum(DB::raw('COALESCE(valor_pago, valor)'));
 
-        // Pendentes Gerais (Inclui Atrasados)
-        $pendentesReceber = Financeiro::whereIn('status', ['pendente', 'atrasado'])->entrada()->sum('valor');
-        $pendentesPagar = Financeiro::whereIn('status', ['pendente', 'atrasado'])->saida()->sum('valor');
+                $despesasMes = Financeiro::saida()->pago()
+                    ->whereBetween('data_pagamento', [$inicioMes, $fimMes])
+                    ->sum(DB::raw('COALESCE(valor_pago, valor)'));
+
+                // Pendentes Gerais (Inclui Atrasados)
+                $pendentesReceber = Financeiro::whereIn('status', ['pendente', 'atrasado'])->entrada()->sum('valor');
+                $pendentesPagar = Financeiro::whereIn('status', ['pendente', 'atrasado'])->saida()->sum('valor');
+            }
+        } catch (\Throwable) {
+            // Mantém valores zerados quando o contexto de banco/tenant não está disponível.
+        }
+
+        $saldo = $entradasPagas - $saidasPagas;
 
         return [
             Stat::make('Saldo em Caixa', Number::currency($saldo, 'BRL'))

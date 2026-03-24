@@ -40,6 +40,25 @@
             color: #6ee7b7;
             border: 1px solid #14532d;
         }
+
+        .login-input {
+            color: #ffffff !important;
+            caret-color: #ffffff;
+            -webkit-text-fill-color: #ffffff !important;
+        }
+
+        .login-input::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+
+        .login-input:-webkit-autofill,
+        .login-input:-webkit-autofill:hover,
+        .login-input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #ffffff !important;
+            box-shadow: 0 0 0px 1000px #374151 inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
@@ -78,7 +97,7 @@
                     name="email"
                     required
                     placeholder="seu@email.com"
-                    class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white outline-none transition"
+                    class="login-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white outline-none transition"
                 >
             </div>
 
@@ -90,7 +109,7 @@
                     name="password"
                     required
                     placeholder="••••••••"
-                    class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white outline-none transition"
+                    class="login-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white outline-none transition"
                 >
             </div>
 

@@ -14,6 +14,11 @@ class ListFinanceiros extends ListRecords
 {
     protected static string $resource = FinanceiroResource::class;
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return parent::canAccess($parameters) && FinanceiroResource::hasTableAvailable();
+    }
+
     protected function getHeaderActions(): array
     {
         return [

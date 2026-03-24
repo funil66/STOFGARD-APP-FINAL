@@ -6,6 +6,7 @@ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Livewire\Mechanisms\HandleComponents\CorruptComponentPayloadException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -29,6 +30,17 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $e)
     {
+        // Livewire checksum mismatch: evita 500 em payloads expirados/trocados após deploy.
+        if ($e instanceof CorruptComponentPayloadException) {
+            if ($request->expectsJson() || $request->routeIs('livewire.update') || $request->is('livewire/*')) {
+                return response()->json([
+                    'message' => 'Estado da página expirado. Recarregue a página e tente novamente.',
+                ], 419);
+            }
+
+            return response()->view('errors.419', [], 419);
+        }
+
         // TokenMismatch handling (explicit CSRF failures)
         if ($e instanceof TokenMismatchException) {
             // Only log extra information in local environment to avoid leaking sensitive data.
