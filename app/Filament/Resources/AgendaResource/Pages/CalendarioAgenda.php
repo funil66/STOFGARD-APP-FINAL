@@ -15,6 +15,11 @@ class CalendarioAgenda extends ListRecords
 
     protected static ?string $title = 'Agenda';
 
+    public static function canAccess(array $parameters = []): bool
+    {
+        return parent::canAccess($parameters) && AgendaResource::hasTableAvailable();
+    }
+
     protected function getHeaderActions(): array
     {
         return [
