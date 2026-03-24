@@ -59,7 +59,7 @@ class FinanceiroOverview extends BaseWidget
                 ->chart([$saldo - 100, $saldo - 50, $saldo, $saldo + 50, $saldo + 100])
                 ->url(FinanceiroResource::getUrl('index', [
                     'tableFilters' => [
-                        'status' => ['value' => 'pago'],
+                        'status' => ['values' => ['pago']],
                         'data_range' => [
                             'data_de' => $inicioMes->format('Y-m-d'),
                             'data_ate' => $fimMes->format('Y-m-d'),
@@ -73,7 +73,7 @@ class FinanceiroOverview extends BaseWidget
                 ->color('success')
                 ->url(FinanceiroResource::getUrl('index', [
                     'tableFilters' => [
-                        'status' => ['value' => 'pago'],
+                        'status' => ['values' => ['pago']],
                         'tipo' => ['value' => 'entrada'],
                     ],
                 ])),
@@ -84,7 +84,7 @@ class FinanceiroOverview extends BaseWidget
                 ->color('danger')
                 ->url(FinanceiroResource::getUrl('index', [
                     'tableFilters' => [
-                        'status' => ['value' => 'pago'],
+                        'status' => ['values' => ['pago']],
                         'tipo' => ['value' => 'saida'],
                     ],
                 ])),
@@ -95,7 +95,7 @@ class FinanceiroOverview extends BaseWidget
                 ->color('warning')
                 ->url(FinanceiroResource::getUrl('index', [
                     'tableFilters' => [
-                        'status' => ['value' => 'pendente'],
+                        'status' => ['values' => ['pendente']],
                         'tipo' => ['value' => 'entrada'],
                     ],
                 ])),
@@ -107,7 +107,7 @@ class FinanceiroOverview extends BaseWidget
                 ->color('danger')
                 ->url(FinanceiroResource::getUrl('index', [
                     'tableFilters' => [
-                        'status' => ['value' => 'pendente'],
+                        'status' => ['values' => ['pendente']],
                         'tipo' => ['value' => 'saida'],
                     ],
                 ])),
