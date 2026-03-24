@@ -30,7 +30,7 @@ class InitializeTenancyFromUser
         $tenantId = $user->tenant_id ?? $user->cadastro_id ?? null;
 
         if (!$tenantId) {
-            if ($request->is('admin/financeiros*')) {
+            if ($request->is('admin') || $request->is('admin/*')) {
                 abort(403);
             }
 
@@ -40,6 +40,10 @@ class InitializeTenancyFromUser
         $tenant = Tenant::query()->find((string) $tenantId);
 
         if (!$tenant) {
+            if ($request->is('admin') || $request->is('admin/*')) {
+                abort(403);
+            }
+
             return $next($request);
         }
 
