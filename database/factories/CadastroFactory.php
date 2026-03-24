@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Cadastro;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class CadastroFactory extends Factory
 {
@@ -11,18 +12,21 @@ class CadastroFactory extends Factory
 
     public function definition()
     {
+        $suffix = Str::lower(Str::random(8));
+        $numero = (string) random_int(1, 9999);
+
         return [
-            'nome' => fake()->name(),
+            'nome' => 'Cliente '.$suffix,
             'tipo' => 'cliente',
-            'documento' => fake()->numerify('###########'),
-            'email' => fake()->unique()->safeEmail(),
-            'telefone' => fake()->phoneNumber(),
-            'cep' => fake()->postcode(),
-            'logradouro' => fake()->streetName(),
-            'numero' => fake()->buildingNumber(),
-            'bairro' => fake()->word(),
-            'cidade' => fake()->city(),
-            'estado' => fake()->stateAbbr(),
+            'documento' => (string) random_int(10000000000, 99999999999),
+            'email' => 'cliente_'.$suffix.'@example.com',
+            'telefone' => '(16) 9'.random_int(1000, 9999).'-'.random_int(1000, 9999),
+            'cep' => (string) random_int(10000000, 99999999),
+            'logradouro' => 'Rua '.$suffix,
+            'numero' => $numero,
+            'bairro' => 'Centro',
+            'cidade' => 'Ribeirão Preto',
+            'estado' => 'SP',
         ];
     }
 

@@ -11,6 +11,9 @@ class OrcamentoSeeder extends Seeder
 {
     public function run(): void
     {
+        $statusPermitidos = ['pendente', 'em_elaboracao', 'aprovado'];
+        $tiposServicoPermitidos = ['higienizacao', 'impermeabilizacao'];
+
         // Pega clientes existentes
         $clientes = Cadastro::where('tipo', 'cliente')->get();
 
@@ -37,7 +40,7 @@ class OrcamentoSeeder extends Seeder
                 'cadastro_id' => $cliente->id,
                 'data_orcamento' => now(),
                 'data_validade' => now()->addDays(15),
-                'status' => fake()->randomElement(['rascunho', 'enviado']),
+                'status' => $statusPermitidos[array_rand($statusPermitidos)],
                 'observacoes' => 'Orçamento gerado automaticamente pelo sistema.',
                 'criado_por' => 'SE',
                 'valor_total' => 0,
@@ -52,7 +55,7 @@ class OrcamentoSeeder extends Seeder
 
             for ($j = 0; $j < $itensQtd; $j++) {
                 $itemPreco = $tabelaPrecos->random();
-                $tipoServico = fake()->randomElement(['higienizacao', 'impermeabilizacao']);
+                $tipoServico = $tiposServicoPermitidos[array_rand($tiposServicoPermitidos)];
 
                 // Pega o preço baseado no tipo
                 $preco = ($tipoServico == 'higienizacao')
