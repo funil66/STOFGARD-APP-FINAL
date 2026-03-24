@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Http\Request;
@@ -30,6 +31,18 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $e)
     {
+        if ($e instanceof QueryException && $e->getCode() === '42P01') {
+            if ($request->expectsJson() || $request->routeIs('livewire.update') || $request->is('livewire/*')) {
+                return response()->json([
+                    'message' => 'Módulo temporariamente indisponível para este contexto de acesso.',
+                ], 403);
+            }
+
+            if ($request->is('admin') || $request->is('admin/*')) {
+                abort(403);
+            }
+        }
+
         // Livewire checksum mismatch: evita 500 em payloads expirados/trocados após deploy.
         if ($e instanceof CorruptComponentPayloadException) {
             if ($request->expectsJson() || $request->routeIs('livewire.update') || $request->is('livewire/*')) {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Setting extends Model
 {
@@ -12,24 +13,43 @@ class Setting extends Model
 
     public static function get($key, $default = null)
     {
-        $setting = self::where('key', $key)->first();
-        if (!$setting)
+        try {
+            if (!Schema::hasTable((new self())->getTable())) {
+                return $default;
+            }
+
+            $setting = self::where('key', $key)->first();
+
+            if (!$setting) {
+                return $default;
+            }
+
+            if ($setting->type === 'boolean') {
+                return filter_var($setting->value, FILTER_VALIDATE_BOOLEAN);
+            }
+
+            if ($setting->type === 'json') {
+                return json_decode($setting->value, true);
+            }
+
+            return $setting->value;
+        } catch (\Throwable) {
             return $default;
-
-        // Cast common types
-        if ($setting->type === 'boolean') {
-            return filter_var($setting->value, FILTER_VALIDATE_BOOLEAN);
         }
-        if ($setting->type === 'json') {
-            return json_decode($setting->value, true);
-        }
-
-        return $setting->value;
     }
 
     public static function set($key, $value, $group = 'geral', $type = 'string')
     {
-        $payload = ['value' => $type === 'json' ? json_encode($value) : $value, 'group' => $group, 'type' => $type];
-        return self::updateOrCreate(['key' => $key], $payload);
+        try {
+            if (!Schema::hasTable((new self())->getTable())) {
+                return null;
+            }
+
+            $payload = ['value' => $type === 'json' ? json_encode($value) : $value, 'group' => $group, 'type' => $type];
+
+            return self::updateOrCreate(['key' => $key], $payload);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }
