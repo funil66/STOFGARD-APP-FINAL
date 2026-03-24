@@ -31,6 +31,8 @@ use App\Services\OrdemServicoFormService;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
 
 class OrdemServicoResource extends Resource
 {
@@ -45,6 +47,15 @@ class OrdemServicoResource extends Resource
     protected static ?string $navigationGroup = 'Operacional';
 
     protected static ?int $navigationSort = 2;
+
+    protected static function hasItensTableAvailable(): bool
+    {
+        try {
+            return Schema::hasTable('ordem_servico_items');
+        } catch (Throwable) {
+            return false;
+        }
+    }
 
     public static function form(Form $form): Form
     {
@@ -187,12 +198,30 @@ class OrdemServicoResource extends Resource
                                     ->columnSpanFull(),
 
                                 Repeater::make('itens')
-                                    ->relationship('itens')
+                                    ->when(
+                                        static::hasItensTableAvailable(),
+                                        fn(Repeater $component) => $component->relationship('itens')
+                                    )
                                     ->label('Itens do Serviço (Sofá, Cadeira, etc)')
+                                    ->helperText(
+                                        static::hasItensTableAvailable()
+                                            ? null
+                                            : 'Itens detalhados indisponíveis neste contexto (tabela de itens não encontrada).'
+                                    )
                                     ->schema([
                                         Select::make('descricao')
                                             ->label('Item / Serviço')
-                                            ->options(fn() => \App\Models\TabelaPreco::where('ativo', true)->pluck('nome_item', 'nome_item'))
+                                            ->options(function () {
+                                                try {
+                                                    if (!Schema::hasTable((new \App\Models\TabelaPreco())->getTable())) {
+                                                        return [];
+                                                    }
+
+                                                    return \App\Models\TabelaPreco::where('ativo', true)->pluck('nome_item', 'nome_item');
+                                                } catch (Throwable) {
+                                                    return [];
+                                                }
+                                            })
                                             ->searchable()
                                             ->required()
                                             ->live()
