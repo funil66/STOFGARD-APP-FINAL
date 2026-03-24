@@ -27,6 +27,13 @@ class DomainTopologyMiddleware
 
         // 2. O cara tá acessando o Site de Marketing (Landing Page)
         if ($host === $baseDomain) {
+            if ($request->is('login') || $request->is('admin') || $request->is('admin/*')) {
+                return redirect()->to(
+                    config('domain_routing.provider_scheme', 'https') . '://' . $appDomain . $request->getRequestUri(),
+                    302
+                );
+            }
+
             return $next($request);
         }
 

@@ -39,7 +39,7 @@ class SettingsHelper
                 return Setting::get($key, $default);
             });
         } catch (\Throwable) {
-            return Setting::get($key, $default);
+            return $default;
         }
     }
 
@@ -48,7 +48,11 @@ class SettingsHelper
      */
     public function set(string $key, mixed $value, string $group = 'geral', string $type = 'string'): void
     {
-        Setting::set($key, $value, $group, $type);
+        try {
+            Setting::set($key, $value, $group, $type);
+        } catch (\Throwable) {
+            return;
+        }
 
         try {
             Cache::forget($this->cachePrefix . $key);
@@ -66,7 +70,7 @@ class SettingsHelper
                 return Setting::all()->pluck('value', 'key')->toArray();
             });
         } catch (\Throwable) {
-            return Setting::all()->pluck('value', 'key')->toArray();
+            return [];
         }
     }
 
@@ -75,7 +79,12 @@ class SettingsHelper
      */
     public function clearCache(): void
     {
-        $settings = Setting::all();
+        try {
+            $settings = Setting::all();
+        } catch (\Throwable) {
+            $settings = collect();
+        }
+
         foreach ($settings as $setting) {
             try {
                 Cache::forget($this->cachePrefix . $setting->key);

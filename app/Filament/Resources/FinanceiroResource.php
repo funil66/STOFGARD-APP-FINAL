@@ -18,6 +18,7 @@ use Filament\Tables;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Table;
 use App\Support\Filament\StofgardTable;
+use Illuminate\Support\Facades\Schema;
 
 class FinanceiroResource extends Resource
 {
@@ -32,6 +33,30 @@ class FinanceiroResource extends Resource
     protected static ?string $slug = 'financeiros';
 
     protected static ?int $navigationSort = 1;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return parent::shouldRegisterNavigation();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return parent::canViewAny();
+    }
+
+    public static function hasTableAvailable(): bool
+    {
+        return static::hasFinanceiroTable();
+    }
+
+    protected static function hasFinanceiroTable(): bool
+    {
+        try {
+            return Schema::hasTable((new Financeiro())->getTable());
+        } catch (\Throwable) {
+            return false;
+        }
+    }
 
     public static function form(Form $form): Form
     {
