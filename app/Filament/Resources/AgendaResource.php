@@ -16,6 +16,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use App\Support\Filament\StofgardTable;
 use Throwable;
 
@@ -34,6 +35,15 @@ class AgendaResource extends Resource
     protected static ?string $navigationGroup = 'Operacional';
 
     protected static ?int $navigationSort = 3;
+
+    public static function hasTableAvailable(): bool
+    {
+        try {
+            return Schema::hasTable((new Agenda())->getTable());
+        } catch (Throwable) {
+            return false;
+        }
+    }
 
     public static function form(Form $form): Form
     {
