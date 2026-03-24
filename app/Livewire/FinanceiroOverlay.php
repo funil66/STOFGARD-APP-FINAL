@@ -9,7 +9,9 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Get;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
+use Throwable;
 
 class FinanceiroOverlay extends Component implements HasForms
 {
@@ -90,94 +92,124 @@ class FinanceiroOverlay extends Component implements HasForms
 
     public function getChartData(): array
     {
-        $formData = $this->form->getState();
-        $viewMode = $formData['viewMode'] ?? 'consolidado';
-        $startDate = Carbon::parse($formData['startDate']);
-        $endDate = Carbon::parse($formData['endDate']);
-        $status = $formData['status'];
+        try {
+            if (!Schema::hasTable('financeiros')) {
+                return [
+                    'labels' => [],
+                    'datasets' => [],
+                ];
+            }
 
-        if ($viewMode === 'categoria') {
-            return $this->getCategoriaData($startDate, $endDate, $status);
-        }
+            $formData = $this->form->getState();
+            $viewMode = $formData['viewMode'] ?? 'consolidado';
+            $startDate = Carbon::parse($formData['startDate']);
+            $endDate = Carbon::parse($formData['endDate']);
+            $status = $formData['status'];
 
-        // Common logic for Consolidated and Fluxo (Time Series)
-        $meses = [];
-        $dataset1 = []; // Receitas / Entradas
-        $dataset2 = []; // Despesas / Saídas
+            if ($viewMode === 'categoria') {
+                return $this->getCategoriaData($startDate, $endDate, $status);
+            }
 
-        $transactions = Financeiro::query()
-            ->whereBetween($status === 'pago' ? 'data_pagamento' : 'data_vencimento', [$startDate, $endDate])
-            ->where('status', $status === 'pago' ? 'pago' : 'pendente')
-            ->get();
+            $meses = [];
+            $dataset1 = [];
+            $dataset2 = [];
 
-        $current = $startDate->copy()->startOfMonth();
-        while ($current <= $endDate) {
-            $m = (int) $current->format('m');
-            $y = (int) $current->format('Y');
-            $meses[] = $current->locale('pt_BR')->translatedFormat('M/Y');
+            $transactions = Financeiro::query()
+                ->whereBetween($status === 'pago' ? 'data_pagamento' : 'data_vencimento', [$startDate, $endDate])
+                ->where('status', $status === 'pago' ? 'pago' : 'pendente')
+                ->get();
 
-            $fnFilter = function ($t) use ($m, $y, $status) {
-                $dateRef = $status === 'pago' ? $t->data_pagamento : $t->data_vencimento;
-                if (!$dateRef)
-                    return false;
-                return (int) Carbon::parse($dateRef)->format('m') === $m
-                    && (int) Carbon::parse($dateRef)->format('Y') === $y;
-            };
+            $current = $startDate->copy()->startOfMonth();
+            while ($current <= $endDate) {
+                $m = (int) $current->format('m');
+                $y = (int) $current->format('Y');
+                $meses[] = $current->locale('pt_BR')->translatedFormat('M/Y');
 
-            $val = fn($t) => $status === 'pago' ? $t->valor_pago : $t->valor;
+                $fnFilter = function ($t) use ($m, $y, $status) {
+                    $dateRef = $status === 'pago' ? $t->data_pagamento : $t->data_vencimento;
 
-            $dataset1[] = $transactions->filter(fn($t) => $fnFilter($t) && $t->tipo === 'entrada')->sum($val);
-            $dataset2[] = $transactions->filter(fn($t) => $fnFilter($t) && $t->tipo === 'saida')->sum($val);
+                    if (!$dateRef) {
+                        return false;
+                    }
 
-            $current->addMonth();
-        }
+                    return (int) Carbon::parse($dateRef)->format('m') === $m
+                        && (int) Carbon::parse($dateRef)->format('Y') === $y;
+                };
 
-        return [
-            'labels' => $meses,
-            'datasets' => [
-                [
-                    'label' => $viewMode === 'consolidado' ? 'Receitas' : 'Entradas',
-                    'data' => $dataset1,
-                    'backgroundColor' => '#10b981',
-                    'borderColor' => '#10b981',
-                    'borderWidth' => 2,
-                    'fill' => $viewMode === 'fluxo',
+                $val = fn($t) => $status === 'pago' ? $t->valor_pago : $t->valor;
+
+                $dataset1[] = $transactions->filter(fn($t) => $fnFilter($t) && $t->tipo === 'entrada')->sum($val);
+                $dataset2[] = $transactions->filter(fn($t) => $fnFilter($t) && $t->tipo === 'saida')->sum($val);
+
+                $current->addMonth();
+            }
+
+            return [
+                'labels' => $meses,
+                'datasets' => [
+                    [
+                        'label' => $viewMode === 'consolidado' ? 'Receitas' : 'Entradas',
+                        'data' => $dataset1,
+                        'backgroundColor' => '#10b981',
+                        'borderColor' => '#10b981',
+                        'borderWidth' => 2,
+                        'fill' => $viewMode === 'fluxo',
+                    ],
+                    [
+                        'label' => $viewMode === 'consolidado' ? 'Despesas' : 'Saídas',
+                        'data' => $dataset2,
+                        'backgroundColor' => '#ef4444',
+                        'borderColor' => '#ef4444',
+                        'borderWidth' => 2,
+                        'fill' => $viewMode === 'fluxo',
+                    ],
                 ],
-                [
-                    'label' => $viewMode === 'consolidado' ? 'Despesas' : 'Saídas',
-                    'data' => $dataset2,
-                    'backgroundColor' => '#ef4444',
-                    'borderColor' => '#ef4444',
-                    'borderWidth' => 2,
-                    'fill' => $viewMode === 'fluxo',
-                ],
-            ],
-        ];
+            ];
+        } catch (Throwable) {
+            return [
+                'labels' => [],
+                'datasets' => [],
+            ];
+        }
     }
 
     protected function getCategoriaData(Carbon $start, Carbon $end, string $status): array
     {
-        $dados = Financeiro::query()
-            ->join('categorias', 'financeiros.categoria_id', '=', 'categorias.id')
-            ->where('financeiros.tipo', 'saida')
-            ->whereBetween($status === 'pago' ? 'financeiros.data_pagamento' : 'financeiros.data_vencimento', [$start, $end])
-            ->where('financeiros.status', $status === 'pago' ? 'pago' : 'pendente')
-            ->select('categorias.nome', 'categorias.cor', DB::raw('SUM(financeiros.valor) as total'))
-            ->groupBy('categorias.id', 'categorias.nome', 'categorias.cor')
-            ->orderByDesc('total')
-            ->limit(8)
-            ->get();
+        try {
+            if (!Schema::hasTable('financeiros') || !Schema::hasTable('categorias')) {
+                return [
+                    'labels' => [],
+                    'datasets' => [],
+                ];
+            }
 
-        return [
-            'labels' => $dados->pluck('nome')->toArray(),
-            'datasets' => [
-                [
-                    'label' => 'Despesas por Categoria',
-                    'data' => $dados->pluck('total')->toArray(),
-                    'backgroundColor' => $dados->pluck('cor')->map(fn($c) => $c ?? '#6b7280')->toArray(),
+            $dados = Financeiro::query()
+                ->join('categorias', 'financeiros.categoria_id', '=', 'categorias.id')
+                ->where('financeiros.tipo', 'saida')
+                ->whereBetween($status === 'pago' ? 'financeiros.data_pagamento' : 'financeiros.data_vencimento', [$start, $end])
+                ->where('financeiros.status', $status === 'pago' ? 'pago' : 'pendente')
+                ->select('categorias.nome', 'categorias.cor', DB::raw('SUM(financeiros.valor) as total'))
+                ->groupBy('categorias.id', 'categorias.nome', 'categorias.cor')
+                ->orderByDesc('total')
+                ->limit(8)
+                ->get();
+
+            return [
+                'labels' => $dados->pluck('nome')->toArray(),
+                'datasets' => [
+                    [
+                        'label' => 'Despesas por Categoria',
+                        'data' => $dados->pluck('total')->toArray(),
+                        'backgroundColor' => $dados->pluck('cor')->map(fn($c) => $c ?? '#6b7280')->toArray(),
+                    ],
                 ],
-            ],
-        ];
+            ];
+        } catch (Throwable) {
+            return [
+                'labels' => [],
+                'datasets' => [],
+            ];
+        }
     }
 
     public function getChartType(): string
