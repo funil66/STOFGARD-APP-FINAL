@@ -16,16 +16,11 @@ return [
      *
      * Only relevant if you're using the domain or subdomain identification middleware.
      */
-    'central_domains' => array_values(array_unique(array_filter(array_map(
-        static fn ($domain) => trim((string) $domain),
-        array_merge(
-            explode(',', (string) env('CENTRAL_DOMAINS', '127.0.0.1,localhost')),
-            [
-                (string) config('domain_routing.base_domain', 'autonomia.app.br'),
-                (string) config('domain_routing.provider_subdomain', 'app') . '.' . (string) config('domain_routing.base_domain', 'autonomia.app.br'),
-            ],
-        ),
-    )))),
+    'central_domains' => [
+        'autonomia.app.br',
+        'localhost',
+        '127.0.0.1',
+    ],
 
 
     /**

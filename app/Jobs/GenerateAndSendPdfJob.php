@@ -65,6 +65,22 @@ class GenerateAndSendPdfJob implements ShouldQueue
 
         Log::info("[PdfJob] PDF gerado e salvo em {$path}");
 
+        if ($orcamento->user_id) {
+            $user = \App\Models\User::find($orcamento->user_id);
+            if ($user && \Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+                \Filament\Notifications\Notification::make()
+                    ->title("📄 PDF do Orçamento #{$orcamento->numero} Gerado!")
+                    ->success()
+                    ->body("O arquivo já está pronto para download ou envio.")
+                    ->actions([
+                        \Filament\Notifications\Actions\Action::make('download')
+                            ->button()
+                            ->url(asset("storage/{$path}"), shouldOpenInNewTab: true),
+                    ])
+                    ->sendToDatabase($user);
+            }
+        }
+
         if ($this->sendToEmail && $orcamento->cliente) {
             // Dispara um Job separado para envio de e-mail
             // para não bloquear o Job de PDF se o SMTP falhar.
@@ -82,5 +98,19 @@ class GenerateAndSendPdfJob implements ShouldQueue
         Log::error("[PdfJob] Falha ao gerar PDF do orçamento #{$this->orcamentoId}", [
             'error' => $exception->getMessage(),
         ]);
+
+        try {
+            $orcamento = Orcamento::find($this->orcamentoId);
+            if ($orcamento && $orcamento->user_id) {
+                $user = \App\Models\User::find($orcamento->user_id);
+                if ($user && \Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+                    \Filament\Notifications\Notification::make()
+                        ->title("❌ Erro na Geração do PDF")
+                        ->danger()
+                        ->body("Falha ao gerar o documento do orçamento #{$orcamento->numero}.")
+                        ->sendToDatabase($user);
+                }
+            }
+        } catch (\Throwable) {}
     }
 }

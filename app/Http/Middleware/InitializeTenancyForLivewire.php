@@ -8,10 +8,10 @@ use App\Models\Tenant;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Throwable;
 
-class InitializeTenancyForLivewire extends InitializeTenancyByDomain
+class InitializeTenancyForLivewire extends InitializeTenancyBySubdomain
 {
     public function handle($request, Closure $next): mixed
     {

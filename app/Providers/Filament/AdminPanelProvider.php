@@ -27,7 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(\App\Filament\Pages\Auth\CustomLogin::class)
             ->brandName('AUTONOMIA ILIMITADA')
             ->brandLogo(asset('images/logo.png'))
             ->brandLogoHeight('3rem')
@@ -76,10 +76,11 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain::class,
+                \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
-                InitializeTenancyFromUser::class,
             ])
             ->renderHook(
                 PanelsRenderHook::HEAD_START,
@@ -135,6 +136,10 @@ class AdminPanelProvider extends PanelProvider
                 function (): string {
                     return '';
                 }
+            )
+            ->renderHook(
+                PanelsRenderHook::CONTENT_START,
+                fn(): string => view('filament.hooks.global-announcement')->render()
             )
             ->renderHook(
                 'panels::body.start',

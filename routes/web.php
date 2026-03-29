@@ -60,6 +60,8 @@ Route::middleware([\App\Http\Middleware\EnsureSuperAdmin::class])->group(functio
 
 // Rota de login JWT (Prestador)
 Route::view('/login', 'auth.jwt-login')->name('empresa.login');
+Route::post('/auth/central-login', [\App\Http\Controllers\Auth\CentralLoginController::class, 'submit'])
+    ->name('auth.central.login');
 Route::post('/auth/session-login', [JwtSessionBridgeController::class, 'store'])
     ->name('auth.session.login')
     ->withoutMiddleware([

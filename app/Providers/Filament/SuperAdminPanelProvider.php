@@ -54,6 +54,8 @@ class SuperAdminPanelProvider extends PanelProvider
             // IMPORTANTE: sem discoverResources() — apenas os resources explicitamente listados
             ->resources([
                 \App\Filament\SuperAdmin\Resources\TenantResource::class,
+                \App\Filament\SuperAdmin\Resources\SaaSBillingResource::class,
+                \App\Filament\SuperAdmin\Resources\GlobalAnnouncementResource::class,
                 \App\Filament\SuperAdmin\Resources\UserImpersonationResource::class,
                 \App\Filament\SuperAdmin\Resources\TicketSuporteResource::class,
             ])
