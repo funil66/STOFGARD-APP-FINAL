@@ -1,6 +1,6 @@
 services:
-  site-final:
-    container_name: site-final
+  autonomia-site-legacy:
+    container_name: autonomia-site-legacy
     image: php:8.4-apache
     command: >
       bash -lc "a2enmod headers rewrite && apache2-foreground"
@@ -12,8 +12,8 @@ services:
     networks:
       - autonomia-public
 
-  stofgard:
-    container_name: stofgard
+  autonomia-stofgard:
+    container_name: autonomia-stofgard
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
@@ -43,7 +43,7 @@ services:
     env_file:
       - ${AUTONOMIA_ENV_FILE:-.env}
     command: >
-      sh -lc "php artisan key:generate --force >/dev/null 2>&1 || true; php artisan config:clear >/dev/null 2>&1 || true; php artisan serve --host=0.0.0.0 --port=80"
+      sh -lc "php artisan config:clear >/dev/null 2>&1 || true; php artisan serve --host=0.0.0.0 --port=80"
     restart: unless-stopped
     ports:
       - "8004:80"
@@ -52,4 +52,6 @@ services:
 
 networks:
   autonomia-public:
-    driver: bridge
+    external: true
+    name: autonomia-deploy_autonomia-public
+

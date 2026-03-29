@@ -27,6 +27,12 @@ class ViewOrcamento extends ViewRecord
             // #5: Aprovar e Gerar OS (Unificado)
             \App\Filament\Actions\OrcamentoActions::getAprovarAction(),
 
+            Actions\Action::make('baixar_pdf_direto')
+                ->label('Baixar PDF Agora')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('primary')
+                ->url(fn (Orcamento $record) => route('orcamento.pdf', ['orcamento' => $record->id]), shouldOpenInNewTab: true),
+
             Actions\Action::make('gerar_pdf_background')
                 ->label('Gerar PDF (Fila)')
                 ->icon('heroicon-o-document-arrow-down')

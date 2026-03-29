@@ -27,11 +27,33 @@ class InitializeTenancyFromUser
             return $next($request);
         }
 
-        $tenantId = $user->tenant_id ?? $user->cadastro_id ?? null;
+        $tenantId = $user->tenant_id ?? null;
+
+        // Se é um super admin sem tenant, mandar para o /super-admin
+        if ($user->is_super_admin && !$tenantId && ($request->is('admin') || $request->is('admin/*'))) {
+            return redirect('/super-admin');
+        }
 
         if (!$tenantId) {
             if ($request->is('admin') || $request->is('admin/*')) {
-                abort(403);
+                // Modo resgate: se era um Super Admin impersonando um usuário defeituoso
+                if (session()->has('impersonating_super_admin_id')) {
+                    $superAdminId = session()->pull('impersonating_super_admin_id');
+                    session()->forget('impersonated_at');
+
+                    $superAdmin = \App\Models\User::find($superAdminId);
+                    if ($superAdmin) {
+                        Auth::login($superAdmin);
+                        return redirect('/super-admin');
+                    }
+                }
+
+                // Logoff forçado para usuários sem tenant não ficarem presos no 403
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect('/admin/login');
             }
 
             return $next($request);
@@ -41,29 +63,24 @@ class InitializeTenancyFromUser
 
         if (!$tenant) {
             if ($request->is('admin') || $request->is('admin/*')) {
-                abort(403);
+                abort(403, 'Empresa não encontrada. Contate o administrador.');
             }
 
             return $next($request);
         }
 
-        $initializedHere = false;
-
         try {
             tenancy()->initialize($tenant);
-            $initializedHere = true;
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Falha ao inicializar tenancy', [
+                'tenant_id' => $tenantId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
-        $response = $next($request);
-
-        if ($initializedHere && tenancy()->initialized) {
-            try {
-                tenancy()->end();
-            } catch (Throwable) {
-            }
-        }
-
-        return $response;
+        // Não faz tenancy()->end() — deixa o contexto do tenant ativo
+        // durante todo o lifecycle da request (Filament precisa disso)
+        return $next($request);
     }
 }

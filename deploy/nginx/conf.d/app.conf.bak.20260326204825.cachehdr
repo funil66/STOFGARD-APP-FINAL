@@ -1,0 +1,43 @@
+server {
+    listen 80;
+    index index.php index.html;
+    error_log  /var/log/nginx/error.log;
+    access_log /var/log/nginx/access.log;
+    root /var/www/public;
+
+    # Client Body Size (for uploads)
+    client_max_body_size 100M;
+
+    # Prefer the upstream X-Forwarded-Proto (from Cloudflare tunnel) over $scheme
+    # This ensures that when Cloudflare proxies HTTPS, the app sees it as HTTPS
+    set $forwarded_proto $scheme;
+    if ($http_x_forwarded_proto != "") {
+        set $forwarded_proto $http_x_forwarded_proto;
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass app:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param HTTP_X_FORWARDED_PROTO $forwarded_proto;
+        fastcgi_param SERVER_PORT $server_port;
+    }
+
+    location = / {
+        return 301 https://sistema.stofgard.com.br/login;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+        gzip_static on;
+    }
+
+    # Cache static files
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+        expires 365d;
+    }
+}

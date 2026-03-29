@@ -20,10 +20,18 @@ class Notifications extends Page
 
     public function getNotifications()
     {
-        return DatabaseNotification::where('notifiable_type', \App\Models\User::class)
-            ->where('notifiable_id', auth()->id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+                return collect();
+            }
+
+            return DatabaseNotification::where('notifiable_type', \App\Models\User::class)
+                ->where('notifiable_id', auth()->id())
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } catch (\Throwable) {
+            return collect();
+        }
     }
 
     public function markAsRead($notificationId)

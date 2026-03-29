@@ -19,52 +19,57 @@ class DomainTopologyMiddleware
         $apiDomain = 'api.' . $baseDomain;
         $wwwBaseDomain = 'www.' . $baseDomain;
 
-        // 1. O cara tá acessando domínios centrais do App/API
-        if ($host === $appDomain || $host === $apiDomain) {
-            // Aqui dentro roda o Filament, rotas de API privadas e o Login. Tudo liberado.
+        // 0. Localhost / IP direto (healthchecks, artisan serve interno)
+        if (in_array($host, ['127.0.0.1', 'localhost', '0.0.0.0'])) {
             return $next($request);
         }
 
-        // 2. O cara tá acessando o Site de Marketing (Landing Page)
+        // 1. Domínios centrais do App/API — tudo liberado
+        if ($host === $appDomain || $host === $apiDomain) {
+            return $next($request);
+        }
+
+        // 2. Domínio base (site comercial + app SaaS)
         if ($host === $baseDomain) {
-            if ($request->is('login') || $request->is('admin') || $request->is('admin/*')) {
-                return redirect()->to(
-                    config('domain_routing.provider_scheme', 'https') . '://' . $appDomain . $request->getRequestUri(),
-                    302
-                );
+            // Super Admin, Admin, Login — servir diretamente
+            if (
+                $request->is('super-admin') || $request->is('super-admin/*') ||
+                $request->is('admin') || $request->is('admin/*') ||
+                $request->is('login') || $request->is('auth/*') ||
+                $request->is('livewire/*') || $request->is('filament/*') ||
+                $request->is('up') || $request->is('api/*')
+            ) {
+                return $next($request);
             }
 
+            // Tudo mais no domínio base → site comercial (landing page)
             return $next($request);
         }
 
         if ($host === $wwwBaseDomain) {
-            return redirect()->to(config('domain_routing.provider_scheme', 'https') . '://' . $baseDomain . $request->getRequestUri(), 301);
+            return redirect()->to(config('domain_routing.provider_scheme', 'https') . '://' . $baseDomain . $request->getRequestUri(), 302);
         }
 
-        // 3. O cara tá acessando um Subdomínio Wildcard (A Vitrine do Cliente)
-        // Exemplo: joao.autonomia.app.br
+        // 3. Subdomínio Wildcard (Vitrine do Cliente)
         if (str_ends_with($host, '.' . $baseDomain)) {
             $subdomain = str_replace('.' . $baseDomain, '', $host);
 
-            // Regra Inegociável: Vitrine NÃO TEM TELA DE LOGIN.
-            // Se o peão tentar burlar e digitar /login ou /admin, toma um 301 na testa.
-            $restrictedPaths = ['login', 'admin', 'app', 'register', 'api/auth/login', 'api/auth/register', 'api/auth/*'];
-            $currentPath = $request->path();
+            // Vitrine não tem login/admin — redireciona para o painel central
+            $restrictedPaths = ['login', 'register', 'api/auth/login', 'api/auth/register', 'api/auth/*'];
 
             foreach ($restrictedPaths as $path) {
                 if ($request->is($path) || $request->is($path . '/*')) {
-                    // Redireciona o corno pro painel central
-                    return redirect()->to('https://' . $appDomain . '/login', 301);
+                    return redirect()->to('https://' . $appDomain . '/login', 302);
                 }
             }
 
-            // Se passou, injeta o subdomínio na requisição para os Controllers usarem na Vitrine
+            // Injeta subdomínio na requisição para Controllers de vitrine
             $request->attributes->add(['tenant_subdomain' => $subdomain]);
 
             return $next($request);
         }
 
-        // 4. Fallback de segurança (se cair aqui é bot chinês scaneando IP direto)
-        abort(404, 'Domínio não reconhecido pela base Autonomia.');
+        // 4. Fallback — domínio desconhecido
+        abort(404, 'Domínio não reconhecido.');
     }
 }

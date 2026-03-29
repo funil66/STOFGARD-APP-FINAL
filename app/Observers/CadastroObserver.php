@@ -14,24 +14,31 @@ class CadastroObserver
      */
     public function created(Cadastro $cadastro): void
     {
-        // Notificar apenas se for um cliente/lead ou parceiro relevante
         if (in_array($cadastro->tipo, ['cliente', 'loja', 'parceiro', 'arquiteto'])) {
-            $admins = \App\Models\User::all(); // TODO: Filtrar apenas admins ou interessados
+            try {
+                if (!\Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+                    return;
+                }
 
-            foreach ($admins as $admin) {
-                Notification::make()
-                    ->title('Novo Cadastro: ' . $cadastro->nome)
-                    ->body("Um novo {$cadastro->tipo} foi registrado no sistema.")
-                    ->icon('heroicon-o-user-plus')
-                    ->success()
-                    ->actions([
-                        Action::make('view')
-                            ->label('Ver Cadastro')
-                            ->button()
-                            ->url('/admin/cadastros/' . $cadastro->id . '/edit')
-                            ->markAsRead(),
-                    ])
-                    ->sendToDatabase($admin);
+                $admins = \App\Models\User::all();
+
+                foreach ($admins as $admin) {
+                    Notification::make()
+                        ->title('Novo Cadastro: ' . $cadastro->nome)
+                        ->body("Um novo {$cadastro->tipo} foi registrado no sistema.")
+                        ->icon('heroicon-o-user-plus')
+                        ->success()
+                        ->actions([
+                            Action::make('view')
+                                ->label('Ver Cadastro')
+                                ->button()
+                                ->url('/admin/cadastros/' . $cadastro->id . '/edit')
+                                ->markAsRead(),
+                        ])
+                        ->sendToDatabase($admin);
+                }
+            } catch (\Throwable) {
+                // Silencia erros de notificação para não quebrar o CRUD
             }
         }
     }

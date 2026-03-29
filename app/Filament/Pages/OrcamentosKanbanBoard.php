@@ -60,7 +60,10 @@ class OrcamentosKanbanBoard extends KanbanBoard
 
     public function onStatusChanged(int|string $recordId, string $status, array $fromOrderedIds, array $toOrderedIds): void
     {
-        Orcamento::find($recordId)->update(['status' => $status]);
+        $orcamento = Orcamento::find($recordId);
+        if ($orcamento) {
+            $orcamento->update(['status' => $status]);
+        }
     }
 
     public function onSortChanged(int|string $recordId, string $status, array $orderedIds): void

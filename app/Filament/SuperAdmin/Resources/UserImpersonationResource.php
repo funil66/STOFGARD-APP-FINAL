@@ -30,7 +30,7 @@ class UserImpersonationResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
-    protected static ?string $navigationLabel = 'Impersonar Usuários';
+    protected static ?string $navigationLabel = 'Usuários do Sistema';
 
     protected static ?string $modelLabel = 'Usuário';
 
@@ -42,9 +42,32 @@ class UserImpersonationResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')->disabled(),
-                Forms\Components\TextInput::make('email')->disabled(),
-                Forms\Components\Toggle::make('is_admin')->disabled(),
+                Forms\Components\Select::make('tenant_id')
+                    ->label('Empresa (Tenant)')
+                    ->relationship('tenant', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Nenhuma (Acesso Central)'),
+                Forms\Components\TextInput::make('name')
+                    ->label('Nome Completo')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('email')
+                    ->label('E-mail')
+                    ->email()
+                    ->required()
+                    ->unique(ignoreRecord: true)
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('password')
+                    ->label('Nova Senha')
+                    ->password()
+                    ->dehydrated(fn (?string $state): bool => filled($state))
+                    ->dehydrateStateUsing(fn (string $state): string => \Illuminate\Support\Facades\Hash::make($state))
+                    ->required(fn (string $context): bool => $context === 'create')
+                    ->helperText('Preencha ao criar, ou deixe em branco para não alterar a senha atual.'),
+                Forms\Components\Toggle::make('is_admin')
+                    ->label('Acesso Administrativo')
+                    ->default(true),
                 Forms\Components\Toggle::make('is_super_admin')->label('É Super Admin?'),
             ]);
     }
@@ -56,6 +79,13 @@ class UserImpersonationResource extends Resource
                 Tables\Columns\TextColumn::make('id')->sortable()->width('80px'),
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('email')->searchable(),
+                Tables\Columns\TextColumn::make('tenant.name')
+                    ->label('Empresa Vinculada')
+                    ->badge()
+                    ->color('success')
+                    ->placeholder('Nenhuma')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\IconColumn::make('is_admin')->boolean()->label('Admin'),
                 Tables\Columns\IconColumn::make('is_super_admin')->boolean()->label('Super Admin'),
                 Tables\Columns\TextColumn::make('created_at')->dateTime('d/m/Y H:i')->sortable(),
@@ -98,8 +128,15 @@ class UserImpersonationResource extends Resource
                     })
                     ->visible(fn(User $record) => $record->id !== Auth::id()),
 
-                Tables\Actions\EditAction::make()
-                    ->label('Permissões'),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation()
+                    ->modalDescription('Cuidado: Deletar o usuário removerá seu acesso à plataforma de forma definitiva.'),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ])
             ->headerActions([
                 Tables\Actions\Action::make('sair_impersonacao')

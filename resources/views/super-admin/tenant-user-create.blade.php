@@ -69,7 +69,7 @@
 
         <div class="actions">
             <button type="submit" class="btn btn-primary">Criar usuário</button>
-            <a class="btn btn-secondary" href="{{ url('/portal/user-impersonations') }}">Voltar</a>
+            <a class="btn btn-secondary" href="{{ url('/super-admin/user-impersonations') }}">Voltar</a>
         </div>
     </form>
 </div>

@@ -1,0 +1,88 @@
+services:
+  app:
+    container_name: stofgard-app-standalone
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    env_file:
+      - .env.standalone
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - storage-data:/var/www/storage
+      - bootstrap-cache-data:/var/www/bootstrap/cache
+    healthcheck:
+      test: ["CMD-SHELL", "php -v >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - standalone
+
+  nginx:
+    container_name: stofgard-nginx-standalone
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "8010:80"
+    volumes:
+      - .:/var/www:ro
+      - storage-data:/var/www/storage
+      - bootstrap-cache-data:/var/www/bootstrap/cache
+      - ./deploy/nginx/conf.d/app.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/up >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 6
+    networks:
+      - standalone
+
+  postgres:
+    container_name: stofgard-postgres-standalone
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-stofgard}
+      POSTGRES_USER: ${DB_USERNAME:-stofgard}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-stofgard} -d ${DB_DATABASE:-stofgard}"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    networks:
+      - standalone
+
+  redis:
+    container_name: stofgard-redis-standalone
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - standalone
+
+networks:
+  standalone:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  storage-data:
+    driver: local
+  bootstrap-cache-data:
+    driver: local

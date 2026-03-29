@@ -701,6 +701,12 @@ class OrcamentoResource extends Resource
                     edit: true,
                     delete: true,
                     extraActions: [
+                        Tables\Actions\Action::make('baixar_pdf_direto')
+                            ->label('Baixar PDF Agora')
+                            ->icon('heroicon-o-arrow-down-tray')
+                            ->color('primary')
+                            ->url(fn (Orcamento $record) => route('orcamento.pdf', ['orcamento' => $record->id]), shouldOpenInNewTab: true),
+
                         Tables\Actions\Action::make('gerar_pdf_background')
                             ->label('Gerar PDF (Fila)')
                             ->icon('heroicon-o-document-arrow-down')
@@ -713,25 +719,36 @@ class OrcamentoResource extends Resource
                                 $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
                                 foreach ($jsonFields as $k) {
                                     if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
-                                        $settingsArray[$k] = json_decode($settingsArray[$k], true);
+                                        $decoded = json_decode($settingsArray[$k], true);
+                                        $settingsArray[$k] = $decoded !== null ? $decoded : [];
+                                    } elseif (!isset($settingsArray[$k])) {
+                                        $settingsArray[$k] = [];
                                     }
                                 }
                                 $config = (object) $settingsArray;
 
-                                $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
+                                try {
+                                    $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
 
-                                \App\Jobs\ProcessPdfJob::dispatch(
-                                    $record->id,
-                                    'orcamento',
-                                    auth()->id(),
-                                    $htmlContent
-                                );
+                                    \App\Jobs\ProcessPdfJob::dispatch(
+                                        $record->id,
+                                        'orcamento',
+                                        auth()->id(),
+                                        $htmlContent
+                                    );
 
-                                \Filament\Notifications\Notification::make()
-                                    ->title('🚀 Fogo na Bomba!')
-                                    ->body('O PDF do Orçamento está sendo gerado no servidor. Avisaremos quando estiver pronto.')
-                                    ->success()
-                                    ->send();
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('🚀 Fogo na Bomba!')
+                                        ->body('O PDF do Orçamento está sendo gerado no servidor. Avisaremos quando estiver pronto.')
+                                        ->success()
+                                        ->send();
+                                } catch (\Exception $e) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Erro Crítico')
+                                        ->body('Falha ao compilar PDF. Erro: ' . $e->getMessage())
+                                        ->danger()
+                                        ->send();
+                                }
                             }),
 
                         Tables\Actions\Action::make('gerar_contrato_background')
@@ -747,10 +764,14 @@ class OrcamentoResource extends Resource
                                 $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
                                 foreach ($jsonFields as $k) {
                                     if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
-                                        $settingsArray[$k] = json_decode($settingsArray[$k], true);
+                                        $decoded = json_decode($settingsArray[$k], true);
+                                        $settingsArray[$k] = $decoded !== null ? $decoded : [];
+                                    } elseif (!isset($settingsArray[$k])) {
+                                        $settingsArray[$k] = [];
                                     }
                                 }
                                 $config = (object) $settingsArray;
+
                                 // Adiciona as configurações do tenant
                                 $tenantConfig = \App\Models\Configuracao::first();
                                 $config->empresa_logo = $tenantConfig->empresa_logo ?? null;
@@ -760,20 +781,28 @@ class OrcamentoResource extends Resource
                                 $config->texto_contrato_padrao = $tenantConfig->texto_contrato_padrao ?? null;
                                 $config->termos_garantia = $tenantConfig->termos_garantia ?? null;
 
-                                $htmlContent = view('pdf.contrato', ['orcamento' => $record, 'config' => $config])->render();
+                                try {
+                                    $htmlContent = view('pdf.contrato', ['orcamento' => $record, 'config' => $config])->render();
 
-                                \App\Jobs\ProcessPdfJob::dispatch(
-                                    $record->id,
-                                    'contrato',
-                                    auth()->id(),
-                                    $htmlContent
-                                );
+                                    \App\Jobs\ProcessPdfJob::dispatch(
+                                        $record->id,
+                                        'contrato',
+                                        auth()->id(),
+                                        $htmlContent
+                                    );
 
-                                \Filament\Notifications\Notification::make()
-                                    ->title('⚖️ A Lei é Dura, Mas é a Lei')
-                                    ->body('O Contrato está sendo gerado em background. Avisaremos assim que o PDF estiver pronto.')
-                                    ->success()
-                                    ->send();
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('⚖️ A Lei é Dura, Mas é a Lei')
+                                        ->body('O Contrato está sendo gerado em background. Avisaremos assim que o PDF estiver pronto.')
+                                        ->success()
+                                        ->send();
+                                } catch (\Exception $e) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Erro Crítico')
+                                        ->body('Falha ao compilar Contrato. Erro: ' . $e->getMessage())
+                                        ->danger()
+                                        ->send();
+                                }
                             }),
 
                         // #5: Aprovar e Gerar OS direto da lista (Unificado)

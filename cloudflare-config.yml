@@ -11,9 +11,9 @@ ingress:
   - hostname: www.stofgard.com.br
     service: http://localhost:8002
   - hostname: autonomia.app.br
-    service: http://localhost:8003
+    service: http://localhost:8004
   - hostname: www.autonomia.app.br
-    service: http://localhost:8003
+    service: http://localhost:8004
   - hostname: app.autonomia.app.br
     service: http://localhost:8004
   - hostname: api.autonomia.app.br

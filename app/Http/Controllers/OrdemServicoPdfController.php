@@ -22,20 +22,14 @@ class OrdemServicoPdfController extends Controller
             mkdir($tempPath, 0755, true);
         }
 
-        return Pdf::view('pdf.os', [
-            'record' => $record->load(['produtosUtilizados', 'cliente', 'itens']),
-            'config' => Configuracao::first()
-        ])
-            ->format('a4')
-            ->name("OS-{$record->id}.pdf")
-            ->withBrowsershot(function ($browsershot) {
-                $browsershot->noSandbox()
-                    ->setChromePath(config('services.browsershot.chrome_path', '/usr/bin/google-chrome'))
-                    ->setNodeBinary(config('services.browsershot.node_path', '/usr/bin/node'))
-                    ->setNpmBinary(config('services.browsershot.npm_path', '/usr/bin/npm'))
-                    ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
-                    ->timeout(60);
-            })
-            ->download();
+        return app(\App\Services\PdfService::class)->generate(
+            'pdf.os',
+            [
+                'record' => $record->load(['produtosUtilizados', 'cliente', 'itens']),
+                'config' => Configuracao::first()
+            ],
+            "OS-{$record->id}.pdf",
+            true
+        );
     }
 }

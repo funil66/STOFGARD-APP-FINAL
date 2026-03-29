@@ -53,11 +53,20 @@ class AgendaObserver
                     // safely use save() as OS observer doesn't seem to update Agenda.
                     $os->save();
 
-                    Notification::make()
-                        ->title('Sincronização Automática')
-                        ->body("A data prevista da OS #{$os->numero_os} foi atualizada conforme a Agenda.")
-                        ->success()
-                        ->sendToDatabase(\App\Models\User::find($agenda->criado_por) ?? \App\Models\User::first());
+                    try {
+                        if (\Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+                            $recipient = \App\Models\User::find($agenda->criado_por) ?? \App\Models\User::first();
+                            if ($recipient) {
+                                Notification::make()
+                                    ->title('Sincronização Automática')
+                                    ->body("A data prevista da OS #{$os->numero_os} foi atualizada conforme a Agenda.")
+                                    ->success()
+                                    ->sendToDatabase($recipient);
+                            }
+                        }
+                    } catch (\Throwable) {
+                        // Não bloqueia a sincronização de datas por falha na notificação
+                    }
                 }
             }
         }

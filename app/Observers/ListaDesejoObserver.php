@@ -33,40 +33,42 @@ class ListaDesejoObserver
             return;
         }
 
-        // Se já foi comprado, não alertar
         if ($listaDesejo->status === 'comprado') {
             return;
         }
 
-        $hoje = \Carbon\Carbon::now()->startOfDay();
-        $dataPrevista = \Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->startOfDay();
-        $diasRestantes = $hoje->diffInDays($dataPrevista, false);
+        if (!auth()->user() || !\Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+            return;
+        }
 
-        // Data vencida (passou)
-        if ($diasRestantes < 0) {
-            Notification::make()
-                ->title('⚠️ DATA DE COMPRA VENCIDA!')
-                ->body("{$listaDesejo->nome} - Previsão: ".\Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->format('d/m/Y'))
-                ->danger()
-                ->persistent()
-                ->sendToDatabase(auth()->user());
-        }
-        // Hoje ou amanhã
-        elseif ($diasRestantes <= 1) {
-            Notification::make()
-                ->title('📅 COMPRA URGENTE!')
-                ->body("{$listaDesejo->nome} - Previsão: ".\Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->format('d/m/Y'))
-                ->warning()
-                ->persistent()
-                ->sendToDatabase(auth()->user());
-        }
-        // Próximos 7 dias
-        elseif ($diasRestantes <= 7) {
-            Notification::make()
-                ->title('📋 Compra Próxima')
-                ->body("{$listaDesejo->nome} em {$diasRestantes} dia(s)")
-                ->info()
-                ->sendToDatabase(auth()->user());
+        try {
+            $hoje = \Carbon\Carbon::now()->startOfDay();
+            $dataPrevista = \Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->startOfDay();
+            $diasRestantes = $hoje->diffInDays($dataPrevista, false);
+
+            if ($diasRestantes < 0) {
+                Notification::make()
+                    ->title('⚠️ DATA DE COMPRA VENCIDA!')
+                    ->body("{$listaDesejo->nome} - Previsão: ".\Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->format('d/m/Y'))
+                    ->danger()
+                    ->persistent()
+                    ->sendToDatabase(auth()->user());
+            } elseif ($diasRestantes <= 1) {
+                Notification::make()
+                    ->title('📅 COMPRA URGENTE!')
+                    ->body("{$listaDesejo->nome} - Previsão: ".\Carbon\Carbon::parse($listaDesejo->data_prevista_compra)->format('d/m/Y'))
+                    ->warning()
+                    ->persistent()
+                    ->sendToDatabase(auth()->user());
+            } elseif ($diasRestantes <= 7) {
+                Notification::make()
+                    ->title('📋 Compra Próxima')
+                    ->body("{$listaDesejo->nome} em {$diasRestantes} dia(s)")
+                    ->info()
+                    ->sendToDatabase(auth()->user());
+            }
+        } catch (\Throwable) {
+            // Não bloqueia a atualização do registro por falha na notificação
         }
     }
 }

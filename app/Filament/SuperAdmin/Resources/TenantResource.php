@@ -237,6 +237,12 @@ class TenantResource extends Resource
                     ->label('Trial até')
                     ->date('d/m/Y')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Criado em')
+                    ->date('d/m/Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('plan')
@@ -407,7 +413,7 @@ class TenantResource extends Resource
 
                             // Como a URL do tenant está no DB, precisamos apontar para ela e garantir a sessão
                             $domain = $record->domains->first()?->domain ?? env('APP_URL');
-                            $url = "http://{$domain}/admin";
+                            $url = str_starts_with($domain, 'http') ? "{$domain}/admin" : "https://{$domain}/admin";
 
                             // Dica para reverter: O usuário precisará usar o Sair padrão, o middleware Global não detectará imediatamente o super-admin cross-domain sem session driver unificado
                             return redirect()->away($url);
@@ -584,12 +590,64 @@ class TenantResource extends Resource
                         }
                     })
                     ->tooltip('Limpar cache, views e rotas deste tenant.'),
+
+                // Ação Crítica: Exclusão Definitiva do Tenant
+                Tables\Actions\Action::make('deletar_tenant')
+                    ->label('Excluir Definitivo')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('EXCLUSÃO DEFINITIVA')
+                    ->modalDescription(fn(Tenant $record) => "ATENÇÃO: Você está prestes a APAGAR COMPLETAMENTE a empresa '{$record->name}' e todo o seu banco de dados e arquivos associados. Essa ação é irreversível. Para continuar, digite EXATAMENTE o slug (subdomínio) '{$record->slug}' abaixo.")
+                    ->form(fn(Tenant $record) => [
+                        Forms\Components\TextInput::make('confirmacao_slug')
+                            ->label("Confirme digitando: {$record->slug}")
+                            ->required()
+                            ->rule("in:{$record->slug}")
+                            ->validationMessages([
+                                'in' => 'A palavra digitada não confere com o slug exato. Cancelando exclusão.',
+                            ])
+                    ])
+                    ->action(function (Tenant $record, array $data) {
+                        try {
+                            if ($data['confirmacao_slug'] !== $record->slug) {
+                                throw new \Exception('Validação falhou.');
+                            }
+
+                            $record->delete();
+
+                            Log::warning('[SuperAdmin] Tenant APAGADO definitivamente', [
+                                'tenant_id' => $record->id,
+                                'tenant_name' => $record->name,
+                                'super_admin_id' => Auth::id(),
+                            ]);
+
+                            Notification::make()
+                                ->title("Tenant '{$record->name}' excluído com sucesso!")
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Erro ao excluir tenant')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->tooltip('Excluir completamente este Tenant e seu banco de dados.'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\SuperAdmin\Resources\TenantResource\RelationManagers\TenantUsersRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

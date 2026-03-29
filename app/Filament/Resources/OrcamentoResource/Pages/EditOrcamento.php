@@ -26,25 +26,36 @@ class EditOrcamento extends EditRecord
                     $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
                     foreach ($jsonFields as $k) {
                         if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
-                            $settingsArray[$k] = json_decode($settingsArray[$k], true);
+                            $decoded = json_decode($settingsArray[$k], true);
+                            $settingsArray[$k] = $decoded !== null ? $decoded : [];
+                        } elseif (!isset($settingsArray[$k])) {
+                            $settingsArray[$k] = [];
                         }
                     }
                     $config = (object) $settingsArray;
 
-                    $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
+                    try {
+                        $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
 
-                    \App\Jobs\ProcessPdfJob::dispatch(
-                        $record->id,
-                        'orcamento',
-                        auth()->id(),
-                        $htmlContent
-                    );
+                        \App\Jobs\ProcessPdfJob::dispatch(
+                            $record->id,
+                            'orcamento',
+                            auth()->id(),
+                            $htmlContent
+                        );
 
-                    \Filament\Notifications\Notification::make()
-                        ->title('🚀 Fogo na Bomba!')
-                        ->body('O PDF está sendo gerado no servidor. Continue trabalhando, avisaremos quando estiver pronto.')
-                        ->success()
-                        ->send();
+                        \Filament\Notifications\Notification::make()
+                            ->title('🚀 Fogo na Bomba!')
+                            ->body('O PDF está sendo gerado no servidor. Continue trabalhando, avisaremos quando estiver pronto.')
+                            ->success()
+                            ->send();
+                    } catch (\Exception $e) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Erro Crítico')
+                            ->body('Falha ao instanciar o gerador de PDF. Erro: ' . $e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 }),
         ];
     }

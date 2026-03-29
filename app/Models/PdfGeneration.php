@@ -14,6 +14,11 @@ class PdfGeneration extends Model
         'user_id',
         'include_pix',
         'url',
+        'tipo',
+        'modelo_id',
+        'status',
+        'file_path',
+        'error_message',
     ];
 
     public function orcamento()
@@ -24,5 +29,13 @@ class PdfGeneration extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Scope para PDFs prontos para download.
+     */
+    public function scopePronto($query)
+    {
+        return $query->where('status', 'done');
     }
 }

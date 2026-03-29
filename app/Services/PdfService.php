@@ -41,10 +41,10 @@ class PdfService
             ->name($filename);
 
         if ($orientation === 'landscape') {
-            $pdf->landscape();
+            $pdf = $pdf->landscape();
         }
 
-        $pdf->withBrowsershot(function ($browsershot) {
+        $pdf = $pdf->withBrowsershot(function ($browsershot) {
             $this->configureBrowsershot($browsershot);
         });
 
@@ -54,6 +54,32 @@ class PdfService
         }
 
         return $download ? $pdf->download() : $pdf->inline();
+    }
+
+    /**
+     * Gera um PDF a partir de HTML puro.
+     */
+    public function generateFromHtml(
+        string $html,
+        string $filename,
+        string $paperSize = 'a4',
+        string $orientation = 'portrait'
+    ) {
+        $this->ensureTempDirectoryExists();
+
+        $pdf = Pdf::html($html)
+            ->format($paperSize)
+            ->name($filename);
+
+        if ($orientation === 'landscape') {
+            $pdf = $pdf->landscape();
+        }
+
+        $pdf = $pdf->withBrowsershot(function ($browsershot) {
+            $this->configureBrowsershot($browsershot);
+        });
+
+        return $pdf;
     }
 
     /**
@@ -89,21 +115,18 @@ class PdfService
             return;
         }
 
-        // Modo local (fallback para desenvolvimento sem Docker)
-        $chromePath = config('browsershot.chrome_path');
-        $tempPath = storage_path('app/temp');
-
-        $args = config('browsershot.chrome_args', [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--headless',
-        ]);
+        // Modo local
+        $chromePath = config('browsershot.chrome_path', '/usr/lib/chromium/chromium');
 
         $browsershot
             ->noSandbox()
-            ->setOption('args', $args)
+            ->setOption('args', [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--headless',
+            ])
             ->timeout($timeout)
             ->setNodeBinary(config('browsershot.node_path', '/usr/bin/node'))
             ->setNpmBinary(config('browsershot.npm_path', '/usr/bin/npm'))

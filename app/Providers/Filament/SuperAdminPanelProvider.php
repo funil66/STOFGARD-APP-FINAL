@@ -32,7 +32,7 @@ class SuperAdminPanelProvider extends PanelProvider
     {
         return $panel
             ->id('super-admin')
-            ->path('portal')
+            ->path('super-admin')
             ->login()
             ->brandName('Autonomia Ilimitada — Super Admin')
             ->brandLogoHeight('2.5rem')
@@ -42,6 +42,12 @@ class SuperAdminPanelProvider extends PanelProvider
                 'success' => Color::hex('#059669'),
                 'warning' => Color::hex('#d97706'),
             ])
+            ->renderHook(
+                \Filament\View\PanelsRenderHook::USER_MENU_BEFORE,
+                fn (): string => '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:#6d28d9;margin-right:8px;white-space:nowrap" title="Painel Central (Sem Empresa)">'
+                    . '🌐 CENTRAL'
+                    . '</div>'
+            )
             ->font('Inter')
             ->maxContentWidth('full')
             ->authGuard('web')

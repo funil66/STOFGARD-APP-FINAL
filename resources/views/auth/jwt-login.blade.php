@@ -42,30 +42,25 @@
         }
 
         .login-input {
-            color: #ffffff !important;
-            caret-color: #ffffff;
-            -webkit-text-fill-color: #ffffff !important;
-        }
-
-        .login-input::placeholder {
-            color: #9ca3af !important;
-            opacity: 1;
+            caret-color: currentColor;
         }
 
         .login-input:-webkit-autofill,
         .login-input:-webkit-autofill:hover,
         .login-input:-webkit-autofill:focus {
-            -webkit-text-fill-color: #ffffff !important;
             box-shadow: 0 0 0px 1000px #374151 inset !important;
             transition: background-color 5000s ease-in-out 0s;
         }
     </style>
 </head>
-<body class="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-gray-800 rounded-xl shadow-2xl p-8 border border-gray-700">
-        <div class="text-center mb-8">
-            <a href="/" class="inline-block text-2xl font-extrabold mb-2">AUTONOMIA <span class="text-emerald-400">ILIMITADA</span></a>
-            <p class="text-gray-400 text-sm">Login da empresa para acessar o painel</p>
+<body class="min-h-screen bg-slate-50 dark:bg-gray-950 text-slate-900 dark:text-white flex items-center justify-center p-4 transition-colors duration-500">
+    <div class="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-10 border border-slate-200 dark:border-gray-800">
+        <div class="text-center mb-10">
+            <a href="/" class="inline-block text-2xl font-extrabold mb-2 tracking-tight">
+                <span class="text-slate-900 dark:text-white">AUTONOMIA</span> 
+                <span class="text-emerald-500">ILIMITADA</span>
+            </a>
+            <p class="text-slate-500 dark:text-gray-400 text-sm font-medium">Acesse o painel administrativo da sua empresa</p>
         </div>
 
         @if (request()->query('paypal') === 'approved')
@@ -90,26 +85,26 @@
             </div>
 
             <div>
-                <label for="email" class="block text-sm font-medium text-gray-300 mb-1">E-mail Profissional</label>
+                <label for="email" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">E-mail Profissional</label>
                 <input
                     type="email"
                     id="email"
                     name="email"
                     required
                     placeholder="seu@email.com"
-                    class="login-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white outline-none transition"
+                    class="login-input w-full px-4 py-3 bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white outline-none transition shadow-sm"
                 >
             </div>
 
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Senha</label>
+                <label for="password" class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">Senha</label>
                 <input
                     type="password"
                     id="password"
                     name="password"
                     required
                     placeholder="••••••••"
-                    class="login-input w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white outline-none transition"
+                    class="login-input w-full px-4 py-3 bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white outline-none transition shadow-sm"
                 >
             </div>
 

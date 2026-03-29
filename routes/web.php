@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+// Redirecionamento de segurança para o novo caminho do Super Admin
+Route::redirect('/portal', '/super-admin');
+
 // Página inicial
 Route::view('/', 'welcome');
 

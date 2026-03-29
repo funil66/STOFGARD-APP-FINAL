@@ -49,7 +49,7 @@
                         @endfor
 
                         @if($produto['galoes'] > 10)
-                            <span class="flex items-center text-sm text-gray-500">
+                            <span class="flex items-center text-sm text-gray-500 dark:text-gray-400">
                                 +{{ $produto['galoes'] - 10 }} galões
                             </span>
                         @endif
@@ -71,7 +71,7 @@
                     @endif
                 </div>
             @empty
-                <div class="col-span-2 py-8 text-center text-gray-500">
+                <div class="col-span-2 py-8 text-center text-gray-500 dark:text-gray-400">
                     <x-heroicon-o-beaker class="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>Nenhum produto cadastrado.</p>
                     <p class="text-sm">Cadastre "Impermeabilizante" e "Frotador" para ver o estoque.</p>

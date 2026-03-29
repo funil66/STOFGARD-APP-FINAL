@@ -53,12 +53,12 @@ class GenerateAndSendPdfJob implements ShouldQueue
 
         $path = "orcamentos/orcamento-{$orcamento->id}-" . now()->format('YmdHis') . '.pdf';
 
-        $pdf = \Spatie\LaravelPdf\Facades\Pdf::view('pdf.orcamento', ['orcamento' => $orcamento])
-            ->format('a4')
-            ->name("Orcamento-{$orcamento->id}.pdf")
-            ->withBrowsershot(function ($browsershot) {
-                app(\App\Services\PdfService::class)->configureBrowsershotPublic($browsershot);
-            });
+        $pdf = app(\App\Services\PdfService::class)->generate(
+            'pdf.orcamento',
+            ['orcamento' => $orcamento],
+            "Orcamento-{$orcamento->id}.pdf",
+            false // return builder/inline for base64
+        );
 
         $content = base64_decode($pdf->base64());
         \Illuminate\Support\Facades\Storage::put($path, $content);
