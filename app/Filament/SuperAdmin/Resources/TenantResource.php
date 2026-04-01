@@ -622,7 +622,12 @@ class TenantResource extends Resource
                                 throw new \Exception('Validação falhou.');
                             }
 
-                            $record->delete();
+                            $tenantId = $record->id;
+                            
+                            // Remove of owner user on central db
+                            \App\Models\User::where('tenant_id', $tenantId)->delete();
+
+                            $record->forceDelete();
 
                             Log::warning('[SuperAdmin] Tenant APAGADO definitivamente', [
                                 'tenant_id' => $record->id,
@@ -646,7 +651,13 @@ class TenantResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make()
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            foreach ($records as $record) {
+                                \App\Models\User::where('tenant_id', $record->id)->delete();
+                                $record->forceDelete();
+                            }
+                        }),
                 ]),
             ]);
     }
