@@ -50,13 +50,18 @@ class TenantResource extends Resource
                                 Forms\Components\TextInput::make('slug')
                                     ->label('Slug (subdomínio)')
                                     ->required()
-                                    ->unique(ignoreRecord: true)
+                                    ->unique(
+                                        table: 'tenants',
+                                        column: 'slug',
+                                        ignoreRecord: true,
+                                        modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) => $rule->whereNull('deleted_at'),
+                                    )
                                     ->dehydrateStateUsing(fn (?string $state) => trim(strtolower((string) $state)))
                                     ->notIn(['app', 'admin', 'super-admin', 'sistema', 'suporte', 'api', 'www', 'mail', 'painel'])
                                     ->validationMessages([
-                                        'unique' => 'Este slug já está em uso por outro tenant.',
+                                        'unique' => 'Este slug já está em uso por outro tenant ativo.',
                                         'not_in' => 'Este subdomínio é reservado e não pode ser usado.',
-                                        'regex' => 'O slug deve conter apenas letras, números, traços e pontos.'
+                                        'regex'  => 'O slug deve conter apenas letras, números, traços e pontos.'
                                     ])
                                     ->helperText('Ex: "joao-eletricista" ou "dominioproprio.com.br"')
                                     ->regex('/^[a-zA-Z0-9.\-]+$/')
@@ -193,13 +198,14 @@ class TenantResource extends Resource
                     ->sortable()
                     ->description(fn(Tenant $record) => $record->slug),
 
-                Tables\Columns\BadgeColumn::make('plan')
+                Tables\Columns\TextColumn::make('plan')
                     ->label('Plano')
-                    ->colors([
-                        'gray' => 'free',
-                        'primary' => 'pro',
-                        'warning' => 'elite',
-                    ])
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'pro' => 'primary',
+                        'elite' => 'warning',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn($state) => match ($state) {
                         'free' => '🆓 Free',
                         'pro' => '⭐ PRO',
@@ -207,14 +213,16 @@ class TenantResource extends Resource
                         default => $state,
                     }),
 
-                Tables\Columns\BadgeColumn::make('status_pagamento')
+                Tables\Columns\TextColumn::make('status_pagamento')
                     ->label('Status Pagamento')
-                    ->colors([
-                        'success' => 'ativo',
-                        'info' => 'trial',
-                        'warning' => 'inadimplente',
-                        'danger' => ['suspenso', 'cancelado'],
-                    ])
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'ativo' => 'success',
+                        'trial' => 'info',
+                        'inadimplente' => 'warning',
+                        'suspenso', 'cancelado' => 'danger',
+                        default => 'gray',
+                    })
                     ->formatStateUsing(fn($state) => match ($state) {
                         'ativo' => '✅ Ativo',
                         'trial' => '⏳ Trial',

@@ -18,6 +18,7 @@ return [
      */
     'central_domains' => [
         'autonomia.app.br',
+        'app.autonomia.app.br',
         'localhost',
         '127.0.0.1',
     ],

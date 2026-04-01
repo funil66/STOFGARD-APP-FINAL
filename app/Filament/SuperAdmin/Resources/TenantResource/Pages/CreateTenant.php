@@ -22,18 +22,22 @@ class CreateTenant extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $this->ownerData = [
-            'name' => trim((string) ($data['owner_name'] ?? '')),
-            'email' => strtolower(trim((string) ($data['owner_email'] ?? ''))),
-            'password' => (string) ($data['owner_password'] ?? ''),
-        ];
+        // Salva dados do owner no campo 'data' do tenant (JSON)
+        // O CreateTenantOwnerJob vai lê-los APÓS o banco estar pronto
+        if (!empty($data['owner_name']) && !empty($data['owner_email']) && !empty($data['owner_password'])) {
+            $data['pending_owner'] = [
+                'name'     => trim($data['owner_name']),
+                'email'    => strtolower(trim($data['owner_email'])),
+                'password' => $data['owner_password'],
+            ];
+        }
 
         unset($data['owner_name'], $data['owner_email'], $data['owner_password']);
 
         // Defaults for new tenants
-        $data['is_active'] = true;
-        $data['status_pagamento'] = 'trial';
-        $data['trial_termina_em'] = now()->addDays((int) env('TRIAL_DAYS', 14));
+        $data['is_active']           = true;
+        $data['status_pagamento']    = 'trial';
+        $data['trial_termina_em']    = now()->addDays((int) env('TRIAL_DAYS', 14));
         $data['os_criadas_mes_atual'] = 0;
 
         return $data;
@@ -43,59 +47,20 @@ class CreateTenant extends CreateRecord
     {
         $tenant = $this->record;
 
-        // Create domain from slug (supports custom full domain/subdomain)
+        // Cria o registro de domínio baseado no slug
         if ($tenant->slug) {
-            $slug = trim(strtolower($tenant->slug));
+            $slug       = trim(strtolower($tenant->slug));
             $baseDomain = env('TENANT_BASE_DOMAIN', env('APP_DOMAIN', parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost'));
 
             $domain = str_contains($slug, '.')
                 ? $slug
                 : "{$slug}.{$baseDomain}";
 
-            $tenant->domains()->firstOrCreate([
-                'domain' => $domain,
-            ]);
+            $tenant->domains()->firstOrCreate(['domain' => $domain]);
         }
 
-        // Garante baseline visual/funcional idêntico ao tenant referência (STOFGARD)
-        app(TenantTemplateProvisioner::class)->apply($tenant);
-
-        if (
-            !empty($this->ownerData['name'])
-            && !empty($this->ownerData['email'])
-            && !empty($this->ownerData['password'])
-        ) {
-            $initialized = false;
-
-            try {
-                tenancy()->initialize($tenant);
-                $initialized = true;
-
-                $exists = User::query()->where('email', $this->ownerData['email'])->exists();
-
-                if (! $exists) {
-                    User::query()->create([
-                        'name' => $this->ownerData['name'],
-                        'email' => $this->ownerData['email'],
-                        'password' => Hash::make($this->ownerData['password']),
-                        'is_admin' => true,
-                        'role' => 'dono',
-                        'acesso_financeiro' => true,
-                        'email_verified_at' => now(),
-                    ]);
-                }
-            } catch (\Throwable $e) {
-                Notification::make()
-                    ->title('Tenant criado, mas usuário inicial não foi criado')
-                    ->body($e->getMessage())
-                    ->warning()
-                    ->persistent()
-                    ->send();
-            } finally {
-                if ($initialized) {
-                    tenancy()->end();
-                }
-            }
-        }
+        // ⚠️ O template e o usuário admin NÃO são aplicados/criados aqui.
+        // Eles foram movidos para JobPipeline no background (TenancyServiceProvider).
+        // Isso evita o timeout de 3 minutos e garante que o banco exista antes da criação do usuário.
     }
 }

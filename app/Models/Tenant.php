@@ -32,6 +32,7 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'trial_termina_em',
             'limite_os_mes',
             'os_criadas_mes_atual',
+            'data',
         ];
     }
 
