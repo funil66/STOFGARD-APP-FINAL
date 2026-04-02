@@ -23,6 +23,7 @@ class CreateTenantOwnerJob implements ShouldQueue
 
     public function handle(): void
     {
+        // 1. Obtém os dados do proprietário (atributo virtual mapeado para 'data')
         $ownerData = $this->tenant->getAttribute('pending_owner');
 
         if (!$ownerData) {
@@ -43,9 +44,10 @@ class CreateTenantOwnerJob implements ShouldQueue
             'central_db' => $centralConn
         ]);
 
-        $centralUser = User::on($centralConn)->where('email', $ownerData['email'])->first();
+        // 2. Cria o usuário no BANCO CENTRAL (Usando conexão central explicitamente)
+        $existsCentral = User::on($centralConn)->where('email', $ownerData['email'])->exists();
         
-        if (!$centralUser) {
+        if (!$existsCentral) {
             User::on($centralConn)->create([
                 'name'               => $ownerData['name'],
                 'email'              => $ownerData['email'],
@@ -53,18 +55,18 @@ class CreateTenantOwnerJob implements ShouldQueue
                 'tenant_id'          => $this->tenant->getTenantKey(),
                 'is_admin'           => true,
                 'is_super_admin'     => false,
+                'role'               => 'dono',
+                'acesso_financeiro'  => true,
                 'email_verified_at'  => now(),
             ]);
             Log::info('[CreateTenantOwnerJob] Sucesso: Usuário criado na CENTRAL.');
-        } else {
-            if (empty($centralUser->tenant_id)) {
-                $centralUser->update(['tenant_id' => $this->tenant->getTenantKey()]);
-                Log::info('[CreateTenantOwnerJob] Sucesso: Usuário vinculado na CENTRAL.', ['tenant_id' => $this->tenant->getTenantKey()]);
-            }
         }
 
+        // 3. Cria o usuário no BANCO DO INQUILINO
+        // O método $tenant->run() garante a mudança de conexão para o tenant
         $this->tenant->run(function () use ($ownerData) {
             $existsTenant = User::query()->where('email', $ownerData['email'])->exists();
+
             if (!$existsTenant) {
                 User::query()->create([
                     'name'               => $ownerData['name'],
@@ -72,14 +74,12 @@ class CreateTenantOwnerJob implements ShouldQueue
                     'password'           => Hash::make($ownerData['password']),
                     'is_admin'           => true,
                     'is_super_admin'     => false,
+                    'role'               => 'dono',
+                    'acesso_financeiro'  => true,
                     'email_verified_at'  => now(),
                 ]);
                 Log::info('[CreateTenantOwnerJob] Sucesso: Usuário criado no INQUILINO.');
             }
         });
-        
-        // Limpa senha sensível
-        $this->tenant->pending_owner = null;
-        $this->tenant->save();
     }
 }

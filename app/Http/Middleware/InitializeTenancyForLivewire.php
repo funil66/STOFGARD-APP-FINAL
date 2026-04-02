@@ -8,14 +8,31 @@ use App\Models\Tenant;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException;
-use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
+use Stancl\Tenancy\Exceptions\NotASubdomainException;
+use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Throwable;
 
-class InitializeTenancyForLivewire extends InitializeTenancyBySubdomain
+class InitializeTenancyForLivewire extends InitializeTenancyByDomain
 {
     public function handle($request, Closure $next): mixed
     {
-        if ($request->routeIs('livewire.update') || $request->is('livewire/*')) {
+        // 1. Primeiro tenta inicializar pelo domínio/subdomínio da requisição
+        try {
+            return parent::handle($request, $next);
+        } catch (TenantCouldNotBeIdentifiedOnDomainException|NotASubdomainException $e) {
+            // Se falhou (ex: estamos no domínio central, mas a requisição é do livewire)
+            // vamos tentar deduzir o tenant a partir do usuário logado.
+        }
+
+        // 2. Se caiu aqui, é porque não inicializou pelo domínio da URL.
+        if (
+            $request->routeIs('livewire.update') || 
+            $request->is('livewire/*') || 
+            $request->is('super-admin') || 
+            $request->is('super-admin/*') || 
+            $request->is('admin') || 
+            $request->is('admin/*')
+        ) {
             if (function_exists('tenancy') && tenancy()->initialized) {
                 return $next($request);
             }
@@ -23,9 +40,11 @@ class InitializeTenancyForLivewire extends InitializeTenancyBySubdomain
             $initializedFromUser = false;
 
             if (function_exists('tenancy') && !tenancy()->initialized) {
+                // Como ainda estamos no domínio central (o parent falhou e não alterou a DB connection),
+                // o Auth::user() vai buscar do banco central, o que é CORRETO para usuários do super-admin!
                 $user = Auth::user();
                 $tenantId = $user?->tenant_id ?? $user?->cadastro_id ?? null;
-
+                
                 if ($tenantId) {
                     $tenant = Tenant::query()->find((string) $tenantId);
 
@@ -51,15 +70,9 @@ class InitializeTenancyForLivewire extends InitializeTenancyBySubdomain
 
                 return $response;
             }
-
-            try {
-                return parent::handle($request, $next);
-            } catch (TenantCouldNotBeIdentifiedOnDomainException $e) {
-                // Central domains and non-tenant hosts should keep working.
-                return $next($request);
-            }
         }
 
+        // Se chegou até aqui sem iniciar o tenant, segue a requisição normal (contexto central)
         return $next($request);
     }
 }

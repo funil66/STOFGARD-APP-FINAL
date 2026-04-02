@@ -41,6 +41,8 @@ echo "📦 Instalando dependências e rodando migrações..."
 docker compose -f docker-compose.prod.yml exec -T app composer install --no-dev --optimize-autoloader
 docker compose -f docker-compose.prod.yml exec -T app php artisan key:generate
 docker compose -f docker-compose.prod.yml exec -T app php artisan migrate --force
+docker compose -f docker-compose.prod.yml exec -T app php artisan tenants:migrate --force
+docker compose -f docker-compose.prod.yml exec -T app php artisan tenants:seed --class=ProjectBaselineSeeder --force
 docker compose -f docker-compose.prod.yml exec -T app php artisan storage:link
 docker compose -f docker-compose.prod.yml exec -T app php artisan optimize:clear
 docker compose -f docker-compose.prod.yml exec -T app php artisan optimize

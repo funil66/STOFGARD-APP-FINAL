@@ -22,7 +22,7 @@ class CreateTenant extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Salva dados do owner no campo 'data' do tenant (JSON)
+        // Salva dados do owner em atributos virtuais
         // O CreateTenantOwnerJob vai lê-los APÓS o banco estar pronto
         if (!empty($data['owner_name']) && !empty($data['owner_email']) && !empty($data['owner_password'])) {
             $data['pending_owner'] = [
@@ -51,7 +51,6 @@ class CreateTenant extends CreateRecord
         if ($tenant->slug) {
             $slug       = trim(strtolower($tenant->slug));
             $baseDomain = env('TENANT_BASE_DOMAIN', env('APP_DOMAIN', parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost'));
-
             $domain = str_contains($slug, '.')
                 ? $slug
                 : "{$slug}.{$baseDomain}";
@@ -59,41 +58,8 @@ class CreateTenant extends CreateRecord
             $tenant->domains()->firstOrCreate(['domain' => $domain]);
         }
 
-        // Criar Usuário do Tenant (Context-Switching)
-        $ownerData = $tenant->getAttribute('pending_owner') ?? $tenant->data['pending_owner'] ?? null;
-        
-        if ($ownerData) {
-            // Cria no banco central
-            $centralConn = config('tenancy.central_connection', 'pgsql');
-            if (!User::on($centralConn)->where('email', $ownerData['email'])->exists()) {
-                User::on($centralConn)->create([
-                    'name'               => $ownerData['name'],
-                    'email'              => $ownerData['email'],
-                    'password'           => Hash::make($ownerData['password']),
-                    'tenant_id'          => $tenant->getTenantKey(),
-                    'is_admin'           => true,
-                    'is_super_admin'     => false,
-                    'role'               => 'dono',
-                    'acesso_financeiro'  => true,
-                    'email_verified_at'  => now(),
-                ]);
-            }
-
-            // O SEGREDO: Roda DENTRO do contexto do tenant
-            $tenant->run(function () use ($ownerData) {
-                if (!User::where('email', $ownerData['email'])->exists()) {
-                    User::create([
-                        'name'               => $ownerData['name'],
-                        'email'              => $ownerData['email'],
-                        'password'           => \Illuminate\Support\Facades\Hash::make($ownerData['password']),
-                        'is_admin'           => true,
-                        'is_super_admin'     => false,
-                        'role'               => 'dono',
-                        'acesso_financeiro'  => true,
-                        'email_verified_at'  => now(),
-                    ]);
-                }
-            });
-        }
+        // ⚠️ A criação do usuário e a aplicação do template são delegados à Fila!
+        // Eles foram movidos para JobPipeline no background (TenancyServiceProvider)
+        // Não criamos o usuário aqui, pois ele falhará ao rodar no tenant inativo/incompleto.
     }
 }

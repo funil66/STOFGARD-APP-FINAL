@@ -44,7 +44,7 @@ class CentralLoginController extends Controller
 
         // Gera um token de acesso rápido válido por 30 segundos usando o Cache central
         $token = Str::random(64);
-        Cache::put('central_auth_token_' . $token, $user->id, now()->addSeconds(30));
+        Cache::store(config('cache.default'))->put('central_auth_token_' . $token, $user->email, now()->addSeconds(30));
 
         $domain = $tenant->domains()->first();
         if (!$domain) {
