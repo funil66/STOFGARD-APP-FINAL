@@ -59,8 +59,41 @@ class CreateTenant extends CreateRecord
             $tenant->domains()->firstOrCreate(['domain' => $domain]);
         }
 
-        // ⚠️ O template e o usuário admin NÃO são aplicados/criados aqui.
-        // Eles foram movidos para JobPipeline no background (TenancyServiceProvider).
-        // Isso evita o timeout de 3 minutos e garante que o banco exista antes da criação do usuário.
+        // Criar Usuário do Tenant (Context-Switching)
+        $ownerData = $tenant->getAttribute('pending_owner') ?? $tenant->data['pending_owner'] ?? null;
+        
+        if ($ownerData) {
+            // Cria no banco central
+            $centralConn = config('tenancy.central_connection', 'pgsql');
+            if (!User::on($centralConn)->where('email', $ownerData['email'])->exists()) {
+                User::on($centralConn)->create([
+                    'name'               => $ownerData['name'],
+                    'email'              => $ownerData['email'],
+                    'password'           => Hash::make($ownerData['password']),
+                    'tenant_id'          => $tenant->getTenantKey(),
+                    'is_admin'           => true,
+                    'is_super_admin'     => false,
+                    'role'               => 'dono',
+                    'acesso_financeiro'  => true,
+                    'email_verified_at'  => now(),
+                ]);
+            }
+
+            // O SEGREDO: Roda DENTRO do contexto do tenant
+            $tenant->run(function () use ($ownerData) {
+                if (!User::where('email', $ownerData['email'])->exists()) {
+                    User::create([
+                        'name'               => $ownerData['name'],
+                        'email'              => $ownerData['email'],
+                        'password'           => \Illuminate\Support\Facades\Hash::make($ownerData['password']),
+                        'is_admin'           => true,
+                        'is_super_admin'     => false,
+                        'role'               => 'dono',
+                        'acesso_financeiro'  => true,
+                        'email_verified_at'  => now(),
+                    ]);
+                }
+            });
+        }
     }
 }
