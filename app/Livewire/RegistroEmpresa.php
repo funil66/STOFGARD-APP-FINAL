@@ -157,6 +157,14 @@ class RegistroEmpresa extends Component
 
         $trialDays = (int) env('TRIAL_DAYS', 14);
 
+        // Salva dados do owner no cache para o job em background (CreateTenantOwnerJob)
+        $pendingOwner = [
+            'name'     => $this->admin_nome,
+            'email'    => strtolower(trim($this->admin_email)),
+            'password' => $this->admin_password,
+        ];
+        \Illuminate\Support\Facades\Cache::put('pending_owner_' . trim(strtolower($slug)), $pendingOwner, now()->addMinutes(60));
+
         // Create tenant (triggers CreateDatabase + MigrateDatabase + SeedDatabase via TenancyServiceProvider)
         $tenant = Tenant::create([
             'id' => Str::uuid()->toString(),
@@ -197,19 +205,23 @@ class RegistroEmpresa extends Component
             'domain' => $domain,
         ]);
 
-        // Garante baseline visual/funcional idêntico ao tenant referência (STOFGARD)
-        app(TenantTemplateProvisioner::class)->apply($tenant);
-
-        // Create admin user inside tenant context
-        $tenant->run(function () {
+        // Usuario central é criado de forma síncrona/imediata para o painel de Super Admin
+        $centralUser = User::where('email', trim(strtolower($this->admin_email)))->first();
+        if (!$centralUser) {
             User::create([
                 'name' => $this->admin_nome,
-                'email' => $this->admin_email,
+                'email' => trim(strtolower($this->admin_email)),
                 'password' => Hash::make($this->admin_password),
                 'is_admin' => true,
-                'tenant_id' => tenant('id'),
+                'tenant_id' => $tenant->id,
+                'is_super_admin' => false,
+                'email_verified_at' => now(),
             ]);
-        });
+        } elseif (empty($centralUser->tenant_id)) {
+            $centralUser->update(['tenant_id' => $tenant->id]);
+        }
+
+        // Template e clone do usuário dentro do esquema do Tenant continuam pela Fila (JobPipeline TenancyServiceProvider)
 
         $this->iniciarCobrancaAutomatica($tenant, $planoSelecionado);
         $this->status_assinatura_url = URL::temporarySignedRoute(

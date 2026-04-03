@@ -23,7 +23,12 @@ class CreateTenantOwnerJob implements ShouldQueue
 
     public function handle(): void
     {
-        $ownerData = $this->tenant->getAttribute('pending_owner');
+        $slug = trim(strtolower($this->tenant->slug ?? ''));
+        $ownerData = \Illuminate\Support\Facades\Cache::get('pending_owner_' . $slug);
+
+        if (!$ownerData) {
+            $ownerData = $this->tenant->getAttribute('pending_owner');
+        }
 
         if (!$ownerData) {
             $ownerData = $this->tenant->data['pending_owner'] ?? null;
@@ -81,5 +86,6 @@ class CreateTenantOwnerJob implements ShouldQueue
         // Limpa senha sensível
         $this->tenant->pending_owner = null;
         $this->tenant->save();
+        \Illuminate\Support\Facades\Cache::forget('pending_owner_' . $slug);
     }
 }
