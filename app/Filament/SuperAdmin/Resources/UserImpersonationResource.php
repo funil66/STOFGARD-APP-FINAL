@@ -119,8 +119,20 @@ class UserImpersonationResource extends Resource
                         // Troca o usuário autenticado
                         Auth::login($targetUser);
 
-                        // Redireciona para o painel principal (HTTPS em produção)
+                        // Redireciona para o painel principal
                         $url = url('/admin');
+                        
+                        if ($targetUser->tenant_id) {
+                            $tenant = \App\Models\Tenant::find($targetUser->tenant_id);
+                            if ($tenant && $tenant->domains->first()) {
+                                $scheme = request()->getScheme();
+                                $domain = $tenant->domains->first()->domain;
+                                $port = request()->getPort();
+                                $portSuffix = ($port && !in_array($port, [80, 443])) ? ':' . $port : '';
+                                $url = $scheme . '://' . $domain . $portSuffix . '/admin';
+                            }
+                        }
+
                         if (app()->environment('production')) {
                             $url = str_replace('http://', 'https://', $url);
                         }
@@ -157,6 +169,12 @@ class UserImpersonationResource extends Resource
                         }
 
                         $url = url('/super-admin');
+                        $baseDomain = config('domain_routing.base_domain', parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost');
+                        $scheme = request()->getScheme();
+                        $port = request()->getPort();
+                        $portSuffix = ($port && !in_array($port, [80, 443])) ? ':' . $port : '';
+                        $url = $scheme . '://' . $baseDomain . $portSuffix . '/super-admin';
+                        
                         if (app()->environment('production')) {
                             $url = str_replace('http://', 'https://', $url);
                         }
