@@ -208,10 +208,10 @@ class RegistroEmpresa extends Component
         // Usuario central é criado de forma síncrona/imediata para o painel de Super Admin
         $centralUser = User::where('email', trim(strtolower($this->admin_email)))->first();
         if (!$centralUser) {
-            User::create([
+            User::forceCreate([
                 'name' => $this->admin_nome,
                 'email' => trim(strtolower($this->admin_email)),
-                'password' => Hash::make($this->admin_password),
+                'password' => \Illuminate\Support\Facades\Hash::make($this->admin_password),
                 'is_admin' => true,
                 'tenant_id' => $tenant->id,
                 'is_super_admin' => false,

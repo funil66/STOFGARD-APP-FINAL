@@ -68,7 +68,7 @@ class CreateTenant extends CreateRecord
             $centralConn = config('tenancy.central_connection', 'pgsql');
             $centralUser = User::on($centralConn)->where('email', $ownerData['email'])->first();
             if (!$centralUser) {
-                User::on($centralConn)->create([
+                User::on($centralConn)->forceCreate([
                     'name'               => $ownerData['name'],
                     'email'              => $ownerData['email'],
                     'password'           => Hash::make($ownerData['password']),
