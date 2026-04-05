@@ -61,7 +61,7 @@
                 <table style="width: 100%; border-collapse: collapse;">
                     @php
                         $parcelas = $config->financeiro_parcelamento;
-                        $colsPerRow = 3;
+                        $colsPerRow = 6;
                         $rowCount = (int)ceil(count($parcelas) / $colsPerRow);
                     @endphp
                     @for($row = 0; $row < $rowCount; $row++)
@@ -76,14 +76,11 @@
                                         $valorComJuros = $valorFinal + ($valorFinal * ($taxa / 100));
                                         $valorParcela = $valorComJuros / $qtd;
                                     @endphp
-                                    <td style="padding: 4px; width: 33.33%; border: 1px solid #e5e7eb;">
-                                        <div style="text-align: center;">
-                                            <strong>{{ $qtd }}x</strong><br>
-                                            <div style="font-size: 9px;">R$ {{ number_format($valorParcela, 2, ',', '.') }}</div>
-                                        </div>
+                                    <td style="padding: 3px; width: 16.67%; border: 1px solid #e5e7eb; text-align: center; font-size: 8px;">
+                                        <strong>{{ $qtd }}x</strong> R$ {{ number_format($valorParcela, 2, ',', '.') }}
                                     </td>
                                 @else
-                                    <td style="padding: 4px; width: 33.33%; border: 1px solid #e5e7eb; background: #f9fafb;"></td>
+                                    <td style="padding: 3px; width: 16.67%; border: 1px solid #e5e7eb; background: #f9fafb;"></td>
                                 @endif
                             @endfor
                         </tr>
