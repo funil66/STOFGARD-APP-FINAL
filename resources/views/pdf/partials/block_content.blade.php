@@ -61,13 +61,13 @@
                 <table style="width: 100%; border-collapse: collapse;">
                     @php
                         $parcelas = $config->financeiro_parcelamento;
-                        $colsPerRow = 6;
-                        $rowCount = (int)ceil(count($parcelas) / $colsPerRow);
+                        $rowsPerColumn = 4;
+                        $columns = (int) ceil(count($parcelas) / $rowsPerColumn);
                     @endphp
-                    @for($row = 0; $row < $rowCount; $row++)
+                    @for($row = 0; $row < $rowsPerColumn; $row++)
                         <tr>
-                            @for($col = 0; $col < $colsPerRow; $col++)
-                                @php $index = $row * $colsPerRow + $col; @endphp
+                            @for($col = 0; $col < $columns; $col++)
+                                @php $index = $col * $rowsPerColumn + $row; @endphp
                                 @if(isset($parcelas[$index]))
                                     @php
                                         $parcelaConfig = $parcelas[$index];
@@ -76,11 +76,11 @@
                                         $valorComJuros = $valorFinal + ($valorFinal * ($taxa / 100));
                                         $valorParcela = $valorComJuros / $qtd;
                                     @endphp
-                                    <td style="padding: 3px; width: 16.67%; border: 1px solid #e5e7eb; text-align: center; font-size: 8px;">
+                                    <td style="padding: 2px 8px 2px 0; width: {{ number_format(100 / max($columns, 1), 2, '.', '') }}%; text-align: left; font-size: 8px; white-space: nowrap;">
                                         <strong>{{ $qtd }}x</strong> R$ {{ number_format($valorParcela, 2, ',', '.') }}
                                     </td>
                                 @else
-                                    <td style="padding: 3px; width: 16.67%; border: 1px solid #e5e7eb; background: #f9fafb;"></td>
+                                    <td style="padding: 2px 8px 2px 0;"></td>
                                 @endif
                             @endfor
                         </tr>
