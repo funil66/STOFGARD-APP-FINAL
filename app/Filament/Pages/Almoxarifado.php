@@ -20,12 +20,6 @@ class Almoxarifado extends Page
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('produtos')
-                ->label('Produtos')
-                ->icon('heroicon-o-cube')
-                ->color('primary')
-                ->url(url('/admin/almoxarifado/produtos')),
-
             Action::make('equipamentos')
                 ->label('Equipamentos')
                 ->icon('heroicon-o-wrench-screwdriver')
@@ -37,6 +31,12 @@ class Almoxarifado extends Page
                 ->icon('heroicon-o-archive-box')
                 ->color('success')
                 ->url(url('/admin/almoxarifado/estoques')),
+
+            Action::make('novo_item_estoque')
+                ->label('Novo Item de Estoque')
+                ->icon('heroicon-o-plus-circle')
+                ->color('primary')
+                ->url(url('/admin/almoxarifado/estoques/create')),
 
             Action::make('lista_desejos')
                 ->label('Lista de Desejos')

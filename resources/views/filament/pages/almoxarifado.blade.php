@@ -1,15 +1,15 @@
 <x-filament-panels::page>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {{-- Card Produtos --}}
-        <a href="{{ url('/admin/almoxarifado/produtos') }}"
+        {{-- Card Novo Item de Estoque --}}
+        <a href="{{ url('/admin/almoxarifado/estoques/create') }}"
             class="block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-700">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-primary-100 dark:bg-primary-900 rounded-lg">
-                    <x-heroicon-o-cube class="w-8 h-8 text-primary-600 dark:text-primary-400" />
+                    <x-heroicon-o-plus-circle class="w-8 h-8 text-primary-600 dark:text-primary-400" />
                 </div>
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Produtos</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Catálogo de produtos</p>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Novo Item</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Cadastro único pelo estoque</p>
                 </div>
             </div>
         </a>

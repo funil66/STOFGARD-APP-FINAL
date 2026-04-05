@@ -571,7 +571,7 @@ class OrcamentoResource extends Resource
 
                         Tabs\Tab::make('📁 Arquivos')
                             ->schema([
-                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos_imagens')
+                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
                                     ->label('Imagens')
                                     ->collection('arquivos')
                                     ->disk('public'),

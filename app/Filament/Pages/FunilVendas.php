@@ -101,8 +101,8 @@ class FunilVendas extends Page
         if ($this->busca) {
             $query->where(function ($q) {
                 $termo = "%{$this->busca}%";
-                $q->where('numero', 'like', $termo)
-                    ->orWhereHas('cliente', fn($q) => $q->where('nome', 'like', $termo));
+                $q->where('numero', 'ilike', $termo)
+                    ->orWhereHas('cliente', fn($q) => $q->where('nome', 'ilike', $termo));
             });
         }
 
@@ -170,6 +170,71 @@ class FunilVendas extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('whatsapp_script')
+                ->label('Zapar Lead')
+                ->icon('heroicon-o-chat-bubble-oval-left-ellipsis')
+                ->color('success')
+                ->form([
+                    Select::make('orcamento_id')
+                        ->label('Lead / Orçamento')
+                        ->options(fn () => Orcamento::query()
+                            ->with('cliente')
+                            ->latest('updated_at')
+                            ->limit(200)
+                            ->get()
+                            ->mapWithKeys(fn ($item) => [
+                                $item->id => trim(($item->numero ?? "#{$item->id}") . ' • ' . ($item->cliente?->nome ?? 'Sem cliente')),
+                            ]))
+                        ->searchable()
+                        ->required(),
+                    Select::make('tipo_script')
+                        ->label('Qual o papo?')
+                        ->options([
+                            'agitar' => 'Agitar Venda (Quebrar Gelo)',
+                            'promocao' => 'Enviar Promoção Nova',
+                            'fechamento' => 'Pressionar Fechamento',
+                        ])
+                        ->required(),
+                    Textarea::make('mensagem_customizada')
+                        ->label('Ajuste fino (opcional)')
+                        ->rows(3),
+                ])
+                ->action(function (array $data) {
+                    $orcamento = Orcamento::with('cliente')->find($data['orcamento_id']);
+                    if (! $orcamento || ! $orcamento->cliente) {
+                        Notification::make()
+                            ->title('Lead sem cliente vinculado')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    $phone = preg_replace('/\D/', '', (string) ($orcamento->cliente->telefone ?? $orcamento->cliente->celular ?? ''));
+                    if (blank($phone)) {
+                        Notification::make()
+                            ->title('Telefone do lead não encontrado')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+
+                    $scripts = [
+                        'agitar' => "Fala {$orcamento->cliente->nome}, beleza? Aqui é da Stofgard. Como tá a evolução do seu projeto? Precisando de algo, só dar o grito!",
+                        'promocao' => "Opa {$orcamento->cliente->nome}! Passando pra avisar que liberamos uma condição especial pros serviços que você olhou. Bora fechar?",
+                        'fechamento' => "E aí {$orcamento->cliente->nome}, conseguimos aprovar aquele orçamento? O time já tá engatilhado pra começar!",
+                    ];
+
+                    $msg = filled($data['mensagem_customizada'] ?? null)
+                        ? $data['mensagem_customizada']
+                        : ($scripts[$data['tipo_script']] ?? 'Olá!');
+
+                    $url = 'https://api.whatsapp.com/send?phone=55' . $phone . '&text=' . urlencode($msg);
+
+                    return redirect()->away($url);
+                }),
+
             // BOTÃO: NOVO LEAD
             Action::make('novoLead')
                 ->label('+ Novo Lead')

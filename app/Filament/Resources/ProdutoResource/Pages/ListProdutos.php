@@ -11,6 +11,11 @@ class ListProdutos extends ListRecords
 {
     protected static string $resource = ProdutoResource::class;
 
+    public function mount(): void
+    {
+        $this->redirect('/admin/almoxarifado/estoques');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

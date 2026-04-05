@@ -197,10 +197,10 @@ class BuscaUniversal extends Page implements HasForms
 
             $query->where(function ($q) use ($termoLike, $termoHash) {
                 // Campos plaintext — busca LIKE
-                $q->where('nome', 'like', $termoLike)
-                    ->orWhere('logradouro', 'like', $termoLike)
-                    ->orWhere('bairro', 'like', $termoLike)
-                    ->orWhere('cidade', 'like', $termoLike)
+                $q->where('nome', 'ilike', $termoLike)
+                    ->orWhere('logradouro', 'ilike', $termoLike)
+                    ->orWhere('bairro', 'ilike', $termoLike)
+                    ->orWhere('cidade', 'ilike', $termoLike)
                     // Campos cifrados — busca exata pelo hash HMAC
                     ->orWhere('documento_hash', $termoHash)
                     ->orWhere('telefone_hash', $termoHash)
@@ -271,11 +271,11 @@ class BuscaUniversal extends Page implements HasForms
         if ($this->termo) {
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
-                $q->where('numero', 'like', $termo)
-                    ->orWhere('observacoes', 'like', $termo)
-                    ->orWhere('observacoes', 'like', $termo)
+                $q->where('numero', 'ilike', $termo)
+                    ->orWhere('observacoes', 'ilike', $termo)
+                    ->orWhere('observacoes', 'ilike', $termo)
                     ->orWhereHas('cliente', function ($clienteQuery) use ($termo) {
-                        $clienteQuery->where('nome', 'like', $termo);
+                        $clienteQuery->where('nome', 'ilike', $termo);
                     });
             });
         }
@@ -331,11 +331,11 @@ class BuscaUniversal extends Page implements HasForms
         if ($this->termo) {
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
-                $q->where('numero_os', 'like', $termo)
-                    ->orWhere('observacoes', 'like', $termo)
-                    ->orWhere('observacoes', 'like', $termo)
+                $q->where('numero_os', 'ilike', $termo)
+                    ->orWhere('observacoes', 'ilike', $termo)
+                    ->orWhere('observacoes', 'ilike', $termo)
                     ->orWhereHas('cliente', function ($clienteQuery) use ($termo) {
-                        $clienteQuery->where('nome', 'like', $termo);
+                        $clienteQuery->where('nome', 'ilike', $termo);
                     });
             });
         }
@@ -391,8 +391,8 @@ class BuscaUniversal extends Page implements HasForms
         if ($this->termo) {
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
-                $q->where('descricao', 'like', $termo)
-                    ->orWhere('observacoes', 'like', $termo);
+                $q->where('descricao', 'ilike', $termo)
+                    ->orWhere('observacoes', 'ilike', $termo);
             });
         }
 
@@ -448,9 +448,9 @@ class BuscaUniversal extends Page implements HasForms
         if ($this->termo) {
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
-                $q->where('titulo', 'like', $termo)
-                    ->orWhere('descricao', 'like', $termo)
-                    ->orWhere('local', 'like', $termo);
+                $q->where('titulo', 'ilike', $termo)
+                    ->orWhere('descricao', 'ilike', $termo)
+                    ->orWhere('local', 'ilike', $termo);
             });
         }
 
@@ -505,8 +505,8 @@ class BuscaUniversal extends Page implements HasForms
         if ($this->termo) {
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
-                $q->where('nome', 'like', $termo)
-                    ->orWhere('descricao', 'like', $termo);
+                $q->where('nome', 'ilike', $termo)
+                    ->orWhere('descricao', 'ilike', $termo);
             });
         }
 

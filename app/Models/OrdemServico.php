@@ -291,7 +291,7 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
             // We need to parse them because numero_os is a string field
             // Include soft-deleted records to avoid reusing numbers
             $osNumeros = self::withTrashed()
-                ->where('numero_os', 'perfil_garantia_id', 'LIKE', "{$ano}.%")
+                ->where('numero_os', 'LIKE', "{$ano}.%")
                 ->pluck('numero_os')
                 ->map(function ($numero) {
                     $partes = explode('.', $numero);

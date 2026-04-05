@@ -30,6 +30,8 @@ class BuscaAvancada extends Page implements HasForms
 
     protected static ?string $title = 'Busca Avançada';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.busca-avancada';
@@ -54,6 +56,12 @@ class BuscaAvancada extends Page implements HasForms
 
     public function mount(): void
     {
+        if (request()->path() === 'admin/busca-avancada') {
+            $this->redirect('/admin/busca-universal');
+
+            return;
+        }
+
         $this->resultados = collect();
         $this->form->fill();
     }

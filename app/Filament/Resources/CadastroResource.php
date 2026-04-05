@@ -306,7 +306,7 @@ class CadastroResource extends Resource
                         Infolists\Components\Tabs\Tab::make('📁 Arquivos')
                             ->badge(fn($record) => $record->getMedia('arquivos')->count())
                             ->schema([
-                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos_imagens')
+                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
                                     ->label('Galeria de Imagens')
                                     ->collection('arquivos')
                                     ->size(200)
