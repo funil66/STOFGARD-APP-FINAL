@@ -57,21 +57,37 @@
         @if(($orcamento->pdf_mostrar_parcelamento ?? true) && isset($config->financeiro_parcelamento) && is_array($config->financeiro_parcelamento) && count($config->financeiro_parcelamento) > 0)
             <div class="parcelamento-box"
                 style="margin-top: 15px; font-size: 10px; border-top: 1px dashed #ddd; padding-top: 10px;">
-                <div style="font-weight: bold; margin-bottom: 5px;">CONDIÇÕES DE PARCELAMENTO (CARTÃO):</div>
+                <div style="font-weight: bold; margin-bottom: 8px;">CONDIÇÕES DE PARCELAMENTO (CARTÃO):</div>
                 <table style="width: 100%; border-collapse: collapse;">
-                    @foreach($config->financeiro_parcelamento as $parcelaConfig)
-                        @php
-                            $qtd = (int) ($parcelaConfig['parcelas'] ?? 1);
-                            $taxa = (float) ($parcelaConfig['taxa'] ?? 0);
-
-                            // Calcula valor com juros
-                            $valorComJuros = $valorFinal + ($valorFinal * ($taxa / 100));
-                            $valorParcela = $valorComJuros / $qtd;
-                        @endphp
+                    @php
+                        $parcelas = $config->financeiro_parcelamento;
+                        $colsPerRow = 3;
+                        $rowCount = (int)ceil(count($parcelas) / $colsPerRow);
+                    @endphp
+                    @for($row = 0; $row < $rowCount; $row++)
                         <tr>
-                            <td style="padding: 2px 0;">{{ $qtd }}x de R$ {{ number_format($valorParcela, 2, ',', '.') }}</td>
+                            @for($col = 0; $col < $colsPerRow; $col++)
+                                @php $index = $row * $colsPerRow + $col; @endphp
+                                @if(isset($parcelas[$index]))
+                                    @php
+                                        $parcelaConfig = $parcelas[$index];
+                                        $qtd = (int) ($parcelaConfig['parcelas'] ?? 1);
+                                        $taxa = (float) ($parcelaConfig['taxa'] ?? 0);
+                                        $valorComJuros = $valorFinal + ($valorFinal * ($taxa / 100));
+                                        $valorParcela = $valorComJuros / $qtd;
+                                    @endphp
+                                    <td style="padding: 4px; width: 33.33%; border: 1px solid #e5e7eb;">
+                                        <div style="text-align: center;">
+                                            <strong>{{ $qtd }}x</strong><br>
+                                            <div style="font-size: 9px;">R$ {{ number_format($valorParcela, 2, ',', '.') }}</div>
+                                        </div>
+                                    </td>
+                                @else
+                                    <td style="padding: 4px; width: 33.33%; border: 1px solid #e5e7eb; background: #f9fafb;"></td>
+                                @endif
+                            @endfor
                         </tr>
-                    @endforeach
+                    @endfor
                 </table>
             </div>
         @endif

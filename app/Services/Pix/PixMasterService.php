@@ -89,7 +89,9 @@ class PixMasterService
 
         return [
             'payload' => $res['payload_pix'],
+            'payload_pix' => $res['payload_pix'],
             'imagem' => $res['qr_code_img'],
+            'qr_code_img' => $res['qr_code_img'],
             'chave_real' => $res['chave_real'],
             'beneficiario_real' => $res['beneficiario_real'] ?? $beneficiario,
         ];

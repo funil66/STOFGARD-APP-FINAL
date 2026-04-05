@@ -26,6 +26,13 @@
             line-height: 1.3;
         }
 
+        /* Espaçamento para header/footer em todas as páginas */
+        body::before {
+            content: '';
+            display: block;
+            height: 0;
+        }
+
         /* UTILITARIOS */
         .w-full {
             width: 100%;
@@ -53,6 +60,7 @@
             border-bottom: 2px solid #0ea5e9;
             padding-bottom: 10px;
             page-break-inside: avoid;
+            page-break-after: avoid;
         }
 
         .logo-img {
@@ -76,6 +84,7 @@
             border-left: 4px solid #0ea5e9;
             margin: 20px 0 10px 0;
             text-transform: uppercase;
+            page-break-after: avoid;
         }
 
         /* TABELA DE ITENS */
@@ -83,6 +92,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 5px;
+            page-break-inside: avoid;
         }
 
         .items-table th {
@@ -106,6 +116,7 @@
             font-size: 10px;
             margin-top: 10px;
             display: block;
+            page-break-after: avoid;
         }
 
         /* --- NOVO LAYOUT FINANCEIRO (GRID DE 3 COLUNAS SIMULADO) --- */
@@ -117,11 +128,13 @@
             border-radius: 6px;
             overflow: hidden;
             margin-top: 10px;
+            page-break-inside: avoid;
         }
 
         .finance-grid td {
             vertical-align: top;
             padding: 15px;
+            page-break-inside: avoid;
         }
 
         /* COLUNA 1: TOTAIS */
@@ -129,10 +142,12 @@
             width: 30%;
             background-color: #f8fafc;
             border-right: 1px dashed #e2e8f0;
+            page-break-inside: avoid;
         }
 
         .summary-row {
             margin-bottom: 8px;
+            page-break-inside: avoid;
         }
 
         .summary-label {
@@ -152,6 +167,7 @@
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid #cbd5e1;
+            page-break-inside: avoid;
         }
 
         .big-price {
@@ -172,7 +188,6 @@
             margin-top: 15px;
             font-size: 10px;
             border-top: 1px dashed #ddd;
-            padding-top: 10px;
             padding: 10px;
             background-color: #fafaf9;
             border-radius: 4px;
@@ -187,6 +202,7 @@
 
         .inst-table td {
             padding: 4px 0;
+            page-break-inside: avoid;
             border-bottom: 1px solid #f1f5f9;
         }
 
@@ -205,6 +221,7 @@
             width: 35%;
             background-color: #f0fdf4;
             text-align: center;
+            page-break-inside: avoid;
         }
 
         .qr-wrapper {
@@ -213,6 +230,7 @@
             display: inline-block;
             border-radius: 4px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            page-break-inside: avoid;
         }
 
         .qr-img {
@@ -225,6 +243,7 @@
         .payload-container {
             margin-top: 10px;
             text-align: left;
+            page-break-inside: avoid;
         }
 
         .payload-label {
