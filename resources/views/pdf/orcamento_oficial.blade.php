@@ -6,13 +6,21 @@
     <title>Orçamento {{ $orcamento->numero }}</title>
     <style>
         @page {
-            margin: 0;
+            margin: 80px 40px 90px 40px;
+            margin-left: 40px;
+            margin-right: 40px;
+            margin-top: 80px;
+            margin-bottom: 90px;
+        }
+
+        @page :first {
+            margin-top: 40px;
         }
 
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
-            padding: 40px 50px 60px 50px;
+            padding: 0;
             font-size: 10px;
             color: #1e293b;
             line-height: 1.3;
@@ -44,6 +52,7 @@
             margin-bottom: 25px;
             border-bottom: 2px solid #0ea5e9;
             padding-bottom: 10px;
+            page-break-inside: avoid;
         }
 
         .logo-img {
@@ -155,16 +164,40 @@
         .col-installments {
             width: 35%;
             border-right: 1px dashed #e2e8f0;
+            page-break-inside: avoid;
+        }
+
+        .parcelamento-box {
+            page-break-inside: avoid;
+            margin-top: 15px;
+            font-size: 10px;
+            border-top: 1px dashed #ddd;
+            padding-top: 10px;
+            padding: 10px;
+            background-color: #fafaf9;
+            border-radius: 4px;
+            break-inside: avoid;
         }
 
         .inst-table {
             width: 100%;
             font-size: 9px;
+            page-break-inside: avoid;
         }
 
         .inst-table td {
             padding: 4px 0;
             border-bottom: 1px solid #f1f5f9;
+        }
+
+        /* Seções de conteúdo que não devem quebrar no meio */
+        .section-bar {
+            page-break-after: avoid;
+        }
+
+        .values-box,
+        .pix-box {
+            page-break-inside: avoid;
         }
 
         /* COLUNA 3: PIX (O FIX) */

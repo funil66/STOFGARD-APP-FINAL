@@ -383,7 +383,11 @@ class OrcamentoResource extends Resource
                         SpatieMediaLibraryFileUpload::make('arquivos')
                             ->collection('arquivos')
                             ->multiple()
-                            ->disk('public'),
+                            ->disk('public')
+                            ->directory('orcamentos')
+                            ->maxSize(10 * 1024) // 10MB max file
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'application/pdf'])
+                            ->helperText('Anexe fotos, documentos ou PDFs relacionados ao orçamento (máx 10MB por arquivo)'),
                     ]),
             ]);
     }

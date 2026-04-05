@@ -34,8 +34,8 @@
             <div class="valor-total-value">R$ {{ number_format($valorEfetivo, 2, ',', '.') }}</div>
         </div>
 
-        {{-- Comissões (Apenas se houver) --}}
-        @if($orcamento->comissao_vendedor > 0 || $orcamento->comissao_loja > 0)
+        {{-- Comissões (Apenas se houver E se toggle estiver ativado) --}}
+        @if(($orcamento->pdf_mostrar_comissoes ?? true) && ($orcamento->comissao_vendedor > 0 || $orcamento->comissao_loja > 0))
             <div class="valor-row-separator"></div>
             <div style="font-size: 9px; color: #666; margin-top: 5px;">
                 @if($orcamento->comissao_vendedor > 0)

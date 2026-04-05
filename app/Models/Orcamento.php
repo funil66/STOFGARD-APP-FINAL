@@ -65,6 +65,8 @@ class Orcamento extends Model implements HasMedia, \OwenIt\Auditing\Contracts\Au
         'pdf_incluir_pix',        // Controle do botão
         'pdf_mostrar_fotos',      // Controle de exibição de fotos
         'pix_chave_selecionada',  // Chave escolhida (Crucial)
+        'pix_qrcode_base64',      // QR Code em base64
+        'pix_copia_cola',         // Payload PIX copia e cola
         'aplicar_desconto_pix',
         'pdf_mostrar_comissoes',       // #2a: Toggle comissões no PDF
         'pdf_mostrar_parcelamento',    // #2a: Toggle parcelamento no PDF

@@ -55,23 +55,28 @@ class OrcamentoActions
     public static function getAprovarFormSchema(): array
     {
         return [
-            Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
+            Forms\Components\Section::make('📅 Agendar Serviço')
+                ->icon('heroicon-o-calendar')
                 ->schema([
-                    Forms\Components\DateTimePicker::make('data_servico')
-                        ->label('📅 Data e Hora de Início')
-                        ->required() // Se é agendamento, melhor ser required, ou nullable se opcional
-                        ->native(false)
-                        ->displayFormat('d/m/Y H:i')
-                        ->seconds(false)
-                        ->helperText('Informe a data e hora prevista para início do serviço')
-                        ->columnSpan(1),
+                    Forms\Components\Grid::make(['default' => 1, 'sm' => 2])
+                        ->schema([
+                            Forms\Components\DateTimePicker::make('data_servico')
+                                ->label('Data e Hora de Início')
+                                ->required()
+                                ->native(false)
+                                ->displayFormat('d/m/Y H:i')
+                                ->seconds(false)
+                                ->helperText('Informe a data e hora prevista para início do serviço')
+                                ->columnSpan(['default' => 1, 'sm' => 2]),
 
-                    Forms\Components\TimePicker::make('hora_fim')
-                        ->label('🕐 Hora de Término (estimada)')
-                        ->default('17:00')
-                        ->native(false)
-                        ->seconds(false)
-                        ->columnSpan(1),
+                            Forms\Components\TimePicker::make('hora_fim')
+                                ->label('Hora de Término (opcional)')
+                                ->default('17:00')
+                                ->native(false)
+                                ->seconds(false)
+                                ->helperText('Hora aproximada do término. Se vazio, sistema usará data_servico como referência.')
+                                ->columnSpan(['default' => 1, 'sm' => 1]),
+                        ]),
                 ]),
 
             Forms\Components\Textarea::make('local_servico')
