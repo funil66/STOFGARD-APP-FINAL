@@ -61,17 +61,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 NavigationGroup::make()
-                    ->label('Comercial')
-                    ->icon('heroicon-o-shopping-cart'),
+                    ->label('Comercial'),
                 NavigationGroup::make()
-                    ->label('Operacional')
-                    ->icon('heroicon-o-wrench-screwdriver'),
+                    ->label('Operacional'),
                 NavigationGroup::make()
-                    ->label('Administrativo')
-                    ->icon('heroicon-o-building-office'),
+                    ->label('Administrativo'),
                 NavigationGroup::make()
                     ->label('Configurações')
-                    ->icon('heroicon-o-cog-6-tooth')
                     ->collapsed(),
             ]);
     }
