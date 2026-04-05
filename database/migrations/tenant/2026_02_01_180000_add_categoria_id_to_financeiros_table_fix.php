@@ -32,7 +32,9 @@ return new class extends Migration
         if (Schema::hasColumn('financeiros', 'categoria_id')) {
             Schema::table('financeiros', function (Blueprint $table) {
                 $table->dropForeign(['categoria_id']);
-                $table->dropColumn('categoria_id');
+                if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite') {
+                    if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite') $table->dropColumn('categoria_id');
+                }
             });
         }
     }

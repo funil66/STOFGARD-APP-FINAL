@@ -31,7 +31,7 @@ class TabelaPrecoResource extends Resource
     // Submódulo de Configurações
     protected static ?string $slug = 'configuracoes/tabela-precos';
 
-    protected static bool $shouldRegisterNavigation = false;
+    protected static bool $shouldRegisterNavigation = false; // = false;
 
     protected static ?int $navigationSort = 100;
 

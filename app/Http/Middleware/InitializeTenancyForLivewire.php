@@ -42,6 +42,7 @@ class InitializeTenancyForLivewire extends InitializeTenancyByDomain
             if (function_exists('tenancy') && !tenancy()->initialized) {
                 // Como ainda estamos no domínio central (o parent falhou e não alterou a DB connection),
                 // o Auth::user() vai buscar do banco central, o que é CORRETO para usuários do super-admin!
+                \Illuminate\Support\Facades\Log::info("[InitializeTenancyForLivewire] Checking user: ", ["route" => $request->path(), "user" => Auth::user()?->toArray(), "session_id" => session()->getId()]);
                 $user = Auth::user();
                 $tenantId = $user?->tenant_id ?? $user?->cadastro_id ?? null;
                 

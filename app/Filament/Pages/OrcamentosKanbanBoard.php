@@ -46,16 +46,7 @@ class OrcamentosKanbanBoard extends KanbanBoard
     {
         return Orcamento::with('cliente')
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($record) {
-                return [
-                    'id' => $record->id,
-                    'title' => '#' . $record->numero . ' - ' . ($record->cliente?->nome ?? 'S/Cliente'),
-                    'status' => $record->status,
-                    'valor' => 'R$ ' . number_format($record->valor_efetivo, 2, ',', '.'),
-                    'data' => $record->data_orcamento ? $record->data_orcamento->format('d/m/Y') : '',
-                ];
-            });
+            ->get();
     }
 
     public function onStatusChanged(int|string $recordId, string $status, array $fromOrderedIds, array $toOrderedIds): void

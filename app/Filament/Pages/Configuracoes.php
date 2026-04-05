@@ -325,7 +325,41 @@ class Configuracoes extends Page implements HasForms
                                                 '<h3 class="font-semibold text-blue-900">Tabela de Preços Unificada</h3>' .
                                                 '<p class="text-sm text-blue-700">Gerencie todos os itens, preços e categorias em um local único.</p>' .
                                                 '<a href="/admin/configuracoes/tabela-precos" class="inline-flex items-center mt-2 text-sm font-medium text-blue-600 hover:text-blue-800">' .
-                                                'Acessar Tabela de Preços →' .
+                                                'Acessar Tabela de Preços &rarr;' .
+                                                '</a>' .
+                                                '</div>' .
+                                                '</div>' .
+                                                '</div>'
+                                            )),
+                                            
+                                        \Filament\Forms\Components\Placeholder::make('link_categorias')
+                                            ->label('')
+                                            ->content(new \Illuminate\Support\HtmlString(
+                                                '<div class="p-4 bg-green-50 border border-green-200 rounded-lg mt-4">' .
+                                                '<div class="flex items-center space-x-3">' .
+                                                '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>' .
+                                                '<div>' .
+                                                '<h3 class="font-semibold text-green-900">Categorias do Sistema</h3>' .
+                                                '<p class="text-sm text-green-700">Gerencie as taxonomias, receitas e despesas disponíveis no sistema.</p>' .
+                                                '<a href="/admin/categorias" class="inline-flex items-center mt-2 text-sm font-medium text-green-600 hover:text-green-800">' .
+                                                'Acessar Categorias &rarr;' .
+                                                '</a>' .
+                                                '</div>' .
+                                                '</div>' .
+                                                '</div>'
+                                            )),
+                                            
+                                        \Filament\Forms\Components\Placeholder::make('link_garantias')
+                                            ->label('')
+                                            ->content(new \Illuminate\Support\HtmlString(
+                                                '<div class="p-4 bg-purple-50 border border-purple-200 rounded-lg mt-4">' .
+                                                '<div class="flex items-center space-x-3">' .
+                                                '<svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>' .
+                                                '<div>' .
+                                                '<h3 class="font-semibold text-purple-900">Gestão de Garantias</h3>' .
+                                                '<p class="text-sm text-purple-700">Visualize todas as garantias automáticas e ative ou desative-as.</p>' .
+                                                '<a href="/admin/configuracoes/garantias" class="inline-flex items-center mt-2 text-sm font-medium text-purple-600 hover:text-purple-800">' .
+                                                'Acessar Garantias &rarr;' .
                                                 '</a>' .
                                                 '</div>' .
                                                 '</div>' .

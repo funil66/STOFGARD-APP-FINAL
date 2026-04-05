@@ -236,7 +236,7 @@ class BuscaAvancada extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('numero', 'like', $termo)
-                    ->orWhere('descricao_servico', 'like', $termo)
+                    ->orWhere('observacoes', 'like', $termo)
                     ->orWhereHas('cliente', fn($c) => $c->where('nome', 'like', $termo));
             });
         }
@@ -263,7 +263,7 @@ class BuscaAvancada extends Page implements HasForms
                     $orcamento->cliente?->nome,
                     'R$ ' . number_format($orcamento->valor_efetivo, 2, ',', '.'),
                 ])),
-                'descricao' => $orcamento->descricao_servico,
+                'descricao' => $orcamento->observacoes,
                 'status' => ucfirst($orcamento->status ?? 'pendente'),
                 'status_color' => match ($orcamento->status) {
                     'aprovado' => 'success',
@@ -286,7 +286,7 @@ class BuscaAvancada extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('numero_os', 'like', $termo)
-                    ->orWhere('descricao_servico', 'like', $termo)
+                    ->orWhere('observacoes', 'like', $termo)
                     ->orWhereHas('cliente', fn($c) => $c->where('nome', 'like', $termo));
             });
         }

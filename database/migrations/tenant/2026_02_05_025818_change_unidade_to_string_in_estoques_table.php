@@ -35,7 +35,7 @@ return new class extends Migration {
                 \Illuminate\Support\Facades\DB::statement("INSERT INTO estoques_new ($colunas) SELECT $colunas FROM estoques");
 
                 // 3. Dropar tabela antiga
-                Schema::drop('estoques');
+                Schema::dropIfExists('estoques');
             }
 
             // 4. Renomear nova tabela
@@ -81,11 +81,14 @@ return new class extends Migration {
             $table->text('observacoes')->nullable(); // Observações adicionais
         });
 
-        $colunas = implode(',', ['id', 'created_at', 'updated_at', 'item', 'quantidade', 'unidade', 'minimo_alerta', 'tipo', 'observacoes']);
         // Cuidado com valores que não cabem no enum ao reverter
+        // Dynamically get existing columns to avoid selecting missing columns
+        $columns = \Illuminate\Support\Facades\Schema::getColumnListing('estoques');
+        $safeColumns = array_intersect(['id', 'created_at', 'updated_at', 'item', 'quantidade', 'unidade', 'minimo_alerta', 'tipo', 'observacoes'], $columns);
+        $colunas = implode(',', $safeColumns);
         \Illuminate\Support\Facades\DB::statement("INSERT INTO estoques_new ($colunas) SELECT $colunas FROM estoques WHERE unidade IN ('unidade', 'litros', 'caixa', 'metro')");
 
-        Schema::drop('estoques');
+        Schema::dropIfExists('estoques');
         Schema::rename('estoques_new', 'estoques');
     }
 };

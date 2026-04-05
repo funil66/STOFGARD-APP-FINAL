@@ -488,7 +488,6 @@ class CadastroResource extends Resource
                                         'password' => bcrypt($data['password']),
                                         'is_cliente' => true,
                                         'cadastro_id' => $record->id,
-                                        'tenant_id' => auth()->user()->tenant_id,
                                     ]
                                 );
 

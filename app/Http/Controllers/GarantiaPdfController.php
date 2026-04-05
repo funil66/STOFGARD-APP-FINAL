@@ -3,16 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Models\Garantia;
-use Spatie\LaravelPdf\Facades\Pdf;
+use App\Models\Setting;
+use Illuminate\Http\Request;
 
 class GarantiaPdfController extends Controller
 {
     public function gerarPdf(Garantia $garantia)
     {
-        $pdf = Pdf::view('pdfs.garantia', ['garantia' => $garantia])
-            ->format('a4')
-            ->name('garantia-' . $garantia->numero_garantia . '.pdf');
+        $garantia->load(['ordemServico.cliente']);
 
-        return $pdf->download();
+        // Carrega configurações do sistema (mesmo padrão)
+        $settingsArray = Setting::all()->pluck('value', 'key')->toArray();
+        $config = (object) $settingsArray;
+
+        $safeName = "Certificado-Garantia-OS-" . ($garantia->ordemServico->numero_os ?? 'ND');
+
+        return app(\App\Services\PdfService::class)->generate(
+            'pdf.certificado_garantia',
+            [
+                'garantia' => $garantia,
+                'os' => $garantia->ordemServico,
+                'config' => $config,
+            ],
+            "{$safeName}.pdf",
+            true
+        );
     }
 }

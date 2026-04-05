@@ -48,6 +48,11 @@ class ListaDesejoResource extends Resource
                                     ->required()
                                     ->maxLength(255),
 
+                                Forms\Components\Select::make('categoria')
+                                    ->label('Categoria')
+                                    ->options(['quimico' => 'Químico', 'equipamento' => 'Equipamento', 'acessorio' => 'Acessório', 'ferramenta' => 'Ferramenta', 'epi' => 'EPI', 'consumivel' => 'Consumível', 'outro' => 'Outro' ])
+                                    ->required()
+                                    ->native(false),
                                 Forms\Components\Select::make('prioridade')
                                     ->label('Prioridade')
                                     ->options([

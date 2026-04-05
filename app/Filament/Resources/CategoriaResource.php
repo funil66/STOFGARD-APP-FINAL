@@ -32,7 +32,7 @@ class CategoriaResource extends Resource
     protected static ?string $navigationGroup = 'Configurações';
 
     // Acessado via Financeiro > Categorias ou Configurações hub
-    protected static bool $shouldRegisterNavigation = true;
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?int $navigationSort = 4;
 

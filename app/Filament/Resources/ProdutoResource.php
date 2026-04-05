@@ -242,7 +242,7 @@ class ProdutoResource extends Resource
                         \Filament\Infolists\Components\Tabs\Tab::make('📸 Imagens')
                             ->badge(fn($record) => $record->getMedia('produtos')->count())
                             ->schema([
-                                ImageEntry::make('fotos')
+                                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('produtos')
                                     ->collection('produtos')
                                     ->label('')
                                     ->limit(10)

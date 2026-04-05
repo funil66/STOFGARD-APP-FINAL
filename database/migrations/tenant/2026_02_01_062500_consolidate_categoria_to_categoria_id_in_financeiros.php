@@ -128,7 +128,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        // Recriar coluna categoria como string (na tabela financeira existente)
         $table = null;
         if (Schema::hasTable('financeiros')) {
             $table = 'financeiros';
@@ -137,14 +136,14 @@ return new class extends Migration {
         }
 
         if (!$table) {
-            $this->log('Nenhuma tabela financeira encontrada; pulando rollback.');
-
             return;
         }
 
-        Schema::table($table, function (Blueprint $tbl) {
-            $tbl->string('categoria')->nullable()->after('descricao');
-        });
+        if (!Schema::hasColumn($table, 'categoria')) {
+            Schema::table($table, function (Blueprint $tbl) {
+                $tbl->string('categoria')->nullable()->after('descricao');
+            });
+        }
 
         // Copiar dados de categoria_id de volta para string
         $financeiros = DB::table($table)
@@ -163,14 +162,13 @@ return new class extends Migration {
             }
         }
 
-        Schema::table('financeiros', function (Blueprint $table) {
-            $table->index('categoria');
-        });
+        if (!Schema::hasIndex('financeiros', 'financeiros_categoria_index')) {
+            Schema::table('financeiros', function (Blueprint $table) {
+                $table->index('categoria');
+            });
+        }
     }
 
-    /**
-     * Infere o tipo de categoria baseado no nome.
-     */
     private function inferirTipoCategoria(string $nome): string
     {
         $nome = strtolower($nome);

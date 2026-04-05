@@ -383,27 +383,28 @@ class TenantResource extends Resource
                         try {
                             $superAdminId = Auth::id();
 
-                            // 1. Busca o dono do Tenant (quem idealmente criou a conta, via relacionamento cascade)
-                            // Acessamos o banco do tenant
-                            tenancy()->initialize($record);
-
-                            // O ID do dono idealmente é is_super_admin = false e role = dono. Se não achar, pega o user mais antigo (primeiro criado)
-                            $dono = \App\Models\User::where('tenant_id', $record->id)
+                            // 1. Busca o dono do Tenant usando a conexão central (pgsql)
+                            $dono = \App\Models\User::on(config('tenancy.central_connection', 'pgsql'))
+                                ->where('tenant_id', $record->id)
                                 ->where('role', 'dono')
                                 ->first();
 
                             if (!$dono) {
-                                $dono = \App\Models\User::where('tenant_id', $record->id)->orderBy('id', 'asc')->first();
+                                $dono = \App\Models\User::on(config('tenancy.central_connection', 'pgsql'))
+                                    ->where('tenant_id', $record->id)
+                                    ->orderBy('id', 'asc')
+                                    ->first();
                             }
 
                             if (!$dono) {
-                                tenancy()->end();
                                 Notification::make()
                                     ->title('Nenhum usuário encontrado neste Tenant')
                                     ->danger()
                                     ->send();
                                 return;
                             }
+
+                            tenancy()->initialize($record);
 
                             // 2. Faz o backup do Super Admin e Log da Ação (Audit)
                             Log::warning('[SuperAdmin] Impersonação de Tenant iniciada', [
@@ -419,10 +420,23 @@ class TenantResource extends Resource
                             // 3. Força o login com as credenciais do Dono do Tenant
                             Auth::guard('web')->login($dono);
 
+                            // Gerar um token seguro para login imediato (Fallback para TLDs onde SESSION_DOMAIN não rola, ex .localhost)
+                            $token = \Illuminate\Support\Str::random(40);
+                            \Illuminate\Support\Facades\Cache::put('central_auth_token_' . $token, $dono->id, now()->addMinutes(5));
+
                             // Como a URL do tenant está no DB, precisamos apontar para ela e garantir a sessão
                             $domain = $record->domains->first()?->domain ?? env('APP_URL');
-                            $url = str_starts_with($domain, 'http') ? "{$domain}/admin" : "https://{$domain}/admin";
+                            
+                            $protocol = request()->secure() ? 'https://' : 'http://';
+                            $port = request()->getPort();
+                            $portSuffix = (!in_array($port, [80, 443])) ? ":{$port}" : "";
 
+                            if (str_starts_with($domain, 'http')) {
+                                $url = "{$domain}/admin/login?token={$token}";
+                            } else {
+                                $url = "{$protocol}{$domain}{$portSuffix}/admin/login?token={$token}";
+                            }
+                            
                             // Dica para reverter: O usuário precisará usar o Sair padrão, o middleware Global não detectará imediatamente o super-admin cross-domain sem session driver unificado
                             return redirect()->away($url);
 
@@ -444,9 +458,15 @@ class TenantResource extends Resource
                     ->color('success')
                     ->url(function (Tenant $record) {
                         try {
-                            tenancy()->initialize($record);
-                            $telefone = \App\Models\Configuracao::first()?->empresa_telefone;
-                            tenancy()->end();
+                            // Fetch via direct connection to bypass stancl/tenancy bootstrapper lifecycle crashes
+                            $dbConfig = config('database.connections.pgsql');
+                            $dbConfig['database'] = $record->tenancy_db_name;
+                            config(["database.connections.tmp_{$record->id}" => $dbConfig]);
+                            
+                            $telefone = \Illuminate\Support\Facades\DB::connection("tmp_{$record->id}")
+                                ->table('configuracoes')->first()?->empresa_telefone;
+                            
+                            \Illuminate\Support\Facades\DB::purge("tmp_{$record->id}");
 
                             if (!$telefone) {
                                 return '#';
@@ -454,7 +474,7 @@ class TenantResource extends Resource
                             $numero = preg_replace('/[^0-9]/', '', $telefone);
                             return "https://wa.me/55{$numero}?text=Ol%C3%A1%2C%20aqui%20%C3%A9%20o%20suporte%20da%20Autonomia%20Ilimitada.%20Como%20podemos%20ajudar%3F";
                         } catch (\Exception $e) {
-                            tenancy()->end();
+                            \Illuminate\Support\Facades\DB::purge("tmp_{$record->id}");
                             return '#';
                         }
                     })

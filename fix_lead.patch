@@ -1,0 +1,10 @@
+--- app/Filament/Pages/FunilVendas.php
++++ app/Filament/Pages/FunilVendas.php
+@@ -274,6 +274,7 @@
+                             'tipo_servico' => $data['tipo_servico'],
+                             'valor_total' => (float) ($data['valor_estimado'] ?? 0),
+                             'observacoes' => $data['observacoes'] ?? "Lead capturado via CRM Funil.\n\nContato: {$data['telefone']}",
++                            'etapa_funil' => $data['etapa_inicial'],
+                         ]);
+ 
+                         Notification::make()

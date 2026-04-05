@@ -272,7 +272,7 @@ class BuscaUniversal extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('numero', 'like', $termo)
-                    ->orWhere('descricao_servico', 'like', $termo)
+                    ->orWhere('observacoes', 'like', $termo)
                     ->orWhere('observacoes', 'like', $termo)
                     ->orWhereHas('cliente', function ($clienteQuery) use ($termo) {
                         $clienteQuery->where('nome', 'like', $termo);
@@ -312,7 +312,7 @@ class BuscaUniversal extends Page implements HasForms
                     $orcamento->cliente?->nome ?? 'Sem cliente',
                     'R$ ' . number_format($orcamento->valor_efetivo, 2, ',', '.'),
                 ]),
-                'descricao' => $orcamento->descricao_servico,
+                'descricao' => $orcamento->observacoes,
                 'status' => ucfirst($orcamento->status ?? 'pendente'),
                 'status_color' => $statusColor,
                 'data' => $orcamento->created_at?->format('d/m/Y'),
@@ -332,7 +332,7 @@ class BuscaUniversal extends Page implements HasForms
             $query->where(function ($q) {
                 $termo = "%{$this->termo}%";
                 $q->where('numero_os', 'like', $termo)
-                    ->orWhere('descricao_servico', 'like', $termo)
+                    ->orWhere('observacoes', 'like', $termo)
                     ->orWhere('observacoes', 'like', $termo)
                     ->orWhereHas('cliente', function ($clienteQuery) use ($termo) {
                         $clienteQuery->where('nome', 'like', $termo);

@@ -13,6 +13,10 @@ class DomainTopologyMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $host = $request->getHost();
+
+        if ($host === 'localhost') {
+            \Illuminate\Support\Facades\Log::info("[DomainTopologyMiddleware] request to localhost:", ["path" => $request->path(), "method" => $request->method(), "route" => $request->route()?->getName()]);
+        }
         $baseDomain = (string) config('domain_routing.base_domain', 'autonomia.app.br');
         $providerSubdomain = (string) config('domain_routing.provider_subdomain', 'app');
         $appDomain = $providerSubdomain . '.' . $baseDomain;
@@ -70,6 +74,7 @@ class DomainTopologyMiddleware
         }
 
         // 4. Fallback — domínio desconhecido
+        if (str_ends_with($host, '.localhost')) { return $next($request); }
         abort(404, 'Domínio não reconhecido.');
     }
 }

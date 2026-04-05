@@ -25,6 +25,8 @@ return new class extends Migration {
 
     public function down(): void
     {
-        DB::statement('ALTER TABLE financeiros DROP COLUMN categoria_id');
+        if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite' && \Illuminate\Support\Facades\Schema::hasColumn('financeiros', 'categoria_id')) {
+            \Illuminate\Support\Facades\DB::statement('ALTER TABLE financeiros DROP COLUMN categoria_id');
+        }
     }
 };

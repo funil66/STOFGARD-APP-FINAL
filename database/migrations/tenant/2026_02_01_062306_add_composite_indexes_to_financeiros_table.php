@@ -57,42 +57,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasTable('financeiros')) {
-            Schema::table('financeiros', function (Blueprint $table) {
-                if (Schema::hasColumn('financeiros', 'cadastro_id') && Schema::hasColumn('financeiros', 'status') && Schema::hasColumn('financeiros', 'tipo')) {
-                    $table->dropIndex('idx_financeiros_cadastro_status_tipo');
-                }
-
-                if (Schema::hasColumn('financeiros', 'data_vencimento') && Schema::hasColumn('financeiros', 'status')) {
-                    $table->dropIndex('idx_financeiros_vencimento_status');
-                }
-
-                if (Schema::hasColumn('financeiros', 'ordem_servico_id') && Schema::hasColumn('financeiros', 'tipo')) {
-                    $table->dropIndex('idx_financeiros_os_tipo');
-                }
-
-                if (Schema::hasColumn('financeiros', 'pix_status') && Schema::hasColumn('financeiros', 'pix_expiracao')) {
-                    $table->dropIndex('idx_financeiros_pix_status');
-                }
-            });
-        } elseif (Schema::hasTable('transacoes_financeiras')) {
-            Schema::table('transacoes_financeiras', function (Blueprint $table) {
-                if (Schema::hasColumn('transacoes_financeiras', 'cadastro_id') && Schema::hasColumn('transacoes_financeiras', 'status') && Schema::hasColumn('transacoes_financeiras', 'tipo')) {
-                    $table->dropIndex('idx_financeiros_cadastro_status_tipo');
-                }
-
-                if (Schema::hasColumn('transacoes_financeiras', 'data_vencimento') && Schema::hasColumn('transacoes_financeiras', 'status')) {
-                    $table->dropIndex('idx_financeiros_vencimento_status');
-                }
-
-                if (Schema::hasColumn('transacoes_financeiras', 'ordem_servico_id') && Schema::hasColumn('transacoes_financeiras', 'tipo')) {
-                    $table->dropIndex('idx_financeiros_os_tipo');
-                }
-
-                if (Schema::hasColumn('transacoes_financeiras', 'pix_status') && Schema::hasColumn('transacoes_financeiras', 'pix_expiracao')) {
-                    $table->dropIndex('idx_financeiros_pix_status');
-                }
-            });
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            return;
         }
     }
 };

@@ -54,19 +54,6 @@ class AppServiceProvider extends ServiceProvider
     {
         // AuditObserver registrado apenas no AuditServiceProvider (evita duplicata)
 
-        if (! $this->app->runningInConsole() && $this->app->bound('request')) {
-            $request = $this->app->make('request');
-            $isHttps = $request->isSecure() || strtolower((string) $request->header('x-forwarded-proto')) === 'https';
-            $forwardedHost = trim((string) $request->header('x-forwarded-host'));
-            $host = $forwardedHost !== '' ? trim(explode(',', $forwardedHost)[0]) : $request->getHttpHost();
-
-            URL::forceRootUrl(($isHttps ? 'https' : 'http') . '://' . $host);
-
-            if ($isHttps) {
-                URL::forceScheme('https');
-            }
-        }
-
         // O "Modo Deus". Se retornar true aqui, ignora as Policies.
         Gate::before(function (\App\Models\User $user, string $ability) {
             if ($user->is_super_admin) {

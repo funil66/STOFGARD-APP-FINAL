@@ -139,7 +139,7 @@ class EquipamentoResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\SpatieMediaLibraryImageColumn::make('foto')
+                Tables\Columns\SpatieMediaLibraryImageColumn::make('arquivos')
                     ->collection('arquivos')
                     ->circular()
                     ->label(''),
@@ -252,20 +252,37 @@ class EquipamentoResource extends Resource
     public static function infolist(Infolist $infolist): Infolist
     {
         return $infolist->schema([
-            InfolistSection::make()->schema([
+            InfolistSection::make('Informações Principais')->schema([
                 InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
                     TextEntry::make('nome')->label('Nome do Equipamento')->size(TextEntry\TextEntrySize::Large)->weight('bold')->columnSpan(['default' => 1, 'sm' => 2]),
+                    TextEntry::make('codigo_patrimonio')->label('Código Patrimônio'),
                     TextEntry::make('status')->badge()->color(fn($state) => match ($state) {
                         'ativo' => 'success', 'manutencao' => 'warning', default => 'danger'
+                    })->formatStateUsing(fn(string $state): string => match ($state) {
+                        'ativo' => '✅ Ativo',
+                        'manutencao' => '🔧 Manutenção',
+                        'baixado' => '❌ Baixado',
+                        default => $state,
                     }),
                 ]),
+                TextEntry::make('descricao')->label('Descrição')->columnSpanFull(),
             ]),
-            InfolistSection::make('Detalhes')->schema([
+            InfolistSection::make('Detalhes Técnicos')->schema([
                 InfolistGrid::make(['default' => 1, 'sm' => 3])->schema([
+                    TextEntry::make('marca')->label('Marca'),
+                    TextEntry::make('modelo')->label('Modelo'),
                     TextEntry::make('numero_serie')->label('Número de Série'),
                     TextEntry::make('data_aquisicao')->label('Data de Aquisição')->date('d/m/Y'),
                     TextEntry::make('valor_aquisicao')->label('Valor')->money('BRL'),
+                    TextEntry::make('localizacao')->label('Localização'),
                 ]),
+                TextEntry::make('observacoes')->label('Observações')->columnSpanFull(),
+            ]),
+            InfolistSection::make('Fotos')->schema([
+                \Filament\Infolists\Components\SpatieMediaLibraryImageEntry::make('arquivos')
+                    ->collection('arquivos')
+                    ->label('')
+                    ->columnSpanFull()
             ]),
         ]);
     }

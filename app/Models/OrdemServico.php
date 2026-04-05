@@ -29,7 +29,7 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
     protected $fillable = [
         'cadastro_id',
         'orcamento_id',
-        'numero_os',
+        'numero_os', 'perfil_garantia_id',
         'status',
         'tipo_servico',
         'descricao_servico',
@@ -111,7 +111,7 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
     }
 
     // CONFIGURAÇÃO DA BUSCA GLOBAL
-    public static $globallySearchableAttributes = ['numero_os', 'descricao'];
+    public static $globallySearchableAttributes = ['numero_os', 'perfil_garantia_id', 'descricao'];
 
     public function getGlobalSearchResultTitle(): string
     {
@@ -168,6 +168,11 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
     public function formulario(): BelongsTo
     {
         return $this->belongsTo(\App\Models\FormularioDinamico::class, 'formulario_id');
+    }
+
+    public function perfilGarantia()
+    {
+        return $this->belongsTo(PerfilGarantia::class);
     }
 
     public function garantias(): HasMany
@@ -286,7 +291,7 @@ class OrdemServico extends Model implements HasMedia, \OwenIt\Auditing\Contracts
             // We need to parse them because numero_os is a string field
             // Include soft-deleted records to avoid reusing numbers
             $osNumeros = self::withTrashed()
-                ->where('numero_os', 'LIKE', "{$ano}.%")
+                ->where('numero_os', 'perfil_garantia_id', 'LIKE', "{$ano}.%")
                 ->pluck('numero_os')
                 ->map(function ($numero) {
                     $partes = explode('.', $numero);

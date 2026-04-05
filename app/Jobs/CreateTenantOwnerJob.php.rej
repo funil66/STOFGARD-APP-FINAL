@@ -1,23 +1,16 @@
 --- CreateTenantOwnerJob.php
 +++ CreateTenantOwnerJob.php
-@@ -25,7 +25,7 @@
+@@ -21,9 +21,11 @@
  
      public function handle(): void
      {
--        $ownerData = $this->tenant->data['pending_owner'] ?? null;
-+        $ownerData = $this->tenant->pending_owner ?? null;
+-        $ownerData = $this->tenant->getAttribute('pending_owner');
++        $slug = trim(strtolower($this->tenant->slug ?? ''));
++        $ownerData = \Illuminate\Support\Facades\Cache::get('pending_owner_' . $slug);
++
+         if (!$ownerData) {
+-            $ownerData = $this->tenant->data['pending_owner'] ?? null;
++            $ownerData = $this->tenant->getAttribute('pending_owner') ?? ($this->tenant->data['pending_owner'] ?? null);
+         }
  
          if (empty($ownerData['email']) || empty($ownerData['name']) || empty($ownerData['password'])) {
-             Log::info('[CreateTenantOwnerJob] Sem dados de owner pendente para tenant', [
-@@ -74,9 +74,8 @@
-         });
- 
-         // Limpa dados sensíveis da coluna data após criar o usuário
--        $data = $this->tenant->data ?? [];
--        unset($data['pending_owner']);
--        $this->tenant->update(['data' => $data]);
-+        $this->tenant->pending_owner = null;
-+        $this->tenant->save();
-     }
- }
- 

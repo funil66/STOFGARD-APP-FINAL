@@ -25,7 +25,8 @@ class CustomLogin extends BaseLogin
                     Auth::guard('web')->login($user);
                     session()->regenerate();
                     
-                    redirect()->intended(filament()->getUrl());
+                    $this->redirect(filament()->getUrl());
+                    return;
                 }
             }
         }

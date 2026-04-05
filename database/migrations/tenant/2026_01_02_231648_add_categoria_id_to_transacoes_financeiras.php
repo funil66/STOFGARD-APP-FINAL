@@ -23,7 +23,7 @@ return new class extends Migration
     {
         Schema::table('transacoes_financeiras', function (Blueprint $table) {
             $table->dropForeign(['categoria_id']);
-            $table->dropColumn('categoria_id');
+            if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite') $table->dropColumn('categoria_id');
         });
     }
 };

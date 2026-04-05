@@ -1,28 +1,10 @@
 <?php
-require '/var/www/vendor/autoload.php';
-$app = require_once '/var/www/bootstrap/app.php';
-$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+require __DIR__.'/vendor/autoload.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
+$kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
 
-$slug = 'tenant' . time();
-$data = [
-    'name' => 'Fake Store',
-    'slug' => $slug,
-    'is_active' => true,
-    'status_pagamento' => 'trial',
-    'trial_termina_em' => now()->addDays(14),
-    'os_criadas_mes_atual' => 0,
-    'pending_owner' => [
-        'name' => 'Owner Fake',
-        'email' => "fakeowner_{$slug}@example.com",
-        'password' => 'fake12345'
-    ]
-];
-$t = App\Models\Tenant::create($data);
-echo "Simulating queue...\n";
-\Illuminate\Support\Facades\Artisan::call('queue:work', ['--stop-when-empty' => true]);
-echo "Tenant DB Users: \n";
-$t->run(function() {
-    echo App\Models\User::count() . "\n";
-});
-echo "Central DB Users for tenant: \n";
-echo App\Models\User::where('tenant_id', $t->id)->count() . "\n";
+$id = 'test_y_' . uniqid();
+$t = \App\Models\Tenant::create(['id' => $id, 'name' => 'Test Flow Y', 'slug' => 'flow_' . $id]);
+\Illuminate\Support\Facades\Cache::put('pending_owner_flow_' . $id, ['email'=>'flowy@f.com','name'=>'Flow Y','password'=>'1']);
+echo "Created: $id\n";

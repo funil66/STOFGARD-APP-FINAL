@@ -20,33 +20,21 @@ use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 Route::middleware([
     'web',
-    \Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain::class,
+    InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
     Route::get('/', function () {
-        return redirect('/cliente-panel');
+        return redirect('/admin/login');
     });
 
-    Route::prefix('cliente')->name('cliente.')->group(function () {
-        Route::get('/acesso/{token}', [\App\Http\Controllers\MagicLinkController::class, 'consumir'])
-            ->name('magic-link.consumir');
-        Route::get('/link-invalido', [\App\Http\Controllers\MagicLinkController::class, 'invalido'])
-            ->name('magic-link.invalido');
-        Route::post('/logout', [\App\Http\Controllers\MagicLinkController::class, 'logout'])
-            ->name('logout');
-
-        Route::middleware([\App\Http\Middleware\ClienteAutenticado::class])->group(function () {
-            Route::get('/', [\App\Http\Controllers\PortalClienteController::class, 'index'])
-                ->name('portal');
-            Route::get('/orcamento/{id}', [\App\Http\Controllers\PortalClienteController::class, 'orcamento'])
-                ->name('orcamento');
-            Route::get('/os/{id}', [\App\Http\Controllers\PortalClienteController::class, 'ordemServico'])
-                ->name('os');
-            Route::get('/nota-fiscal/{id}', [\App\Http\Controllers\PortalClienteController::class, 'notaFiscal'])
-                ->name('nota-fiscal');
-            Route::get('/orcamento/{orcamento}/aprovar/{opcao}', [\App\Http\Controllers\PortalClienteController::class, 'aprovarOpcao'])
-                ->name('aprovar_opcao')
-                ->where('opcao', '[ABC]');
-        });
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/os/{ordemServico}/garantia', [\App\Http\Controllers\GarantiaPdfController::class, 'gerarPdf'])->name('os.garantia');
     });
+    Route::get('/storage/{path}', function ($path) {
+        $fullPath = storage_path("app/public/{$path}");
+        if (!file_exists($fullPath)) {
+            abort(404);
+        }
+        return response()->file($fullPath);
+    })->where('path', '.*')->name('tenant.storage.serve');
 });
