@@ -31,7 +31,7 @@ class GarantiaResource extends Resource
     // Submódulo de Configurações
     protected static ?string $slug = 'configuracoes/garantias';
 
-    protected static bool $shouldRegisterNavigation = true; // Agora visível
+    protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $navigationGroup = 'Configurações';
 
@@ -63,33 +63,33 @@ class GarantiaResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->disabled(),
+                            ,
 
                         Forms\Components\Select::make('tipo_servico')
                             ->label('Tipo de Serviço')
                             ->options(\App\Services\ServiceTypeManager::getOptions())
                             ->required()
-                            ->disabled(),
+                            ,
 
                         Forms\Components\Grid::make(['default' => 1, 'sm' => 3])
                             ->schema([
                                 Forms\Components\DatePicker::make('data_inicio')
                                     ->label('Data Início')
                                     ->required()
-                                    ->disabled()
+                                    
                                     ->native(false)
                                     ->displayFormat('d/m/Y'),
 
                                 Forms\Components\DatePicker::make('data_fim')
                                     ->label('Data Fim')
                                     ->required()
-                                    ->disabled()
+                                    
                                     ->native(false)
                                     ->displayFormat('d/m/Y'),
 
                                 Forms\Components\TextInput::make('dias_garantia')
                                     ->label('Dias de Garantia')
-                                    ->disabled()
+                                    
                                     ->suffix('dias'),
                             ]),
 
@@ -265,6 +265,46 @@ class GarantiaResource extends Resource
                                 ]);
                             }),
 
+                        Tables\Actions\Action::make('gerar_pdf_background')
+                            ->label('Gerar Documento')
+                            ->icon('heroicon-o-document-arrow-down')
+                            ->color('success')
+                            ->requiresConfirmation()
+                            ->modalHeading('Gerar Documento de Garantia')
+                            ->modalDescription('O Certificado de Garantia será gerado em segundo plano. Você receberá uma notificação quando estiver pronto.')
+                            ->action(function (Garantia $record) {
+                                $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
+                                $config = (object) $settingsArray;
+
+                                try {
+                                    $record->load(['ordemServico.cliente']);
+                                    $htmlContent = view('pdf.certificado_garantia', [
+                                        'garantia' => $record,
+                                        'os' => $record->ordemServico,
+                                        'config' => $config
+                                    ])->render();
+                                    
+                                    \App\Services\PdfQueueService::enqueue(
+                                        $record->id,
+                                        'garantia',
+                                        auth()->id(),
+                                        $htmlContent
+                                    );
+
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('🚀 Fogo na Bomba!')
+                                        ->body('O PDF do Certificado de Garantia está sendo gerado no servidor. Avisaremos quando estiver pronto.')
+                                        ->success()
+                                        ->send();
+                                } catch (\Exception $e) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Erro Crítico')
+                                        ->body('Falha ao compilar PDF. Erro: ' . $e->getMessage())
+                                        ->danger()
+                                        ->send();
+                                }
+                            }),
+
                         Tables\Actions\Action::make('pdf')
                             ->label('Abrir PDF')
                             ->tooltip('Abrir PDF')
@@ -323,6 +363,7 @@ class GarantiaResource extends Resource
     {
         return [
             'index' => Pages\ListGarantias::route('/'),
+            'create' => Pages\CreateGarantia::route('/create'),
             'view' => Pages\ViewGarantia::route('/{record}'),
             'edit' => Pages\EditGarantia::route('/{record}/edit'),
         ];

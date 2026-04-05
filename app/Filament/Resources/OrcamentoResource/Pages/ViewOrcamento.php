@@ -95,7 +95,7 @@ class ViewOrcamento extends ViewRecord
 
                     $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
 
-                    \App\Jobs\ProcessPdfJob::dispatch($record->id, 'orcamento', auth()->id(), $htmlContent);
+                    \App\Services\PdfQueueService::enqueue($record->id, 'orcamento', auth()->id(), $htmlContent);
 
                     Notification::make()
                         ->title('🚀 Fogo na Bomba!')

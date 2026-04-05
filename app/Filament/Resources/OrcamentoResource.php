@@ -730,7 +730,7 @@ class OrcamentoResource extends Resource
                                 try {
                                     $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
 
-                                    \App\Jobs\ProcessPdfJob::dispatch(
+                                    \App\Services\PdfQueueService::enqueue(
                                         $record->id,
                                         'orcamento',
                                         auth()->id(),
@@ -784,7 +784,7 @@ class OrcamentoResource extends Resource
                                 try {
                                     $htmlContent = view('pdf.contrato', ['orcamento' => $record, 'config' => $config])->render();
 
-                                    \App\Jobs\ProcessPdfJob::dispatch(
+                                    \App\Services\PdfQueueService::enqueue(
                                         $record->id,
                                         'contrato',
                                         auth()->id(),

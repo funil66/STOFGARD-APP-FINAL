@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Spatie\LaravelPdf\Facades\Pdf;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class PdfService
 {
@@ -109,7 +110,16 @@ class PdfService
 
             $browsershot
                 ->setCustomTempPath(storage_path('app/temp'))
-                ->setOption('browserWSEndpoint', $wsEndpoint)
+                ->setOption('browserWSEndpoint', $wsEndpoint);
+
+            Log::info('SETTING NODE ENV');
+
+                $browsershot->setNodeEnv([
+                    'HOME' => storage_path('app/temp'),
+                    'XDG_CONFIG_HOME' => storage_path('app/temp'),
+                    'XDG_DATA_HOME' => storage_path('app/temp'),
+                    'PUPPETEER_CACHE_DIR' => storage_path('app/temp')
+                ])
                 ->timeout($timeout);
 
             return;
@@ -131,10 +141,12 @@ class PdfService
             ->setNodeBinary(config('browsershot.node_path', '/usr/bin/node'))
             ->setNpmBinary(config('browsershot.npm_path', '/usr/bin/npm'))
             ->setNodeModulePath('/var/www/node_modules')
-            ->setEnvironmentVariables([
+            ->setNodeEnv([
                 'NODE_PATH' => '/var/www/node_modules',
                 'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
             ]);
+
+        Log::info('SETTING NODE ENV');
 
         if ($chromePath) {
             $browsershot->setChromePath($chromePath);

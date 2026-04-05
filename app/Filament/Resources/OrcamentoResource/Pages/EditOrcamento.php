@@ -37,7 +37,7 @@ class EditOrcamento extends EditRecord
                     try {
                         $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
 
-                        \App\Jobs\ProcessPdfJob::dispatch(
+                        \App\Services\PdfQueueService::enqueue(
                             $record->id,
                             'orcamento',
                             auth()->id(),

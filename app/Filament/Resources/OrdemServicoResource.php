@@ -700,6 +700,79 @@ class OrdemServicoResource extends Resource
                             ->action(fn(OrdemServico $record) => $record->update(['status' => 'concluida'])),
 
                         // 5. Assinar Digitalmente
+                        Tables\Actions\Action::make('certificado_garantia')
+                            ->label('Garantia (Fila)')
+                            ->icon('heroicon-o-document-arrow-down')
+                            ->color('success')
+                            ->visible(fn(OrdemServico $record) => $record->status === 'concluida')
+                            ->requiresConfirmation()
+                            ->modalHeading('Gerar Certificado de Garantia')
+                            ->modalDescription('O Certificado de Garantia será gerado em segundo plano usando as configurações de layout de PDF (Layout de Orçamento/Garantia). Você receberá uma notificação quando estiver pronto.')
+                            ->action(function (OrdemServico $record) {
+                                // Pega a primeira garantia associada ou simula uma
+                                $garantia = $record->garantias()->first();
+                                if (!$garantia) {
+                                    $tipoServico = $record->tipo_servico ?? 'servico';
+                                    $dias = \App\Services\ServiceTypeManager::getDiasGarantia($tipoServico) ?? 90;
+                                    $garantia = \App\Models\Garantia::create([
+                                        'ordem_servico_id' => $record->id,
+                                        'tipo_servico' => $tipoServico,
+                                        'data_inicio' => now(),
+                                        'dias_garantia' => $dias,
+                                        'data_fim' => now()->addDays($dias),
+                                        'status' => 'ativa',
+                                        'observacoes' => "Garantia padrão",
+                                    ]);
+                                }
+
+                                $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
+                                $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
+                                foreach ($jsonFields as $k) {
+                                    if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
+                                        $decoded = json_decode($settingsArray[$k], true);
+                                        $settingsArray[$k] = $decoded !== null ? $decoded : [];
+                                    } elseif (!isset($settingsArray[$k])) {
+                                        $settingsArray[$k] = [];
+                                    }
+                                }
+                                $config = (object) $settingsArray;
+                                $tenantConfig = \App\Models\Configuracao::first();
+                                if ($tenantConfig) {
+                                    $config->empresa_logo = $tenantConfig->empresa_logo ?? null;
+                                    $config->empresa_nome = $tenantConfig->empresa_nome ?? null;
+                                    $config->empresa_cnpj = $tenantConfig->empresa_cnpj ?? null;
+                                }
+
+                                try {
+                                    // Renderiza o HTML com a engine do blade
+                                    $htmlContent = view('pdf.certificado_garantia', [
+                                        'os' => $record,
+                                        'garantia' => $garantia,
+                                        'orcamento' => $record->orcamento,
+                                        'config' => $config
+                                    ])->render();
+
+                                    \App\Services\PdfQueueService::enqueue(
+                                        $record->id,
+                                        'garantia',
+                                        auth()->id(),
+                                        $htmlContent
+                                    );
+
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('⚙️ Gerando Garantia...')
+                                        ->body('O Certificado de Garantia está sendo gerado no servidor. Avisaremos quando estiver pronto.')
+                                        ->success()
+                                        ->send();
+                                } catch (\Exception $e) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Erro Crítico')
+                                        ->body('Falha ao compilar Certificado de Garantia. Erro: ' . $e->getMessage())
+                                        ->danger()
+                                        ->send();
+                                }
+                            }),
+
                         Tables\Actions\Action::make('assinar')
                             ->label('Assinar')
                             ->tooltip('Assinatura Digital')

@@ -141,6 +141,46 @@ class OrdemServicoObserver
 
             Log::info("Garantia de {$dias} dias criada automaticamente para OS {$os->numero_os} ({$tipoServico})");
 
+            try {
+                $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
+                $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
+                foreach ($jsonFields as $k) {
+                    if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
+                        $decoded = json_decode($settingsArray[$k], true);
+                        $settingsArray[$k] = $decoded !== null ? $decoded : [];
+                    } elseif (!isset($settingsArray[$k])) {
+                        $settingsArray[$k] = [];
+                    }
+                }
+                $config = (object) $settingsArray;
+                $tenantConfig = \App\Models\Configuracao::first();
+                if ($tenantConfig) {
+                    $config->empresa_logo = $tenantConfig->empresa_logo ?? null;
+                    $config->empresa_nome = $tenantConfig->empresa_nome ?? null;
+                    $config->empresa_cnpj = $tenantConfig->empresa_cnpj ?? null;
+                }
+                
+                // Get the created garantia
+                $garantia = $os->garantias()->latest()->first();
+
+                // Disparar job invisível para gerar PDF
+                $htmlContent = view('pdf.certificado_garantia', [
+                    'os' => $os,
+                    'garantia' => $garantia,
+                    'orcamento' => $os->orcamento,
+                    'config' => $config
+                ])->render();
+
+                \App\Services\PdfQueueService::enqueue(
+                    $os->id,
+                    'garantia',
+                    $os->criado_por ?? 1,
+                    $htmlContent
+                );
+            } catch (\Exception $e) {
+                Log::error("Erro ao despachar job de PDF da garantia para OS {$os->numero_os}: " . $e->getMessage());
+            }
+
         } catch (\Exception $e) {
             Log::error("Erro ao criar garantia automática para OS {$os->numero_os}: " . $e->getMessage());
         }

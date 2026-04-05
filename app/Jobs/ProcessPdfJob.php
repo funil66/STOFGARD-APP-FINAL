@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
-class ProcessPdfJob implements ShouldQueue
+class ProcessPdfJob implements ShouldQueue, \Stancl\Tenancy\Contracts\TenantAware
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -25,13 +25,15 @@ class ProcessPdfJob implements ShouldQueue
     protected $tipo;
     protected $userId;
     protected $htmlContent;
+    protected $recordId;
 
-    public function __construct($modeloId, $tipo, $userId, $htmlContent)
+    public function __construct($modeloId, $tipo, $userId, $htmlContent, $recordId = null)
     {
         $this->modeloId = $modeloId;
         $this->tipo = $tipo;
         $this->userId = $userId;
         $this->htmlContent = $htmlContent;
+        $this->recordId = $recordId;
     }
 
     public function handle()
@@ -39,28 +41,14 @@ class ProcessPdfJob implements ShouldQueue
         Log::info("Iniciando geração de PDF para {$this->tipo} ID: {$this->modeloId}");
 
         $fileName = "{$this->tipo}_{$this->modeloId}_" . time() . ".pdf";
-        $path = "pdfs/{$fileName}";
-        $fullPath = storage_path("app/public/{$path}");
+        $pathPdf = "pdfs/{$fileName}";
+        $fullPath = storage_path("app/public/{$pathPdf}");
 
         if (!file_exists(dirname($fullPath))) {
             mkdir(dirname($fullPath), 0755, true);
         }
 
-        // Registra na tabela de acompanhamento (se existir)
-        $pdfRecord = null;
-        try {
-            if (Schema::hasTable('pdf_generations')) {
-                $pdfRecord = PdfGeneration::create([
-                    'tipo'      => $this->tipo,
-                    'modelo_id' => (string) $this->modeloId,
-                    'user_id'   => $this->userId,
-                    'status'    => 'processing',
-                    'orcamento_id' => $this->tipo === 'orcamento' ? $this->modeloId : null,
-                ]);
-            }
-        } catch (\Throwable $e) {
-            Log::warning("Não foi possível registrar PDF em pdf_generations: " . $e->getMessage());
-        }
+        $pdfRecord = $this->recordId ? PdfGeneration::find($this->recordId) : null;
 
         try {
             $pdf = app(\App\Services\PdfService::class)->generateFromHtml(
@@ -71,15 +59,28 @@ class ProcessPdfJob implements ShouldQueue
             );
 
             $content = base64_decode($pdf->base64());
-            Storage::disk('public')->put($path, $content);
+            Storage::disk('public')->put($pathPdf, $content);
+
+            $urlToPdf = asset("storage/{$pathPdf}");
+            if (function_exists('tenancy') && tenancy()->initialized) {
+                // Obtem o domínio associado ao tenant atual
+                $domain = tenancy()->tenant->domains->first();
+                if ($domain) {
+                    $protocol = str_starts_with(env('APP_URL', 'http://'), 'https://') ? 'https://' : 'http://';
+                    // Garante que a porta correta seja adicionada, caso nao seja padrao
+                    $parsedUrl = parse_url(env('APP_URL'));
+                    $port = isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '';
+                    $urlToPdf = "{$protocol}{$domain->domain}{$port}/storage/{$pathPdf}";
+                }
+            }
 
             // Atualiza registro com sucesso
             if ($pdfRecord) {
                 try {
                     $pdfRecord->update([
                         'status'    => 'done',
-                        'file_path' => $path,
-                        'url'       => asset("storage/{$path}"),
+                        'file_path' => $pathPdf,
+                        'url'       => $urlToPdf,
                     ]);
                 } catch (\Throwable) {}
             }
@@ -96,7 +97,7 @@ class ProcessPdfJob implements ShouldQueue
                             ->actions([
                                 \Filament\Notifications\Actions\Action::make('download')
                                     ->button()
-                                    ->url(asset("storage/{$path}"), shouldOpenInNewTab: true),
+                                    ->url($urlToPdf, shouldOpenInNewTab: true),
                             ])
                             ->sendToDatabase($user);
                     }
@@ -107,7 +108,7 @@ class ProcessPdfJob implements ShouldQueue
 
             Log::info("PDF {$fileName} finalizado com sucesso.");
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("Erro ao gerar PDF: " . $e->getMessage());
 
             // Atualiza registro com erro
