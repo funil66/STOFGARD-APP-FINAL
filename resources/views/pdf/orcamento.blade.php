@@ -33,7 +33,7 @@
         /* HEADER FIXO - Topo absoluto da página */
         .header {
             position: fixed; 
-            top: 0;
+            top: -4.6cm;
             left: 0;
             right: 0;
             height: 3.8cm;  /* Reduzido levemente de 4.5cm para 3.8cm para subir a régua */
@@ -47,7 +47,7 @@
         /* FOOTER FIXO - Rodapé absoluto da página */
         .footer {
             position: fixed; 
-            bottom: 0;
+            bottom: -3.2cm;
             left: 0;
             right: 0;
             height: 2.5cm;  /* Aumentado de 2cm para 2.5cm */
