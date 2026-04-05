@@ -26,6 +26,11 @@ class PdfQueueService
             Log::warning("Não foi possível registrar PDF em pdf_generations antes do Job: " . $e->getMessage());
         }
 
+                try {
+                    $htmlContent = \App\Services\DigitalSealService::appendSeal($htmlContent, $tipo, $modeloId);
+                } catch (\Throwable $e) {
+                    Log::warning('Falha ao anexar selo digital no HTML: ' . $e->getMessage());
+                }
 
 
         // Passamos o ID do registro (se existir) para o Job atualizar

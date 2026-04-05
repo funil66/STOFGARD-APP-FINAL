@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Financeiro;
 use App\Models\Configuracao;
-use Spatie\LaravelPdf\Facades\Pdf;
 use Illuminate\Http\Request;
 
 class ExtratoPdfController extends Controller
@@ -65,24 +64,18 @@ class ExtratoPdfController extends Controller
         $totalSaidas = $transacoes->where('tipo', 'saida')->sum(fn($t) => $t->valor_pago > 0 ? $t->valor_pago : $t->valor);
         $saldo = $totalEntradas - $totalSaidas;
 
-        return Pdf::view('pdf.extrato', [
-            'transacoes' => $transacoes,
-            'filtros' => $filters,
-            'totalEntradas' => $totalEntradas,
-            'totalSaidas' => $totalSaidas,
-            'saldo' => $saldo,
-            'config' => Configuracao::first(),
-        ])
-            ->format('a4')
-            ->name('Extrato-Financeiro-' . now()->format('Y-m-d') . '.pdf')
-            ->withBrowsershot(function ($browsershot) {
-                $browsershot->noSandbox()
-                    ->setChromePath(config('services.browsershot.chrome_path', '/usr/bin/google-chrome'))
-                    ->setNodeBinary(config('services.browsershot.node_path', '/usr/bin/node'))
-                    ->setNpmBinary(config('services.browsershot.npm_path', '/usr/bin/npm'))
-                    ->setOption('args', ['--disable-web-security', '--no-sandbox', '--disable-setuid-sandbox'])
-                    ->timeout(60);
-            })
-            ->download();
+        return app(\App\Services\PdfService::class)->generate(
+            'pdf.extrato',
+            [
+                'transacoes' => $transacoes,
+                'filtros' => $filters,
+                'totalEntradas' => $totalEntradas,
+                'totalSaidas' => $totalSaidas,
+                'saldo' => $saldo,
+                'config' => Configuracao::first(),
+            ],
+            'Extrato-Financeiro-' . now()->format('Y-m-d') . '.pdf',
+            true
+        );
     }
 }

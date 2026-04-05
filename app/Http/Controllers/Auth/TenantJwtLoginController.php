@@ -29,6 +29,15 @@ class TenantJwtLoginController extends Controller
         }
 
         if ($jwtSecret === '') {
+            $appKey = (string) config('app.key', '');
+            $jwtSecret = $appKey !== '' ? hash('sha256', $appKey) : '';
+
+            if ($jwtSecret !== '') {
+                config(['jwt.secret' => $jwtSecret]);
+            }
+        }
+
+        if ($jwtSecret === '') {
             return response()->json([
                 'error' => 'Configuração de autenticação indisponível no momento. Tente novamente em instantes.',
             ], 503);
