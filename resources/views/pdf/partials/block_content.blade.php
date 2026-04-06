@@ -53,42 +53,43 @@
             </div>
         @endif
 
-        <!-- PARCELAMENTO -->
-        @if(($orcamento->pdf_mostrar_parcelamento ?? true) && isset($config->financeiro_parcelamento) && is_array($config->financeiro_parcelamento) && count($config->financeiro_parcelamento) > 0)
-            <div class="parcelamento-box"
-                style="margin-top: 15px; font-size: 10px; border-top: 1px dashed #ddd; padding-top: 10px;">
-                <div style="font-weight: bold; margin-bottom: 8px;">CONDIÇÕES DE PARCELAMENTO (CARTÃO):</div>
-                <table style="width: 100%; border-collapse: collapse;">
-                    @php
-                        $parcelas = $config->financeiro_parcelamento;
-                        $rowsPerColumn = 4;
-                        $columns = (int) ceil(count($parcelas) / $rowsPerColumn);
-                    @endphp
-                    @for($row = 0; $row < $rowsPerColumn; $row++)
-                        <tr>
-                            @for($col = 0; $col < $columns; $col++)
-                                @php $index = $col * $rowsPerColumn + $row; @endphp
-                                @if(isset($parcelas[$index]))
-                                    @php
-                                        $parcelaConfig = $parcelas[$index];
-                                        $qtd = (int) ($parcelaConfig['parcelas'] ?? 1);
-                                        $taxa = (float) ($parcelaConfig['taxa'] ?? 0);
-                                        $valorComJuros = $valorFinal + ($valorFinal * ($taxa / 100));
-                                        $valorParcela = $valorComJuros / $qtd;
-                                    @endphp
-                                    <td style="padding: 2px 8px 2px 0; width: {{ number_format(100 / max($columns, 1), 2, '.', '') }}%; text-align: left; font-size: 8px; white-space: nowrap;">
-                                        <strong>{{ $qtd }}x</strong> R$ {{ number_format($valorParcela, 2, ',', '.') }}
-                                    </td>
-                                @else
-                                    <td style="padding: 2px 8px 2px 0;"></td>
-                                @endif
-                            @endfor
-                        </tr>
-                    @endfor
-                </table>
-            </div>
-        @endif
     </div>
+
+    <!-- PARCELAMENTO -->
+    @if(($orcamento->pdf_mostrar_parcelamento ?? true) && isset($config->financeiro_parcelamento) && is_array($config->financeiro_parcelamento) && count($config->financeiro_parcelamento) > 0)
+        <div class="parcelamento-box"
+            style="margin-top: 15px; font-size: 10px; border-top: 1px dashed #ddd; padding-top: 10px; page-break-inside: avoid;">
+            <div style="font-weight: bold; margin-bottom: 8px;">CONDIÇÕES DE PARCELAMENTO (CARTÃO):</div>
+            <table style="width: 100%; border-collapse: collapse; page-break-inside: avoid;">
+                @php
+                    $parcelas = $config->financeiro_parcelamento;
+                    $rowsPerColumn = 4;
+                    $columns = (int) ceil(count($parcelas) / $rowsPerColumn);
+                @endphp
+                @for($row = 0; $row < $rowsPerColumn; $row++)
+                    <tr>
+                        @for($col = 0; $col < $columns; $col++)
+                            @php $index = $col * $rowsPerColumn + $row; @endphp
+                            @if(isset($parcelas[$index]))
+                                @php
+                                    $parcelaConfig = $parcelas[$index];
+                                    $qtd = (int) ($parcelaConfig['parcelas'] ?? 1);
+                                    $taxa = (float) ($parcelaConfig['taxa'] ?? 0);
+                                    $valorComJuros = $valorFinal + ($valorFinal * ($taxa / 100));
+                                    $valorParcela = $valorComJuros / $qtd;
+                                @endphp
+                                <td style="padding: 2px 8px 2px 0; width: {{ number_format(100 / max($columns, 1), 2, '.', '') }}%; text-align: left; font-size: 8px; white-space: nowrap;">
+                                    <strong>{{ $qtd }}x</strong> R$ {{ number_format($valorParcela, 2, ',', '.') }}
+                                </td>
+                            @else
+                                <td style="padding: 2px 8px 2px 0;"></td>
+                            @endif
+                        @endfor
+                    </tr>
+                @endfor
+            </table>
+        </div>
+    @endif
 @endif
 
 @if($type === 'pix')

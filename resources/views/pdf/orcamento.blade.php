@@ -160,7 +160,7 @@
         .cat-outro { background: #e5e7eb; color: #374151; }
         .item-description { color: #6b7280; font-size: 8px; line-height: 1.3; }
 
-        .valores-section { margin-top: 16px; display: flex; gap: 20px; page-break-inside: avoid; }
+        .valores-section { margin-top: 16px; display: flex; gap: 20px; }
         .valores-left { flex: 1; }
         .valores-right { width: 220px; }
         .valores-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; }
@@ -500,7 +500,7 @@
                     </div>
                 @endif
 
-                <div class="valores-section" style="page-break-inside: avoid;">
+                <div class="valores-section">
                     <div class="valores-left" style="flex:1; margin-right: 15px;">
                         @include('pdf.partials.block_content', ['type' => $data['coluna_esquerda'] ?? 'totais', 'orcamento' => $orcamento, 'config' => $config])
                     </div>
