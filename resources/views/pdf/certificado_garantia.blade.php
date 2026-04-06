@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orçamento {{ $os->numero_os ?? $os->numero_os }}</title>
+    @php
+        $primary = data_get($config, 'pdf_color_primary', '#2563eb');
+    @endphp
     <style>
 $style
     </style>
