@@ -7,10 +7,7 @@
     <title>Orçamento {{ $orcamento->numero ?? $orcamento->numero_orcamento }}</title>
     <style>
         @page {
-            margin-top: 3.2cm;
-            margin-right: 1cm;
-            margin-bottom: 2.4cm;
-            margin-left: 1cm;
+            margin: 0px; /* Reset hard margins to allow absolute positioning from edge */
         }
 
         /* DYNAMIC STYLES */
@@ -26,38 +23,41 @@
             font-size: 10px;
             color: {{ $text }};
             line-height: 1.4;
+            
+            /* Define content safe area via padding */
+            padding-top: 4.5cm;    /* Reduzido de 6.2cm para 4.5cm */
+            padding-bottom: 3cm;
+            padding-left: 1cm;
+            padding-right: 1cm;
             margin: 0;
-            padding: 0;
         }
 
         /* HEADER FIXO - Topo absoluto da página */
         .header {
             position: fixed; 
-            top: -3.2cm;
-            left: 0;
-            right: 0;
-            height: 3.2cm;
-            padding-top: 0;
+            top: 0;
+            left: 1cm;
+            right: 1cm; 
+            height: 3.8cm;  /* Reduzido levemente de 4.5cm para 3.8cm para subir a régua */
+            padding-top: 0.5cm;
             border-bottom: 3px solid {{ $primary }};
             display: flex;
             background: white;
             z-index: 1000;
-            box-sizing: border-box;
         }
 
         /* FOOTER FIXO - Rodapé absoluto da página */
         .footer {
             position: fixed; 
             bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2.1cm;
-            padding-bottom: 0.25cm;
+            left: 1cm; 
+            right: 1cm; 
+            height: 2.5cm;  /* Aumentado de 2cm para 2.5cm */
+            padding-bottom: 0.5cm;
             background: white;
             padding-top: 5px;
             border-top: 1px solid #e5e7eb;
             z-index: 1000;
-            box-sizing: border-box;
         }
         
         .header-left {
@@ -127,7 +127,7 @@
         .cat-outro { background: #e5e7eb; color: #374151; }
         .item-description { color: #6b7280; font-size: 8px; line-height: 1.3; }
 
-        .valores-section { margin-top: 16px; display: flex; gap: 20px; }
+        .valores-section { margin-top: 16px; display: flex; gap: 20px; page-break-inside: avoid; }
         .valores-left { flex: 1; }
         .valores-right { width: 220px; }
         .valores-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; }
@@ -453,7 +453,7 @@
                     </div>
                 @endif
 
-                <div class="valores-section">
+                <div class="valores-section" style="page-break-inside: avoid;">
                     <div class="valores-left" style="flex:1; margin-right: 15px;">
                         @include('pdf.partials.block_content', ['type' => $data['coluna_esquerda'] ?? 'totais', 'orcamento' => $orcamento, 'config' => $config])
                     </div>
