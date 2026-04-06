@@ -33,7 +33,7 @@
         /* HEADER FIXO - Topo absoluto da página */
         .header {
             position: fixed; 
-            top: -0.2cm;
+            top: -0.35cm;
             left: 0;
             right: 0;
             height: 3.2cm;
