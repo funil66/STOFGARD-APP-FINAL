@@ -482,7 +482,7 @@
                                 @foreach($linhaFotos as $foto)
                                     <td style="width: {{ number_format(100 / max($cols, 1), 2, '.', '') }}%; vertical-align: top; text-align: center;">
                                         @if($foto->base64_src)
-                                            <img src="{{ $foto->base64_src }}" style="width: 100%; height: auto; border-radius: 4px; border: 1px solid #eee;">
+                                            <img src="{{ $foto->base64_src }}" style="width: 100%; max-height: 180px; height: auto; object-fit: contain; border-radius: 4px; border: 1px solid #eee;">
                                             @if(($data['show_legend'] ?? false))
                                                 <div style="font-size: 8px; color: #999;">{{ $foto->file_name }}</div>
                                             @endif
