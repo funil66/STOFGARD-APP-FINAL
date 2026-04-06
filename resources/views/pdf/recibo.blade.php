@@ -6,69 +6,72 @@
     <title>Recibo de Pagamento</title>
     <style>
         @page {
-            margin: 0px;
+            margin: 0;
         }
 
         @php
-            $primary = $config->pdf_color_primary ?? '#2563eb';
-            $text = $config->pdf_color_text ?? '#1f2937';
+            $primary = data_get($config, 'pdf_color_primary', '#2563eb');
+            $text = data_get($config, 'pdf_color_text', '#1f2937');
         @endphp
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', Arial, sans-serif;
-            font-s
-i               ze: 10px;
-
-                        color: {{ $text }};
+            font-size: 10px;
+            color: {{ $text }};
             line-height: 1.5;
-            padding: 1.5cm 1.5cm 2cm;
+            padding: 4.5cm 1cm 2.5cm 1cm;
             margin: 0;
         }
 
         .header {
+            position: fixed;
+            top: 0;
+            left: 1cm;
+            right: 1cm;
+            height: 3.8cm;
+            padding-top: 0.5cm;
+            border-bottom: 3px solid {{ $primary }};
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-
-               
-                        border-bottom: 3px solid {{ $primary }};
-            padding-bottom: 15px;
-            margin-bottom: 25px;
+            background: white;
+            z-index: 1000;
         }
 
-
-           
-                      
-       
-
-        .logo-img { max
--           width: 180px; m
-a           x-height: 60px;
-        margin-bottom: 5px; }
-        .company-info { font-size: 8px; color: #374151; }
-
-        .header-title {
-
-            
-
-                                      text-align: right; color: {{ $primary }};
-
+        .logo-img {
+            max-width: 180px;
+            max-height: 60px;
+            margin-bottom: 5px;
         }
 
-       
-           
-           
-           
-           
-        .doc-title 
-{            font-size: 22p
-x           ; font-weight
-:        bold; text-transform: uppercase; margin-bottom: 4px; }
-        .doc-date { font-size: 9px; opacity: 0.8; }
+        .company-info {
+            font-size: 8px;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .header-right {
+            background: {{ $primary }};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-align: right;
+            min-width: 180px;
+        }
+
+        .doc-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .doc-date {
+            font-size: 9px;
+            opacity: 0.9;
+        }
 
         .recibo-box {
-
-                           
             border: 2px solid {{ $primary }};
             border-radius: 10px;
             padding: 25px;
@@ -82,20 +85,18 @@ x           ; font-weight
             left: 50%;
             transform: translate(-50%, -50%) rotate(-30deg);
             font-size: 72px;
-            font-w
-e               ight: bold;
-
-                        color: {{ $primary }};
+            font-weight: bold;
+            color: {{ $primary }};
             opacity: 0.06;
             white-space: nowrap;
             pointer-events: none;
             z-index: 0;
         }
 
-
-           
-           
-               .recibo-content { position: relative; z-index: 1; }
+        .recibo-content {
+            position: relative;
+            z-index: 1;
+        }
 
         .recibo-row {
             display: flex;
@@ -104,44 +105,30 @@ e               ight: bold;
             border-bottom: 1px dashed #e5e7eb;
         }
 
+        .recibo-row:last-child {
+            border-bottom: none;
+        }
 
-
-           
-               .recibo-row:las
-           t-child { border-bo
-           ttom: none; }
-
-           
-       
         .recibo-label {
-            font-w
-               eight: bold;
-             
-           color: #374151; f
-       ont-size: 10px; }
-        .recibo-value { color: {{ $text }}; font-size: 10px; }
+            font-weight: bold;
+            color: #374151;
+            font-size: 10px;
+        }
+
+        .recibo-value {
+            color: {{ $text }};
+            font-size: 10px;
+            text-align: right;
+        }
 
         .valor-destaque {
             font-size: 24px;
-            font-w
-               eight: bold;
-
-                        color: {{ $primary }};
+            font-weight: bold;
+            color: {{ $primary }};
             text-align: center;
             padding: 15px 0;
-
-               
-                        border-top: 2px solid {{ $primary }};
+            border-top: 2px solid {{ $primary }};
             margin-top: 10px;
-        }
-
-        .footer {
-            text-align: center;
-            color: #9ca3af;
-            font-size: 7px;
-            margin-top: 30px;
-            padding-top: 10px;
-            border-top: 1px solid #e5e7eb;
         }
 
         .badge-pago {
@@ -153,31 +140,50 @@ e               ight: bold;
             font-weight: bold;
             font-size: 11px;
         }
-    </s
-tyle>
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 1cm;
+            right: 1cm;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 7px;
+            padding-top: 8px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+            height: 1.8cm;
+        }
+    </style>
 </head>
+
 <body>
     <div class="header">
-        <div>
-        @php
-            $logoPath = $config->empresa_logo ?? null;
-            if ($logoPath && !file_exists($logoPath))
-                $logoPath = storage_path('app/public/' . $logoPath);
-        @endphp
-        @if($logoPath && file_exists($logoPath))
+        <div style="max-width: 55%;">
+            @php
+                $logoPath = $config->empresa_logo ?? null;
+                if ($logoPath && !file_exists($logoPath)) {
+                    $logoPath = storage_path('app/public/' . $logoPath);
+                }
+            @endphp
 
-               <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
-        @else
+            @if($logoPath && file_exists($logoPath))
+                <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
+            @else
+                <div style="font-size: 14px; font-weight: bold; color: {{ $primary }}; margin-bottom: 5px;">
+                    {{ $config->empresa_nome ?? 'Empresa' }}
+                </div>
+            @endif
 
-            <div style="font-size: 14px; font-weight: bold; color: {{ $primary }};">{{ $config->nome_sistema ?? 'Sistema' }}</div>
-        @endif
             <div class="company-info">
-
-                               {{ $config->empresa_cnpj ?? '' }} | {{ $config->empresa_telefone ?? '' }}<br>{{ $config->empresa_email ?? '' }}
+                {{ $config->empresa_nome ?? '' }}<br>
+                {{ $config->empresa_cnpj ?? '' }} | {{ $config->empresa_telefone ?? '' }}<br>
+                {{ $config->empresa_email ?? '' }}
             </div>
         </div>
-        <div class="header-title">
-            <div class="doc-title">Recibo de Pagamento</div>
+
+        <div class="header-right">
+            <div class="doc-title">RECIBO</div>
             <div class="doc-date">Emitido em: {{ now()->format('d/m/Y H:i') }}</div>
         </div>
     </div>
@@ -219,21 +225,20 @@ tyle>
             </div>
 
             <div class="recibo-row">
-                <span
-                    class="recibo-label">Data do Pagamento:</span>
+                <span class="recibo-label">Data do Pagamento:</span>
                 <span class="recibo-value">{{ $financeiro->data_pagamento ? $financeiro->data_pagamento->format('d/m/Y H:i') : ($financeiro->data ? $financeiro->data->format('d/m/Y') : 'N/A') }}</span>
             </div>
 
-            <div c
-               lass="valor-destaque">
+            <div class="valor-destaque">
                 R$ {{ number_format($financeiro->valor_pago > 0 ? $financeiro->valor_pago : $financeiro->valor, 2, ',', '.') }}
             </div>
         </div>
     </div>
 
     <div class="footer">
-        Este recibo é um comprovante gerencial de pagamento. AUTONOMIA ILIMITADA {{ date('Y') }}<br>
-        Documento gerado automaticamente — {{ $config->empresa_nome ?? '' }}
-    </d
-iv>
-</body></html>
+        Este recibo é um comprovante gerencial de pagamento.<br>
+        Documento gerado automaticamente — {{ $config->empresa_nome ?? 'Empresa' }} — {{ now()->format('d/m/Y H:i') }}
+    </div>
+</body>
+
+</html>

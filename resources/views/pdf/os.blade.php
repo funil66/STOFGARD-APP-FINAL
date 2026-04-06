@@ -16,16 +16,21 @@
             margin: 15mm;
         }
 
+        @php
+            $primary = data_get($config, 'pdf_color_primary', '#2563eb');
+            $text = data_get($config, 'pdf_color_text', '#1f2937');
+        @endphp
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', Arial, sans-serif;
             font-size: 10px;
-            color: #000;
+            color: {{ $text }};
             line-height: 1.4;
         }
 
         /* HEADER */
         .header {
-            border-bottom: 3px solid #2563eb;
+            border-bottom: 3px solid {{ $primary }};
             padding-bottom: 10px;
             margin-bottom: 20px;
             position: relative;
@@ -51,7 +56,7 @@
 
         .header-left h1 {
             font-size: 16px;
-            color: #2563eb;
+            color: {{ $primary }};
             font-weight: bold;
             text-transform: uppercase;
             margin-bottom: 2px;
@@ -60,7 +65,7 @@
 
         .header-left h2 {
             font-size: 14px;
-            color: #2563eb;
+            color: {{ $primary }};
             font-weight: 600;
             margin-bottom: 8px;
         }
@@ -78,7 +83,7 @@
         }
 
         .header-right {
-            background: #2563eb;
+            background: {{ $primary }};
             color: white;
             padding: 12px 16px;
             border-radius: 6px;
@@ -99,7 +104,7 @@
 
         /* SECTION HEADERS */
         .section-header {
-            background: #2563eb;
+            background: {{ $primary }};
             color: white;
             padding: 8px 12px;
             font-size: 10px;
@@ -205,13 +210,13 @@
         .valor-row.total .label {
             font-size: 14px;
             font-weight: bold;
-            color: #2563eb;
+            color: {{ $primary }};
         }
 
         .valor-row.total .value {
             font-size: 22px;
             font-weight: bold;
-            color: #2563eb;
+            color: {{ $primary }};
         }
     </style>
 </head>

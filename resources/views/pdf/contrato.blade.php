@@ -5,37 +5,70 @@
     <meta charset="UTF-8">
     <title>Contrato de Prestação de Serviço - #{{ $orcamento->numero }}</title>
     <style>
+        @page {
+            margin: 0;
+        }
+
+        @php
+            $primary = data_get($config, 'pdf_color_primary', '#2563eb');
+            $text = data_get($config, 'pdf_color_text', '#1f2937');
+        @endphp
+
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            color: #333;
+            color: {{ $text }};
             line-height: 1.6;
             margin: 0;
-            padding: 30px;
+            padding: 4.5cm 1cm 2.6cm 1cm;
             font-size: 14px;
         }
 
         .header {
-            text-align: center;
-            border-bottom: 2px solid
-                {{ $config->cores_pdf['primaria'] ?? '#2563eb' }}
-            ;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            position: fixed;
+            top: 0;
+            left: 1cm;
+            right: 1cm;
+            height: 3.8cm;
+            padding-top: 0.5cm;
+            border-bottom: 3px solid {{ $primary }};
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            background: white;
+            z-index: 1000;
         }
 
         .logo {
             max-width: 200px;
             max-height: 80px;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
 
-        .title {
-            font-size: 22px;
+        .company-info {
+            font-size: 8.5px;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .header-right {
+            background: {{ $primary }};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-align: right;
+            min-width: 190px;
+        }
+
+        .doc-title {
+            font-size: 16px;
             font-weight: bold;
-            color:
-                {{ $config->cores_pdf['primaria'] ?? '#2563eb' }}
-            ;
             text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .doc-ref {
+            font-size: 9px;
+            line-height: 1.6;
         }
 
         h2 {
@@ -68,12 +101,17 @@
         }
 
         .footer {
-            margin-top: 50px;
-            font-size: 11px;
+            position: fixed;
+            bottom: 0;
+            left: 1cm;
+            right: 1cm;
+            background: white;
+            font-size: 8px;
             text-align: center;
             color: #777;
             border-top: 1px solid #eee;
-            padding-top: 10px;
+            padding-top: 6px;
+            height: 1.8cm;
         }
 
         table {
@@ -99,11 +137,27 @@
 <body>
 
     <div class="header">
-        @if(!empty($config->empresa_logo))
-            <img src="{{ public_path('storage/' . $config->empresa_logo) }}" class="logo" alt="Logo">
-        @endif
-        <div class="title">Contrato de Prestação de Serviços</div>
-        <div>Orçamento Referência: <strong>#{{ $orcamento->numero }}</strong></div>
+        <div style="max-width: 55%;">
+            @if(!empty($config->empresa_logo) && file_exists(public_path('storage/' . $config->empresa_logo)))
+                <img src="{{ public_path('storage/' . $config->empresa_logo) }}" class="logo" alt="Logo">
+            @else
+                <div style="font-size: 16px; font-weight: bold; color: {{ $primary }}; margin-bottom: 8px;">
+                    {{ $config->empresa_nome ?? 'Empresa' }}
+                </div>
+            @endif
+            <div class="company-info">
+                {{ $config->empresa_nome ?? '' }}<br>
+                CNPJ: {{ $config->empresa_cnpj ?? '' }}<br>
+                {{ $config->empresa_telefone ?? '' }}
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="doc-title">CONTRATO</div>
+            <div class="doc-ref">
+                <strong>Ref. Orçamento:</strong> #{{ $orcamento->numero }}<br>
+                Emissão: {{ now()->format('d/m/Y') }}
+            </div>
+        </div>
     </div>
 
     @php
