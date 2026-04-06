@@ -7,9 +7,9 @@
     <title>Orçamento {{ $orcamento->numero ?? $orcamento->numero_orcamento }}</title>
     <style>
         @page {
-            margin-top: 3.8cm;
+            margin-top: 3.6cm;
             margin-right: 1cm;
-            margin-bottom: 2.6cm;
+            margin-bottom: 2.4cm;
             margin-left: 1cm;
         }
 
@@ -33,21 +33,22 @@
         /* HEADER FIXO - Topo absoluto da página */
         .header {
             position: fixed; 
-            top: -3.8cm;
+            top: 0;
             left: 0;
             right: 0;
-            height: 3.4cm;
-            padding-top: 0.15cm;
+            height: 3.2cm;
+            padding-top: 0;
             border-bottom: 3px solid {{ $primary }};
             display: flex;
             background: white;
             z-index: 1000;
+            box-sizing: border-box;
         }
 
         /* FOOTER FIXO - Rodapé absoluto da página */
         .footer {
             position: fixed; 
-            bottom: -2.6cm;
+            bottom: 0;
             left: 0;
             right: 0;
             height: 2.1cm;
@@ -56,6 +57,7 @@
             padding-top: 5px;
             border-top: 1px solid #e5e7eb;
             z-index: 1000;
+            box-sizing: border-box;
         }
         
         .header-left {
