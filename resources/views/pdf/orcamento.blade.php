@@ -7,7 +7,7 @@
     <title>Orçamento {{ $orcamento->numero ?? $orcamento->numero_orcamento }}</title>
     <style>
         @page {
-            margin-top: 3.6cm;
+            margin-top: 3.2cm;
             margin-right: 1cm;
             margin-bottom: 2.4cm;
             margin-left: 1cm;
@@ -33,10 +33,10 @@
         /* HEADER FIXO - Topo absoluto da página */
         .header {
             position: fixed; 
-            top: -0.35cm;
+            top: -2.8cm;
             left: 0;
             right: 0;
-            height: 3.2cm;
+            height: 2.8cm;
             padding-top: 0;
             border-bottom: 3px solid {{ $primary }};
             display: flex;
