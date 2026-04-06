@@ -4,6 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Orçamento {{ $orcamento->numero }}</title>
+    @php
+        $primary = data_get($config, 'pdf_color_primary', '#2563eb');
+        $secondary = data_get($config, 'pdf_color_secondary', '#eff6ff');
+        $text = data_get($config, 'pdf_color_text', '#1f2937');
+    @endphp
     <style>
         @page {
             margin: 80px 40px 90px 40px;
@@ -22,7 +27,7 @@
             margin: 0;
             padding: 0;
             font-size: 10px;
-            color: #1e293b;
+            color: {{ $text }};
             line-height: 1.3;
         }
 
@@ -47,7 +52,7 @@
         }
 
         .text-blue {
-            color: #0ea5e9;
+            color: {{ $primary }};
         }
 
         .text-slate {
@@ -57,7 +62,7 @@
         /* HEADER */
         .header-table {
             margin-bottom: 25px;
-            border-bottom: 2px solid #0ea5e9;
+            border-bottom: 2px solid {{ $primary }};
             padding-bottom: 10px;
             page-break-inside: avoid;
             page-break-after: avoid;
@@ -70,18 +75,28 @@
 
         .orc-number {
             font-size: 18px;
-            color: #0f172a;
+            color: #ffffff;
             font-weight: 800;
+        }
+
+        .doc-id-box {
+            background: {{ $primary }};
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: inline-block;
+            min-width: 180px;
+            text-align: right;
         }
 
         /* SEÇÕES */
         .section-bar {
-            background-color: #f1f5f9;
-            color: #0f172a;
+            background-color: {{ $secondary }};
+            color: {{ $text }};
             font-weight: 800;
             font-size: 10px;
             padding: 6px 10px;
-            border-left: 4px solid #0ea5e9;
+            border-left: 4px solid {{ $primary }};
             margin: 20px 0 10px 0;
             text-transform: uppercase;
             page-break-after: avoid;
@@ -111,7 +126,7 @@
         }
 
         .group-header {
-            color: #0284c7;
+            color: {{ $primary }};
             font-weight: bold;
             font-size: 10px;
             margin-top: 10px;
@@ -315,10 +330,12 @@
                 </div>
             </td>
             <td width="40%" class="text-right" valign="bottom">
-                <div class="text-slate" style="font-size:9px;">ORÇAMENTO</div>
-                <div class="orc-number">{{ $orcamento->numero }}</div>
-                <div style="margin-top:5px; font-weight:bold; font-size:11px;">
-                    {{ strtoupper($orcamento->cliente->nome) }}
+                <div class="doc-id-box">
+                    <div style="font-size:9px; opacity: .9;">ORÇAMENTO</div>
+                    <div class="orc-number">{{ $orcamento->numero }}</div>
+                    <div style="margin-top:5px; font-weight:bold; font-size:11px;">
+                        {{ strtoupper($orcamento->cliente->nome) }}
+                    </div>
                 </div>
             </td>
         </tr>
