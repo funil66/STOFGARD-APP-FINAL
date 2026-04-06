@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
-class ProcessPdfJob implements ShouldQueue, \Stancl\Tenancy\Contracts\TenantAware
+class ProcessPdfJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -26,7 +26,6 @@ class ProcessPdfJob implements ShouldQueue, \Stancl\Tenancy\Contracts\TenantAwar
     protected $userId;
     protected $htmlContent;
     protected $recordId;
-    protected $tenantId;
 
     public function __construct($modeloId, $tipo, $userId, $htmlContent, $recordId = null)
     {
@@ -35,16 +34,6 @@ class ProcessPdfJob implements ShouldQueue, \Stancl\Tenancy\Contracts\TenantAwar
         $this->userId = $userId;
         $this->htmlContent = $htmlContent;
         $this->recordId = $recordId;
-    }
-
-    public function setTenantId($tenantId): void
-    {
-        $this->tenantId = $tenantId;
-    }
-
-    public function getTenantId()
-    {
-        return $this->tenantId;
     }
 
     public function handle()
