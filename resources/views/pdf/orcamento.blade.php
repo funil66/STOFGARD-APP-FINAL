@@ -7,10 +7,7 @@
     <title>Orçamento {{ $orcamento->numero ?? $orcamento->numero_orcamento }}</title>
     <style>
         @page {
-            margin-top: 4.3cm;
-            margin-right: 1cm;
-            margin-bottom: 2.8cm;
-            margin-left: 1cm;
+            margin: 0px; /* Reset hard margins to allow absolute positioning from edge */
         }
 
         /* DYNAMIC STYLES */
@@ -26,38 +23,74 @@
             font-size: 10px;
             color: {{ $text }};
             line-height: 1.4;
+            
+            padding-left: 1cm;
+            padding-right: 1cm;
+            padding-top: 0;
+            padding-bottom: 0;
             margin: 0;
+        }
+
+        .page-frame {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .page-frame > thead,
+        .page-frame > tfoot {
+            background: transparent;
+        }
+
+        .page-frame > thead {
+            display: table-header-group;
+        }
+
+        .page-frame > tfoot {
+            display: table-footer-group;
+        }
+
+        .page-frame > thead > tr > td,
+        .page-frame > tfoot > tr > td,
+        .page-frame > tbody > tr > td {
+            border: none;
             padding: 0;
+        }
+
+        .header-spacer {
+            height: 4.5cm;
+        }
+
+        .footer-spacer {
+            height: 3cm;
         }
 
         /* HEADER FIXO - Topo absoluto da página */
         .header {
             position: fixed; 
-            top: -4.3cm;
+            top: 0;
             left: 1cm;
-            right: 1cm;
+            right: 1cm; 
             height: 3.8cm;  /* Reduzido levemente de 4.5cm para 3.8cm para subir a régua */
-            padding-top: 0.3cm;
+            padding-top: 0.5cm;
             border-bottom: 3px solid {{ $primary }};
             display: flex;
             background: white;
             z-index: 1000;
-            box-sizing: border-box;
         }
 
         /* FOOTER FIXO - Rodapé absoluto da página */
         .footer {
             position: fixed; 
-            bottom: -2.8cm;
-            left: 1cm;
-            right: 1cm;
+            bottom: 0;
+            left: 1cm; 
+            right: 1cm; 
             height: 2.5cm;  /* Aumentado de 2cm para 2.5cm */
             padding-bottom: 0.5cm;
             background: white;
             padding-top: 5px;
             border-top: 1px solid #e5e7eb;
             z-index: 1000;
-            box-sizing: border-box;
         }
         
         .header-left {
@@ -231,6 +264,20 @@
     @endif
 
     <!-- MAIN CONTENT (Flows inside margins) -->
+    <table class="page-frame">
+        <thead>
+            <tr>
+                <td><div class="header-spacer"></div></td>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <td><div class="footer-spacer"></div></td>
+            </tr>
+        </tfoot>
+        <tbody>
+            <tr>
+                <td>
     <div style="width: 100%;">
         @foreach($mainBlocks as $block)
             @php $data = $block['data'] ?? []; @endphp
@@ -473,3 +520,7 @@
 
         @endforeach
     </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
