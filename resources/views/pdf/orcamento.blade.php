@@ -475,17 +475,27 @@
                     $cols = (int) ($data['columns'] ?? 2);
                  @endphp
                  @if($showPhotos && count($fotos) > 0)
-                    <div class="section-header" style="page-break-inside: avoid;">{{ $data['titulo'] ?? 'REGISTROS FOTOGRÁFICOS' }}</div>
-                    <div class="fotos-grid" style="display: grid; grid-template-columns: repeat({{ $cols }}, 1fr); gap: 10px; margin-bottom: 20px; page-break-inside: avoid;">
-                        @foreach($fotos as $foto)
-                            @if($foto->base64_src)
-                            <div class="foto-item" style="text-align: center; page-break-inside: avoid;">
-                                 <img src="{{ $foto->base64_src }}" style="width: 100%; height: auto; border-radius: 4px; border: 1px solid #eee;">
-                                 @if(($data['show_legend'] ?? false)) <div style="font-size: 8px; color: #999;">{{ $foto->file_name }}</div> @endif
-                            </div>
-                            @endif
+                    <div class="section-header">{{ $data['titulo'] ?? 'REGISTROS FOTOGRÁFICOS' }}</div>
+                    <table style="width: 100%; border-collapse: separate; border-spacing: 8px 8px; margin-bottom: 20px;">
+                        @foreach($fotos->chunk($cols) as $linhaFotos)
+                            <tr>
+                                @foreach($linhaFotos as $foto)
+                                    <td style="width: {{ number_format(100 / max($cols, 1), 2, '.', '') }}%; vertical-align: top; text-align: center;">
+                                        @if($foto->base64_src)
+                                            <img src="{{ $foto->base64_src }}" style="width: 100%; height: auto; border-radius: 4px; border: 1px solid #eee;">
+                                            @if(($data['show_legend'] ?? false))
+                                                <div style="font-size: 8px; color: #999;">{{ $foto->file_name }}</div>
+                                            @endif
+                                        @endif
+                                    </td>
+                                @endforeach
+
+                                @for($i = $linhaFotos->count(); $i < $cols; $i++)
+                                    <td style="width: {{ number_format(100 / max($cols, 1), 2, '.', '') }}%;"></td>
+                                @endfor
+                            </tr>
                         @endforeach
-                    </div>
+                    </table>
                  @endif
             @endif
 
