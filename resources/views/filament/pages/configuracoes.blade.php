@@ -35,7 +35,7 @@
             </a>
 
             {{-- Card Garantias --}}
-            <a href="{{ url('/admin/configuracoes/garantias') }}"
+            <a href="{{ \App\Filament\Resources\PerfilGarantiaResource::getUrl('index') }}"
                 class="block p-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 group">
                 <div class="flex items-center gap-3">
                     <div class="p-2.5 bg-blue-100 dark:bg-blue-900/50 rounded-lg group-hover:scale-110 transition-transform">
