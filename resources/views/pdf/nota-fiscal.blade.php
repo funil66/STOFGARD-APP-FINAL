@@ -319,13 +319,17 @@
             <div class="field">
                 <div class="field-label">Data de Emissão</div>
                 <div class="field-value">
-                    {{ $notaFiscal->data_emissao ? \Carbon\Carbon::parse($notaFiscal->data_emissao)->format('d/m/Y H:i') : 'Não informado' }}
+                    @if($notaFiscal->data_emissao)
+                        {{ \Carbon\Carbon::parse($notaFiscal->data_emissao)->format('d/m/Y H:i') }}
+                    @endif
                 </div>
             </div>
-            <div class="field">
-                <div class="field-label">Protocolo de Autorização</div>
-                <div class="field-value">{{ $notaFiscal->protocolo_autorizacao ?? 'Não autorizado' }}</div>
-            </div>
+            @if($notaFiscal->protocolo_autorizacao)
+                <div class="field">
+                    <div class="field-label">Protocolo de Autorização</div>
+                    <div class="field-value">{{ $notaFiscal->protocolo_autorizacao }}</div>
+                </div>
+            @endif
         </div>
 
         @if ($notaFiscal->chave_acesso)
@@ -352,7 +356,7 @@
                     </div>
                     <div class="field">
                         <div class="field-label">CPF/CNPJ</div>
-                        <div class="field-value">{{ $cliente->cpf ?? $cliente->cnpj ?? 'Não informado' }}</div>
+                        <div class="field-value">{{ $cliente->cpf ?? $cliente->cnpj ?? '' }}</div>
                     </div>
                 </div>
                 @if ($cliente->endereco ?? $cliente->celular)

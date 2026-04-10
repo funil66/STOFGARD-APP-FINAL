@@ -8,6 +8,7 @@
 
         @php
             $primary = $config->pdf_color_primary ?? '#2563eb';
+            $secondary = $config->pdf_color_secondary ?? '#eff6ff';
             $text = $config->pdf_color_text ?? '#1f2937';
         @endphp
 
@@ -38,11 +39,17 @@
         .logo-img { max-width: 180px; max-height: 60px; margin-bottom: 5px; }
         .company-info { font-size: 8px; color: #374151; }
 
-        .header-title {
-            text-align: right; color: {{ $primary }};
+        .header-right {
+            background: {{ $primary }};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-align: right;
+            min-width: 190px;
         }
-        .doc-title { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
-        .doc-date { font-size: 9px; opacity: 0.8; }
+
+        .doc-title { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; }
+        .doc-date { font-size: 9px; line-height: 1.6; }
 
         .section-header {
             background: #f3f4f6; color: #374151; padding: 4px 8px;
@@ -63,7 +70,7 @@
         .valor-saida { color: #991b1b; font-weight: bold; }
 
         .totais-box {
-            background: #eff6ff; border: 1px solid {{ $primary }};
+            background: {{ $secondary }}; border: 1px solid {{ $primary }};
             border-radius: 6px; padding: 10px; margin-top: 10px;
             page-break-inside: avoid;
         }
@@ -87,9 +94,20 @@
                 {{ $config->empresa_cnpj ?? '' }} | {{ $config->empresa_telefone ?? '' }}<br>{{ $config->empresa_email ?? '' }}
             </div>
         </div>
-        <div class="header-title">
+        <div class="header-right">
             <div class="doc-title">Extrato Financeiro</div>
-            <div class="doc-date">Gerado em: {{ now()->format('d/m/Y H:i') }}</div>
+            <div class="doc-date">
+                <strong>Período:</strong>
+                @if(!empty($filtros['periodo']['data_inicio']) || !empty($filtros['periodo']['data_fim']))
+                    {{ !empty($filtros['periodo']['data_inicio']) ? \Carbon\Carbon::parse($filtros['periodo']['data_inicio'])->format('d/m/Y') : '--' }}
+                    até
+                    {{ !empty($filtros['periodo']['data_fim']) ? \Carbon\Carbon::parse($filtros['periodo']['data_fim'])->format('d/m/Y') : '--' }}
+                @else
+                    Geral
+                @endif
+                <br>
+                <strong>Emissão:</strong> {{ now()->format('d/m/Y H:i') }}
+            </div>
         </div>
     </div>
 

@@ -219,10 +219,12 @@
                 </div>
             @endif
 
-            <div class="recibo-row">
-                <span class="recibo-label">Forma de Pagamento:</span>
-                <span class="recibo-value">{{ ucfirst($financeiro->forma_pagamento ?? 'Não informado') }}</span>
-            </div>
+            @if(filled($financeiro->forma_pagamento))
+                <div class="recibo-row">
+                    <span class="recibo-label">Forma de Pagamento:</span>
+                    <span class="recibo-value">{{ ucfirst($financeiro->forma_pagamento) }}</span>
+                </div>
+            @endif
 
             <div class="recibo-row">
                 <span class="recibo-label">Data do Pagamento:</span>

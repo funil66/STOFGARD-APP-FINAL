@@ -264,12 +264,18 @@
     <!-- DADOS DO CLIENTE -->
     <div class="section-header">DADOS DO CLIENTE</div>
     <div class="client-info">
-        <div class="client-name">CLIENTE: {{ strtoupper($record->cliente->nome ?? 'Cliente Não Informado') }}</div>
-        <div class="client-phone">TELEFONE: {{ $record->cliente->telefone ?? '(--) -----' }}</div>
+        @if(!empty($record->cliente?->nome))
+            <div class="client-name">CLIENTE: {{ strtoupper($record->cliente->nome) }}</div>
+        @endif
+        @if(!empty($record->cliente?->telefone))
+            <div class="client-phone">TELEFONE: {{ $record->cliente->telefone }}</div>
+        @endif
     </div>
-    <div style="font-size: 9px; margin-top: 5px;">ENDEREÇO:
-        {{ $record->endereco ?? $record->cliente->endereco ?? 'Endereço não informado' }}
-    </div>
+    @if(!empty($record->endereco) || !empty($record->cliente?->endereco))
+        <div style="font-size: 9px; margin-top: 5px;">ENDEREÇO:
+            {{ $record->endereco ?? $record->cliente->endereco }}
+        </div>
+    @endif
 
     <!-- ITENS DA OS -->
     <div class="section-header">ITENS DO SERVIÇO</div>
