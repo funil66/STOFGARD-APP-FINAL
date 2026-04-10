@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ProcessPdfJob;
 use App\Models\Cadastro;
-use App\Models\User;
-use App\Services\PdfService;
-use Mockery\MockInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class CadastroFichaPdfTest extends TestCase
@@ -16,8 +15,7 @@ class CadastroFichaPdfTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function it_generates_ficha_cadastral_pdf_without_signature_fields()
     {
-        // Criar um usuário autenticado
-        $user = User::factory()->create();
+        Queue::fake();
 
         // Criar um cadastro de teste
         $cadastro = Cadastro::factory()->create([
@@ -25,28 +23,11 @@ class CadastroFichaPdfTest extends TestCase
             'tipo' => 'cliente',
         ]);
 
-        // Mock do PdfService para interceptar a geração do PDF e retornar um PDF dummy
-        $this->mock(PdfService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('generate')
-                ->once()
-                ->withArgs(function ($view, $data, $filename, $download) {
-                    return $view === 'pdf.cadastro_ficha'
-                        && str_contains($filename, 'Ficha-Cadastral-')
-                        && $download === true;
-                })
-                ->andReturn(response('PDF Content', 200, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="Ficha-Cadastral.pdf"']));
-        });
-
-        // Testar se a rota do PDF funciona
-        $this->withoutExceptionHandling();
+        // Testar se a rota do PDF enfileira geração
         $response = $this->actingAsSuperAdmin()->get("/cadastro/{$cadastro->id}/pdf");
 
-        $response->assertStatus(200);
-        $response->assertHeader('Content-Type', 'application/pdf');
-
-        // Verificar se está configurado como attachment (download)
-        $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
-        $this->assertStringContainsString('Ficha-Cadastral', $response->headers->get('Content-Disposition'));
+        $response->assertStatus(302);
+        Queue::assertPushed(ProcessPdfJob::class);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]

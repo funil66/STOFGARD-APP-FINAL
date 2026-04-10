@@ -2,72 +2,54 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ProcessPdfJob;
 use App\Models\Financeiro;
 use App\Models\Orcamento;
-use App\Models\User;
-use App\Services\PdfService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery\MockInterface;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class PdfGenerationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_orcamento_pdf_uses_service()
+    public function test_orcamento_pdf_is_enqueued_and_redirects()
     {
-        $user = User::factory()->create();
-        $orcamento = Orcamento::factory()->create();
+        Queue::fake();
 
-        // Mock PdfService
-        $this->mock(PdfService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('generate')
-                ->once()
-                ->withArgs(function ($view, $data, $filename, $download) {
-                    return $view === 'pdf.orcamento'
-                        && str_contains($filename, 'Orcamento-')
-                        && $download === true;
-                })
-                ->andReturn(response('PDF Content', 200, ['Content-Type' => 'application/pdf']));
-        });
+        $orcamento = Orcamento::factory()->create();
 
         $response = $this->actingAsSuperAdmin()->get(route('orcamento.pdf', $orcamento));
 
-        $response->assertOk();
-        $response->assertHeader('Content-Type', 'application/pdf');
+        $response->assertStatus(302);
+        $this->assertDatabaseHas('pdf_generations', [
+            'tipo' => 'orcamento',
+            'modelo_id' => (string) $orcamento->id,
+            'orcamento_id' => $orcamento->id,
+            'status' => 'processing',
+        ]);
+        Queue::assertPushed(ProcessPdfJob::class);
     }
 
-    public function test_financeiro_pdf_uses_service()
+    public function test_financeiro_pdf_is_enqueued_and_redirects()
     {
-        $financeiro = Financeiro::factory()->create();
+        Queue::fake();
 
-        $this->mock(PdfService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('generate')
-                ->once()
-                ->withArgs(function ($view, $data, $filename) {
-                    return $view === 'pdf.financeiro';
-                })
-                ->andReturn(response('PDF Content', 200, ['Content-Type' => 'application/pdf']));
-        });
+        $financeiro = Financeiro::factory()->create();
 
         $response = $this->actingAsSuperAdmin()->get(route('financeiro.pdf', $financeiro));
 
-        $response->assertOk();
+        $response->assertStatus(302);
+        Queue::assertPushed(ProcessPdfJob::class);
     }
 
-    public function test_financeiro_relatorio_mensal_uses_service()
+    public function test_financeiro_relatorio_mensal_is_enqueued_and_redirects()
     {
-        $this->mock(PdfService::class, function (MockInterface $mock) {
-            $mock->shouldReceive('generate')
-                ->once()
-                ->withArgs(function ($view, $data, $filename) {
-                    return $view === 'pdf.financeiro_mensal';
-                })
-                ->andReturn(response('PDF Content', 200, ['Content-Type' => 'application/pdf']));
-        });
+        Queue::fake();
 
         $response = $this->actingAsSuperAdmin()->get(route('financeiro.relatorio_mensal'));
 
-        $response->assertOk();
+        $response->assertStatus(302);
+        Queue::assertPushed(ProcessPdfJob::class);
     }
 }
