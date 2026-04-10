@@ -9,17 +9,18 @@ use Illuminate\Support\Facades\Log;
 
 class PdfQueueService
 {
-    public static function enqueue($modeloId, $tipo, $userId, $htmlContent)
+    public static function enqueue($modeloId, $tipo, $userId, $htmlContent, $orcamentoId = null)
     {
         $pdfRecord = null;
         try {
             if (Schema::hasTable('pdf_generations')) {
+                $orcamentoId = $orcamentoId ?? ($tipo === 'orcamento' ? $modeloId : null);
                 $pdfRecord = PdfGeneration::create([
                     'tipo'         => $tipo,
                     'modelo_id'    => (string) $modeloId,
                     'user_id'      => $userId,
                     'status'       => 'processing',
-                    'orcamento_id' => $tipo === 'orcamento' ? $modeloId : null,
+                    'orcamento_id' => $orcamentoId,
                 ]);
             }
         } catch (\Throwable $e) {
@@ -36,7 +37,8 @@ class PdfQueueService
         // Passamos o ID do registro (se existir) para o Job atualizar
         $recordId = $pdfRecord ? $pdfRecord->id : null;
         try {
-            ProcessPdfJob::dispatch($modeloId, $tipo, $userId, $htmlContent, $recordId);
+            ProcessPdfJob::dispatch($modeloId, $tipo, $userId, $htmlContent, $recordId)
+                ->onQueue('high');
         } catch (\Throwable $e) {
             Log::error('Falha ao despachar job de PDF: ' . $e->getMessage(), [
                 'tipo' => $tipo,

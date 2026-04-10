@@ -34,6 +34,9 @@ class ProcessPdfJob implements ShouldQueue
         $this->userId = $userId;
         $this->htmlContent = $htmlContent;
         $this->recordId = $recordId;
+
+        $this->onConnection('redis');
+        $this->onQueue('high');
     }
 
     public function handle()
