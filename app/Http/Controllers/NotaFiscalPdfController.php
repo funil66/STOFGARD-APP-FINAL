@@ -3,25 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\NotaFiscal;
-use App\Models\Configuracao;
 
-class NotaFiscalPdfController extends Controller
+class NotaFiscalPdfController extends BasePdfQueueController
 {
     public function gerarPdf(NotaFiscal $notaFiscal)
     {
-        return $this->renderPdf($notaFiscal);
-    }
+        $config = $this->loadConfig();
 
-    private function renderPdf(NotaFiscal $notaFiscal)
-    {
-        return app(\App\Services\PdfService::class)->generate(
+        return $this->enqueuePdf(
             'pdf.nota-fiscal',
             [
                 'notaFiscal' => $notaFiscal,
-                'config' => Configuracao::first(),
+                'config' => $config,
             ],
-            "NotaFiscal-{$notaFiscal->numero}.pdf",
-            true
+            'nota_fiscal',
+            $notaFiscal,
+            []
         );
     }
 }

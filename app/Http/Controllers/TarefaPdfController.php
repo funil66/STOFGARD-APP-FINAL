@@ -3,20 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tarefa;
-use App\Models\Configuracao;
 
-class TarefaPdfController extends Controller
+class TarefaPdfController extends BasePdfQueueController
 {
     public function gerarPdf(Tarefa $tarefa)
     {
-        return app(\App\Services\PdfService::class)->generate(
+        $config = $this->loadConfig();
+
+        return $this->enqueuePdf(
             'pdf.tarefa',
             [
                 'tarefa' => $tarefa,
-                'config' => Configuracao::first(),
+                'config' => $config,
             ],
-            "Tarefa-{$tarefa->id}.pdf",
-            true
+            'tarefa',
+            $tarefa,
+            []
         );
     }
 }

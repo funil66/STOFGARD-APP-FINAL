@@ -4,15 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\ListaDesejo;
 
-class ListaDesejoPdfController extends Controller
+class ListaDesejoPdfController extends BasePdfQueueController
 {
     public function gerarPdf(ListaDesejo $listadesejo)
     {
-        return app(\App\Services\PdfService::class)->generate(
+        $config = $this->loadConfig();
+
+        return $this->enqueuePdf(
             'pdfs.listadesejo',
-            ['listadesejo' => $listadesejo],
-            'listadesejo-' . $listadesejo->id . '.pdf',
-            true
+            [
+                'listadesejo' => $listadesejo,
+                'config' => $config,
+            ],
+            'listadesejo',
+            $listadesejo,
+            []
         );
     }
 }

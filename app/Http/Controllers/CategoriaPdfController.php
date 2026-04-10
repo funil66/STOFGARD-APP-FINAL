@@ -3,25 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Categoria;
-use App\Models\Configuracao;
 
-class CategoriaPdfController extends Controller
+class CategoriaPdfController extends BasePdfQueueController
 {
     public function gerarPdf(Categoria $categoria)
     {
-        return $this->renderPdf($categoria);
-    }
+        $config = $this->loadConfig();
 
-    private function renderPdf(Categoria $categoria)
-    {
-        return app(\App\Services\PdfService::class)->generate(
+        return $this->enqueuePdf(
             'pdf.categoria',
             [
                 'categoria' => $categoria,
-                'config' => Configuracao::first(),
+                'config' => $config,
             ],
-            "Categoria-{$categoria->slug}.pdf",
-            true
+            'categoria',
+            $categoria,
+            []
         );
     }
 }

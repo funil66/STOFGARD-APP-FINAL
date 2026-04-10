@@ -4,15 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Estoque;
 
-class EstoquePdfController extends Controller
+class EstoquePdfController extends BasePdfQueueController
 {
     public function gerarPdf(Estoque $estoque)
     {
-        return app(\App\Services\PdfService::class)->generate(
+        $config = $this->loadConfig();
+
+        return $this->enqueuePdf(
             'pdfs.estoque',
-            ['estoque' => $estoque],
-            'estoque-' . $estoque->id . '.pdf',
-            true
+            [
+                'estoque' => $estoque,
+                'config' => $config,
+            ],
+            'estoque',
+            $estoque,
+            []
         );
     }
 }

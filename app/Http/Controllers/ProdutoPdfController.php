@@ -3,25 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Produto;
-use App\Models\Configuracao;
 
-class ProdutoPdfController extends Controller
+class ProdutoPdfController extends BasePdfQueueController
 {
     public function gerarPdf(Produto $produto)
     {
-        return $this->renderPdf($produto);
-    }
+        $config = $this->loadConfig();
 
-    private function renderPdf(Produto $produto)
-    {
-        return app(\App\Services\PdfService::class)->generate(
+        return $this->enqueuePdf(
             'pdf.produto',
             [
                 'produto' => $produto,
-                'config' => Configuracao::first(),
+                'config' => $config,
             ],
-            "Produto-{$produto->id}.pdf",
-            true
+            'produto',
+            $produto,
+            []
         );
     }
 }

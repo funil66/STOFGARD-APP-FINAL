@@ -4,15 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Equipamento;
 
-class EquipamentoPdfController extends Controller
+class EquipamentoPdfController extends BasePdfQueueController
 {
     public function gerarPdf(Equipamento $equipamento)
     {
-        return app(\App\Services\PdfService::class)->generate(
+        $config = $this->loadConfig();
+
+        return $this->enqueuePdf(
             'pdfs.equipamento',
-            ['equipamento' => $equipamento],
-            'equipamento-' . $equipamento->id . '.pdf',
-            true
+            [
+                'equipamento' => $equipamento,
+                'config' => $config,
+            ],
+            'equipamento',
+            $equipamento,
+            []
         );
     }
 }

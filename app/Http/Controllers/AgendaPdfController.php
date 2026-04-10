@@ -3,25 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agenda;
-use App\Models\Configuracao;
 
-class AgendaPdfController extends Controller
+class AgendaPdfController extends BasePdfQueueController
 {
     public function gerarPdf(Agenda $agenda)
     {
-        return $this->renderPdf($agenda);
-    }
+        $config = $this->loadConfig();
 
-    private function renderPdf(Agenda $agenda)
-    {
-        return app(\App\Services\PdfService::class)->generate(
+        return $this->enqueuePdf(
             'pdf.agenda',
             [
                 'agenda' => $agenda,
-                'config' => Configuracao::first(),
+                'config' => $config,
             ],
-            "Agenda-{$agenda->id}.pdf",
-            true
+            'agenda',
+            $agenda,
+            []
         );
     }
 }

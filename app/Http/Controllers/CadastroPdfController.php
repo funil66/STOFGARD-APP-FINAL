@@ -3,56 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cadastro;
-use App\Models\Setting;
-use Spatie\LaravelPdf\Facades\Pdf;
-use Illuminate\Http\Request;
 
-class CadastroPdfController extends Controller
+class CadastroPdfController extends BasePdfQueueController
 {
     public function gerarPdf(Cadastro $cadastro)
     {
-        return $this->renderPdf($cadastro);
-    }
+        $config = $this->loadConfig();
 
-    /**
-     * Lógica central de geração do PDF (mesmo padrão do OrcamentoPdfController).
-     */
-    private function renderPdf(Cadastro $cadastro)
-    {
-        // Garante que o diretório de arquivos temporários exista
-        $tempPath = storage_path('app/temp');
-        if (!is_dir($tempPath)) {
-            mkdir($tempPath, 0755, true);
-        }
-
-        // Carrega configurações do sistema
-        $settingsArray = Setting::all()->pluck('value', 'key')->toArray();
-
-        // Decodifica JSONs conhecidos
-        $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
-        foreach ($jsonFields as $k) {
-            if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
-                $settingsArray[$k] = json_decode($settingsArray[$k], true);
-            }
-        }
-
-        // Cria objeto Config para a View
-        $config = (object) $settingsArray;
-
-        // Carrega relacionamentos
-        $cadastro->load('loja');
-
-        // Nome de arquivo seguro
-        $safeName = preg_replace('/[^A-Za-z0-9_\-]/', '-', $cadastro->nome);
-
-        return app(\App\Services\PdfService::class)->generate(
+        return $this->enqueuePdf(
             'pdf.cadastro_ficha',
             [
                 'cadastro' => $cadastro,
                 'config' => $config,
             ],
-            "Ficha-Cadastral-{$safeName}.pdf",
-            true
+            'cadastro',
+            $cadastro,
+            ['loja']
         );
     }
 }

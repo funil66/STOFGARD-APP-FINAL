@@ -4,15 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\TabelaPreco;
 
-class TabelaPrecoPdfController extends Controller
+class TabelaPrecoPdfController extends BasePdfQueueController
 {
     public function gerarPdf(TabelaPreco $tabelapreco)
     {
-        return app(\App\Services\PdfService::class)->generate(
+        $config = $this->loadConfig();
+
+        return $this->enqueuePdf(
             'pdfs.tabelapreco',
-            ['tabelapreco' => $tabelapreco],
-            'tabelapreco-' . $tabelapreco->id . '.pdf',
-            true
+            [
+                'tabelapreco' => $tabelapreco,
+                'config' => $config,
+            ],
+            'tabelapreco',
+            $tabelapreco,
+            []
         );
     }
 }
