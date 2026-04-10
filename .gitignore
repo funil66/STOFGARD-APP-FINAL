@@ -1,6 +1,7 @@
 .phpunit.result.cache
 /storage/debug/
 /public/pdfs/
+/storage/app/*
 /node_modules/
 /vendor/
 .env
