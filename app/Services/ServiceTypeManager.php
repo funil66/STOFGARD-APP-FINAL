@@ -51,6 +51,11 @@ class ServiceTypeManager
             $dbItem = $dbTypes->get($slug);
             $enumItem = $enumTypes->get($slug);
 
+            $perfilGarantiaId = $settingItem['perfil_garantia_id'] ?? null;
+            $diasGarantiaLegacy = $settingItem['dias_garantia'] ?? null;
+
+            $diasGarantia = self::resolveDiasGarantia($perfilGarantiaId, $diasGarantiaLegacy);
+
             // Prioridade: Settings > DB > Enum
             return [
                 'slug' => $slug,
@@ -58,9 +63,27 @@ class ServiceTypeManager
                 'color' => $settingItem['color'] ?? $dbItem->cor ?? $enumItem?->getColor() ?? 'gray',
                 'icon' => $settingItem['icon'] ?? $dbItem->icone ?? $enumItem?->getIcon() ?? 'heroicon-o-sparkles',
                 'descricao_pdf' => $settingItem['descricao_pdf'] ?? $dbItem->descricao ?? $enumItem?->getDescricaoPdf() ?? null,
-                'dias_garantia' => $settingItem['dias_garantia'] ?? null,
+                'perfil_garantia_id' => $perfilGarantiaId,
+                'dias_garantia' => $diasGarantia,
             ];
         });
+    }
+
+    protected static function resolveDiasGarantia(mixed $perfilGarantiaId, mixed $diasGarantiaLegacy): ?int
+    {
+        if (!empty($perfilGarantiaId)) {
+            try {
+                $perfil = \App\Models\PerfilGarantia::find($perfilGarantiaId);
+
+                if ($perfil && $perfil->dias_garantia !== null) {
+                    return (int) $perfil->dias_garantia;
+                }
+            } catch (\Throwable) {
+                // fallback para legado
+            }
+        }
+
+        return $diasGarantiaLegacy !== null ? (int) $diasGarantiaLegacy : null;
     }
 
     /**
@@ -123,6 +146,16 @@ class ServiceTypeManager
         $dias = $item['dias_garantia'] ?? null;
 
         return $dias !== null ? (int) $dias : null;
+    }
+
+    public static function getPerfilGarantiaId(string $slug): ?int
+    {
+        $all = self::getAll();
+        $item = $all->firstWhere('slug', $slug);
+
+        $perfilId = $item['perfil_garantia_id'] ?? null;
+
+        return $perfilId ? (int) $perfilId : null;
     }
 
     /**
