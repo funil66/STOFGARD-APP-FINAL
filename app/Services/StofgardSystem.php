@@ -62,6 +62,9 @@ class StofgardSystem
 
             // A. Criação da OS (Usando cadastro_id unificado)
             // OBS: O OrdemServicoObserver cria uma Agenda automaticamente aqui!
+            $tipoServicoPrincipal = $orcamento->itens->first()?->servico_tipo ?? FinanceiroCategoria::Servico->value;
+            $servicoPrincipal = \App\Services\ServiceTypeManager::get($tipoServicoPrincipal) ?? [];
+
             $os = OrdemServico::create([
                 'orcamento_id' => $orcamento->id,
                 'cadastro_id' => $orcamento->cadastro_id,
@@ -71,8 +74,8 @@ class StofgardSystem
                 'status' => OrdemServicoStatus::Aberta->value,
                 'data_abertura' => now(),
                 'data_prevista' => $dataPrevista,
-                'tipo_servico' => $orcamento->itens->first()?->servico_tipo ?? FinanceiroCategoria::Servico->value,
-                'descricao_servico' => $orcamento->descricao_servico ?? "Conforme orçamento {$orcamento->numero}",
+                'tipo_servico' => $tipoServicoPrincipal,
+                'descricao_servico' => $servicoPrincipal['descricao_pdf'] ?? $orcamento->descricao_servico ?? "Conforme orçamento {$orcamento->numero}",
                 'valor_total' => $orcamento->valor_efetivo,
                 'valor_desconto' => max(0, floatval($orcamento->valor_total) - floatval($orcamento->valor_efetivo)),
                 'observacoes' => $options['observacoes'] ?? $orcamento->observacoes,
@@ -84,10 +87,14 @@ class StofgardSystem
                 // Mapeia unidade para valores aceitos pelo enum
                 $unidade = $item->unidade ?? $item->unidade_medida ?? 'un';
                 $unidadeMapeada = $unidade === 'm2' ? 'm2' : 'unidade';
+                $servicoTipo = $item->servico_tipo ?? $tipoServicoPrincipal;
+                $perfilGarantiaId = \App\Services\ServiceTypeManager::getPerfilGarantiaId($servicoTipo);
 
                 \App\Models\OrdemServicoItem::create([
                     'ordem_servico_id' => $os->id,
                     'descricao' => $item->item_nome ?? $item->descricao_item ?? 'Serviço',
+                    'servico_tipo' => $servicoTipo,
+                    'perfil_garantia_id' => $perfilGarantiaId,
                     'quantidade' => $item->quantidade,
                     'unidade_medida' => $unidadeMapeada,
                     'valor_unitario' => $item->valor_unitario,

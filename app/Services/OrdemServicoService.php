@@ -108,6 +108,10 @@ class OrdemServicoService
             $lojaId = \App\Models\Cadastro::find($orcamento->loja_id)?->id;
             $vendedorId = \App\Models\Cadastro::find($orcamento->vendedor_id)?->id;
 
+            $primeiroItem = $orcamento->itens->first();
+            $tipoServicoPrincipal = $primeiroItem->servico_tipo ?? 'servico';
+            $servicoPrincipal = \App\Services\ServiceTypeManager::get($tipoServicoPrincipal) ?? [];
+
             $os = OrdemServico::create([
                 'orcamento_id' => $orcamento->id,
                 'cadastro_id' => $orcamento->cadastro_id,
@@ -117,16 +121,21 @@ class OrdemServicoService
                 'status' => OrdemServicoStatus::Aberta->value,
                 'valor_total' => $orcamento->valor_total,
                 'data_abertura' => now(),
-                'tipo_servico' => 'servico',
-                'descricao_servico' => "Serviço aprovado via Orçamento #{$orcamento->numero}",
+                'tipo_servico' => $tipoServicoPrincipal,
+                'descricao_servico' => $servicoPrincipal['descricao_pdf'] ?? $orcamento->descricao_servico ?? "Serviço aprovado via Orçamento #{$orcamento->numero}",
                 'criado_por' => $userId,
             ]);
 
             // Copia Itens (Lógica mantida)
             if ($orcamento->itens()->exists()) {
                 foreach ($orcamento->itens as $item) {
+                    $servicoTipo = $item->servico_tipo ?? $tipoServicoPrincipal;
+                    $perfilGarantiaId = \App\Services\ServiceTypeManager::getPerfilGarantiaId($servicoTipo);
+
                     $os->itens()->create([
                         'descricao' => $item->item_nome ?? 'Serviço Diverso',
+                        'servico_tipo' => $servicoTipo,
+                        'perfil_garantia_id' => $perfilGarantiaId,
                         'quantidade' => $item->quantidade,
                         'unidade_medida' => $item->unidade ?? 'unidade',
                         'valor_unitario' => $item->valor_unitario,

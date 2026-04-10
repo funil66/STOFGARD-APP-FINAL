@@ -379,6 +379,11 @@
                         {{-- Show Warranty if configured --}}
                         @php
                             $diasGarantia = \App\Services\ServiceTypeManager::getDiasGarantia($tipoServico);
+                            $perfilGarantiaId = $servicoInfo['perfil_garantia_id'] ?? null;
+                            $perfilGarantiaNome = null;
+                            if ($perfilGarantiaId) {
+                                $perfilGarantiaNome = \App\Models\PerfilGarantia::find($perfilGarantiaId)?->nome;
+                            }
                         @endphp
                         @if($diasGarantia)
                             <span style="display: inline-block;
@@ -391,6 +396,20 @@
                                          margin-left: 5px;
                                          border: 1px solid #047857;">
                                 🛡️ Garantia: {{ $diasGarantia }} dias
+                            </span>
+                        @endif
+
+                        @if($perfilGarantiaNome)
+                            <span style="display: inline-block;
+                                         background: #eef2ff;
+                                         color: #3730a3;
+                                         padding: 6px 10px;
+                                         border-radius: 16px;
+                                         font-weight: bold;
+                                         font-size: 10px;
+                                         margin-left: 5px;
+                                         border: 1px solid #4338ca;">
+                                Perfil: {{ $perfilGarantiaNome }}
                             </span>
                         @endif
 

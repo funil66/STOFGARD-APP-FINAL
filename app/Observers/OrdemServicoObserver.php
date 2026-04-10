@@ -103,43 +103,76 @@ class OrdemServicoObserver
      */
     protected function criarGarantiaAutomatica(OrdemServico $os): void
     {
-        // Verifica se já existe garantia para esta OS
-        if ($os->garantias()->exists()) {
-            Log::info("Garantia já existe para OS {$os->numero_os}, pulando criação");
-            return;
-        }
-
         try {
-            // Determina tipo(s) de serviço da OS
-            $tipoServico = $os->tipo_servico ?? 'servico';
+            $tiposServico = collect($os->itens ?? [])
+                ->map(fn ($item) => $item->servico_tipo)
+                ->filter(fn ($tipo) => filled($tipo))
+                ->unique()
+                ->values();
 
-            // Obtém dias de garantia via ServiceTypeManager (Centralizado)
-            $dias = \App\Services\ServiceTypeManager::getDiasGarantia($tipoServico);
-
-            // Se não houver dias definidos (null ou 0), não cria garantia
-            if (empty($dias)) {
-                Log::info("Garantia não configurada para o serviço '{$tipoServico}' (dias=null|0), pulando criação.");
-                return;
+            if ($tiposServico->isEmpty()) {
+                $tiposServico = collect([$os->tipo_servico ?? 'servico']);
             }
 
-            // Obtém descrição (label do serviço)
-            $labelServico = \App\Services\ServiceTypeManager::getLabel($tipoServico);
-            $descricao = "Garantia padrão para {$labelServico}";
+            $garantiasCriadas = 0;
+            $diasResumo = [];
+            $perfilResumoId = null;
 
-            // Cria a garantia
-            \App\Models\Garantia::create([
-                'ordem_servico_id' => $os->id,
-                'tipo_servico' => $tipoServico,
-                'data_inicio' => now(),
-                // Garante que é inteiro
-                'dias_garantia' => (int) $dias,
-                // Data fim calculada com base nos dias
-                'data_fim' => now()->addDays((int) $dias),
-                'status' => 'ativa',
-                'observacoes' => $descricao,
-            ]);
+            foreach ($tiposServico as $tipoServico) {
+                $jaExiste = $os->garantias()->where('tipo_servico', $tipoServico)->exists();
+                if ($jaExiste) {
+                    continue;
+                }
 
-            Log::info("Garantia de {$dias} dias criada automaticamente para OS {$os->numero_os} ({$tipoServico})");
+                $perfil = null;
+                $perfilId = \App\Services\ServiceTypeManager::getPerfilGarantiaId((string) $tipoServico);
+                if ($perfilId) {
+                    $perfil = \App\Models\PerfilGarantia::find($perfilId);
+                }
+
+                if (!$perfil && $os->perfilGarantia && $os->tipo_servico === $tipoServico) {
+                    $perfil = $os->perfilGarantia;
+                }
+
+                if (!$perfil) {
+                    Log::info("Perfil de garantia não configurado para serviço '{$tipoServico}', pulando criação da garantia.");
+                    continue;
+                }
+
+                $dias = (int) ($perfil->dias_garantia ?? 0);
+                if (empty($dias)) {
+                    Log::info("Perfil '{$perfil->nome}' sem dias de garantia para serviço '{$tipoServico}', pulando criação.");
+                    continue;
+                }
+
+                $labelServico = \App\Services\ServiceTypeManager::getLabel((string) $tipoServico);
+                $descricao = "Perfil {$perfil->nome} aplicado para {$labelServico}";
+
+                \App\Models\Garantia::create([
+                    'ordem_servico_id' => $os->id,
+                    'tipo_servico' => $tipoServico,
+                    'data_inicio' => now(),
+                    'dias_garantia' => $dias,
+                    'data_fim' => now()->addDays($dias),
+                    'status' => 'ativa',
+                    'observacoes' => $descricao,
+                ]);
+
+                $garantiasCriadas++;
+                $diasResumo[] = $dias;
+                if (!$perfilResumoId) {
+                    $perfilResumoId = $perfil->id;
+                }
+
+                Log::info("Garantia de {$dias} dias criada automaticamente para OS {$os->numero_os} ({$tipoServico})");
+            }
+
+            if ($garantiasCriadas > 0) {
+                $os->forceFill([
+                    'perfil_garantia_id' => $os->perfil_garantia_id ?: $perfilResumoId,
+                    'dias_garantia' => !empty($diasResumo) ? max($diasResumo) : $os->dias_garantia,
+                ])->saveQuietly();
+            }
 
             try {
                 $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
@@ -160,7 +193,7 @@ class OrdemServicoObserver
                     $config->empresa_cnpj = $tenantConfig->empresa_cnpj ?? null;
                 }
                 
-                // Get the created garantia
+                // Get one garantia as referência para o PDF
                 $garantia = $os->garantias()->latest()->first();
 
                 // Disparar job invisível para gerar PDF
@@ -175,7 +208,8 @@ class OrdemServicoObserver
                     $os->id,
                     'garantia',
                     $os->criado_por ?? 1,
-                    $htmlContent
+                    $htmlContent,
+                    $os->orcamento_id
                 );
             } catch (\Exception $e) {
                 Log::error("Erro ao despachar job de PDF da garantia para OS {$os->numero_os}: " . $e->getMessage());

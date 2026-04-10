@@ -33,6 +33,9 @@ Route::get('/registro-empresa', \App\Livewire\RegistroEmpresa::class)
 Route::get('/assinatura/{tenant}/status', \App\Http\Controllers\PublicSubscriptionStatusController::class)
     ->name('assinatura.status');
 
+Route::get('/validar/{hash}', [\App\Http\Controllers\DigitalSealValidationController::class, 'show'])
+    ->name('certificado.validar');
+
 // Avaliação pública NPS (via token único enviado ao cliente)
 Route::get('/avaliacao/{token}', \App\Livewire\AvaliacaoPublica::class)
     ->name('avaliacao.publica')

@@ -3,26 +3,53 @@
 namespace App\Services;
 
 use App\Helpers\SettingsHelper;
+use Illuminate\Support\Facades\Cache;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class DigitalSealService
 {
-    public static function appendSeal($html, $tipo, $modeloId)
+    public static function buildSealData(string $tipo, string $modeloId): array
     {
         $settings = new SettingsHelper();
         $nomeFantasia = $settings->get('empresa_nome', 'Stofgard');
         $data = now()->format('d/m/Y H:i:s');
-        
-        // Let's create a unique hash (Document validation hash)
+
         $hashInput = $tipo . $modeloId . $nomeFantasia . $data;
         $docHash = hash('sha256', $hashInput);
-        
-        // This QR Code points to a generic validation page or just contains the text
-        // Usually, point to a route on your app (e.g. env('APP_URL')/validar/$docHash)
-        $validationUrl = env('APP_URL', 'https://stofgard.com') . "/validar/" . $docHash;
-        
+        $validationUrl = rtrim((string) env('APP_URL', 'https://stofgard.com'), '/') . '/validar/' . $docHash;
+
         $qrBase64 = base64_encode(QrCode::format('svg')->size(100)->generate($validationUrl));
-        $imgSrc = 'data:image/svg+xml;base64,' . $qrBase64;
+
+        Cache::put('digital_seal:' . $docHash, [
+            'tipo' => $tipo,
+            'modelo_id' => $modeloId,
+            'company_name' => $nomeFantasia,
+            'generated_at' => $data,
+            'hash' => $docHash,
+            'validation_url' => $validationUrl,
+            'validated_at' => now()->toDateTimeString(),
+        ], now()->addYears(2));
+
+        return [
+            'company_name' => $nomeFantasia,
+            'generated_at' => $data,
+            'hash' => $docHash,
+            'validation_url' => $validationUrl,
+            'qr_base64' => $qrBase64,
+        ];
+    }
+
+    public static function appendSeal($html, $tipo, $modeloId)
+    {
+        if (strpos($html, 'data-digital-seal="embedded"') !== false || strpos($html, 'sealed-footer-embedded') !== false) {
+            return $html;
+        }
+
+        $sealData = self::buildSealData((string) $tipo, (string) $modeloId);
+        $imgSrc = 'data:image/svg+xml;base64,' . $sealData['qr_base64'];
+        $nomeFantasia = $sealData['company_name'];
+        $data = $sealData['generated_at'];
+        $docHash = $sealData['hash'];
 
         $sealHtml = <<<HTML
         <div style="border-top: 2px dashed #ccc; margin-top: 30px; padding-top: 20px; page-break-inside: avoid;">
@@ -44,11 +71,16 @@ class DigitalSealService
         </div>
 HTML;
         
-        // Append the seal before </body> closing tag if exists, otherwise at the end
+        // Append the seal before </body> closing tag if exists, preserving valid HTML
         if (strpos($html, '</body>') !== false) {
-            return str_replace('</body>', $sealHtml, $html);
+            return str_replace('</body>', $sealHtml . '</body>', $html);
         }
-        
+
+        // If there is only </html>, inject seal before it
+        if (strpos($html, '</html>') !== false) {
+            return str_replace('</html>', $sealHtml . '</html>', $html);
+        }
+
         return $html . $sealHtml;
     }
 }

@@ -10,6 +10,8 @@ class OrdemServicoItem extends Model
     protected $fillable = [
         'ordem_servico_id',
         'descricao',
+        'servico_tipo',
+        'perfil_garantia_id',
         'quantidade',
         'unidade_medida',
         'valor_unitario',
