@@ -28,7 +28,7 @@ Route::middleware([
     });
 
     Route::middleware(['auth'])->group(function () {
-        Route::get('/os/{ordemServico}/garantia', [\App\Http\Controllers\GarantiaPdfController::class, 'gerarPdf'])->name('os.garantia');
+        Route::get('/os/{ordemServico}/garantia', [\App\Http\Controllers\GarantiaPdfController::class, 'gerarPorOrdemServico'])->name('os.garantia');
     });
     Route::get('/storage/{path}', function ($path) {
         $fullPath = storage_path("app/public/{$path}");
