@@ -1,20 +1,27 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 echo "🚁 Iron Code: Iniciando Deploy Tático Zero Downtime no fluxo Docker..."
 
 # Verifica o nome do container
-CONTAINER_NAME="autonomia-app"
+CONTAINER_NAME="${CONTAINER_NAME:-autonomia-app}"
 if ! docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-    if docker ps --format "{{.Names}}" | grep -q "^stofgard-app-standalone$"; then
-        CONTAINER_NAME="stofgard-app-standalone"
-    else
-        echo "⚠️  Aviso: Container não encontrado! Verifique se seu docker-compose está rodando."
-    fi
+    for candidate in stofgard-app-standalone stofgard-app-final-laravel.test-1; do
+        if docker ps --format "{{.Names}}" | grep -q "^${candidate}$"; then
+            CONTAINER_NAME="$candidate"
+            break
+        fi
+    done
+fi
+
+if ! docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+    echo "❌ Container de aplicação não encontrado. Defina CONTAINER_NAME ou suba o compose."
+    exit 1
 fi
 
 # Entra na pasta do projeto
-cd /root/STOFGARD-APP-FINAL-1 # Ajustado para o caminho real da sua VPS
+PROJECT_DIR="${PROJECT_DIR:-$PWD}"
+cd "$PROJECT_DIR"
 
 # Coloca em modo manutenção
 docker exec ${CONTAINER_NAME} php artisan down || true

@@ -24,12 +24,18 @@ chmod +x deploy/deploy.sh
 
 1. Verifica se o Docker está instalado.
 2. Cria o arquivo `.env` a partir de `.env.prod` (já configurado com Mysql/Redis) se não existir.
-3. Sobe os containers (App, Nginx, Redis, MySQL) usando `docker-compose.prod.yml`.
+3. Sobe os containers (App, Nginx, Redis, MySQL) usando auto-detecção de compose (`docker-compose.prod.yml`, `docker-compose.standalone.yml`, `compose.yaml` ou `docker-compose.yml`).
 4. Executa comandos finais:
    - `composer install`
    - `artisan migrate`
    - `artisan storage:link`
    - `artisan optimize`
+
+### Regras de segurança no deploy
+
+- O script **não** regenera `APP_KEY` a cada deploy.
+- `APP_KEY` só é gerada quando estiver ausente no ambiente.
+- Worker de fila usa conexão configurável por `QUEUE_CONNECTION` (sem fixar `redis`).
 
 ## Verificação
 

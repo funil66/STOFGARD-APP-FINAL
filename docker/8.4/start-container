@@ -9,6 +9,10 @@ if [ ! -z "$WWWUSER" ]; then
     usermod -u $WWWUSER sail
 fi
 
+if [ -z "$WWWUSER" ]; then
+    WWWUSER=1337
+fi
+
 if [ ! -d /.composer ]; then
     mkdir /.composer
 fi
