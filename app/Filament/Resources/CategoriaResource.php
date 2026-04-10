@@ -191,18 +191,11 @@ class CategoriaResource extends Resource
                     delete: true,
                     extraActions: [
                         Tables\Actions\Action::make('pdf')
-                            ->label('Abrir PDF')
+                            ->label('Gerar PDF')
                             ->icon('heroicon-o-document-text')
-                            ->color('info')
-                            ->url(fn(Categoria $record) => route('categoria.pdf', $record))
-                            ->openUrlInNewTab(),
-
-                        Tables\Actions\Action::make('download')
-                            ->label('Baixar PDF')
-                            ->icon('heroicon-o-arrow-down-tray')
                             ->color('success')
-                            ->url(fn(Categoria $record) => route('categoria.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->tooltip('Gerar PDF em fila')
+                            ->url(fn(Categoria $record) => route('categoria.pdf', $record)),
                     ]
                 )
             )

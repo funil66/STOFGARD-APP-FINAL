@@ -223,12 +223,11 @@ class EquipamentoResource extends Resource
                     delete: true,
                     extraActions: [
                         Tables\Actions\Action::make('download')
-                            ->label('Baixar PDF')
-                            ->tooltip('Baixar PDF') // Tooltip might be redundant in dropdown but harmless
+                            ->label('Gerar PDF')
+                            ->tooltip('Gerar PDF em fila')
                             ->icon('heroicon-o-arrow-down-tray')
                             ->color('success')
                             ->url(fn(Equipamento $record) => route('equipamento.pdf', $record))
-                            ->openUrlInNewTab()
                             ->hidden(fn() => request()->header('user-agent') && preg_match('/Mobile|Android|iPhone/i', request()->header('user-agent'))),
 
                         Tables\Actions\Action::make('enviar_lista_desejos')

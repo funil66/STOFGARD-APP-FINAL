@@ -121,11 +121,11 @@ class Extratos extends Page implements HasTable
             ])
             ->headerActions([
                 Tables\Actions\Action::make('exportar_pdf')
-                    ->label('Exportar PDF')
+                    ->label('Gerar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('primary')
-                    ->url(fn () => route('extrato.pdf', request()->query('tableFilters', [])))
-                    ->openUrlInNewTab(),
+                    ->tooltip('Gerar extrato em fila')
+                    ->url(fn () => route('extrato.pdf', request()->query('tableFilters', []))),
             ])
             ->defaultSort('data', 'desc');
     }

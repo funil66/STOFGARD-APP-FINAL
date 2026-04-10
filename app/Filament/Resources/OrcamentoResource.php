@@ -705,55 +705,14 @@ class OrcamentoResource extends Resource
                     edit: true,
                     delete: true,
                     extraActions: [
-                        Tables\Actions\Action::make('baixar_pdf_direto')
-                            ->label('Baixar PDF Agora')
-                            ->icon('heroicon-o-arrow-down-tray')
-                            ->color('primary')
-                            ->url(fn (Orcamento $record) => route('orcamento.pdf', ['orcamento' => $record->id]), shouldOpenInNewTab: true),
-
                         Tables\Actions\Action::make('gerar_pdf_background')
-                            ->label('Gerar PDF (Fila)')
+                            ->label('Gerar PDF')
                             ->icon('heroicon-o-document-arrow-down')
                             ->color('success')
                             ->requiresConfirmation()
-                            ->modalHeading('Gerar Documento Pesado')
-                            ->modalDescription('O PDF será gerado em segundo plano para não travar sua tela. Você receberá uma notificação quando estiver pronto.')
-                            ->action(function (Orcamento $record) {
-                                $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
-                                $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
-                                foreach ($jsonFields as $k) {
-                                    if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
-                                        $decoded = json_decode($settingsArray[$k], true);
-                                        $settingsArray[$k] = $decoded !== null ? $decoded : [];
-                                    } elseif (!isset($settingsArray[$k])) {
-                                        $settingsArray[$k] = [];
-                                    }
-                                }
-                                $config = (object) $settingsArray;
-
-                                try {
-                                    $htmlContent = view('pdf.orcamento', ['orcamento' => $record, 'config' => $config])->render();
-
-                                    \App\Services\PdfQueueService::enqueue(
-                                        $record->id,
-                                        'orcamento',
-                                        auth()->id(),
-                                        $htmlContent
-                                    );
-
-                                    \Filament\Notifications\Notification::make()
-                                        ->title('🚀 Fogo na Bomba!')
-                                        ->body('O PDF do Orçamento está sendo gerado no servidor. Avisaremos quando estiver pronto.')
-                                        ->success()
-                                        ->send();
-                                } catch (\Exception $e) {
-                                    \Filament\Notifications\Notification::make()
-                                        ->title('Erro Crítico')
-                                        ->body('Falha ao compilar PDF. Erro: ' . $e->getMessage())
-                                        ->danger()
-                                        ->send();
-                                }
-                            }),
+                            ->modalHeading('Gerar PDF')
+                            ->modalDescription('O PDF será gerado em segundo plano e ficará disponível em PDFs Gerados.')
+                            ->url(fn (Orcamento $record) => route('orcamento.pdf', ['orcamento' => $record->id])),
 
                         Tables\Actions\Action::make('gerar_contrato_background')
                             ->label('Gerar Contrato (Fila)')

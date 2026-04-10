@@ -73,11 +73,11 @@ class FinanceiroResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('pdf')
-                    ->label('Recibo/Fatura')
+                    ->label('Gerar PDF')
                     ->icon('heroicon-o-document-arrow-down')
                     ->color('success')
-                    ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
-                    ->openUrlInNewTab(),
+                    ->tooltip('Gerar PDF em fila')
+                    ->url(fn(Financeiro $record) => route('financeiro.pdf', $record)),
             ]);
     }
 

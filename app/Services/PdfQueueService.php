@@ -37,8 +37,7 @@ class PdfQueueService
         // Passamos o ID do registro (se existir) para o Job atualizar
         $recordId = $pdfRecord ? $pdfRecord->id : null;
         try {
-            ProcessPdfJob::dispatch($modeloId, $tipo, $userId, $htmlContent, $recordId)
-                ->onQueue('high');
+            ProcessPdfJob::dispatch($modeloId, $tipo, $userId, $htmlContent, $recordId);
         } catch (\Throwable $e) {
             Log::error('Falha ao despachar job de PDF: ' . $e->getMessage(), [
                 'tipo' => $tipo,

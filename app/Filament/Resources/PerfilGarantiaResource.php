@@ -22,6 +22,8 @@ class PerfilGarantiaResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Perfis de Garantia';
 
+    protected static ?string $slug = 'configuracoes/perfil-garantias';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -43,6 +45,32 @@ class PerfilGarantiaResource extends Resource
                     ->label('Termos e Observações Legais')
                     ->placeholder('Insira os termos de garantia, exceções, obrigações do cliente, etc.')
                     ->columnSpanFull(),
+
+                Forms\Components\TextInput::make('titulo_certificado')
+                    ->label('Título do Certificado')
+                    ->placeholder('CERTIFICADO DE GARANTIA')
+                    ->default('CERTIFICADO DE GARANTIA')
+                    ->maxLength(255)
+                    ->columnSpanFull(),
+
+                Forms\Components\TextInput::make('subtitulo_certificado')
+                    ->label('Subtítulo do Certificado')
+                    ->placeholder('Documento oficial de cobertura do serviço executado')
+                    ->maxLength(255)
+                    ->columnSpanFull(),
+
+                Forms\Components\TextInput::make('titulo_termos_garantia')
+                    ->label('Título dos Termos de Garantia')
+                    ->placeholder('TERMOS E CONDIÇÕES LEGAIS DE GARANTIA')
+                    ->default('TERMOS E CONDIÇÕES LEGAIS DE GARANTIA')
+                    ->maxLength(255)
+                    ->columnSpanFull(),
+
+                Forms\Components\Textarea::make('texto_rodape_certificado')
+                    ->label('Texto do Rodapé do Certificado')
+                    ->placeholder('Este documento atesta a qualidade do serviço prestado. Não possui valor fiscal.')
+                    ->rows(3)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -55,6 +83,10 @@ class PerfilGarantiaResource extends Resource
                 Tables\Columns\TextColumn::make('dias_garantia')
                     ->numeric()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('titulo_certificado')
+                    ->label('Título PDF')
+                    ->limit(40)
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

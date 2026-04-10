@@ -464,20 +464,11 @@ class NotaFiscalResource extends Resource
                     delete: true,
                     extraActions: [
                         Tables\Actions\Action::make('pdf')
-                            ->label('Abrir PDF')
-                            ->tooltip('Abrir PDF')
+                            ->label('Gerar PDF')
+                            ->tooltip('Gerar PDF em fila')
                             ->icon('heroicon-o-document-text')
-                            ->color('info')
-                            ->url(fn(NotaFiscal $record) => route('nota-fiscal.pdf', $record))
-                            ->openUrlInNewTab(),
-
-                        Tables\Actions\Action::make('download')
-                            ->label('Baixar PDF')
-                            ->tooltip('Baixar PDF')
-                            ->icon('heroicon-o-arrow-down-tray')
                             ->color('success')
-                            ->url(fn(NotaFiscal $record) => route('nota-fiscal.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->url(fn(NotaFiscal $record) => route('nota-fiscal.pdf', $record)),
                     ]
                 )
             )

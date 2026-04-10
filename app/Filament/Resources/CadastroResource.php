@@ -156,7 +156,7 @@ class CadastroResource extends Resource
                                             TextEntry::make('valor_efetivo')->label('Valor')->money('BRL')->color('success')->weight('bold'),
                                             TextEntry::make('id')
                                                 ->label('')
-                                                ->formatStateUsing(fn() => 'Ver PDF')
+                                                ->formatStateUsing(fn() => 'Gerar PDF')
                                                 ->url(fn($record) => route('orcamento.pdf', $record), true)
                                                 ->icon('heroicon-o-document-arrow-down')
                                                 ->color('primary'),
@@ -196,7 +196,7 @@ class CadastroResource extends Resource
                                             TextEntry::make('valor_total')->label('Total')->money('BRL'),
                                             TextEntry::make('id')
                                                 ->label('')
-                                                ->formatStateUsing(fn() => 'Ver PDF')
+                                                ->formatStateUsing(fn() => 'Gerar PDF')
                                                 ->url(fn($record) => route('os.pdf', $record), true)
                                                 ->icon('heroicon-o-document-arrow-down')
                                                 ->color('primary'),
@@ -455,11 +455,11 @@ class CadastroResource extends Resource
                     delete: true,
                     extraActions: [
                         Tables\Actions\Action::make('pdf')
-                            ->label('PDF')
+                            ->label('Gerar PDF')
                             ->icon('heroicon-o-document-text')
                             ->color('success')
+                            ->tooltip('Gerar PDF em fila')
                             ->url(fn(Cadastro $record) => route('cadastro.pdf', $record))
-                            ->openUrlInNewTab()
                             ->hidden(fn() => request()->header('user-agent') && preg_match('/Mobile|Android|iPhone/i', request()->header('user-agent'))),
 
                         Tables\Actions\Action::make('criar_acesso')

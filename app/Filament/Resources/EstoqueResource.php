@@ -176,11 +176,11 @@ class EstoqueResource extends Resource
                     delete: true,
                     extraActions: [
                         Tables\Actions\Action::make('pdf')
-                            ->label('PDF')
+                            ->label('Gerar PDF')
                             ->icon('heroicon-o-document-text')
                             ->color('success')
-                            ->url(fn(Estoque $record) => route('estoque.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->tooltip('Gerar PDF em fila')
+                            ->url(fn(Estoque $record) => route('estoque.pdf', $record)),
 
                         Tables\Actions\Action::make('adicionar')
                             ->label('Entrada Rápida')

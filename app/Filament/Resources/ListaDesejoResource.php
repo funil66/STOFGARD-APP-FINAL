@@ -234,12 +234,11 @@ class ListaDesejoResource extends Resource
                             ->action(fn(ListaDesejo $record) => $record->marcarComoComprado()),
 
                         Tables\Actions\Action::make('download')
-                            ->label('Baixar PDF')
-                            ->tooltip('Baixar PDF')
+                            ->label('Gerar PDF')
+                            ->tooltip('Gerar PDF em fila')
                             ->icon('heroicon-o-arrow-down-tray')
                             ->color('success')
-                            ->url(fn(ListaDesejo $record) => route('listadesejo.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->url(fn(ListaDesejo $record) => route('listadesejo.pdf', $record)),
                     ]
                 )
             )

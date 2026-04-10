@@ -72,11 +72,11 @@ class OrcamentoResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('pdf')
-                    ->label('Baixar PDF')
+                    ->label('Gerar PDF')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('success')
-                    ->url(fn(Orcamento $record) => route('orcamento.pdf', $record))
-                    ->openUrlInNewTab(),
+                    ->tooltip('Gerar PDF em fila')
+                    ->url(fn(Orcamento $record) => route('orcamento.pdf', $record)),
             ]);
     }
 

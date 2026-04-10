@@ -48,12 +48,14 @@ class PdfGeracaoResource extends Resource
                         'orcamento' => 'primary',
                         'contrato'  => 'info',
                         'os'        => 'warning',
+                        'garantia'  => 'success',
                         default     => 'gray',
                     })
                     ->formatStateUsing(fn($state) => match ($state) {
                         'orcamento' => '📄 Orçamento',
                         'contrato'  => '⚖️ Contrato',
                         'os'        => '🔧 OS',
+                        'garantia'  => '🛡️ Garantia',
                         default     => ucfirst($state ?? 'N/A'),
                     }),
 
@@ -107,6 +109,7 @@ class PdfGeracaoResource extends Resource
                         'orcamento' => 'Orçamento',
                         'contrato'  => 'Contrato',
                         'os'        => 'Ordem de Serviço',
+                        'garantia'  => 'Garantia',
                     ]),
             ])
             ->actions([
@@ -138,7 +141,7 @@ class PdfGeracaoResource extends Resource
                 Tables\Actions\DeleteBulkAction::make(),
             ])
             ->emptyStateHeading('Nenhum PDF gerado')
-            ->emptyStateDescription('Os PDFs gerados via botão "Gerar PDF (Fila)" aparecerão aqui com status e link de download.')
+            ->emptyStateDescription('Os PDFs gerados via botão "Gerar PDF" aparecerão aqui com status e link de download.')
             ->emptyStateIcon('heroicon-o-document');
     }
 

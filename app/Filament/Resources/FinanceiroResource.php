@@ -620,13 +620,12 @@ class FinanceiroResource extends Resource
 
                         // PDF
                         Tables\Actions\Action::make('pdf')
-                            ->label('Baixar PDF')
-                            ->tooltip('Baixar PDF')
+                            ->label('Gerar PDF')
+                            ->tooltip('Gerar PDF em fila')
                             ->icon('heroicon-s-document-text')
                             ->color('success')
                             // ->iconButton()
-                            ->url(fn(Financeiro $record) => route('financeiro.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->url(fn(Financeiro $record) => route('financeiro.pdf', $record)),
 
                         // Gerar Recibo (apenas para entradas pagas)
                         Tables\Actions\Action::make('recibo')

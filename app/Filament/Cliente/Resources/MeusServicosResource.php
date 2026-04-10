@@ -124,11 +124,11 @@ class MeusServicosResource extends Resource
 
                 // Botão para baixar garantia se concluída
                 Tables\Actions\Action::make('garantia')
-                    ->label('Certificado')
+                    ->label('Gerar Certificado')
                     ->icon('heroicon-o-check-badge')
                     ->color('success')
+                    ->tooltip('Gerar certificado em fila')
                     ->url(fn (OrdemServico $record) => route('os.pdf', $record)) // Usando PDF da OS como "certificado" por enquanto
-                    ->openUrlInNewTab()
                     ->visible(fn (OrdemServico $record) => in_array($record->status, ['concluida', 'finalizada'])),
 
                 Tables\Actions\Action::make('whatsapp')

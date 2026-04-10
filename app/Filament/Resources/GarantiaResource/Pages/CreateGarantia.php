@@ -3,11 +3,23 @@
 namespace App\Filament\Resources\GarantiaResource\Pages;
 
 use App\Filament\Resources\GarantiaResource;
+use App\Filament\Resources\PerfilGarantiaResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateGarantia extends CreateRecord
 {
     protected static string $resource = GarantiaResource::class;
+
+    public function mount(): void
+    {
+        \Filament\Notifications\Notification::make()
+            ->title('Criação manual desativada')
+            ->body('Cadastre perfis de garantia (A/B/C) e vincule-os aos serviços em Configurações.')
+            ->warning()
+            ->send();
+
+        $this->redirect(PerfilGarantiaResource::getUrl('index'));
+    }
 
     protected function afterCreate(): void
     {
@@ -28,7 +40,8 @@ class CreateGarantia extends CreateRecord
                 $record->id,
                 'garantia',
                 auth()->id(),
-                $htmlContent
+                $htmlContent,
+                $record->ordemServico?->orcamento_id
             );
 
             \Filament\Notifications\Notification::make()

@@ -155,12 +155,11 @@ class ProdutoResource extends Resource
                     delete: true,
                     extraActions: [
                         Tables\Actions\Action::make('download')
-                            ->label('Baixar PDF')
-                            ->tooltip('Baixar PDF')
+                            ->label('Gerar PDF')
+                            ->tooltip('Gerar PDF em fila')
                             ->icon('heroicon-o-arrow-down-tray')
                             ->color('success')
-                            ->url(fn(Produto $record) => route('produto.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->url(fn(Produto $record) => route('produto.pdf', $record)),
                     ]
                 )
             )

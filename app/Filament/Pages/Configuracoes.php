@@ -285,10 +285,13 @@ class Configuracoes extends Page implements HasForms
                                                     ])
                                                     ->required()
                                                     ->columnSpan(1),
-                                                TextInput::make('dias_garantia')
-                                                    ->label('Garantia (dias)')
-                                                    ->numeric()
-                                                    ->placeholder('Opcional')
+                                                Select::make('perfil_garantia_id')
+                                                    ->label('Perfil de Garantia')
+                                                    ->options(fn() => \App\Models\PerfilGarantia::query()->orderBy('nome')->pluck('nome', 'id')->toArray())
+                                                    ->searchable()
+                                                    ->preload()
+                                                    ->placeholder('Selecione um perfil')
+                                                    ->helperText('Defina os dias e termos no cadastro de Perfil de Garantia.')
                                                     ->columnSpan(1),
                                                 TextInput::make('icon')
                                                     ->label('Ícone (Heroicon)')
@@ -356,10 +359,10 @@ class Configuracoes extends Page implements HasForms
                                                 '<div class="flex items-center space-x-3">' .
                                                 '<svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>' .
                                                 '<div>' .
-                                                '<h3 class="font-semibold text-purple-900">Gestão de Garantias</h3>' .
-                                                '<p class="text-sm text-purple-700">Visualize todas as garantias automáticas e ative ou desative-as.</p>' .
-                                                '<a href="/admin/configuracoes/garantias" class="inline-flex items-center mt-2 text-sm font-medium text-purple-600 hover:text-purple-800">' .
-                                                'Acessar Garantias &rarr;' .
+                                                '<h3 class="font-semibold text-purple-900">Perfis de Garantia</h3>' .
+                                                '<p class="text-sm text-purple-700">Cadastre perfis (A/B/C...) com dias e termos legais para vincular aos serviços.</p>' .
+                                                '<a href="' . \App\Filament\Resources\PerfilGarantiaResource::getUrl('index') . '" class="inline-flex items-center mt-2 text-sm font-medium text-purple-600 hover:text-purple-800">' .
+                                                'Acessar Perfis de Garantia &rarr;' .
                                                 '</a>' .
                                                 '</div>' .
                                                 '</div>' .

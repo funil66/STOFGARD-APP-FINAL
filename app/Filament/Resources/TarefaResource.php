@@ -161,12 +161,11 @@ class TarefaResource extends Resource
                     delete: true,
                     extraActions: [
                         Tables\Actions\Action::make('download')
-                            ->label('Baixar PDF')
-                            ->tooltip('Baixar PDF')
+                            ->label('Gerar PDF')
+                            ->tooltip('Gerar PDF em fila')
                             ->icon('heroicon-o-arrow-down-tray')
                             ->color('success')
-                            ->url(fn(Tarefa $record) => route('tarefa.pdf', $record))
-                            ->openUrlInNewTab(),
+                            ->url(fn(Tarefa $record) => route('tarefa.pdf', $record)),
                     ]
                 )
             )
