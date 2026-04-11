@@ -11,19 +11,19 @@ class DigitalSealService
 {
     public static function buildSealData(string $tipo, string $modeloId): array
     {
-        $nomeFantasia = 'Stofgard';
+        $nomeFantasia = 'Autonomia';
         try {
             $settings = new SettingsHelper();
-            $nomeFantasia = $settings->get('empresa_nome', 'Stofgard') ?: 'Stofgard';
+            $nomeFantasia = $settings->get('empresa_nome', 'Autonomia') ?: 'Autonomia';
         } catch (\Throwable) {
-            $nomeFantasia = 'Stofgard';
+            $nomeFantasia = 'Autonomia';
         }
 
         $data = now()->format('d/m/Y H:i:s');
 
         $hashInput = $tipo . $modeloId . $nomeFantasia . $data;
         $docHash = hash('sha256', $hashInput);
-        $validationUrl = rtrim((string) env('APP_URL', 'https://stofgard.com'), '/') . '/validar/' . $docHash;
+        $validationUrl = rtrim((string) env('APP_URL', 'https://autonomia.com'), '/') . '/validar/' . $docHash;
 
         $qrSvg = null;
 

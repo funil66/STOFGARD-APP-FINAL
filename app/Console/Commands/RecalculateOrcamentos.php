@@ -7,7 +7,7 @@ use App\Models\Orcamento;
 
 class RecalculateOrcamentos extends Command
 {
-    protected $signature = 'stofgard:recalc-orcamentos';
+    protected $signature = 'autonomia:recalc-orcamentos';
     protected $description = 'Recalcula e persiste os totais de todos os orçamentos (valor_subtotal, valor_desconto, valor_total)';
 
     public function handle(): int

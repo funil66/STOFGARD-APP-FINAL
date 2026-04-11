@@ -8,7 +8,7 @@ use App\Services\PixService;
 
 class RenderOrcamentoHtml extends Command
 {
-    protected $signature = 'stofgard:render-orcamento-html {orcamentoId?}';
+    protected $signature = 'autonomia:render-orcamento-html {orcamentoId?}';
     protected $description = 'Renderiza a view do orcamento para HTML em storage/debug/orcamento-{id}.html para testes (Puppeteer)';
 
     public function handle(): int

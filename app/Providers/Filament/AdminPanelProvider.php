@@ -27,8 +27,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('Stofgard')
-            ->brandLogo(asset('images/logo-stofgard.png'))
+            ->brandName(config('app.name', 'Autonomia'))
+            ->brandLogo(asset('images/logo.png'))
             ->brandLogoHeight('3rem')
             ->favicon(asset('images/favicon.ico'))
             ->colors([

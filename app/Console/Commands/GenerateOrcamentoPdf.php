@@ -12,7 +12,7 @@ use App\Services\PdfService;
 
 class GenerateOrcamentoPdf extends Command
 {
-    protected $signature = 'stofgard:generate-orcamento-pdf {orcamentoId?} {--v2 : Use the v2 table-based layout (compact, logo palette)}';
+    protected $signature = 'autonomia:generate-orcamento-pdf {orcamentoId?} {--v2 : Use the v2 table-based layout (compact, logo palette)}';
     protected $description = 'Gera um PDF do orçamento especificado (ou o último) e salva em storage/app/public/orcamentos/';
 
     public function handle(): int

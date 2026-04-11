@@ -72,7 +72,7 @@ class PopulateTestData extends Command
             
             $this->comment('💡 Dicas:');
             $this->line('   • Acesse: http://localhost/admin');
-            $this->line('   • Login: admin@stofgard.com / admin123');
+            $this->line('   • Login: admin@autonomia.com / admin123');
             $this->line('   • Explore os diferentes módulos do sistema');
             $this->newLine();
 

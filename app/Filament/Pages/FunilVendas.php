@@ -221,7 +221,7 @@ class FunilVendas extends Page
                     }
 
                     $scripts = [
-                        'agitar' => "Fala {$orcamento->cliente->nome}, beleza? Aqui é da Stofgard. Como tá a evolução do seu projeto? Precisando de algo, só dar o grito!",
+                        'agitar' => "Fala {$orcamento->cliente->nome}, beleza? Aqui é da Autonomia. Como tá a evolução do seu projeto? Precisando de algo, só dar o grito!",
                         'promocao' => "Opa {$orcamento->cliente->nome}! Passando pra avisar que liberamos uma condição especial pros serviços que você olhou. Bora fechar?",
                         'fechamento' => "E aí {$orcamento->cliente->nome}, conseguimos aprovar aquele orçamento? O time já tá engatilhado pra começar!",
                     ];

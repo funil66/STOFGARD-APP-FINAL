@@ -167,11 +167,11 @@ class AsaasTenantService
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => 15,
             CURLOPT_CUSTOMREQUEST => $httpMethod,
-            CURLOPT_USERAGENT => 'STOFGARD-APP/1.0',
+            CURLOPT_USERAGENT => 'AUTONOMIA-APP/1.0',
             CURLOPT_HTTPHEADER => [
                 'accept: application/json',
                 'content-type: application/json',
-                'User-Agent: STOFGARD-APP/1.0',
+                'User-Agent: AUTONOMIA-APP/1.0',
                 "access_token:{$this->apiKey}",
             ],
         ]);

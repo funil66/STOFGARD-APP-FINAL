@@ -282,6 +282,6 @@ class CreateSampleData extends Command
         $this->newLine();
         $this->info('✅ Sistema populado e pronto para demonstração!');
         $this->line('🌐 Acesse: http://localhost/admin');
-        $this->line('👤 Login: admin@stofgard.com / admin123');
+        $this->line('👤 Login: admin@autonomia.com / admin123');
     }
 }

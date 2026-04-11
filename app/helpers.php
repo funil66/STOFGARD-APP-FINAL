@@ -119,7 +119,7 @@ if (!function_exists('company_pdf_identity')) {
             }
 
             $normalized = mb_strtolower(trim($value));
-            if (in_array($normalized, ['stofgard', 'autonomia ilimitada', 'minha empresa', 'sistema', 'empresa'], true)) {
+            if (in_array($normalized, ['autonomia', 'autonomia ilimitada', 'minha empresa', 'sistema', 'empresa'], true)) {
                 return true;
             }
 
