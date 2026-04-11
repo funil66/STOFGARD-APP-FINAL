@@ -48,3 +48,4 @@ mudancas_*.txt
 **/caddy
 frankenphp
 frankenphp-worker.php
+/public/storage
