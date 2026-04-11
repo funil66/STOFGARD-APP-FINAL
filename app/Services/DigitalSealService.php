@@ -5,30 +5,59 @@ namespace App\Services;
 use App\Helpers\SettingsHelper;
 use Illuminate\Support\Facades\Cache;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use SimpleSoftwareIO\QrCode\Generator;
 
 class DigitalSealService
 {
     public static function buildSealData(string $tipo, string $modeloId): array
     {
-        $settings = new SettingsHelper();
-        $nomeFantasia = $settings->get('empresa_nome', 'Stofgard');
+        $nomeFantasia = 'Stofgard';
+        try {
+            $settings = new SettingsHelper();
+            $nomeFantasia = $settings->get('empresa_nome', 'Stofgard') ?: 'Stofgard';
+        } catch (\Throwable) {
+            $nomeFantasia = 'Stofgard';
+        }
+
         $data = now()->format('d/m/Y H:i:s');
 
         $hashInput = $tipo . $modeloId . $nomeFantasia . $data;
         $docHash = hash('sha256', $hashInput);
         $validationUrl = rtrim((string) env('APP_URL', 'https://stofgard.com'), '/') . '/validar/' . $docHash;
 
-        $qrBase64 = base64_encode(QrCode::format('svg')->size(100)->generate($validationUrl));
+        $qrSvg = null;
 
-        Cache::put('digital_seal:' . $docHash, [
-            'tipo' => $tipo,
-            'modelo_id' => $modeloId,
-            'company_name' => $nomeFantasia,
-            'generated_at' => $data,
-            'hash' => $docHash,
-            'validation_url' => $validationUrl,
-            'validated_at' => now()->toDateTimeString(),
-        ], now()->addYears(2));
+        try {
+            $qrSvg = QrCode::format('svg')->size(100)->generate($validationUrl);
+        } catch (\Throwable) {
+            try {
+                if (class_exists(Generator::class)) {
+                    $qrSvg = (new Generator())->format('svg')->size(100)->generate($validationUrl);
+                }
+            } catch (\Throwable) {
+                $qrSvg = null;
+            }
+        }
+
+        if (blank($qrSvg)) {
+            throw new \RuntimeException('Não foi possível gerar QR Code do selo digital.');
+        }
+
+        $qrBase64 = base64_encode($qrSvg);
+
+        try {
+            Cache::put('digital_seal:' . $docHash, [
+                'tipo' => $tipo,
+                'modelo_id' => $modeloId,
+                'company_name' => $nomeFantasia,
+                'generated_at' => $data,
+                'hash' => $docHash,
+                'validation_url' => $validationUrl,
+                'validated_at' => now()->toDateTimeString(),
+            ], now()->addYears(2));
+        } catch (\Throwable) {
+            // Falha de cache não pode impedir a geração do PDF/QR.
+        }
 
         return [
             'company_name' => $nomeFantasia,

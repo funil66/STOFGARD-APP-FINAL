@@ -372,12 +372,40 @@
     @endif
 
     <!-- ASSINATURAS -->
+    @php
+        $assinaturaCliente = null;
+        $assinaturaTecnico = null;
+
+        if (!empty($record->assinatura)) {
+            $assinaturaCliente = str_starts_with($record->assinatura, 'data:image')
+                ? $record->assinatura
+                : 'data:image/png;base64,' . $record->assinatura;
+        }
+
+        if (!empty($record->assinatura_tecnico)) {
+            $assinaturaTecnico = str_starts_with($record->assinatura_tecnico, 'data:image')
+                ? $record->assinatura_tecnico
+                : 'data:image/png;base64,' . $record->assinatura_tecnico;
+        }
+    @endphp
     <div style="margin-top: 60px; display: flex; justify-content: space-between; padding-top: 20px;">
-        <div style="width: 40%; border-top: 1px solid #000; text-align: center; font-size: 10px;">
-            ASSINATURA DO TÉCNICO
+        <div style="width: 40%; text-align: center; font-size: 10px;">
+            <div style="height: 55px; position: relative;">
+                @if($assinaturaTecnico)
+                    <img src="{{ $assinaturaTecnico }}" alt="Assinatura do Técnico"
+                        style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); max-height: 50px; max-width: 220px;">
+                @endif
+            </div>
+            <div style="border-top: 1px solid #000; padding-top: 2px;">ASSINATURA DO TÉCNICO</div>
         </div>
-        <div style="width: 40%; border-top: 1px solid #000; text-align: center; font-size: 10px;">
-            ASSINATURA DO CLIENTE
+        <div style="width: 40%; text-align: center; font-size: 10px;">
+            <div style="height: 55px; position: relative;">
+                @if($assinaturaCliente)
+                    <img src="{{ $assinaturaCliente }}" alt="Assinatura do Cliente"
+                        style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); max-height: 50px; max-width: 220px;">
+                @endif
+            </div>
+            <div style="border-top: 1px solid #000; padding-top: 2px;">ASSINATURA DO CLIENTE</div>
         </div>
     </div>
 </body>

@@ -24,7 +24,7 @@ chmod +x deploy/deploy.sh
 
 1. Verifica se o Docker está instalado.
 2. Cria o arquivo `.env` a partir de `.env.prod` (já configurado com Mysql/Redis) se não existir.
-3. Sobe os containers (App, Nginx, Redis, MySQL) usando auto-detecção de compose (`docker-compose.prod.yml`, `docker-compose.standalone.yml`, `compose.yaml` ou `docker-compose.yml`).
+3. Sobe os containers (App, Nginx, Redis, MySQL/Postgres) usando auto-detecção de compose (`docker-compose.prod.yml`, `docker-compose.standalone.yml`, `docker-compose.yml` ou `compose.yaml`).
 4. Executa comandos finais:
    - `composer install`
    - `artisan migrate`
@@ -36,6 +36,15 @@ chmod +x deploy/deploy.sh
 - O script **não** regenera `APP_KEY` a cada deploy.
 - `APP_KEY` só é gerada quando estiver ausente no ambiente.
 - Worker de fila usa conexão configurável por `QUEUE_CONNECTION` (sem fixar `redis`).
+- Em `standalone`, o script usa automaticamente `.env.standalone` como `--env-file` do compose.
+
+### Variáveis opcionais do script
+
+Você pode forçar arquivos específicos no deploy:
+
+```bash
+DEPLOY_COMPOSE_FILE=docker-compose.standalone.yml DEPLOY_ENV_FILE=.env.standalone ./deploy/deploy.sh
+```
 
 ## Verificação
 
@@ -65,3 +74,7 @@ LEGACY_PIX_WEBHOOK_ENABLED=false
 chmod +x scripts/post_deploy_smoke.sh
 ./scripts/post_deploy_smoke.sh
 ```
+
+## Assinaturas Digitais de OS
+
+- Documentação técnica completa do fluxo cliente+técnico: [docs/ASSINATURAS_DIGITAIS_OS.md](docs/ASSINATURAS_DIGITAIS_OS.md)

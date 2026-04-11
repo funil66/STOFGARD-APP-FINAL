@@ -176,6 +176,7 @@ class OrdemServicoObserver
 
             try {
                 $settingsArray = \App\Models\Setting::pluck('value', 'key')->toArray();
+                $companyIdentity = company_pdf_identity();
                 $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
                 foreach ($jsonFields as $k) {
                     if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
@@ -186,11 +187,22 @@ class OrdemServicoObserver
                     }
                 }
                 $config = (object) $settingsArray;
-                $tenantConfig = \App\Models\Configuracao::first();
+                $tenantConfig = \App\Models\Configuracao::query()
+                    ->whereNotNull('empresa_nome')
+                    ->where('empresa_nome', '!=', '')
+                    ->latest('id')
+                    ->first();
+
+                if (!$tenantConfig) {
+                    $tenantConfig = \App\Models\Configuracao::query()->latest('id')->first();
+                }
+
                 if ($tenantConfig) {
-                    $config->empresa_logo = $tenantConfig->empresa_logo ?? null;
-                    $config->empresa_nome = $tenantConfig->empresa_nome ?? null;
-                    $config->empresa_cnpj = $tenantConfig->empresa_cnpj ?? null;
+                    $config->empresa_logo = $companyIdentity['empresa_logo'] ?? $config->empresa_logo ?? $tenantConfig->empresa_logo ?? null;
+                    $config->empresa_nome = $companyIdentity['empresa_nome'] ?? $config->empresa_nome ?? $tenantConfig->empresa_nome ?? null;
+                    $config->empresa_cnpj = $companyIdentity['empresa_cnpj'] ?? $config->empresa_cnpj ?? $tenantConfig->empresa_cnpj ?? null;
+                    $config->empresa_telefone = $companyIdentity['empresa_telefone'] ?? $config->empresa_telefone ?? $tenantConfig->empresa_telefone ?? null;
+                    $config->empresa_email = $companyIdentity['empresa_email'] ?? $config->empresa_email ?? $tenantConfig->empresa_email ?? null;
                 }
                 
                 // Get one garantia as referência para o PDF

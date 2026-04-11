@@ -558,6 +558,30 @@ class OrdemServicoResource extends Resource
                     ->falseColor('danger')
                     ->getStateUsing(fn(?OrdemServico $record): bool => $record?->status_garantia === 'ativa'),
 
+                Tables\Columns\IconColumn::make('assinado')
+                    ->label('Ass.')
+                    ->tooltip(fn(?OrdemServico $record): string => filled($record?->assinatura)
+                        ? 'OS assinada pelo cliente'
+                        : 'Sem assinatura do cliente')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-pencil-square')
+                    ->falseIcon('heroicon-o-minus-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->getStateUsing(fn(?OrdemServico $record): bool => filled($record?->assinatura)),
+
+                Tables\Columns\IconColumn::make('assinado_tecnico')
+                    ->label('Téc.')
+                    ->tooltip(fn(?OrdemServico $record): string => filled($record?->assinatura_tecnico)
+                        ? 'OS assinada pelo técnico'
+                        : 'Sem assinatura do técnico')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-badge')
+                    ->falseIcon('heroicon-o-minus-circle')
+                    ->trueColor('success')
+                    ->falseColor('gray')
+                    ->getStateUsing(fn(?OrdemServico $record): bool => filled($record?->assinatura_tecnico)),
+
                 Tables\Columns\TextColumn::make('valor_total')
                     ->money('BRL')
                     ->label('Total')
@@ -725,7 +749,25 @@ class OrdemServicoResource extends Resource
                             ->action(function (OrdemServico $record, array $data) {
                                 app(\App\Actions\FinalizeAssinaturaAction::class)->execute($record, $data['assinatura'], request());
                             })
-                            ->successNotificationTitle('OS Assinada Digitalmente com Sucesso!'),
+                            ->successNotificationTitle('OS assinada digitalmente pelo cliente!'),
+
+                        Tables\Actions\Action::make('assinar_tecnico')
+                            ->label('Assinar Téc.')
+                            ->tooltip('Assinatura do Técnico (usuário logado)')
+                            ->icon('heroicon-s-identification')
+                            ->color('primary')
+                            ->visible(fn(OrdemServico $record) => $record->status !== 'cancelada' && empty($record->assinatura_tecnico))
+                            ->form([
+                                \Saade\FilamentAutograph\Forms\Components\SignaturePad::make('assinatura_tecnico')
+                                    ->label('Assinatura do Técnico (' . (auth()->user()?->name ?? 'Usuário logado') . ')')
+                                    ->required()
+                                    ->exportBackgroundColor('#ffffff')
+                                    ->exportPenColor('#000000'),
+                            ])
+                            ->action(function (OrdemServico $record, array $data) {
+                                app(\App\Actions\FinalizeAssinaturaAction::class)->execute($record, $data['assinatura_tecnico'], request(), 'tecnico');
+                            })
+                            ->successNotificationTitle('OS assinada digitalmente pelo técnico!'),
                     ]
                 )
             )
@@ -882,6 +924,74 @@ class OrdemServicoResource extends Resource
                             ->columnSpanFull()
                             ->visible(fn($record) => !empty($record->observacoes)),
                     ])
+                    ->collapsible(),
+
+                InfolistSection::make('✍️ Assinatura do Cliente')
+                    ->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
+                            TextEntry::make('assinado_em')
+                                ->label('Assinado em')
+                                ->dateTime('d/m/Y H:i:s')
+                                ->placeholder('Ainda não assinado'),
+                            TextEntry::make('assinatura_pdf_hash')
+                                ->label('Hash do PDF Assinado')
+                                ->copyable()
+                                ->placeholder('—'),
+                        ]),
+                        TextEntry::make('assinatura_preview')
+                            ->label('Assinatura')
+                            ->html()
+                            ->getStateUsing(function (OrdemServico $record) {
+                                if (blank($record->assinatura)) {
+                                    return '<span class="text-gray-500 text-sm">Sem assinatura do cliente.</span>';
+                                }
+
+                                $signature = str_starts_with($record->assinatura, 'data:image')
+                                    ? $record->assinatura
+                                    : 'data:image/png;base64,' . $record->assinatura;
+
+                                return '<img src="' . e($signature) . '" alt="Assinatura do Cliente" style="max-height:110px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; padding:8px;">';
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn(OrdemServico $record) => filled($record->assinatura) || filled($record->assinado_em))
+                    ->collapsible(),
+
+                InfolistSection::make('🛠️ Assinatura do Técnico')
+                    ->schema([
+                        InfolistGrid::make(['default' => 1, 'sm' => 2])->schema([
+                            TextEntry::make('assinado_tecnico_em')
+                                ->label('Assinado em')
+                                ->dateTime('d/m/Y H:i:s')
+                                ->placeholder('Ainda não assinado'),
+                            TextEntry::make('assinatura_tecnico_pdf_hash')
+                                ->label('Hash do PDF Assinado')
+                                ->copyable()
+                                ->placeholder('—'),
+                            TextEntry::make('assinatura_tecnico_user_name')
+                                ->label('Usuário técnico')
+                                ->placeholder('—'),
+                            TextEntry::make('assinatura_tecnico_user_id')
+                                ->label('ID usuário técnico')
+                                ->placeholder('—'),
+                        ]),
+                        TextEntry::make('assinatura_tecnico_preview')
+                            ->label('Assinatura')
+                            ->html()
+                            ->getStateUsing(function (OrdemServico $record) {
+                                if (blank($record->assinatura_tecnico)) {
+                                    return '<span class="text-gray-500 text-sm">Sem assinatura do técnico.</span>';
+                                }
+
+                                $signature = str_starts_with($record->assinatura_tecnico, 'data:image')
+                                    ? $record->assinatura_tecnico
+                                    : 'data:image/png;base64,' . $record->assinatura_tecnico;
+
+                                return '<img src="' . e($signature) . '" alt="Assinatura do Técnico" style="max-height:110px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; padding:8px;">';
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn(OrdemServico $record) => filled($record->assinatura_tecnico) || filled($record->assinado_tecnico_em))
                     ->collapsible(),
 
                 // ===== ABAS DE DETALHES =====

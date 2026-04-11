@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Setting;
 use Filament\Notifications\Notification;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Route;
 
 /**
  * Controller base para geração de PDFs via fila
@@ -19,6 +20,7 @@ abstract class BasePdfQueueController extends Controller
     protected function loadConfig(): object
     {
         $settingsArray = Setting::all()->pluck('value', 'key')->toArray();
+        $companyIdentity = company_pdf_identity();
 
         // Decodifica JSONs conhecidos
         $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
@@ -29,13 +31,22 @@ abstract class BasePdfQueueController extends Controller
         }
 
         try {
-            $tenantConfig = \App\Models\Configuracao::query()->first();
+            $tenantConfig = \App\Models\Configuracao::query()
+                ->whereNotNull('empresa_nome')
+                ->where('empresa_nome', '!=', '')
+                ->latest('id')
+                ->first();
+
+            if (!$tenantConfig) {
+                $tenantConfig = \App\Models\Configuracao::query()->latest('id')->first();
+            }
+
             if ($tenantConfig) {
-                $settingsArray['empresa_logo'] = $tenantConfig->empresa_logo ?? ($settingsArray['empresa_logo'] ?? null);
-                $settingsArray['empresa_nome'] = $tenantConfig->empresa_nome ?? ($settingsArray['empresa_nome'] ?? null);
-                $settingsArray['empresa_cnpj'] = $tenantConfig->empresa_cnpj ?? ($settingsArray['empresa_cnpj'] ?? null);
-                $settingsArray['empresa_telefone'] = $tenantConfig->empresa_telefone ?? ($settingsArray['empresa_telefone'] ?? null);
-                $settingsArray['empresa_email'] = $tenantConfig->empresa_email ?? ($settingsArray['empresa_email'] ?? null);
+                $settingsArray['empresa_logo'] = $companyIdentity['empresa_logo'] ?? $settingsArray['empresa_logo'] ?? $tenantConfig->empresa_logo ?? null;
+                $settingsArray['empresa_nome'] = $companyIdentity['empresa_nome'] ?? $settingsArray['empresa_nome'] ?? $tenantConfig->empresa_nome ?? null;
+                $settingsArray['empresa_cnpj'] = $companyIdentity['empresa_cnpj'] ?? $settingsArray['empresa_cnpj'] ?? $tenantConfig->empresa_cnpj ?? null;
+                $settingsArray['empresa_telefone'] = $companyIdentity['empresa_telefone'] ?? $settingsArray['empresa_telefone'] ?? $tenantConfig->empresa_telefone ?? null;
+                $settingsArray['empresa_email'] = $companyIdentity['empresa_email'] ?? $settingsArray['empresa_email'] ?? $tenantConfig->empresa_email ?? null;
             }
         } catch (\Throwable) {
             // mantém fallback com settings já carregados
@@ -95,8 +106,13 @@ abstract class BasePdfQueueController extends Controller
                 ->success()
                 ->send();
 
-            return redirect()
-                ->route('filament.admin.resources.pdf-geracoes.index')
+            if (Route::has('filament.admin.resources.pdf-geracoes.index')) {
+                return redirect()
+                    ->route('filament.admin.resources.pdf-geracoes.index')
+                    ->with('success', 'PDF enfileirado com sucesso!');
+            }
+
+            return redirect('/admin')
                 ->with('success', 'PDF enfileirado com sucesso!');
 
         } catch (\Exception $e) {

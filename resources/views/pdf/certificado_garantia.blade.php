@@ -15,12 +15,14 @@
             $darkBg = '#374151';
             $text = $config->pdf_color_text ?? '#1f2937';
 
-            $empresaNomeFantasia = $config->empresa_nome ?? $config->nome_sistema ?? null;
-            $empresaDoc = $config->empresa_cnpj ?? $config->cnpj ?? null;
-            $empresaTelefone = $config->empresa_telefone ?? $config->telefone_sistema ?? null;
-            $empresaEmail = $config->empresa_email ?? $config->email_sistema ?? null;
+            $companyIdentity = function_exists('company_pdf_identity') ? company_pdf_identity() : [];
 
-            $logoPath = $config->empresa_logo ?? null;
+            $empresaNomeFantasia = $companyIdentity['empresa_nome'] ?? $config->empresa_nome ?? null;
+            $empresaDoc = $companyIdentity['empresa_cnpj'] ?? $config->empresa_cnpj ?? $config->cnpj ?? null;
+            $empresaTelefone = $companyIdentity['empresa_telefone'] ?? $config->empresa_telefone ?? $config->telefone_sistema ?? null;
+            $empresaEmail = $companyIdentity['empresa_email'] ?? $config->empresa_email ?? $config->email_sistema ?? null;
+
+            $logoPath = $companyIdentity['empresa_logo'] ?? $config->empresa_logo ?? null;
             if ($logoPath && !file_exists($logoPath)) {
                 $logoPath = storage_path('app/public/' . ltrim($logoPath, '/'));
             }
@@ -29,6 +31,7 @@
             $clienteNome = $cliente?->nome;
             $clienteDoc = $cliente?->cpf_cnpj ?? $cliente?->documento;
             $clienteTel = $cliente?->telefone;
+            $idParceiro = $os?->id_parceiro;
 
             $clienteEndereco = trim(collect([
                 $cliente?->logradouro,
@@ -114,20 +117,37 @@
             $tituloTermos = $perfilGarantia?->titulo_termos_garantia ?: 'TERMOS E CONDIÇÕES LEGAIS DE GARANTIA';
             $textoRodape = $perfilGarantia?->texto_rodape_certificado ?: 'Este documento atesta a qualidade do serviço prestado. Não possui valor fiscal.';
 
-            $seloDigital = \App\Services\DigitalSealService::buildSealData('garantia', (string) ($os->id ?? $garantia->id ?? '0'));
-            $dataGeracaoCertificado = $seloDigital['generated_at'];
-            $hashCertificado = $seloDigital['hash'];
-            $urlValidacaoCertificado = $seloDigital['validation_url'];
-            $qrCertificadoSvg = $seloDigital['qr_base64'];
+            $dataGeracaoCertificado = now()->format('d/m/Y H:i:s');
+            $hashCertificado = null;
+            $urlValidacaoCertificado = null;
+            $qrCertificadoSvg = null;
+
+            try {
+                if (method_exists(\App\Services\DigitalSealService::class, 'buildSealData')) {
+                    $seloDigital = \App\Services\DigitalSealService::buildSealData('garantia', (string) ($os->id ?? $garantia->id ?? '0'));
+                    $dataGeracaoCertificado = $seloDigital['generated_at'] ?? $dataGeracaoCertificado;
+                    $hashCertificado = $seloDigital['hash'] ?? null;
+                    $urlValidacaoCertificado = $seloDigital['validation_url'] ?? null;
+                    $qrCertificadoSvg = $seloDigital['qr_base64'] ?? null;
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Falha ao gerar selo digital no certificado de garantia', [
+                    'erro' => $e->getMessage(),
+                    'os_id' => $os->id ?? null,
+                    'garantia_id' => $garantia->id ?? null,
+                ]);
+            }
+
+            $hasSeloDigital = filled($qrCertificadoSvg) && filled($hashCertificado) && filled($urlValidacaoCertificado);
         @endphp
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', Arial, sans-serif;
-            font-size: 10px;
+            font-size: 9px;
             color: {{ $text }};
-            line-height: 1.35;
+            line-height: 1.25;
             margin: 0;
-            padding: 0 1cm;
+            padding: 0 0.8cm;
         }
 
         .page-frame {
@@ -157,20 +177,20 @@
         }
 
         .header-spacer {
-            height: 3.8cm;
+            height: 3.1cm;
         }
 
         .footer-spacer {
-            height: 3.0cm;
+            height: 2.4cm;
         }
 
         .header {
             position: fixed;
             top: 0;
-            left: 1cm;
-            right: 1cm;
-            height: 3.3cm;
-            padding-top: 0.35cm;
+            left: 0.8cm;
+            right: 0.8cm;
+            height: 2.8cm;
+            padding-top: 0.2cm;
             border-bottom: 2px solid #d1d5db;
             background: white;
             z-index: 1000;
@@ -180,27 +200,27 @@
         .footer {
             position: fixed;
             bottom: 0;
-            left: 1cm;
-            right: 1cm;
-            height: 2.75cm;
+            left: 0.8cm;
+            right: 0.8cm;
+            height: 2.2cm;
             background: white;
             z-index: 1000;
-            padding-top: 4px;
+            padding-top: 2px;
         }
 
         .logo-img {
-            max-width: 200px;
-            max-height: 64px;
-            margin-bottom: 4px;
+            max-width: 170px;
+            max-height: 52px;
+            margin-bottom: 2px;
         }
 
         .brand-name {
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 700;
             color: #111827;
             text-transform: uppercase;
             letter-spacing: 0.35px;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
         .company-info {
@@ -212,7 +232,7 @@
         .quadro {
             border: 1.8px solid #9ca3af;
             border-radius: 6px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             overflow: hidden;
             page-break-inside: avoid;
             background: #fff;
@@ -221,7 +241,7 @@
         .quadro-certificado {
             border: 2px solid {{ $darkBg }};
             border-radius: 10px;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
             overflow: hidden;
             background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
@@ -231,7 +251,7 @@
         .quadro-titulo {
             background: {{ $darkBg }};
             color: #fff;
-            padding: 7px 10px;
+            padding: 5px 8px;
             font-weight: 700;
             font-size: 10px;
             text-transform: uppercase;
@@ -240,19 +260,19 @@
         }
 
         .quadro-corpo {
-            padding: 10px;
-            font-size: 9.5px;
+            padding: 8px;
+            font-size: 8.7px;
         }
 
         .certificado-title {
-            font-size: 29px;
+            font-size: 24px;
             font-weight: 800;
             line-height: 1;
             text-align: center;
             color: #111827;
             letter-spacing: 1.2px;
             text-transform: uppercase;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             text-shadow: 0 1px 0 #ffffff;
         }
 
@@ -260,20 +280,20 @@
             text-align: center;
             font-size: 9px;
             color: #4b5563;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             text-transform: uppercase;
             font-weight: 600;
             letter-spacing: 0.4px;
         }
 
         .dados-os {
-            width: 54%;
+            width: 58%;
             margin-left: auto;
             border: 1.8px solid #9ca3af;
             border-radius: 6px;
-            padding: 9px;
+            padding: 7px;
             background: #ffffff;
-            line-height: 1.6;
+            line-height: 1.35;
             font-size: 8.8px;
             box-shadow: inset 0 0 0 1px #f3f4f6;
         }
@@ -286,8 +306,8 @@
         }
 
         .cliente-linha {
-            margin-bottom: 3px;
-            font-size: 10px;
+            margin-bottom: 2px;
+            font-size: 9px;
         }
 
         .cliente-linha strong {
@@ -297,13 +317,13 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 7px;
+            margin-top: 5px;
         }
 
         table thead th {
             background: #f3f4f6;
             border: 1px solid #d1d5db;
-            padding: 6px;
+            padding: 4px;
             text-align: left;
             font-size: 8.8px;
             color: #111827;
@@ -312,29 +332,29 @@
 
         table tbody td {
             border: 1px solid #e5e7eb;
-            padding: 7px 6px;
-            font-size: 9px;
+            padding: 5px 4px;
+            font-size: 8.4px;
             vertical-align: top;
         }
 
         .servico-meta {
-            margin-bottom: 8px;
-            padding: 8px;
+            margin-bottom: 5px;
+            padding: 6px;
             border: 1px solid #d1d5db;
             border-radius: 4px;
             background: #f9fafb;
-            font-size: 9px;
-            line-height: 1.6;
+            font-size: 8.4px;
+            line-height: 1.35;
         }
 
         .data-destaque {
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             background: #eff6ff;
             border: 1.5px solid {{ $primary }};
             border-left: 6px solid {{ $primary }};
             border-radius: 4px;
-            padding: 8px 10px;
-            font-size: 9px;
+            padding: 6px 8px;
+            font-size: 8.4px;
             color: #1e3a8a;
             font-weight: 700;
         }
@@ -343,19 +363,19 @@
             border: 1px solid #d1d5db;
             border-left: 5px solid {{ $primary }};
             border-radius: 4px;
-            padding: 10px;
+            padding: 7px;
             background: #fafafa;
-            font-size: 9px;
-            line-height: 1.55;
+            font-size: 8.2px;
+            line-height: 1.3;
         }
 
         .termos-box p {
-            margin: 0 0 7px 0;
+            margin: 0 0 4px 0;
         }
 
         .termos-box ul,
         .termos-box ol {
-            margin: 7px 0 7px 18px;
+            margin: 4px 0 4px 14px;
             padding: 0;
         }
 
@@ -363,17 +383,17 @@
             border: 1.6px solid #d1d5db;
             border-radius: 6px;
             text-align: left;
-            padding: 7px 10px;
+            padding: 5px 8px;
             background: #f9fafb;
-            font-size: 8.8px;
+            font-size: 8px;
             color: #374151;
-            line-height: 1.35;
+            line-height: 1.2;
         }
 
         .rodape-meta {
             font-weight: 700;
             color: #111827;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
         .rodape-flex {
@@ -388,25 +408,25 @@
         }
 
         .rodape-qr {
-            width: 74px;
+            width: 64px;
             text-align: center;
-            padding-right: 10px;
+            padding-right: 8px;
         }
 
         .rodape-qr img {
             display: block;
-            width: 66px;
-            height: 66px;
+            width: 56px;
+            height: 56px;
             margin: 0 auto;
         }
 
         .rodape-texto {
-            font-size: 8.4px;
+            font-size: 7.8px;
         }
 
         .rodape-micro {
-            margin-top: 2px;
-            font-size: 7.6px;
+            margin-top: 1px;
+            font-size: 7px;
             color: #6b7280;
         }
     </style>
@@ -436,7 +456,9 @@
             <table class="rodape-flex">
                 <tr>
                     <td class="rodape-qr">
-                        <img src="data:image/svg+xml;base64,{{ $qrCertificadoSvg }}" alt="QR Code de validação">
+                        @if($hasSeloDigital)
+                            <img src="data:image/svg+xml;base64,{{ $qrCertificadoSvg }}" alt="QR Code de validação">
+                        @endif
                     </td>
                     <td class="rodape-texto">
                         <div class="rodape-meta">
@@ -451,8 +473,10 @@
                         </div>
                         <div>{{ $textoRodape }}</div>
                         <div class="rodape-micro">Gerado em {{ $dataGeracaoCertificado }}</div>
-                        <div class="rodape-micro">Selo de validação: {{ $hashCertificado }}</div>
-                        <div class="rodape-micro" data-digital-seal="embedded">Validação online: {{ $urlValidacaoCertificado }}</div>
+                        @if($hasSeloDigital)
+                            <div class="rodape-micro">Selo de validação: {{ $hashCertificado }}</div>
+                            <div class="rodape-micro" data-digital-seal="embedded">Validação online: {{ $urlValidacaoCertificado }}</div>
+                        @endif
                     </td>
                 </tr>
             </table>
@@ -482,6 +506,9 @@
 
                             <div class="dados-os">
                                 <strong>Ordem de Serviço:</strong> #{{ $os->numero_os ?? '-' }}<br>
+                                @if(filled($idParceiro))
+                                    <strong>ID Parceiro:</strong> {{ $idParceiro }}<br>
+                                @endif
                                 <strong>Data do Serviço:</strong>
                                 @if($os?->data_conclusao)
                                     {{ \Carbon\Carbon::parse($os->data_conclusao)->format('d/m/Y') }}
@@ -609,7 +636,7 @@
                             <div class="termos-box">
                                 @if($garantiasPorServico->isNotEmpty())
                                     @foreach($garantiasPorServico as $servicoGarantia)
-                                        <p style="margin-bottom: 6px;"><strong>{{ $servicoGarantia['label'] }}:</strong>
+                                        <p style="margin-bottom: 4px;"><strong>{{ $servicoGarantia['label'] }}:</strong>
                                             @if($servicoGarantia['inicio'])
                                                 {{ \Carbon\Carbon::parse($servicoGarantia['inicio'])->format('d/m/Y') }}
                                             @else
@@ -620,11 +647,21 @@
                                             @endif
                                             ({{ $servicoGarantia['dias'] ?? 0 }} dias)
                                         </p>
-
-                                        @if(filled(strip_tags((string) ($servicoGarantia['termos'] ?? ''))))
-                                            {!! $servicoGarantia['termos'] !!}
-                                        @endif
                                     @endforeach
+                                    @php
+                                        $termoPrincipal = $garantiasPorServico
+                                            ->pluck('termos')
+                                            ->filter(fn($termo) => filled(strip_tags((string) $termo)))
+                                            ->first();
+                                    @endphp
+                                    @if(filled(strip_tags((string) $termoPrincipal)))
+                                        {!! $termoPrincipal !!}
+                                    @elseif(filled(strip_tags((string) $termosGarantia)))
+                                        {!! $termosGarantia !!}
+                                    @else
+                                        <p><strong>Cobertura:</strong> Garantia de {{ $garantiaDias }} dias corridos para os itens descritos neste documento.</p>
+                                        <p><strong>Exclusões:</strong> Não cobre mau uso, desgaste natural, acidentes e eventos externos à execução do serviço.</p>
+                                    @endif
                                 @elseif(filled(strip_tags((string) $termosGarantia)))
                                     {!! $termosGarantia !!}
                                 @else

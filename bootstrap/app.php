@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -15,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
         $middleware->append(\App\Http\Middleware\DomainTopologyMiddleware::class);
+        $middleware->redirectGuestsTo(function (Request $request): string {
+            return url('/admin/login');
+        });
 
         $middleware->alias([
             'tenant.jwt' => \App\Http\Middleware\AuthenticateTenantJwt::class,

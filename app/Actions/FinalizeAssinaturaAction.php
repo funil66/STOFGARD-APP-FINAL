@@ -3,7 +3,8 @@
 namespace App\Actions;
 
 use App\Models\OrdemServico;
-use App\Models\Orcamento;
+use App\Models\Setting;
+use App\Services\PdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -34,10 +35,12 @@ class FinalizeAssinaturaAction
      * @param  Request  $request           Request para capturar IP e User-Agent
      * @throws \Exception se PDF não puder ser gerado
      */
-    public function execute(OrdemServico $os, string $signatureData, Request $request): array
+    public function execute(OrdemServico $os, string $signatureData, Request $request, string $assinante = 'cliente'): array
     {
+        $context = $this->resolveSignatureContext($assinante);
+
         // 1. Salvar a assinatura no modelo para geração do PDF
-        $os->update(['assinatura' => $signatureData]);
+        $os->update([$context['signature_column'] => $signatureData]);
 
         // 2. Gerar e salvar o PDF final com a assinatura incluída
         $pdfPath = $this->gerarPdfFinal($os);
@@ -46,19 +49,35 @@ class FinalizeAssinaturaAction
         $pdfHash = $this->calcularHashPdf($pdfPath);
 
         // 4. Capturar metadados legais do assinante
-        $metadata = $this->capturarMetadados($request, $pdfHash);
+        $metadata = $this->capturarMetadados($request, $pdfHash, $context['signer_type']);
+
+        $payload = [
+            $context['metadata_column'] => $metadata,
+            $context['pdf_hash_column'] => $pdfHash,
+            $context['signed_at_column'] => now('America/Sao_Paulo'),
+            $context['ip_column'] => $metadata['ip'],
+            $context['user_agent_column'] => $metadata['user_agent'],
+            $context['timestamp_column'] => now('America/Sao_Paulo'),
+            $context['hash_column'] => hash('sha256', $signatureData . '|' . $pdfHash . '|' . ($metadata['signed_at'] ?? '')),
+        ];
+
+        if (!empty($context['user_id_column'])) {
+            $payload[$context['user_id_column']] = auth()->id();
+        }
+
+        if (!empty($context['user_name_column'])) {
+            $payload[$context['user_name_column']] = auth()->user()?->name;
+        }
 
         // 5. Persistir metadata + hash na OS
-        $os->update([
-            'assinatura_metadata' => $metadata,
-            'assinatura_pdf_hash' => $pdfHash,
-            'assinado_em' => now('America/Sao_Paulo'),
-        ]);
+        $os->update($payload);
 
-        Log::info("[FinalizeAssinaturaAction] OS #{$os->numero_os} assinada digitalmente", [
+        Log::info("[FinalizeAssinaturaAction] OS #{$os->numero_os} assinada digitalmente ({$context['signer_type']})", [
             'ip' => $metadata['ip'],
             'pdf_hash' => $pdfHash,
             'signed_at' => $metadata['signed_at'],
+            'signer_type' => $context['signer_type'],
+            'user_id' => auth()->id(),
         ]);
 
         return [
@@ -66,6 +85,39 @@ class FinalizeAssinaturaAction
             'pdf_path' => $pdfPath,
             'pdf_hash' => $pdfHash,
             'metadata' => $metadata,
+        ];
+    }
+
+    private function resolveSignatureContext(string $assinante): array
+    {
+        if ($assinante === 'tecnico') {
+            return [
+                'signer_type' => 'tecnico',
+                'signature_column' => 'assinatura_tecnico',
+                'metadata_column' => 'assinatura_tecnico_metadata',
+                'pdf_hash_column' => 'assinatura_tecnico_pdf_hash',
+                'signed_at_column' => 'assinado_tecnico_em',
+                'ip_column' => 'assinatura_tecnico_ip',
+                'user_agent_column' => 'assinatura_tecnico_user_agent',
+                'timestamp_column' => 'assinatura_tecnico_timestamp',
+                'hash_column' => 'assinatura_tecnico_hash',
+                'user_id_column' => 'assinatura_tecnico_user_id',
+                'user_name_column' => 'assinatura_tecnico_user_name',
+            ];
+        }
+
+        return [
+            'signer_type' => 'cliente',
+            'signature_column' => 'assinatura',
+            'metadata_column' => 'assinatura_metadata',
+            'pdf_hash_column' => 'assinatura_pdf_hash',
+            'signed_at_column' => 'assinado_em',
+            'ip_column' => 'assinatura_ip',
+            'user_agent_column' => 'assinatura_user_agent',
+            'timestamp_column' => 'assinatura_timestamp',
+            'hash_column' => 'assinatura_hash',
+            'user_id_column' => null,
+            'user_name_column' => null,
         ];
     }
 
@@ -77,9 +129,20 @@ class FinalizeAssinaturaAction
         // Reutiliza PdfGeneratorService com view diferente se OS tiver view própria
         $filename = "os-{$os->id}-" . now()->format('YmdHis') . '.pdf';
         $path = "ordens_servico/assinadas/{$filename}";
+        $config = $this->loadPdfConfig();
+
+        $os->loadMissing(['produtosUtilizados', 'cliente', 'itens']);
 
         // Gera via Browserless e salva no storage
-        $pdf = \Spatie\LaravelPdf\Facades\Pdf::view('pdf.ordem_servico', ['os' => $os])
+        $pdfService = app(PdfService::class);
+
+        $pdf = \Spatie\LaravelPdf\Facades\Pdf::view('pdf.os', [
+            'record' => $os,
+            'config' => $config,
+        ])
+            ->withBrowsershot(function ($browsershot) use ($pdfService) {
+                $pdfService->configureBrowsershotPublic($browsershot);
+            })
             ->format('a4')
             ->name($filename);
 
@@ -87,6 +150,30 @@ class FinalizeAssinaturaAction
         Storage::put($path, $content);
 
         return $path;
+    }
+
+    /**
+     * Carrega configurações para renderização de PDF da OS.
+     */
+    private function loadPdfConfig(): object
+    {
+        $settingsArray = Setting::all()->pluck('value', 'key')->toArray();
+
+        $jsonFields = ['financeiro_pix_keys', 'pdf_layout', 'financeiro_parcelamento'];
+        foreach ($jsonFields as $k) {
+            if (isset($settingsArray[$k]) && is_string($settingsArray[$k])) {
+                $settingsArray[$k] = json_decode($settingsArray[$k], true);
+            }
+        }
+
+        $companyIdentity = function_exists('company_pdf_identity') ? company_pdf_identity() : [];
+        $settingsArray['empresa_logo'] = $companyIdentity['empresa_logo'] ?? ($settingsArray['empresa_logo'] ?? null);
+        $settingsArray['empresa_nome'] = $companyIdentity['empresa_nome'] ?? ($settingsArray['empresa_nome'] ?? null);
+        $settingsArray['empresa_cnpj'] = $companyIdentity['empresa_cnpj'] ?? ($settingsArray['empresa_cnpj'] ?? null);
+        $settingsArray['empresa_telefone'] = $companyIdentity['empresa_telefone'] ?? ($settingsArray['empresa_telefone'] ?? null);
+        $settingsArray['empresa_email'] = $companyIdentity['empresa_email'] ?? ($settingsArray['empresa_email'] ?? null);
+
+        return (object) $settingsArray;
     }
 
     /**
@@ -106,12 +193,13 @@ class FinalizeAssinaturaAction
     /**
      * Captura metadados obrigatórios para validade legal da assinatura eletrônica.
      */
-    private function capturarMetadados(Request $request, string $pdfHash): array
+    private function capturarMetadados(Request $request, string $pdfHash, string $signerType): array
     {
         return [
             // Identificação do assinante
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
+            'signer_type' => $signerType,
 
             // Timestamp com fuso horário oficial brasileiro
             'signed_at' => now('America/Sao_Paulo')->toIso8601String(),
@@ -124,6 +212,7 @@ class FinalizeAssinaturaAction
             // Contexto da sessão
             'session_id' => session()->getId(),
             'user_id' => auth()->id(),
+            'user_name' => auth()->user()?->name,
         ];
     }
 }
