@@ -13,7 +13,12 @@ return new class extends Migration
             try {
                 DB::statement('ALTER TABLE nota_fiscals DROP CONSTRAINT nota_fiscals_status_check');
             } catch (\Exception $e) {
-                // Ignore if constraint does not exist
+                // Ignore if constraint doesn't exist
+            }
+            try {
+                DB::statement('ALTER TABLE nota_fiscals DROP CHECK nota_fiscals_status_check');
+            } catch (\Exception $e) {
+                 // Ignore if constraint doesn't exist
             }
         }
     }

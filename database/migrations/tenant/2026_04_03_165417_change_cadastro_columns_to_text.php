@@ -7,25 +7,13 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('cadastros', function (Blueprint $table) {
-            $indexes = Schema::getIndexes('cadastros');
-            $indexNames = array_column($indexes, 'name');
-
-            if (in_array('cadastros_documento_unique', $indexNames)) {
-                $table->dropUnique('cadastros_documento_unique');
-            }
-
-            if (in_array('cadastros_email_unique', $indexNames)) {
-                $table->dropUnique('cadastros_email_unique');
-            }
-        });
-
-        Schema::table('cadastros', function (Blueprint $table) {
-            $table->text('email')->nullable()->change();
-            $table->text('telefone')->nullable()->change();
-            $table->text('celular')->nullable()->change();
-            $table->text('documento')->nullable()->change();
-        });
+        // Se usar schema->table(dropIndex), ele lança erro se não existir mesmo com try/catch em algumas versões de Laravel/MySQL
+        // O ideal é usar DB::statement com ignore error, ou apenas fazer o DB modify com query direta
+        
+        \Illuminate\Support\Facades\DB::statement('ALTER TABLE cadastros MODIFY COLUMN email TEXT NULL');
+        \Illuminate\Support\Facades\DB::statement('ALTER TABLE cadastros MODIFY COLUMN telefone TEXT NULL');
+        \Illuminate\Support\Facades\DB::statement('ALTER TABLE cadastros MODIFY COLUMN celular TEXT NULL');
+        \Illuminate\Support\Facades\DB::statement('ALTER TABLE cadastros MODIFY COLUMN documento TEXT NULL');
     }
 
     public function down(): void
