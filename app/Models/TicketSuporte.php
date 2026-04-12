@@ -14,7 +14,6 @@ class TicketSuporte extends Model
     protected $table = 'tickets_suporte';
 
     // Usa a conexão central (não a do tenant)
-    // protected $connection = 'pgsql';
 
     protected $fillable = [
         'tenant_id',
