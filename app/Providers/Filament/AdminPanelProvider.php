@@ -28,8 +28,8 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login(\App\Filament\Pages\Auth\CustomLogin::class)
             ->brandName(config('app.name', 'Autonomia'))
-            ->brandLogo(asset('images/logo.png'))
-            ->brandLogoHeight('3rem')
+            // ->brandLogo(asset('images/logo.png')) // Removido: estava fixando a logo antiga da Stofgard
+            // ->brandLogoHeight('3rem')
             ->favicon(asset('images/favicon.ico'))
             ->colors([
                 'primary' => Color::Amber,
