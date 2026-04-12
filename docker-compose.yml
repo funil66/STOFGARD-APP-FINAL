@@ -57,10 +57,39 @@ services:
       - proxy_public
       - autonomia-public
 
+  mysql:
+    container_name: autonomia-mysql
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: stofgard
+      MYSQL_USER: Allisson
+      MYSQL_PASSWORD: Swordfish
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - proxy_public
+      - autonomia-public
+
+  redis:
+    container_name: autonomia-redis
+    image: redis:alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - proxy_public
+      - autonomia-public
+
 networks:
   proxy_public:
     external: true
   autonomia-public:
     external: true
     name: autonomia-deploy_autonomia-public
+
+volumes:
+  mysql-data:
+  redis-data:
 
