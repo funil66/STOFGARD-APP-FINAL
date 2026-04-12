@@ -66,6 +66,10 @@ class SuperAdminDashboard extends Page
             if (config('database.default') === 'pgsql') {
                 $result = DB::selectOne("SELECT pg_database_size(current_database()) AS size");
                 return round($result->size / 1024 / 1024, 2);
+            } elseif (config('database.default') === 'mysql') {
+                $dbName = config('database.connections.mysql.database');
+                $result = DB::selectOne("SELECT SUM(data_length + index_length) AS size FROM information_schema.tables WHERE table_schema = ?", [$dbName]);
+                return round($result->size / 1024 / 1024, 2);
             }
             return null;
         } catch (\Exception) {

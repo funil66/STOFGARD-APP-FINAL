@@ -76,7 +76,6 @@ class CreateTenantOwnerJob implements ShouldQueue
                     'email'              => $ownerData['email'],
                     'password'           => Hash::make($ownerData['password']),
                     'is_admin'           => true,
-                    'is_super_admin'     => false,
                     'email_verified_at'  => now(),
                 ]);
                 Log::info('[CreateTenantOwnerJob] Sucesso: Usuário criado no INQUILINO.');

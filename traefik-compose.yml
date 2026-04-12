@@ -12,7 +12,7 @@ services:
       - "443:443"
     environment:
       # Use token provided by user
-      - CF_DNS_API_TOKEN=cfut_siQQlymYZu5TuW9T1L1u8xqwzs51EOM7PNQrgY7D82575ee8
+      - CF_DNS_API_TOKEN=cfut_FtiU86dcSCKtdbukMMhBynsVUj1fCltYlwaB7tiEe29324c2
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro

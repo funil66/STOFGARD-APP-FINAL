@@ -1,0 +1,22 @@
+{
+    "timeout": 10,
+    "source": {
+        "directories": [
+            "app"
+        ],
+        "excludes": [
+            "Providers",
+            "Console",
+            "Broadcasting",
+            "Events",
+            "Exceptions"
+        ]
+    },
+    "logs": {
+        "text": "infection.log",
+        "html": "infection.html"
+    },
+    "mutators": {
+        "@default": true
+    }
+}

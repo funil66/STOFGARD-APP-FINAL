@@ -1,0 +1,17 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+        - config/
+        - routes/
+
+    # Level 5 is considered a good starting point for medium applications
+    level: 5
+
+    ignoreErrors:
+        # Ignore basic framework magic that PHPStan might struggle with initially
+        - '#Call to an undefined method [a-zA-Z0-9\\_]+::.*$#'
+    excludePaths:
+        - app/Console/
