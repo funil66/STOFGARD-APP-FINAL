@@ -44,3 +44,9 @@ Este documento descreve as correções implementadas para resolver a falha na cr
   - `app/Models/TicketSuporte.php`
   - `app/Models/GlobalAnnouncement.php`
 - **Solução Aplicada**: Comentamos as linhas que forçavam a conexão `pgsql`.  Esses modelos agora herdam corretamente a conexão padrão dinâmica do banco de dados principal do `.env` ou `config/database.php` (normalmente MySQL no ambiente de produção do Autonomia), permitindo o completo funcionamento do fluxo de autenticação e navegação do Super Admin sem falhas de driver.
+
+## Correções de Conexão com o Banco de Dados (Filament Error 500)
+
+### 1. Conexões Chumbadas Removidas
+- **Problema**: O painel Super Admin retornava Erro HTTP 500 no login via POST. Isso se dava devido a modelos (`app/Models/TicketSuporte.php` e `app/Models/GlobalAnnouncement.php`) possuírem o atributo `protected $connection = 'pgsql';` fixado em seus arquivos. Ao conectar no MySQL do Autonomia, o Filament chamava essas queries proativas para calcular notificações e badges, resultando num erro fatal `PDOException` (visto como um erro SSL na negociação para o driver postgres).
+- **Solução**: Comentamos as linhas que forçavam `pgsql` localmente e em produção. O Filament agora obedece a configuração universal default baseada no ambiente.
