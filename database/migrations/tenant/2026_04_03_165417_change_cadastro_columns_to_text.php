@@ -8,17 +8,19 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('cadastros', function (Blueprint $table) {
-            $sm = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexes = $sm->listTableIndexes('cadastros');
+            $indexes = Schema::getIndexes('cadastros');
+            $indexNames = array_column($indexes, 'name');
 
-            if (array_key_exists('cadastros_documento_unique', $indexes)) {
+            if (in_array('cadastros_documento_unique', $indexNames)) {
                 $table->dropUnique('cadastros_documento_unique');
             }
 
-            if (array_key_exists('cadastros_email_unique', $indexes)) {
+            if (in_array('cadastros_email_unique', $indexNames)) {
                 $table->dropUnique('cadastros_email_unique');
             }
+        });
 
+        Schema::table('cadastros', function (Blueprint $table) {
             $table->text('email')->nullable()->change();
             $table->text('telefone')->nullable()->change();
             $table->text('celular')->nullable()->change();
