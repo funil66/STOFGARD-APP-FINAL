@@ -35,3 +35,12 @@ Este documento descreve as correções implementadas para resolver a falha na cr
 
 ---
 **Nota**: Certifique-se de que o worker de fila (`php artisan queue:work`) esteja em execução e tenha sido reiniciado após estas modificações para carregar as novas definições de classes.
+
+## Correções de Conexão com o Banco de Dados (Filament Error 500)
+
+### 1. Conexões Chumbadas ("Hardcoded") Removidas
+- **Problema Identificado**: O painel do Super Admin (Filament) retornava **Erro HTTP 500** imediatamente ao tentar processar o Login via POST. Isso se originava devido a modelos que faziam carregamento proativo de métricas na interface (como badges e dados do dashboard) possuindo o atributo `protected $connection = 'pgsql';` fixado em seus respectivos arquivos. Em ambientes em que a aplicação se conecta a um banco MySQL, a tentativa simultânea de acessar um driver PostgreSQL causava uma exceção crítica fatal `PDOException: connection to server at "mysql" port 3306 failed: received invalid response to SSL negotiation`.
+- **Modelos Afetados e Corrigidos**:
+  - `app/Models/TicketSuporte.php`
+  - `app/Models/GlobalAnnouncement.php`
+- **Solução Aplicada**: Comentamos as linhas que forçavam a conexão `pgsql`.  Esses modelos agora herdam corretamente a conexão padrão dinâmica do banco de dados principal do `.env` ou `config/database.php` (normalmente MySQL no ambiente de produção do Autonomia), permitindo o completo funcionamento do fluxo de autenticação e navegação do Super Admin sem falhas de driver.
