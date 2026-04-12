@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class GlobalAnnouncement extends Model
 {
-    protected $connection = 'pgsql';
+    // protected $connection = 'pgsql';
 
     protected $fillable = [
         'title',
