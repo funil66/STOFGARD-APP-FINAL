@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,11 +12,9 @@ return new class extends Migration
             return;
         }
 
-        if (DB::getDriverName() === 'sqlite') {
-            return;
-        }
-
-        DB::statement('ALTER TABLE pdf_generations ALTER COLUMN orcamento_id DROP NOT NULL');
+        Schema::table('pdf_generations', function (Blueprint $table) {
+            $table->unsignedBigInteger('orcamento_id')->nullable()->change();
+        });
     }
 
     public function down(): void
@@ -25,10 +23,8 @@ return new class extends Migration
             return;
         }
 
-        if (DB::getDriverName() === 'sqlite') {
-            return;
-        }
-
-        DB::statement('ALTER TABLE pdf_generations ALTER COLUMN orcamento_id SET NOT NULL');
+        Schema::table('pdf_generations', function (Blueprint $table) {
+            $table->unsignedBigInteger('orcamento_id')->nullable(false)->change();
+        });
     }
 };
