@@ -47,10 +47,19 @@ services:
     restart: unless-stopped
     ports:
       - "8004:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.autonomia-app.rule=Host(`autonomia.app.br`) || HostRegexp(`{subdomain:[a-z0-9-]+}.autonomia.app.br`)"
+      - "traefik.http.routers.autonomia-app.entrypoints=websecure"
+      - "traefik.http.routers.autonomia-app.tls.certresolver=cloudflare"
+      - "traefik.http.services.autonomia-app.loadbalancer.server.port=80"
     networks:
+      - proxy_public
       - autonomia-public
 
 networks:
+  proxy_public:
+    external: true
   autonomia-public:
     external: true
     name: autonomia-deploy_autonomia-public
