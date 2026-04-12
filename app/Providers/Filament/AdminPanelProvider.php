@@ -26,7 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(\App\Filament\Pages\Auth\CustomLogin::class)
             ->brandName(config('app.name', 'Autonomia'))
             ->brandLogo(asset('images/logo.png'))
             ->brandLogoHeight('3rem')

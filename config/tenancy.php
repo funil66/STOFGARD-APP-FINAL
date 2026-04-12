@@ -17,6 +17,7 @@ return [
      * Only relevant if you're using the domain or subdomain identification middleware.
      */
     'central_domains' => [
+        'traefik.autonomia.app.br',
         'autonomia.app.br',
         'app.autonomia.app.br',
         'localhost',

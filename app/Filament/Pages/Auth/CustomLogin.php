@@ -16,10 +16,12 @@ class CustomLogin extends BaseLogin
         $token = request()->query('token');
 
         if ($token) {
-            $userId = Cache::pull('central_auth_token_' . $token);
+            // Recupera o email do usuário do cache central (usando email para evitar divergência de IDs entre Central DB e Tenant DB)
+            $userEmail = Cache::pull('central_auth_token_' . $token);
 
-            if ($userId) {
-                $user = User::find($userId);
+            if ($userEmail) {
+                // Busca o usuário na base do Tenant usando o email, em vez do ID
+                $user = User::where('email', $userEmail)->first();
                 
                 if ($user) {
                     Auth::guard('web')->login($user);

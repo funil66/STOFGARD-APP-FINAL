@@ -65,7 +65,7 @@ class CreateTenant extends CreateRecord
         $slug = trim(strtolower($tenant->slug));
         $ownerData = \Illuminate\Support\Facades\Cache::get('pending_owner_' . $slug);
         if ($ownerData) {
-            $centralConn = config('tenancy.central_connection', 'pgsql');
+            $centralConn = config('tenancy.central_connection', config('database.default'));
             $centralUser = User::on($centralConn)->where('email', $ownerData['email'])->first();
             if (!$centralUser) {
                 User::on($centralConn)->forceCreate([

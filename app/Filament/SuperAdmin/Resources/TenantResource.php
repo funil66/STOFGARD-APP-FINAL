@@ -384,13 +384,13 @@ class TenantResource extends Resource
                             $superAdminId = Auth::id();
 
                             // 1. Busca o dono do Tenant usando a conexão central (pgsql)
-                            $dono = \App\Models\User::on(config('tenancy.central_connection', 'pgsql'))
+                            $dono = \App\Models\User::on(config('tenancy.central_connection', config('database.default')))
                                 ->where('tenant_id', $record->id)
                                 ->where('role', 'dono')
                                 ->first();
 
                             if (!$dono) {
-                                $dono = \App\Models\User::on(config('tenancy.central_connection', 'pgsql'))
+                                $dono = \App\Models\User::on(config('tenancy.central_connection', config('database.default')))
                                     ->where('tenant_id', $record->id)
                                     ->orderBy('id', 'asc')
                                     ->first();
@@ -459,7 +459,7 @@ class TenantResource extends Resource
                     ->url(function (Tenant $record) {
                         try {
                             // Fetch via direct connection to bypass stancl/tenancy bootstrapper lifecycle crashes
-                            $dbConfig = config('database.connections.pgsql');
+                            $dbConfig = config('database.connections.' . config('database.default'));
                             $dbConfig['database'] = $record->tenancy_db_name;
                             config(["database.connections.tmp_{$record->id}" => $dbConfig]);
                             

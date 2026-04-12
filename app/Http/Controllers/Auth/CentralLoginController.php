@@ -42,7 +42,9 @@ class CentralLoginController extends Controller
             return back()->withErrors(['email' => 'Empresa inativa ou não encontrada.']);
         }
 
-        // Gera um token de acesso rápido válido por 30 segundos usando o Cache central
+        // Gera um token de acesso rápido válido por 30 segundos usando o Cache central.
+        // É importante passar o `email` (e não o `id`) para evitar problemas de divergência 
+        // de IDs entre a base central e as bases dos tenants (onde o ID pode ser diferente).
         $token = Str::random(64);
         Cache::store(config('cache.default'))->put('central_auth_token_' . $token, $user->email, now()->addSeconds(30));
 

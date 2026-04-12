@@ -41,7 +41,7 @@ class CreateTenantOwnerJob implements ShouldQueue
             return;
         }
 
-        $centralConn = config('tenancy.central_connection', 'pgsql');
+        $centralConn = config('tenancy.central_connection', config('database.default'));
 
         Log::info('[CreateTenantOwnerJob] Iniciando criação...', [
             'email' => $ownerData['email'],

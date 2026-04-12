@@ -16,8 +16,10 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('ordens_servico', function (Blueprint $table) {
+            $baseColumn = Schema::hasColumn('ordens_servico', 'assinatura') ? 'assinatura' : 'assinatura_cliente_path';
+            
             // Metadata da assinatura eletrônica (JSON)
-            $table->json('assinatura_metadata')->nullable()->after('assinatura');
+            $table->json('assinatura_metadata')->nullable()->after($baseColumn);
 
             // Hash SHA-256 do PDF final no momento da assinatura
             $table->string('assinatura_pdf_hash', 64)->nullable()->after('assinatura_metadata');
