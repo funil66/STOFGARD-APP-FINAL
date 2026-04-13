@@ -10,6 +10,18 @@ return new class extends Migration {
         // Se usar schema->table(dropIndex), ele lança erro se não existir mesmo com try/catch em algumas versões de Laravel/MySQL
         // O ideal é usar DB::statement com ignore error, ou apenas fazer o DB modify com query direta
         
+        try {
+            \Illuminate\Support\Facades\Schema::table('cadastros', function (Blueprint $table) {
+                $table->dropUnique('cadastros_documento_unique');
+            });
+        } catch (\Exception $e) { }
+
+        try {
+            \Illuminate\Support\Facades\Schema::table('cadastros', function (Blueprint $table) {
+                $table->dropUnique(['documento']);
+            });
+        } catch (\Exception $e) { }
+
         \Illuminate\Support\Facades\DB::statement('ALTER TABLE cadastros MODIFY COLUMN email TEXT NULL');
         \Illuminate\Support\Facades\DB::statement('ALTER TABLE cadastros MODIFY COLUMN telefone TEXT NULL');
         \Illuminate\Support\Facades\DB::statement('ALTER TABLE cadastros MODIFY COLUMN celular TEXT NULL');
