@@ -108,8 +108,8 @@ class SettingsHelper
             return false;
         }
 
-        // Primeiro verifica flag is_admin
-        if ($user->is_admin === true) {
+        // Primeiro verifica flag is_admin, super_admin ou dono
+        if ($user->is_admin || $user->is_super_admin || (method_exists($user, 'isDono') && $user->isDono())) {
             return true;
         }
 
