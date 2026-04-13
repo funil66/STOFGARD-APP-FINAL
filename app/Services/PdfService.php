@@ -144,6 +144,10 @@ class PdfService
             ->setNodeEnv([
                 'NODE_PATH' => '/var/www/node_modules',
                 'PATH' => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+                'HOME' => storage_path('app/temp'),
+                'XDG_CONFIG_HOME' => storage_path('app/temp'),
+                'XDG_DATA_HOME' => storage_path('app/temp'),
+                'PUPPETEER_CACHE_DIR' => storage_path('app/temp')
             ]);
 
         Log::info('SETTING NODE ENV');
