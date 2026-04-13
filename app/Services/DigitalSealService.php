@@ -46,7 +46,7 @@ class DigitalSealService
         $qrBase64 = base64_encode($qrSvg);
 
         try {
-            Cache::put('digital_seal:' . $docHash, [
+            $payload = [
                 'tipo' => $tipo,
                 'modelo_id' => $modeloId,
                 'company_name' => $nomeFantasia,
@@ -54,7 +54,16 @@ class DigitalSealService
                 'hash' => $docHash,
                 'validation_url' => $validationUrl,
                 'validated_at' => now()->toDateTimeString(),
-            ], now()->addYears(2));
+            ];
+            
+            Cache::put('digital_seal:' . $docHash, $payload, now()->addYears(2));
+
+            $directory = base_path('storage/app/public/seals');
+            if (!is_dir($directory)) {
+                @mkdir($directory, 0755, true);
+            }
+            @file_put_contents($directory . '/' . $docHash . '.json', json_encode($payload));
+            
         } catch (\Throwable) {
             // Falha de cache não pode impedir a geração do PDF/QR.
         }

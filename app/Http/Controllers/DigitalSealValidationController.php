@@ -11,6 +11,13 @@ class DigitalSealValidationController extends Controller
         $sealData = Cache::get('digital_seal:' . $hash);
 
         if (!$sealData) {
+            $path = base_path('storage/app/public/seals/' . $hash . '.json');
+            if (file_exists($path)) {
+                $sealData = json_decode(file_get_contents($path), true);
+            }
+        }
+
+        if (!$sealData) {
             return response()->view('validacao.selo', [
                 'valid' => false,
                 'hash' => $hash,
