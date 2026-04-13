@@ -160,11 +160,13 @@
         .cat-outro { background: #e5e7eb; color: #374151; }
         .item-description { color: #6b7280; font-size: 8px; line-height: 1.3; }
 
-        .valores-section { margin-top: 16px; display: flex; gap: 20px; }
-        .valores-left { flex: 1; }
-        .valores-right { width: 220px; }
+        .valores-section { margin-top: 16px; display: table; width: 100%; page-break-inside: avoid; }
+        .valores-left { display: table-cell; vertical-align: top; padding-right: 20px; }
+        .valores-right { display: table-cell; vertical-align: top; width: 220px; }
         .valores-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; }
-        .valor-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 10px; }
+        .valor-row { display: table; width: 100%; padding: 5px 0; font-size: 10px; }
+        .valor-row > span:first-child { display: table-cell; text-align: left; }
+        .valor-row > span:last-child { display: table-cell; text-align: right; }
         .valor-row.desconto { color: #dc2626; font-weight: 600; }
         .valor-row.desconto-prestador { color: #ea580c; font-weight: 600; }
         .valor-row-separator { border-top: 2px solid #2563eb; margin: 8px 0; }
@@ -530,10 +532,10 @@
                 @endif
 
                 <div class="valores-section">
-                    <div class="valores-left" style="flex:1; margin-right: 15px;">
+                    <div class="valores-left">
                         @include('pdf.partials.block_content', ['type' => $data['coluna_esquerda'] ?? 'totais', 'orcamento' => $orcamento, 'config' => $config])
                     </div>
-                    <div class="valores-right" style="flex:1;">
+                    <div class="valores-right">
                         @include('pdf.partials.block_content', ['type' => $data['coluna_direita'] ?? 'pix', 'orcamento' => $orcamento, 'config' => $config])
                     </div>
                 </div>
