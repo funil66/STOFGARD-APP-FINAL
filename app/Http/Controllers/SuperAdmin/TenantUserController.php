@@ -66,7 +66,27 @@ class TenantUserController extends Controller
                 'email_verified_at' => now(),
             ]);
 
-            return back()->with('success', 'Usuário criado com sucesso no tenant.');
+            tenancy()->end();
+            $initialized = false;
+
+            // Sincroniza também no DB Central
+            $centralUser = User::where('email', $email)->first();
+            if (!$centralUser) {
+                User::create([
+                    'name' => trim($data['name']),
+                    'email' => $email,
+                    'password' => Hash::make($data['password']),
+                    'tenant_id' => $tenant->id,
+                    'is_admin' => true,
+                    'role' => 'dono',
+                    'acesso_financeiro' => true,
+                    'email_verified_at' => now(),
+                ]);
+            } elseif (empty($centralUser->tenant_id)) {
+                $centralUser->update(['tenant_id' => $tenant->id]);
+            }
+
+            return back()->with('success', 'Usuário criado e sincronizado com sucesso.');
         } catch (QueryException $e) {
             if (str_contains(strtolower($e->getMessage()), 'does not exist')) {
                 return back()->withInput()->withErrors([

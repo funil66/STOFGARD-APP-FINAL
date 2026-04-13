@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orçamento {{ $orcamento->numero ?? $orcamento->numero_orcamento }}</title>
+    <style>
+        @page {
+            margin: 0px; /* Reset hard margins to allow absolute positioning from edge */
+        }
+
+        /* DYNAMIC STYLES */
+        @php
+            // Cores
+            $primary = $config->pdf_color_primary ?? '#2563eb';
+            $secondary = $config->pdf_color_secondary ?? '#eff6ff';
+            $text = $config->pdf_color_text ?? '#1f2937';
+        @endphp
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', Arial, sans-serif;
+            font-size: 10px;
+            color: {{ $text }};
+            line-height: 1.4;
+            
+            padding-left: 1cm;
+            padding-right: 1cm;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin: 0;
+        }
+
+        .page-frame {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .page-frame > thead,
+        .page-frame > tfoot {
+            background: transparent;
+        }
+
+        .page-frame > thead {
+            display: table-header-group;
+        }
+
+        .page-frame > tfoot {
+            display: table-footer-group;
+        }
+
+        .page-frame > thead > tr > td,
+        .page-frame > tfoot > tr > td,
+        .page-frame > tbody > tr > td {
+            border: none;
+            padding: 0;
+        }
+
+        
+
+        
+
+        /* HEADER MOVIDO PARA THEAD */
+        .header {
+            padding-top: 0.5cm;
+            padding-bottom: 0.2cm;
+            margin-bottom: 0.3cm;
+            border-bottom: 3px solid {{ $primary }};
+            display: flex;
+            background: white;
+        }
+
+        /* FOOTER MOVIDO PARA TFOOT */
+        .footer {
+            padding-bottom: 0.5cm;
+            background: white;
+            padding-top: 5px;
+            margin-top: 0.3cm;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .header-left {
+            max-width: 55%;
+        }
+
+        .logo-img {
+            max-width: 200px;
+            max-height: 70px;
+            margin-bottom: 8px;
+        }
+
+        .company-info {
+            font-size: 8.5px;
+            color: #374151;
+            line-height: 1.6;
+        }
+        
+        .header-right {
+            background: {{ $primary }};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-align: right;
+            min-width: 170px;
+        }
+
+        .numero-orcamento {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .datas {
+            font-size: 8px;
+            line-height: 1.7;
+        }
+
+        /* REST OF STYLES (Unchanged) */
+        .section-header {
+            background: {{ $primary }};
+            color: white;
+            padding: 7px 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-top: 14px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            page-break-after: avoid; 
+        }
+
+        .client-box { padding: 10px 0; border-bottom: 1px solid #e5e7eb; page-break-inside: avoid; }
+        .client-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .client-name { font-size: 11px; font-weight: bold; }
+        .client-detail { font-size: 9px; color: #6b7280; }
+
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        table thead { background: #f3f4f6; }
+        table thead th { padding: 8px 6px; text-align: left; font-size: 9px; font-weight: 600; color: #374151; border-bottom: 2px solid #d1d5db; }
+        table thead th:nth-child(3), table thead th:nth-child(4), table thead th:nth-child(5) { text-align: right; }
+        table tbody td { padding: 8px 6px; font-size: 9px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+        table tbody td:nth-child(3), table tbody td:nth-child(4), table tbody td:nth-child(5) { text-align: right; }
+
+        .item-category { display: inline-block; padding: 2px 6px; border-radius: 3px; font-weight: 600; font-size: 7px; text-transform: uppercase; margin-bottom: 3px; }
+        .cat-higienizacao { background: #dbeafe; color: #1e40af; }
+        .cat-impermeabilizacao { background: #fef3c7; color: #92400e; }
+        .cat-outro { background: #e5e7eb; color: #374151; }
+        .item-description { color: #6b7280; font-size: 8px; line-height: 1.3; }
+
+        .valores-section { margin-top: 16px; display: table; width: 100%; page-break-inside: avoid; }
+        .valores-left { display: table-cell; vertical-align: top; padding-right: 20px; }
+        .valores-right { display: table-cell; vertical-align: top; width: 220px; }
+        .valores-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; }
+        .valor-row { display: table; width: 100%; padding: 5px 0; font-size: 10px; }
+        .valor-row > span:first-child { display: table-cell; text-align: left; }
+        .valor-row > span:last-child { display: table-cell; text-align: right; }
+        .valor-row.desconto { color: #dc2626; font-weight: 600; }
+        .valor-row.desconto-prestador { color: #ea580c; font-weight: 600; }
+        .valor-row-separator { border-top: 2px solid #2563eb; margin: 8px 0; }
+        .valor-total-box { background: #eff6ff; border: 2px solid #2563eb; border-radius: 6px; padding: 12px; text-align: center; margin-top: 10px; }
+        .valor-total-label { font-size: 11px; color: #1e40af; font-weight: 600; }
+        .valor-total-value { font-size: 24px; font-weight: bold; color: #2563eb; }
+
+        .pix-box { background: #ecfdf5; border: 2px solid #10b981; border-radius: 8px; padding: 12px; text-align: center; }
+        .pix-title { font-size: 11px; font-weight: bold; color: #065f46; margin-bottom: 8px; }
+        .pix-qrcode img { width: 100px; height: 100px; border: 2px solid #10b981; border-radius: 4px; background: white; padding: 3px; }
+        .pix-valor { margin-top: 8px; font-size: 12px; font-weight: bold; color: #065f46; }
+        .pix-desconto { font-size: 9px; color: #059669; }
+        .pix-chave { margin-top: 8px; font-size: 7px; color: #374151; }
+        .pix-code { background: white; border: 1px solid #10b981; border-radius: 4px; padding: 5px; font-family: 'Courier New', monospace; font-size: 6px; word-break: break-all; color: #111; line-height: 1.4; margin-top: 5px; }
+
+        .footer-warning { background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 8px 10px; font-size: 8px; color: #dc2626; text-align: center; margin-bottom: 8px; }
+        .footer-legal { font-size: 7px; color: #9ca3af; text-align: center; line-height: 1.5; }
+    </style>
+</head>
+
+<body>
+    <!-- LAYOUT LOGIC -->
+    @php
+        $layout = $config->pdf_layout ?? [];
+        if (empty($layout)) {
+            $layout = [
+                ['type' => 'header', 'data' => ['show_logo' => true, 'show_dates' => true, 'alignment' => 'left']],
+                ['type' => 'dados_cliente', 'data' => []],
+                ['type' => 'tabela_itens', 'data' => []],
+                ['type' => 'container_duplo', 'data' => ['coluna_esquerda' => 'totais', 'coluna_direita' => 'pix']],
+                ['type' => 'rodape_padrao', 'data' => []]
+            ];
+        }
+
+        $headerBlock = collect($layout)->firstWhere('type', 'header');
+        $footerBlock = collect($layout)->firstWhere('type', 'rodape_padrao');
+        $mainBlocks = collect($layout)->reject(fn($b) => in_array($b['type'], ['header', 'rodape_padrao']));
+    @endphp
+
+    
+                    <div class="company-info">
+                        {{ $config->empresa_cnpj ?? '' }}<br>
+                        {{ $config->empresa_telefone ?? '' }}<br>
+                        {{ $config->empresa_email ?? '' }}
+                    </div>
+                </div>
+            @endif
+
+            @if(($data['show_dates'] ?? true))
+                <div class="header-right" style="{{ ($data['alignment'] ?? 'left') === 'center' ? 'margin-top:10px; width:100%; text-align:center;' : '' }}">
+                    <div style="font-size: 10px; opacity: 0.9;">ORÇAMENTO</div>
+                    <div class="numero-orcamento">{{ $orcamento->numero ?? $orcamento->numero_orcamento }}</div>
+                    <div class="datas">
+                        @if(!empty($orcamento->id_parceiro))
+                            <span style="font-weight: bold; color: yellow;">ID Parceiro: {{ $orcamento->id_parceiro }}</span><br>
+                        @endif
+                        Emissão: {{ $orcamento->data_orcamento ? \Carbon\Carbon::parse($orcamento->data_orcamento)->format('d/m/Y') : now()->format('d/m/Y') }}<br>
+                        Validade: {{ $orcamento->data_validade ? \Carbon\Carbon::parse($orcamento->data_validade)->format('d/m/Y') : '' }}
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    
+
+    <!-- MAIN CONTENT (Flows inside margins) -->
+    <table class="page-frame">
+        <thead>
+            <tr>
+                <td><!-- FIXED HEADER -->
+    @if($headerBlock)
+        @php $data = $headerBlock['data'] ?? []; @endphp
+        <div class="header"
+            style="justify-content: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'space-between' }};
+                   flex-direction: {{ ($data['alignment'] ?? 'left') === 'center' ? 'column' : 'row' }};
+                   align-items: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'flex-start' }};">
+            
+            @if(($data['show_logo'] ?? true))
+                <div class="header-left" style="{{ ($data['alignment'] ?? 'left') === 'center' ? 'text-align:center; max-width:100%;' : '' }}">
+                    @php
+                        $logoPath = $config->empresa_logo ?? null;
+                        if ($logoPath && !file_exists($logoPath)) $logoPath = storage_path('app/public/' . $logoPath);
+                    @endphp
+                    @if($logoPath && file_exists($logoPath))
+                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
+                    @else
+                        <div style="font-size: 16px; font-weight: bold; color: {{ $primary }}; margin-bottom: 8px;">
+                            {{ $config->nome_sistema ?? 'Empresa' }}
+                        </div>
+                    @endif</td>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <td><!-- FIXED FOOTER -->
+    @if($footerBlock)
+        @php $data = $footerBlock['data'] ?? []; @endphp
+        <div class="footer">
+            <div class="footer-warning">
+                ⚠️ {{ $config->pdf_texto_garantia ?? 'Validade 7 dias' }}
+            </div>
+            <div class="footer-legal">
+                {{ $data['texto_legal'] ?? 'Documento não fiscal' }}<br>
+                <strong>Certificado de Geração:</strong> {{ now()->format('d/m/Y H:i:s') }} | Orçamento #{{ $orcamento->numero }}
+            </div>
+        </div>
+    @endif</td>
+            </tr>
+        </tfoot>
+        <tbody>
+            <tr>
+                <td>
+    <div style="width: 100%;">
+        @foreach($mainBlocks as $block)
+            @php $data = $block['data'] ?? []; @endphp
+            
+            <!-- (RENDER BLOCKS - SIMPLIFIED MATCHING TO PREVIOUS CODE) -->
+            @if($block['type'] === 'dados_cliente')
+                <div class="section-header">{{ $data['titulo'] ?? 'DADOS DO CLIENTE' }}</div>
+                <div class="client-box" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; padding: 12px 0;">
+                    {{-- Nome completo ocupa as 2 colunas --}}
+                    <div style="grid-column: 1 / -1;">
+                        <span class="client-name">{{ strtoupper($orcamento->cliente->nome ?? '') }}</span>
+                    </div>
+                    
+                    {{-- Telefone --}}
+                    @if(!empty($orcamento->cliente->telefone))
+                    <div style="font-size: 9px;">
+                        <strong style="color: #6b7280;">📞 Telefone:</strong><br>
+                        <span style="color: #111827;">{{ $orcamento->cliente->telefone }}</span>
+                    </div>
+                    @endif
+                    
+                    {{-- Email --}}
+                    @if(!empty($orcamento->cliente->email))
+                    <div style="font-size: 9px;">
+                        <strong style="color: #6b7280;">✉️ Email:</strong><br>
+                        <span style="color: #111827;">{{ $orcamento->cliente->email }}</span>
+                    </div>
+                    @endif
+                    
+                    {{-- Endereço completo ocupa as 2 colunas --}}
+                    @if(!empty($orcamento->cliente->logradouro))
+                    <div style="grid-column: 1 / -1; font-size: 9px; margin-top: 4px;">
+                        <strong style="color: #6b7280;">📍 Endereço:</strong><br>
+                        <span style="color: #111827;">
+                            {{ $orcamento->cliente->logradouro }}, {{ $orcamento->cliente->numero ?? 'S/N' }}
+                            @if(!empty($orcamento->cliente->complemento)) - {{ $orcamento->cliente->complemento }}@endif
+                            @if(!empty($orcamento->cliente->bairro))<br>{{ $orcamento->cliente->bairro }}@endif
+                            @if(!empty($orcamento->cliente->cidade)) - {{ $orcamento->cliente->cidade }}@endif
+                            @if(!empty($orcamento->cliente->estado))/{{ $orcamento->cliente->estado }}@endif
+                            @if(!empty($orcamento->cliente->cep)) - CEP: {{ $orcamento->cliente->cep }}@endif
+                        </span>
+                    </div>
+                    @endif
+                    
+                    {{-- Documento (CPF/CNPJ) --}}
+                    @if(!empty($orcamento->cliente->documento))
+                    <div style="font-size: 9px;">
+                        <strong style="color: #6b7280;">🆔 Documento:</strong><br>
+                        <span style="color: #111827;">{{ $orcamento->cliente->documento }}</span>
+                    </div>
+                    @endif
+                </div>
+            @endif
+
+            @if($block['type'] === 'tabela_itens')
+                @php
+                    // Agrupa itens por tipo de serviço
+                    $itensPorServico = $orcamento->itens->groupBy('servico_tipo');
+                @endphp
+                
+                <div class="section-header">{{ $data['titulo'] ?? 'ITENS DO ORÇAMENTO' }}</div>
+                
+                @foreach($itensPorServico as $tipoServico => $itens)
+                    @php
+                        // Usa o ServiceTypeManager para buscar os dados do tipo de serviço
+                        $servicoInfo = \App\Services\ServiceTypeManager::get($tipoServico);
+                        $servicoLabel = $servicoInfo['label'] ?? ucfirst($tipoServico ?? 'Serviço');
+                        $servicoDescricao = $servicoInfo['descricao_pdf'] ?? null;
+                        
+                        // Cores por tipo
+                        $bgColor = match($tipoServico) {
+                            'higienizacao' => '#dbeafe',
+                            'impermeabilizacao' => '#fef3c7',
+                            'combo' => '#d1fae5',
+                            default => '#f3f4f6'
+                        };
+                        $textColor = match($tipoServico) {
+                            'higienizacao' => '#1e40af',
+                            'impermeabilizacao' => '#92400e',
+                            'combo' => '#065f46',
+                            default => '#374151'
+                        };
+                    @endphp
+                    
+                    {{-- Badge do Serviço em Destaque --}}
+                    <div style="margin: 12px 0 8px 0; page-break-inside: avoid;">
+                        <span style="display: inline-block; 
+                                     background: {{ $bgColor }}; 
+                                     color: {{ $textColor }}; 
+                                     padding: 6px 14px; 
+                                     border-radius: 16px; 
+                                     font-weight: bold; 
+                                     font-size: 11px;
+                                     text-transform: uppercase;
+                                     border: 2px solid {{ $textColor }};">
+                            {{ $servicoLabel }}
+                        </span>
+                        
+                        {{-- Show Warranty if configured --}}
+                        @php
+                            $diasGarantia = \App\Services\ServiceTypeManager::getDiasGarantia($tipoServico);
+                            $perfilGarantiaId = $servicoInfo['perfil_garantia_id'] ?? null;
+                            $perfilGarantiaNome = null;
+                            if ($perfilGarantiaId) {
+                                $perfilGarantiaNome = \App\Models\PerfilGarantia::find($perfilGarantiaId)?->nome;
+                            }
+                        @endphp
+                        @if($diasGarantia)
+                            <span style="display: inline-block;
+                                         background: #ecfdf5;
+                                         color: #047857;
+                                         padding: 6px 10px;
+                                         border-radius: 16px;
+                                         font-weight: bold;
+                                         font-size: 10px;
+                                         margin-left: 5px;
+                                         border: 1px solid #047857;">
+                                🛡️ Garantia: {{ $diasGarantia }} dias
+                            </span>
+                        @endif
+
+                        @if($perfilGarantiaNome)
+                            <span style="display: inline-block;
+                                         background: #eef2ff;
+                                         color: #3730a3;
+                                         padding: 6px 10px;
+                                         border-radius: 16px;
+                                         font-weight: bold;
+                                         font-size: 10px;
+                                         margin-left: 5px;
+                                         border: 1px solid #4338ca;">
+                                Perfil: {{ $perfilGarantiaNome }}
+                            </span>
+                        @endif
+
+                        @if($servicoDescricao)
+                            <span style="display: inline-block; 
+                                         margin-left: 10px;
+                                         font-size: 9px; 
+                                         color: #6b7280;
+                                         font-style: italic;">
+                                {{ $servicoDescricao }}
+                            </span>
+                        @endif
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="50%">DESCRIÇÃO</th>
+                                <th width="10%">UN</th>
+                                <th width="10%">QTD</th>
+                                <th width="15%" style="text-align:right">VALOR UNIT.</th>
+                                <th width="15%" style="text-align:right">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($itens as $item)
+                            <tr>
+                                <td>
+                                    <div class="item-description">
+                                        <strong>{{ $item->item_nome }}</strong>
+                                        @if($item->descricao && $item->descricao !== $item->item_nome) 
+                                            <br><span style="color: #6b7280;">{{ $item->descricao }}</span> 
+                                        @endif
+                                    </div>
+                                </td>
+                                <td>{{ strtoupper($item->unidade ?? 'UN') }}</td>
+                                <td>{{ number_format($item->quantidade, $item->quantidade == intval($item->quantidade) ? 0 : 2, ',', '.') }}</td>
+                                <td style="text-align:right">R$ {{ number_format($item->valor_unitario, 2, ',', '.') }}</td>
+                                <td style="text-align:right"><strong>R$ {{ number_format($item->subtotal, 2, ',', '.') }}</strong></td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endforeach
+                
+                {{-- Extras (Nicho) --}}
+                @if($orcamento->extra_attributes)
+                    @foreach($orcamento->extra_attributes as $key => $val)
+                        @if(is_numeric($val) && $val > 0)
+                        <table style="margin-top: 5px;">
+                            <tr>
+                                <td width="85%" style="text-align:right; border-bottom: 1px dashed #ddd;"><strong>{{ ucfirst($key) }}</strong></td>
+                                <td width="15%" style="text-align:right; border-bottom: 1px dashed #ddd;"><strong>R$ {{ number_format($val, 2, ',', '.') }}</strong></td>
+                            </tr>
+                        </table>
+                        @endif
+                    @endforeach
+                @endif
+            @endif
+
+            @if($block['type'] === 'galeria_fotos')
+                 @php
+                    $showPhotos = $orcamento->pdf_mostrar_fotos ?? true;
+                    $colArq = $orcamento->getMedia('arquivos');
+                    $colFotos = $orcamento->getMedia('fotos_orcamento');
+                    $allMedia = $colArq->merge($colFotos);
+                    $images = $allMedia->filter(fn ($media) => str_starts_with($media->mime_type, 'image/'));
+                    $fotos = $images->map(function($media) {
+                        try {
+                            $path = $media->getPath();
+                            if (file_exists($path)) {
+                                $type = pathinfo($path, PATHINFO_EXTENSION);
+                                $data = file_get_contents($path);
+                                if ($data) {
+                                    $media->base64_src = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                                    return $media;
+                                }
+                            }
+                        } catch (\Exception $e) {}
+                        return null;
+                    })->filter();
+                    $cols = (int) ($data['columns'] ?? 2);
+                 @endphp
+                 @if($showPhotos && count($fotos) > 0)
+                    <div class="section-header">{{ $data['titulo'] ?? 'REGISTROS FOTOGRÁFICOS' }}</div>
+                    <table style="width: 100%; border-collapse: separate; border-spacing: 8px 8px; margin-bottom: 20px;">
+                        @foreach($fotos->chunk($cols) as $linhaFotos)
+                            <tr>
+                                @foreach($linhaFotos as $foto)
+                                    <td style="width: {{ number_format(100 / max($cols, 1), 2, '.', '') }}%; vertical-align: top; text-align: center;">
+                                        @if($foto->base64_src)
+                                            <img src="{{ $foto->base64_src }}" style="width: 100%; max-height: 180px; height: auto; object-fit: contain; border-radius: 4px; border: 1px solid #eee;">
+                                            @if(($data['show_legend'] ?? false))
+                                                <div style="font-size: 8px; color: #999;">{{ $foto->file_name }}</div>
+                                            @endif
+                                        @endif
+                                    </td>
+                                @endforeach
+
+                                @for($i = $linhaFotos->count(); $i < $cols; $i++)
+                                    <td style="width: {{ number_format(100 / max($cols, 1), 2, '.', '') }}%;"></td>
+                                @endfor
+                            </tr>
+                        @endforeach
+                    </table>
+                 @endif
+            @endif
+
+            @if($block['type'] === 'container_duplo')
+                {{-- Observações do Orçamento (se houver) --}}
+                @if(!empty($orcamento->observacoes))
+                    <div style="margin: 14px 0 10px 0; page-break-inside: avoid;">
+                        <div class="section-header" style="margin-top: 5px;">OBSERVAÇÕES</div>
+                        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px 12px; font-size: 9px; color: #92400e; line-height: 1.6;">
+                            {!! nl2br(e($orcamento->observacoes)) !!}
+                        </div>
+                    </div>
+                @endif
+
+                <div class="valores-section">
+                    <div class="valores-left">
+                        @include('pdf.partials.block_content', ['type' => $data['coluna_esquerda'] ?? 'totais', 'orcamento' => $orcamento, 'config' => $config])
+                    </div>
+                    <div class="valores-right">
+                        @include('pdf.partials.block_content', ['type' => $data['coluna_direita'] ?? 'pix', 'orcamento' => $orcamento, 'config' => $config])
+                    </div>
+                </div>
+            @endif
+
+            @if($block['type'] === 'texto_livre')
+                <div style="margin: 20px 0; page-break-inside: avoid;">{!! $data['conteudo'] ?? '' !!}</div>
+            @endif
+            
+            @if($block['type'] === 'linha_separadora')
+                <hr style="border: 0; border-top: {{ $data['espessura'] ?? '1px' }} solid {{ $data['cor'] ?? '#eee' }}; margin: 20px 0;">
+            @endif
+
+        @endforeach
+        
+        <!-- DIGITAL_SEAL_SLOT -->
+    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
