@@ -294,6 +294,7 @@
 
     <!-- FOOTER FIXO -->
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         <div class="footer-legal">
             Documento gerado automaticamente pelo sistema de gestão
         </div>

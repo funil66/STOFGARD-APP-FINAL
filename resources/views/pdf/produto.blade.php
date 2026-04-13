@@ -43,7 +43,8 @@
             <div style="font-size: 8px;"><strong>ID:</strong> #{{ $produto->id }}</div>
         </div>
     </div>
-    <div class="footer"><strong>{{ $config->nome_empresa ?? 'Empresa' }}</strong><br>Gerado em {{ now()->format('d/m/Y H:i') }}</div>
+    <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT --><strong>{{ $config->nome_empresa ?? 'Empresa' }}</strong><br>Gerado em {{ now()->format('d/m/Y H:i') }}</div>
 
     <div class="section-header">📋 INFORMAÇÕES DO PRODUTO</div>
     <div class="section-content">

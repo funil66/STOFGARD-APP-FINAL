@@ -97,6 +97,7 @@
 
     <!-- FOOTER -->
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         <div class="footer-legal">
             Documento gerado automaticamente pelo sistema.<br>
             <strong>Autonomia Ilimitada Manager</strong> - Gestão Inteligente

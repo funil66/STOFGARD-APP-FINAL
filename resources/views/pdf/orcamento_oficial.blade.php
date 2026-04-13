@@ -311,6 +311,7 @@
 <body>
 
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         Documento válido até <strong>{{ \Carbon\Carbon::parse($orcamento->data_validade)->format('d/m/Y') }}</strong>.
         Emitido em {{ now()->format('d/m/Y H:i') }}
     </div>
@@ -522,7 +523,7 @@
         </tr>
     </table>
 
-    <!-- DIGITAL_SEAL_SLOT -->
+    
 
 </body>
 

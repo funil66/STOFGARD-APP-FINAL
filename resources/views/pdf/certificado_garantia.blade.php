@@ -452,6 +452,7 @@
     </div>
 
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         <div class="quadro-rodape">
             <table class="rodape-flex">
                 <tr>

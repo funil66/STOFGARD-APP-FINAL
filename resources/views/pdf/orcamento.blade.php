@@ -253,6 +253,7 @@
     @if($footerBlock)
         @php $data = $footerBlock['data'] ?? []; @endphp
         <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
             <div class="footer-warning">
                 ⚠️ {{ $config->pdf_texto_garantia ?? 'Validade 7 dias' }}
             </div>
@@ -265,10 +266,10 @@
             </tr>
         </tfoot>
         <tbody>
-            <tr>
-                <td>
-    <div style="width: 100%;">
         @foreach($mainBlocks as $block)
+            <tr>
+                <td style="padding: 10px 0;">
+    <div style="width: 100%;">
             @php $data = $block['data'] ?? []; @endphp
             
             <!-- (RENDER BLOCKS - SIMPLIFIED MATCHING TO PREVIOUS CODE) -->
@@ -536,10 +537,14 @@
                 <hr style="border: 0; border-top: {{ $data['espessura'] ?? '1px' }} solid {{ $data['cor'] ?? '#eee' }}; margin: 20px 0;">
             @endif
 
+    </div>
+                </td>
+            </tr>
         @endforeach
         
-        <!-- DIGITAL_SEAL_SLOT -->
-    </div>
+            <tr>
+                <td style="padding-top: 20px;">
+                    
                 </td>
             </tr>
         </tbody>

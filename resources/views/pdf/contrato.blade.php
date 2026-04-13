@@ -225,6 +225,7 @@
     </div>
 
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         Gerado por Autonomia Ilimitada em {{ now()->format('d/m/Y H:i') }} - IP: {{ request()->ip() }}
     </div>
 

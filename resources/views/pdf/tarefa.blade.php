@@ -22,7 +22,8 @@
         <div>@if ($config->pdf_logo_base64)<img src="{{ $config->pdf_logo_base64 }}" style="max-width: 200px; max-height: 70px;">@endif</div>
         <div style="background: {{ $p }}; color: white; padding: 12px 16px; border-radius: 8px;"><div style="font-size: 18px; font-weight: bold;">📋 TAREFA</div></div>
     </div>
-    <div class="footer"><strong>{{ $config->nome_empresa ?? 'Empresa' }}</strong><br>{{ now()->format('d/m/Y H:i') }}</div>
+    <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT --><strong>{{ $config->nome_empresa ?? 'Empresa' }}</strong><br>{{ now()->format('d/m/Y H:i') }}</div>
     
     <div class="section-header">INFORMAÇÕES DA TAREFA</div>
     <div class="section-content">

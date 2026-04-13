@@ -129,6 +129,7 @@
     </div>
 
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         <strong>{{ $config->nome_empresa ?? 'Empresa' }}</strong><br>
         Documento gerado em {{ now()->format('d/m/Y às H:i') }}
     </div>

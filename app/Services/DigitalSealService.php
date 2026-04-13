@@ -80,25 +80,22 @@ class DigitalSealService
         $data = $sealData['generated_at'];
         $docHash = $sealData['hash'];
 
-        $sealHtml = <<<HTML
-        <div style="border-top: 2px dashed #ccc; margin-top: 30px; padding-top: 20px; page-break-inside: avoid;">
+                $sealHtml = <<<HTML
+        <div class="digital-seal" style="border-top: 1px solid #e5e7eb; margin-top: 15px; padding-top: 10px; width: 100%; clear: both; page-break-inside: avoid;">
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                    <td width="120" align="center" valign="middle">
-                        <img src="{$imgSrc}" width="100" height="100" />
+                    <td width="70" align="left" valign="middle">
+                        <img src="{$imgSrc}" width="60" height="60" />
                     </td>
-                    <td valign="middle" style="padding-left: 20px; font-family: sans-serif; font-size: 11px; color: #555;">
-                        <h4 style="margin: 0 0 5px 0; color: #333; font-size: 14px;">🔒 Selo de Autenticidade Digital</h4>
-                        <p style="margin: 0 0 4px 0;"><strong>{$nomeFantasia}</strong> certifica a integridade deste documento.</p>
-                        <p style="margin: 0 0 4px 0;">Documento assinado digitalmente por: <strong>{$nomeFantasia}</strong></p>
-                        <p style="margin: 0 0 4px 0;">Data e Hora da Geração: <strong>{$data}</strong></p>
-                        <p style="margin: 0 0 4px 0; font-family: monospace; font-size: 10px; background: #eee; padding: 4px; display: inline-block; border-radius: 4px;">Hash: {$docHash}</p>
-                        <p style="margin: 6px 0 0 0; font-size: 10px;">Para verificar a autenticidade, leia o QR Code ou acesse a URL de validação fornecida por nossa instituição.</p>
+                    <td valign="middle" style="padding-left: 10px; font-family: sans-serif; font-size: 9px; color: #555; text-align: left; line-height: 1.2;">
+                        <strong style="color: #333; font-size: 11px;">🔒 Selo de Autenticidade Digital</strong><br>
+                        Documento assinado digitalmente por: <strong>{$nomeFantasia}</strong> - {$data}<br>
+                        <span style="font-family: monospace; font-size: 8px; background: #f3f4f6; padding: 2px 4px; border-radius: 3px;">Hash: {$docHash}</span><br>
+                        <span style="font-size: 8px;">Para verificar a autenticidade, leia o QR Code ou acesse a URL de validação fornecida.</span>
                     </td>
                 </tr>
             </table>
         </div>
-HTML;
         
         // If there is a designated slot for the seal, use it
         if (strpos($html, '<!-- DIGITAL_SEAL_SLOT -->') !== false) {

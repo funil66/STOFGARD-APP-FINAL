@@ -259,6 +259,7 @@
 
     <!-- FOOTER -->
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         <div class="footer-divider"></div>
         <div class="footer-text">
             <strong>{{ $config->nome_empresa ?? 'Empresa' }}</strong><br>

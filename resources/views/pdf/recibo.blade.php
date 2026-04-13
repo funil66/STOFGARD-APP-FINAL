@@ -238,6 +238,7 @@
     </div>
 
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         Este recibo é um comprovante gerencial de pagamento.<br>
         Documento gerado automaticamente — {{ $config->empresa_nome ?? 'Empresa' }} — {{ now()->format('d/m/Y H:i') }}
     </div>

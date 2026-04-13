@@ -247,6 +247,7 @@
 
     <!-- FOOTER -->
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         <div class="footer-warning">
              Este documento comprova o lançamento financeiro no sistema, mas não substitui Nota Fiscal para fins tributários.
         </div>

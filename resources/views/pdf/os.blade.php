@@ -408,6 +408,7 @@
             <div style="border-top: 1px solid #000; padding-top: 2px;">ASSINATURA DO CLIENTE</div>
         </div>
     </div>
+<!-- DIGITAL_SEAL_SLOT -->
 </body>
 
 </html>

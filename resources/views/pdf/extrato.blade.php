@@ -112,6 +112,7 @@
     </div>
 
     <div class="footer">
+            <!-- DIGITAL_SEAL_SLOT -->
         Este documento é um relatório gerencial e não substitui documentos fiscais.<br>
         Sistema AUTONOMIA ILIMITADA 2026
     </div>
