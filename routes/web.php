@@ -176,6 +176,8 @@ Route::middleware(['auth'])->group(function () {
     // Rota para visualizar PDF do Financeiro
     Route::get('/financeiro/{financeiro}/pdf', [\App\Http\Controllers\FinanceiroPdfController::class, 'gerarPdf'])
         ->name('financeiro.pdf');
+    Route::get('/financeiro/{financeiro}/recibo', [\App\Http\Controllers\FinanceiroPdfController::class, 'gerarRecibo'])
+        ->name('financeiro.recibo');
     Route::get('/financeiro/relatorio/mensal', [\App\Http\Controllers\FinanceiroPdfController::class, 'gerarRelatorioMensal'])
         ->name('financeiro.relatorio_mensal');
     Route::get('/extrato/pdf', [\App\Http\Controllers\ExtratoPdfController::class, 'gerarExtrato'])->name('extrato.pdf');

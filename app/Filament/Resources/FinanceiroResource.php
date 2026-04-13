@@ -634,20 +634,29 @@ class FinanceiroResource extends Resource
                             ->icon('heroicon-s-receipt-percent')
                             ->color('info')
                             ->visible(fn(Financeiro $record) => $record->status === 'pago' && $record->tipo === 'entrada')
-                            ->action(function (Financeiro $record) {
-                                $record->load(['cadastro', 'categoria', 'orcamento', 'ordemServico']);
-                                $config = \App\Models\Configuracao::first();
+                            ->requiresConfirmation()
+                            ->modalHeading('Gerar Recibo')
+                            ->modalDescription('O recibo será gerado em fila e você será notificado quando estiver pronto.')
+                            ->url(fn(Financeiro $record) => route('financeiro.recibo', $record)),
 
-                                return app(\App\Services\PdfService::class)->generate(
-                                    'pdf.recibo',
-                                    [
-                                        'financeiro' => $record,
-                                        'config' => $config,
-                                    ],
-                                    "Recibo-{$record->id}.pdf",
-                                    download: true,
-                                );
-                            }),
+                        // Assinar Recibo
+                        Tables\Actions\Action::make('assinar_recibo')
+                            ->label('Assinar Recibo')
+                            ->tooltip('Assinatura Digital do Recibo')
+                            ->icon('heroicon-s-pencil')
+                            ->color('info')
+                            ->visible(fn(Financeiro $record) => $record->status === 'pago' && $record->tipo === 'entrada' && empty($record->assinatura_recibo))
+                            ->form([
+                                \Saade\FilamentAutograph\Forms\Components\SignaturePad::make('assinatura_recibo')
+                                    ->label('Assinatura do Emissor / Recebedor')
+                                    ->required()
+                                    ->exportBackgroundColor('#ffffff')
+                                    ->exportPenColor('#000000'),
+                            ])
+                            ->action(function (Financeiro $record, array $data) {
+                                app(\App\Actions\FinalizeAssinaturaReciboAction::class)->execute($record, $data['assinatura_recibo'], request());
+                            })
+                            ->successNotificationTitle('Recibo assinado digitalmente com sucesso!'),
                     ]
                 )
             )

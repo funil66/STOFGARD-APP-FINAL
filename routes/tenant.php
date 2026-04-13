@@ -29,6 +29,7 @@ Route::middleware([
 
     Route::middleware(['auth'])->group(function () {
         Route::get('/os/{ordemServico}/garantia', [\App\Http\Controllers\GarantiaPdfController::class, 'gerarPorOrdemServico'])->name('os.garantia');
+        Route::get('/financeiro/{financeiro}/recibo', [\App\Http\Controllers\FinanceiroPdfController::class, 'gerarRecibo'])->name('financeiro.recibo');
     });
     Route::get('/storage/{path}', function ($path) {
         $fullPath = storage_path("app/public/{$path}");

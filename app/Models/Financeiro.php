@@ -55,12 +55,23 @@ class Financeiro extends Model implements HasMedia, \OwenIt\Auditing\Contracts\A
         'pix_valor_pago',
         'link_pagamento_hash',
         'extra_attributes',
+        'assinatura_recibo',
+        'assinatura_recibo_path',
+        'assinatura_recibo_metadata',
+        'assinatura_recibo_pdf_hash',
+        'assinatura_recibo_ip',
+        'assinatura_recibo_user_agent',
+        'assinatura_recibo_timestamp',
+        'assinatura_recibo_hash',
+        'recibo_selo',
     ];
 
     protected $casts = [
         'data' => 'date',
         'data_vencimento' => 'date',
         'data_pagamento' => 'datetime',
+        'assinatura_recibo_metadata' => 'array',
+        'assinatura_recibo_timestamp' => 'datetime',
         'is_comissao' => 'boolean',
         'comissao_paga' => 'boolean',
         'comissao_data_pagamento' => 'datetime',

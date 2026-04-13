@@ -23,6 +23,38 @@ class FinanceiroPdfController extends BasePdfQueueController
         );
     }
 
+    public function gerarRecibo(Financeiro $financeiro)
+    {
+        $config = $this->loadConfig();
+
+        if ($financeiro->status !== 'pago' || $financeiro->tipo !== 'entrada') {
+            \Filament\Notifications\Notification::make()
+                ->title('Apenas receitas pagas')
+                ->body('O recibo só pode ser gerado para pagamentos confirmados (status: pago).')
+                ->warning()
+                ->send();
+            return back();
+        }
+
+        $financeiro->load(['cadastro', 'categoria', 'ordemServico.cliente', 'ordemServico.itens']);
+
+        if (!$financeiro->recibo_selo) {
+            $financeiro->update(['recibo_selo' => strtoupper(uniqid('REC-') . '-' . substr(hash('sha256', microtime()), 0, 8))]);
+        }
+
+        return $this->enqueuePdf(
+            'pdf.recibo',
+            [
+                'record' => $financeiro,
+                'financeiro' => $financeiro,
+                'config' => $config,
+            ],
+            'recibo_pagamento',
+            $financeiro,
+            []
+        );
+    }
+
     public function gerarRelatorioMensal(Request $request)
     {
         $mes = $request->query('mes', now()->month);
