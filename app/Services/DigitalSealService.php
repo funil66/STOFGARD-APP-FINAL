@@ -100,6 +100,11 @@ class DigitalSealService
         </div>
 HTML;
         
+        // If there is a designated slot for the seal, use it
+        if (strpos($html, '<!-- DIGITAL_SEAL_SLOT -->') !== false) {
+            return str_replace('<!-- DIGITAL_SEAL_SLOT -->', $sealHtml, $html);
+        }
+
         // Append the seal before </body> closing tag if exists, preserving valid HTML
         if (strpos($html, '</body>') !== false) {
             return str_replace('</body>', $sealHtml . '</body>', $html);

@@ -522,6 +522,8 @@
         </tr>
     </table>
 
+    <!-- DIGITAL_SEAL_SLOT -->
+
 </body>
 
 </html>

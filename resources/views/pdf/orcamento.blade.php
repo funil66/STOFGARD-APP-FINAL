@@ -550,6 +550,8 @@
             @endif
 
         @endforeach
+        
+        <!-- DIGITAL_SEAL_SLOT -->
     </div>
                 </td>
             </tr>
