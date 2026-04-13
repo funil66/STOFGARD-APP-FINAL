@@ -56,7 +56,7 @@ class DigitalSealService
                 'validated_at' => now()->toDateTimeString(),
             ];
             
-            Cache::put('digital_seal:' . $docHash, $payload, now()->addYears(2));
+            Cache::forever('digital_seal:' . $docHash, $payload);
 
             $directory = base_path('storage/app/public/seals');
             if (!is_dir($directory)) {
