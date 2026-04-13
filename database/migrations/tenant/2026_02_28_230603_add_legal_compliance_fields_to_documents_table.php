@@ -11,20 +11,24 @@ return new class extends Migration {
     public function up(): void
     {
         // Blindando Ordens de Serviço
-        Schema::table('ordens_servico', function (Blueprint $table) {
-            $table->string('assinatura_ip', 45)->nullable()->after('status');
-            $table->text('assinatura_user_agent')->nullable()->after('assinatura_ip');
-            $table->timestamp('assinatura_timestamp')->nullable()->after('assinatura_user_agent');
-            $table->string('assinatura_hash', 64)->nullable()->comment('Hash SHA-256 da transação')->after('assinatura_timestamp');
-        });
+        if (!Schema::hasColumn('ordens_servico', 'assinatura_ip')) {
+            Schema::table('ordens_servico', function (Blueprint $table) {
+                $table->string('assinatura_ip', 45)->nullable()->after('status');
+                $table->text('assinatura_user_agent')->nullable()->after('assinatura_ip');
+                $table->timestamp('assinatura_timestamp')->nullable()->after('assinatura_user_agent');
+                $table->string('assinatura_hash', 64)->nullable()->comment('Hash SHA-256 da transação')->after('assinatura_timestamp');
+            });
+        }
 
         // Blindando Orçamentos
-        Schema::table('orcamentos', function (Blueprint $table) {
-            $table->string('assinatura_ip', 45)->nullable()->after('status');
-            $table->text('assinatura_user_agent')->nullable()->after('assinatura_ip');
-            $table->timestamp('assinatura_timestamp')->nullable()->after('assinatura_user_agent');
-            $table->string('assinatura_hash', 64)->nullable()->comment('Hash SHA-256 da transação')->after('assinatura_timestamp');
-        });
+        if (!Schema::hasColumn('orcamentos', 'assinatura_ip')) {
+            Schema::table('orcamentos', function (Blueprint $table) {
+                $table->string('assinatura_ip', 45)->nullable()->after('status');
+                $table->text('assinatura_user_agent')->nullable()->after('assinatura_ip');
+                $table->timestamp('assinatura_timestamp')->nullable()->after('assinatura_user_agent');
+                $table->string('assinatura_hash', 64)->nullable()->comment('Hash SHA-256 da transação')->after('assinatura_timestamp');
+            });
+        }
     }
 
     /**

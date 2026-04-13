@@ -14,12 +14,24 @@ return new class extends Migration
     {
         Schema::table('cadastros', function (Blueprint $table) {
             // Campos específicos para funcionários
-            $table->string('cargo')->nullable()->after('tipo');
-            $table->decimal('salario_base', 12, 2)->nullable()->after('cargo');
-            $table->date('data_admissao')->nullable()->after('salario_base');
-            $table->date('data_demissao')->nullable()->after('data_admissao');
-            $table->boolean('is_socio')->default(false)->after('data_demissao');
-            $table->decimal('percentual_prolabore', 5, 2)->nullable()->after('is_socio');
+            if (!Schema::hasColumn('cadastros', 'cargo')) {
+                $table->string('cargo')->nullable()->after('tipo');
+            }
+            if (!Schema::hasColumn('cadastros', 'salario_base')) {
+                $table->decimal('salario_base', 12, 2)->nullable()->after('cargo');
+            }
+            if (!Schema::hasColumn('cadastros', 'data_admissao')) {
+                $table->date('data_admissao')->nullable()->after('salario_base');
+            }
+            if (!Schema::hasColumn('cadastros', 'data_demissao')) {
+                $table->date('data_demissao')->nullable()->after('data_admissao');
+            }
+            if (!Schema::hasColumn('cadastros', 'is_socio')) {
+                $table->boolean('is_socio')->default(false)->after('data_demissao');
+            }
+            if (!Schema::hasColumn('cadastros', 'percentual_prolabore')) {
+                $table->decimal('percentual_prolabore', 5, 2)->nullable()->after('is_socio');
+            }
         });
 
         // Adicionar funcionario_id às ordens de serviço para atribuição de técnico
