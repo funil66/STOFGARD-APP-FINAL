@@ -57,40 +57,27 @@
             padding: 0;
         }
 
-        .header-spacer {
-            height: 4.5cm;
-        }
+        
 
-        .footer-spacer {
-            height: 3cm;
-        }
+        
 
-        /* HEADER FIXO - Topo absoluto da página */
+        /* HEADER MOVIDO PARA THEAD */
         .header {
-            position: fixed; 
-            top: 0;
-            left: 1cm;
-            right: 1cm; 
-            height: 3.8cm;  /* Reduzido levemente de 4.5cm para 3.8cm para subir a régua */
             padding-top: 0.5cm;
+            padding-bottom: 0.2cm;
+            margin-bottom: 0.3cm;
             border-bottom: 3px solid {{ $primary }};
             display: flex;
             background: white;
-            z-index: 1000;
         }
 
-        /* FOOTER FIXO - Rodapé absoluto da página */
+        /* FOOTER MOVIDO PARA TFOOT */
         .footer {
-            position: fixed; 
-            bottom: 0;
-            left: 1cm; 
-            right: 1cm; 
-            height: 2.5cm;  /* Aumentado de 2cm para 2.5cm */
             padding-bottom: 0.5cm;
             background: white;
             padding-top: 5px;
+            margin-top: 0.3cm;
             border-top: 1px solid #e5e7eb;
-            z-index: 1000;
         }
         
         .header-left {
@@ -206,27 +193,7 @@
         $mainBlocks = collect($layout)->reject(fn($b) => in_array($b['type'], ['header', 'rodape_padrao']));
     @endphp
 
-    <!-- FIXED HEADER -->
-    @if($headerBlock)
-        @php $data = $headerBlock['data'] ?? []; @endphp
-        <div class="header"
-            style="justify-content: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'space-between' }};
-                   flex-direction: {{ ($data['alignment'] ?? 'left') === 'center' ? 'column' : 'row' }};
-                   align-items: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'flex-start' }};">
-            
-            @if(($data['show_logo'] ?? true))
-                <div class="header-left" style="{{ ($data['alignment'] ?? 'left') === 'center' ? 'text-align:center; max-width:100%;' : '' }}">
-                    @php
-                        $logoPath = $config->empresa_logo ?? null;
-                        if ($logoPath && !file_exists($logoPath)) $logoPath = storage_path('app/public/' . $logoPath);
-                    @endphp
-                    @if($logoPath && file_exists($logoPath))
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
-                    @else
-                        <div style="font-size: 16px; font-weight: bold; color: {{ $primary }}; margin-bottom: 8px;">
-                            {{ $config->nome_sistema ?? 'Empresa' }}
-                        </div>
-                    @endif
+    
                     <div class="company-info">
                         {{ $config->empresa_cnpj ?? '' }}<br>
                         {{ $config->empresa_telefone ?? '' }}<br>
@@ -251,7 +218,38 @@
         </div>
     @endif
 
-    <!-- FIXED FOOTER -->
+    
+
+    <!-- MAIN CONTENT (Flows inside margins) -->
+    <table class="page-frame">
+        <thead>
+            <tr>
+                <td><!-- FIXED HEADER -->
+    @if($headerBlock)
+        @php $data = $headerBlock['data'] ?? []; @endphp
+        <div class="header"
+            style="justify-content: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'space-between' }};
+                   flex-direction: {{ ($data['alignment'] ?? 'left') === 'center' ? 'column' : 'row' }};
+                   align-items: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'flex-start' }};">
+            
+            @if(($data['show_logo'] ?? true))
+                <div class="header-left" style="{{ ($data['alignment'] ?? 'left') === 'center' ? 'text-align:center; max-width:100%;' : '' }}">
+                    @php
+                        $logoPath = $config->empresa_logo ?? null;
+                        if ($logoPath && !file_exists($logoPath)) $logoPath = storage_path('app/public/' . $logoPath);
+                    @endphp
+                    @if($logoPath && file_exists($logoPath))
+                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
+                    @else
+                        <div style="font-size: 16px; font-weight: bold; color: {{ $primary }}; margin-bottom: 8px;">
+                            {{ $config->nome_sistema ?? 'Empresa' }}
+                        </div>
+                    @endif</td>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <td><!-- FIXED FOOTER -->
     @if($footerBlock)
         @php $data = $footerBlock['data'] ?? []; @endphp
         <div class="footer">
@@ -263,18 +261,7 @@
                 <strong>Certificado de Geração:</strong> {{ now()->format('d/m/Y H:i:s') }} | Orçamento #{{ $orcamento->numero }}
             </div>
         </div>
-    @endif
-
-    <!-- MAIN CONTENT (Flows inside margins) -->
-    <table class="page-frame">
-        <thead>
-            <tr>
-                <td><div class="header-spacer"></div></td>
-            </tr>
-        </thead>
-        <tfoot>
-            <tr>
-                <td><div class="footer-spacer"></div></td>
+    @endif</td>
             </tr>
         </tfoot>
         <tbody>
