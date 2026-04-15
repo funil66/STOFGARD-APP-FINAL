@@ -184,6 +184,7 @@
                 ['type' => 'dados_cliente', 'data' => []],
                 ['type' => 'tabela_itens', 'data' => []],
                 ['type' => 'container_duplo', 'data' => ['coluna_esquerda' => 'totais', 'coluna_direita' => 'pix']],
+                ['type' => 'galeria_fotos', 'data' => ['titulo' => 'REGISTROS FOTOGRÁFICOS', 'columns' => 2]],
                 ['type' => 'rodape_padrao', 'data' => []]
             ];
         }
@@ -192,33 +193,6 @@
         $footerBlock = collect($layout)->firstWhere('type', 'rodape_padrao');
         $mainBlocks = collect($layout)->reject(fn($b) => in_array($b['type'], ['header', 'rodape_padrao']));
     @endphp
-
-    
-                    <div class="company-info">
-                        {{ $config->empresa_cnpj ?? '' }}<br>
-                        {{ $config->empresa_telefone ?? '' }}<br>
-                        {{ $config->empresa_email ?? '' }}
-                    </div>
-                </div>
-            @endif
-
-            @if(($data['show_dates'] ?? true))
-                <div class="header-right" style="{{ ($data['alignment'] ?? 'left') === 'center' ? 'margin-top:10px; width:100%; text-align:center;' : '' }}">
-                    <div style="font-size: 10px; opacity: 0.9;">ORÇAMENTO</div>
-                    <div class="numero-orcamento">{{ $orcamento->numero ?? $orcamento->numero_orcamento }}</div>
-                    <div class="datas">
-                        @if(!empty($orcamento->id_parceiro))
-                            <span style="font-weight: bold; color: yellow;">ID Parceiro: {{ $orcamento->id_parceiro }}</span><br>
-                        @endif
-                        Emissão: {{ $orcamento->data_orcamento ? \Carbon\Carbon::parse($orcamento->data_orcamento)->format('d/m/Y') : now()->format('d/m/Y') }}<br>
-                        Validade: {{ $orcamento->data_validade ? \Carbon\Carbon::parse($orcamento->data_validade)->format('d/m/Y') : '' }}
-                    </div>
-                </div>
-            @endif
-        </div>
-    @endif
-
-    
 
     <!-- MAIN CONTENT (Flows inside margins) -->
     <table class="page-frame">
@@ -244,7 +218,22 @@
                         <div style="font-size: 16px; font-weight: bold; color: {{ $primary }}; margin-bottom: 8px;">
                             {{ $config->nome_sistema ?? 'Empresa' }}
                         </div>
-                    @endif</td>
+                    @endif
+                </div>
+            @endif
+
+            @if(($data['show_dates'] ?? true) && ($data['alignment'] ?? 'left') !== 'center')
+                <div class="header-right">
+                    #{{ str_pad($orcamento->numero, 5, '0', STR_PAD_LEFT) }}<br>
+                    <span><strong>Data:</strong> {{ now()->format('d/m/Y H:i') }}</span>
+                    @if($orcamento->validade)
+                        <br><span><strong>Validade:</strong> {{ \Carbon\Carbon::parse($orcamento->validade)->format('d/m/Y') }}</span>
+                    @endif
+                </div>
+            @endif
+        </div>
+    @endif
+                </td>
             </tr>
         </thead>
         <tfoot>
