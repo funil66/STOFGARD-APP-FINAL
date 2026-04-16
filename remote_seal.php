@@ -105,7 +105,6 @@ class DigitalSealService
                 </tr>
             </table>
         </div>
-HTML;
         
         // If there is a designated slot for the seal, use it
         if (strpos($html, '<!-- DIGITAL_SEAL_SLOT -->') !== false) {

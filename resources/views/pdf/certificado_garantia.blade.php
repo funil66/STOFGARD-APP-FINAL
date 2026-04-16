@@ -634,7 +634,7 @@
                                 Prazo de Garantia em Destaque: {{ $prazoDestaque > 0 ? $prazoDestaque . ' dias' : '-' }}
                             </div>
 
-                            <div class="termos-box">
+                            <div class="termos-box" style="font-family: {{ $garantia->familia_fonte ?? 'Arial, sans-serif' }}; font-size: {{ $garantia->tamanho_fonte ?? '10px' }};">
                                 @if($garantiasPorServico->isNotEmpty())
                                     @foreach($garantiasPorServico as $servicoGarantia)
                                         <p style="margin-bottom: 4px;"><strong>{{ $servicoGarantia['label'] }}:</strong>

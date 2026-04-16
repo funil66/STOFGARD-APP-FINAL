@@ -14,6 +14,16 @@
 
         @page {
             margin: 15mm;
+            margin-bottom: 80px;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: -50px;
+            left: 0px;
+            right: 0px;
+            height: 50px;
+            text-align: center;
         }
 
         @php
@@ -408,7 +418,9 @@
             <div style="border-top: 1px solid #000; padding-top: 2px;">ASSINATURA DO CLIENTE</div>
         </div>
     </div>
+<div class="footer">
 <!-- DIGITAL_SEAL_SLOT -->
+</div>
 </body>
 
 </html>

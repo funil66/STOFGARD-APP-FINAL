@@ -1,19 +1,20 @@
 <?php
-$content = file_get_contents('orcamento.blade.php');
+$path = 'resources/views/pdf/orcamento.blade.php';
+$content = file_get_contents($path);
 
-// Remove broken floating block from lines 191-224 roughly
-$broken_regex = '/\s*<div class="company-info">.*?<\/div>\s*@endif\s*</div>\s*@endif/s';
-if(preg_match($broken_regex, $content, $m)) {
-    echo "Found broken floating block.\n";
-    $block = $m[0];
-    
-    // Now where should it go?
-    // In the <thead> right before `@endif</td>` 
-    // And actually, wait, the `</div>` after company-info closes `.header-left`.
-    // Let's rewrite the thead completely manually to ensure no bugs.
-}
+// First find where the rogue \n                    <div class="company-info"> starts
+$start = strpos($content, '<div class="company-info">');
+// Find the <table class="page-frame">
+$table_start = strpos($content, '<table class="page-frame">', $start);
+// Find the </thead>
+$thead_end = strpos($content, '</thead>', $table_start) + strlen('</thead>');
 
-$fixed_thead_content = <<<HTML
+$bad_portion = substr($content, $start - 25, $thead_end - ($start - 25));
+
+$fixed_thead = <<<HTML
+
+    <!-- MAIN CONTENT (Flows inside margins) -->
+    <table class="page-frame">
         <thead>
             <tr>
                 <td><!-- FIXED HEADER -->
@@ -64,26 +65,5 @@ $fixed_thead_content = <<<HTML
         </thead>
 HTML;
 
-// Find the start of the broken block and replace up to the end of the wrong thead
-$start_marker = '<div class="company-info">';
-$end_marker = '</thead>';
-$start_pos = strpos($content, $start_marker);
-$end_pos = strpos($content, $end_marker, $start_pos) + strlen($end_marker);
-
-if ($start_pos !== false && $end_pos !== false) {
-    // wait, the broken block is OUTSIDE the <table>
-    $broken_block_entirety = substr($content, strpos($content, '<div class="company-info">') - 20, strpos($content, '</thead>') - strpos($content, '<div class="company-info">') + 8 + 20);
-    
-    // We rewrite everything from `<div class="company-info">` to `</thead>` into JUST `<table class="page-frame">` + `$fixed_thead_content`
-    $fixed_content = substr_replace($content, "\n    <table class=\"page-frame\">\n" . $fixed_thead_content, strpos($content, '<div class="company-info">') - 20, strpos($content, '</thead>') - strpos($content, '<div class="company-info">') + 8 + 20);
-    
-    // BUT WAIT! There's also `<!-- MAIN CONTENT (Flows inside margins) -->` and `<table class="page-frame">` inside that region!
-    // So let's do a regex replacement.
-}
-
-$regex_to_replace = '/\b\s*<div class="company-info">.*?<\/thead>/s';
-$replacement = "\n    <!-- MAIN CONTENT (Flows inside margins) -->\n    <table class=\"page-frame\">\n" . $fixed_thead_content;
-
-$new_content = preg_replace($regex_to_replace, $replacement, $content);
-file_put_contents('orcamento.blade.php', $new_content);
-echo "Fixed!\n";
+$new_content = str_replace($bad_portion, $fixed_thead, $content);
+file_put_contents($path, $new_content);

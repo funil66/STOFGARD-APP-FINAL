@@ -44,6 +44,9 @@ class PerfilGarantiaResource extends Resource
                 Forms\Components\RichEditor::make('termos_legais')
                     ->label('Termos e Observações Legais')
                     ->placeholder('Insira os termos de garantia, exceções, obrigações do cliente, etc.')
+                    ->toolbarButtons([
+                        'attachFiles', 'blockquote', 'bold', 'bulletList', 'codeBlock', 'h2', 'h3', 'italic', 'link', 'orderedList', 'redo', 'strike', 'underline', 'undo',
+                    ])
                     ->columnSpanFull(),
 
                 Forms\Components\TextInput::make('titulo_certificado')
@@ -65,6 +68,23 @@ class PerfilGarantiaResource extends Resource
                     ->default('TERMOS E CONDIÇÕES LEGAIS DE GARANTIA')
                     ->maxLength(255)
                     ->columnSpanFull(),
+
+                Forms\Components\Select::make('familia_fonte')
+                    ->label('Família da Fonte')
+                    ->options([
+                        'Arial, sans-serif' => 'Arial',
+                        'Times New Roman, serif' => 'Times New Roman',
+                        'Courier New, monospace' => 'Courier New',
+                        'Georgia, serif' => 'Georgia',
+                        'Verdana, sans-serif' => 'Verdana'
+                    ])
+                    ->default('Arial, sans-serif')
+                    ->columnSpan(1),
+
+                Forms\Components\TextInput::make('tamanho_fonte')
+                    ->label('Tamanho da Fonte (Lembre-se de por px, ex: 10px ou 12px)')
+                    ->default('10px')
+                    ->columnSpan(1),
 
                 Forms\Components\Textarea::make('texto_rodape_certificado')
                     ->label('Texto do Rodapé do Certificado')

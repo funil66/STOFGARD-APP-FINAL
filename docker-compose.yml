@@ -1,4 +1,15 @@
 services:
+  browserless:
+    container_name: browserless
+    image: browserless/chrome:latest
+    restart: unless-stopped
+    environment:
+      - TOKEN=localtoken
+      - MAX_CONCURRENT_SESSIONS=5
+      - TIMEOUT=60000
+    networks:
+      - proxy_public
+      - autonomia-public
   autonomia-site-legacy:
     container_name: autonomia-site-legacy
     image: php:8.4-apache

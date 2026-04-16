@@ -16,5 +16,7 @@ class PerfilGarantia extends Model
         'subtitulo_certificado',
         'titulo_termos_garantia',
         'texto_rodape_certificado',
+        'tamanho_fonte',
+        'familia_fonte',
     ];
 }
