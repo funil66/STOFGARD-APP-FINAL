@@ -373,6 +373,18 @@
             margin: 0 0 4px 0;
         }
 
+        /* Make bold more pronounced inside terms */
+        .termos-box strong,
+        .termos-box b {
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .termos-box em,
+        .termos-box i {
+            font-style: italic;
+        }
+
         .termos-box ul,
         .termos-box ol {
             margin: 4px 0 4px 14px;
@@ -433,21 +445,33 @@
 </head>
 
 <body>
+
     <div class="header">
-        @if($logoPath && file_exists($logoPath))
-            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
-        @endif
-
-        @if(filled($empresaNomeFantasia))
-            <div class="brand-name">{{ $empresaNomeFantasia }}</div>
-        @endif
-
-        <div class="company-info">
-            @if(filled($empresaDoc)){{ $empresaDoc }}@endif
-            @if(filled($empresaDoc) && (filled($empresaTelefone) || filled($empresaEmail))) • @endif
-            @if(filled($empresaTelefone)){{ $empresaTelefone }}@endif
-            @if(filled($empresaTelefone) && filled($empresaEmail)) • @endif
-            @if(filled($empresaEmail)){{ $empresaEmail }}@endif
+        <div class="header-content" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="header-left" style="display: flex; flex-direction: column; justify-content: center;">
+                @if($logoPath && file_exists($logoPath))
+                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
+                @else
+                    <h1 style="font-size: 16px; color: {{ $primary }}; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; line-height: 1.2;">
+                        {{ $empresaNomeFantasia ?? $config->empresa_nome ?? 'Empresa' }}
+                    </h1>
+                @endif
+                <div class="company-info">
+                    @if(filled($empresaDoc))<strong>CNPJ:</strong> {{ $empresaDoc }}<br>@endif
+                    @if(filled($empresaTelefone))<strong>Telefone:</strong> {{ $empresaTelefone }}<br>@endif
+                    @if(filled($empresaEmail))<strong>Email:</strong> {{ $empresaEmail }}@endif
+                </div>
+            </div>
+            <div class="header-right" style="background: {{ $primary }}; color: white; padding: 12px 16px; border-radius: 6px; text-align: right; min-width: 180px;">
+                <div class="numero-orcamento" style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">OS #{{ $os->numero_os ?? '-' }}</div>
+                <div class="datas" style="font-size: 8px; line-height: 1.7;">
+                    @if(!empty($idParceiro))
+                        <span style="font-weight: bold; color: yellow;">ID Parceiro: {{ $idParceiro }}</span><br>
+                    @endif
+                    <div><strong>Data:</strong> {{ $os?->created_at ? \Carbon\Carbon::parse($os->created_at)->format('d/m/Y H:i') : '-' }}</div>
+                    <div><strong>Status:</strong> {{ strtoupper($os->status ?? '-') }}</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -505,28 +529,71 @@
                                 <div class="certificado-subtitle">{{ $subtituloCertificado }}</div>
                             @endif
 
-                            <div class="dados-os">
-                                <strong>Ordem de Serviço:</strong> #{{ $os->numero_os ?? '-' }}<br>
-                                @if(filled($idParceiro))
-                                    <strong>ID Parceiro:</strong> {{ $idParceiro }}<br>
-                                @endif
-                                <strong>Data do Serviço:</strong>
-                                @if($os?->data_conclusao)
-                                    {{ \Carbon\Carbon::parse($os->data_conclusao)->format('d/m/Y') }}
-                                @else
-                                    -
-                                @endif
-                                <br>
-                                <strong>Prazo de Garantia:</strong>
-                                @if($prazoDestaque > 0)
-                                    {{ $prazoDestaque }} dias
-                                    @if(($garantiasPorServico->count() ?? 0) > 1)
-                                        (conforme serviço)
+                            <div class="dados-os" style="margin-left: 0; width: 100%;">
+                                <table style="width: 100%; border: none; font-size: 9px;">
+                                    <tr>
+                                        <td style="padding: 2px 0;"><strong>Ordem de Serviço:</strong></td>
+                                        <td style="padding: 2px 0;">#{{ $os->numero_os ?? '-' }}</td>
+                                    </tr>
+                                    @if(filled($idParceiro))
+                                    <tr>
+                                        <td style="padding: 2px 0;"><strong>ID Parceiro:</strong></td>
+                                        <td style="padding: 2px 0;">{{ $idParceiro }}</td>
+                                    </tr>
                                     @endif
-                                @else
-                                    -
-                                @endif
+                                    <tr>
+                                        <td style="padding: 2px 0;"><strong>Data do Serviço:</strong></td>
+                                        <td style="padding: 2px 0;">
+                                            @if($os?->data_conclusao)
+                                                {{ \Carbon\Carbon::parse($os->data_conclusao)->format('d/m/Y') }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 2px 0;"><strong>Prazo de Garantia:</strong></td>
+                                        <td style="padding: 2px 0;">
+                                            @if($prazoDestaque > 0)
+                                                {{ $prazoDestaque }} dias
+                                                @if(($garantiasPorServico->count() ?? 0) > 1)
+                                                    (conforme serviço)
+                                                @endif
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
+                            @php
+                                $perfilMidias = $perfilGarantia?->getMedia('arquivos_garantia') ?? collect();
+                                $imagensPerfil = $perfilMidias->filter(fn($m) => str_starts_with($m->mime_type, 'image/'));
+                                $imagensPerfil = $imagensPerfil->map(function($media) {
+                                    try {
+                                        $path = $media->getPath();
+                                        if (file_exists($path)) {
+                                            $type = pathinfo($path, PATHINFO_EXTENSION);
+                                            $data = file_get_contents($path);
+                                            if ($data) {
+                                                $media->base64_src = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                                                return $media;
+                                            }
+                                        }
+                                    } catch (\Exception $e) {}
+                                    return null;
+                                })->filter();
+                            @endphp
+
+                            @if($imagensPerfil->isNotEmpty())
+                                <div style="margin-top:12px; text-align:center; page-break-inside: avoid;">
+                                    @foreach($imagensPerfil as $img)
+                                        @if(!empty($img->base64_src))
+                                            <img src="{{ $img->base64_src }}" alt="anexo" style="display:block; margin:10px auto; max-width:180px; max-height:180px; width:auto; height:auto;">
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     </div>
 
@@ -635,6 +702,16 @@
                             </div>
 
                             <div class="termos-box" style="font-family: {{ $garantia->familia_fonte ?? 'Arial, sans-serif' }}; font-size: {{ $garantia->tamanho_fonte ?? '10px' }};">
+                                <style>
+                                    .termos-box img {
+                                        display: block;
+                                        margin: 12px auto 12px auto;
+                                        max-width: 180px;
+                                        max-height: 180px;
+                                        width: auto;
+                                        height: auto;
+                                    }
+                                </style>
                                 @if($garantiasPorServico->isNotEmpty())
                                     @foreach($garantiasPorServico as $servicoGarantia)
                                         <p style="margin-bottom: 4px;"><strong>{{ $servicoGarantia['label'] }}:</strong>

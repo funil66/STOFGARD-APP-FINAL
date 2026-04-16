@@ -198,55 +198,39 @@
     <table class="page-frame">
         <thead>
             <tr>
-                <td><!-- FIXED HEADER -->
-    @if($headerBlock)
-        @php $data = $headerBlock['data'] ?? []; @endphp
-        <div class="header"
-            style="justify-content: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'space-between' }};
-                   flex-direction: {{ ($data['alignment'] ?? 'left') === 'center' ? 'column' : 'row' }};
-                   align-items: {{ ($data['alignment'] ?? 'left') === 'center' ? 'center' : 'flex-start' }};">
-            
-            @if(($data['show_logo'] ?? true))
-                <div class="header-left" style="{{ ($data['alignment'] ?? 'left') === 'center' ? 'text-align:center; max-width:100%;' : '' }}">
-                    @php
-                        $logoPath = $config->empresa_logo ?? null;
-                        if ($logoPath && !file_exists($logoPath)) $logoPath = storage_path('app/public/' . $logoPath);
-                    @endphp
-                    @if($logoPath && file_exists($logoPath))
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
-                    @else
-                        <div style="font-size: 16px; font-weight: bold; color: {{ $primary }}; margin-bottom: 8px;">
-                            {{ $config->empresa_nome ?? $config->nome_sistema ?? 'Empresa' }}
+                <td>
+                    <div class="header">
+                        <div class="header-content" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div class="header-left" style="display: flex; flex-direction: column; justify-content: center;">
+                                @php
+                                    $logoPath = $config->empresa_logo ?? null;
+                                    if ($logoPath && !file_exists($logoPath)) $logoPath = storage_path('app/public/' . $logoPath);
+                                @endphp
+                                @if($logoPath && file_exists($logoPath))
+                                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}" alt="Logo" class="logo-img">
+                                @else
+                                    <div style="font-size: 16px; font-weight: bold; color: {{ $primary }}; margin-bottom: 8px;">
+                                        {{ $config->empresa_nome_fantasia ?? $config->empresa_nome ?? $config->nome_sistema ?? 'Empresa' }}
+                                    </div>
+                                @endif
+                                <div class="company-info">
+                                    @if(!empty($config->empresa_cnpj) || !empty($config->cnpj))<strong>CNPJ:</strong> {{ $config->empresa_cnpj ?? $config->cnpj }}<br>@endif
+                                    @if(!empty($config->empresa_telefone) || !empty($config->telefone_sistema))<strong>Telefone:</strong> {{ $config->empresa_telefone ?? $config->telefone_sistema }}<br>@endif
+                                </div>
+                            </div>
+                            <div class="header-right" style="background: #2d2aa6; color: white; padding: 18px 22px 16px 22px; border-radius: 14px; text-align: right; min-width: 210px; box-shadow: 0 2px 8px rgba(44,44,100,0.07);">
+                                <div style="font-size: 20px; font-weight: bold; margin-bottom: 8px; letter-spacing: 0.5px;">#{{ str_pad($orcamento->numero ?? $orcamento->numero_orcamento, 5, '0', STR_PAD_LEFT) }}</div>
+                                @if(!empty($orcamento->id_parceiro))
+                                    <div style="font-size: 11px; font-weight: bold; color: #ffe066; margin-bottom: 2px;">ID Parceiro: {{ $orcamento->id_parceiro }}</div>
+                                @endif
+                                <div style="font-size: 10px; margin-bottom: 2px;"><strong>Data:</strong> {{ $orcamento->created_at ? \Carbon\Carbon::parse($orcamento->created_at)->format('d/m/Y H:i') : now()->format('d/m/Y H:i') }}</div>
+                                @if($orcamento->validade)
+                                    <div style="font-size: 10px; margin-bottom: 2px;"><strong>Validade:</strong> {{ \Carbon\Carbon::parse($orcamento->validade)->format('d/m/Y') }}</div>
+                                @endif
+                                <div style="font-size: 10px;"><strong>Status:</strong> {{ strtoupper($orcamento->status ?? '-') }}</div>
+                            </div>
                         </div>
-                    @endif
-                    
-                    <div class="company-info">
-                        @if(!empty($config->empresa_nome_fantasia) || !empty($config->nome_fantasia))
-                            <div style="font-weight: bold; font-size: 10px; margin-bottom: 2px;">{{ $config->empresa_nome_fantasia ?? $config->nome_fantasia }}</div>
-                        @elseif(!empty($config->empresa_nome))
-                            <div style="font-weight: bold; font-size: 10px; margin-bottom: 2px;">{{ $config->empresa_nome }}</div>
-                        @endif
-                        @if(!empty($config->empresa_cnpj) || !empty($config->cnpj))
-                            <div><strong>CNPJ:</strong> {{ $config->empresa_cnpj ?? $config->cnpj }}</div>
-                        @endif
-                        @if(!empty($config->empresa_telefone) || !empty($config->telefone_sistema))
-                            <div><strong>Telefone:</strong> {{ $config->empresa_telefone ?? $config->telefone_sistema }}</div>
-                        @endif
                     </div>
-                </div>
-            @endif
-
-            @if(($data['show_dates'] ?? true) && ($data['alignment'] ?? 'left') !== 'center')
-                <div class="header-right">
-                    #{{ str_pad($orcamento->numero, 5, '0', STR_PAD_LEFT) }}<br>
-                    <span><strong>Data:</strong> {{ now()->format('d/m/Y H:i') }}</span>
-                    @if($orcamento->validade)
-                        <br><span><strong>Validade:</strong> {{ \Carbon\Carbon::parse($orcamento->validade)->format('d/m/Y') }}</span>
-                    @endif
-                </div>
-            @endif
-        </div>
-    @endif
                 </td>
             </tr>
         </thead>

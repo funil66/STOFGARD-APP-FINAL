@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PerfilGarantiaResource\Pages;
 use App\Models\PerfilGarantia;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -91,6 +92,19 @@ class PerfilGarantiaResource extends Resource
                     ->placeholder('Este documento atesta a qualidade do serviço prestado. Não possui valor fiscal.')
                     ->rows(3)
                     ->columnSpanFull(),
+                Forms\Components\Section::make('Central de Arquivos')
+                    ->icon('heroicon-o-paper-clip')
+                    ->collapsible()
+                    ->schema([
+                        SpatieMediaLibraryFileUpload::make('arquivos_garantia')
+                            ->collection('arquivos_garantia')
+                            ->multiple()
+                            ->disk('public')
+                            ->directory('perfis_garantia')
+                            ->maxSize(10 * 1024) // 10MB max file
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'application/pdf'])
+                            ->helperText('Anexe imagens ou PDFs que serão exibidos no PDF do Certificado de Garantia (máx 10MB por arquivo)'),
+                    ]),
             ]);
     }
 
