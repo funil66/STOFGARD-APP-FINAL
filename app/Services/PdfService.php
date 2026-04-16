@@ -38,6 +38,7 @@ class PdfService
         $this->ensureTempDirectoryExists();
 
         $html = view($view, $data)->render();
+        $html = $this->convertTrixAttachmentsToImages($html);
         $html = $this->convertImagesToBase64($html);
 
         $pdf = Pdf::html($html)
@@ -71,6 +72,7 @@ class PdfService
     ) {
         $this->ensureTempDirectoryExists();
         
+        $html = $this->convertTrixAttachmentsToImages($html);
         $html = $this->convertImagesToBase64($html);
 
         $pdf = Pdf::html($html)
@@ -101,7 +103,29 @@ class PdfService
         $this->configureBrowsershot($browsershot);
     }
 
-    
+    /**
+     * Converte os anexos do Trix (RichEditor do Filament) que são imagens (SVG, PNG, etc) em tags <img>
+     * Dessa forma o convertImagesToBase64 vai poder pegar e transformar essas tags em Base64 para o PDF.
+     */
+    protected function convertTrixAttachmentsToImages(string $html): string
+    {
+        return preg_replace_callback('/<figure[^>]+data-trix-attachment="([^"]+)"[^>]*>.*?<\/figure>/is', function ($matches) {
+            $original = $matches[0];
+            $jsonString = html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $data = json_decode($jsonString, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && isset($data['url'])) {
+                $url = $data['url'];
+                $path = parse_url($url, PHP_URL_PATH) ?? '';
+                if (preg_match('/\.(svg|png|jpg|jpeg|webp)$/i', $path)) {
+                    return '<img src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" style="max-width: 100%;" />';
+                }
+            }
+
+            return $original;
+        }, $html);
+    }
+
     /**
      * Converte tags <img> para utilizar Base64 no src
      * Isso corrige imagens que não carregam (especialmente as geradas por RichEditors)
