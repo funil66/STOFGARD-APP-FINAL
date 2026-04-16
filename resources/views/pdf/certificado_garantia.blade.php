@@ -594,6 +594,21 @@
                                     @endforeach
                                 </div>
                             @endif
+
+                            @if($os->extra_attributes && is_array($os->extra_attributes))
+                                <div style="margin-top:10px; page-break-inside: avoid;">
+                                    <table style="width:100%; border-collapse: collapse; margin-top:8px;">
+                                        @foreach($os->extra_attributes as $key => $val)
+                                            @if(is_numeric($val) && $val > 0)
+                                                <tr>
+                                                    <td style="text-align:right; padding:4px 8px; color:#374151;">{{ ucfirst($key) }}</td>
+                                                    <td style="text-align:right; padding:4px 8px; color:#0f766e; font-weight:700;">R$ {{ number_format($val, 2, ',', '.') }}</td>
+                                                </tr>
+                                            @endif
+                                        @endforeach
+                                    </table>
+                                </div>
+                            @endif
                         </div>
                     </div>
 

@@ -35,13 +35,34 @@ class OrdemServicoObserver
 
         DB::transaction(function () use ($os) {
             // 1. Cria a Receita no Financeiro automaticamente (Lançamento Pendente)
+            // Calcula total a partir dos itens + extra_attributes (fallback caso valor_total esteja incorreto)
+            $itensTotal = collect($os->itens ?? [])->sum(function ($i) { return floatval($i->subtotal ?? 0); });
+            $extrasTotal = 0;
+            if (is_array($os->extra_attributes) || $os->extra_attributes instanceof \Illuminate\Support\Collection) {
+                foreach ($os->extra_attributes as $k => $v) {
+                    if (is_numeric($v)) {
+                        $extrasTotal += floatval($v);
+                        continue;
+                    }
+                    if (is_string($v) && strlen(trim((string) $v)) > 0) {
+                        $normalized = str_replace(['R$', ' ', '\\u00A0', '\\xc2\\xa0'], ['', '', '', ''], $v);
+                        $normalized = str_replace('.', '', $normalized);
+                        $normalized = str_replace(',', '.', $normalized);
+                        $extrasTotal += floatval($normalized);
+                    }
+                }
+            }
+
+            $computedTotal = $itensTotal + $extrasTotal;
+            $valorParaFinanceiro = ($computedTotal > 0) ? $computedTotal : ($os->valor_total ?? 0);
+
             \App\Models\Financeiro::create([
                 'cadastro_id' => $os->cadastro_id,
                 'ordem_servico_id' => $os->id,
                 'id_parceiro' => $os->id_parceiro,
                 'tipo' => 'entrada',
                 'descricao' => "Receita ref. OS #{$os->numero_os} - " . ($os->cliente->nome ?? 'Cliente'),
-                'valor' => $os->valor_total,
+                'valor' => $valorParaFinanceiro,
                 'data_vencimento' => $os->data_prevista ?? now()->addDays(2),
                 'data' => now(),
                 'status' => 'pendente',

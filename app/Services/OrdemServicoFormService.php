@@ -84,6 +84,30 @@ class OrdemServicoFormService
             return floatval($item['subtotal'] ?? 0);
         });
 
+        // Inclui valores de extra_attributes (ex: 'Taxa' => 100)
+        $extras = $get('extra_attributes') ?? $get('../../extra_attributes') ?? [];
+        if (is_array($extras) || $extras instanceof \Illuminate\Support\Collection) {
+            foreach ($extras as $k => $v) {
+                if (is_numeric($v)) {
+                    $total += floatval($v);
+                    continue;
+                }
+
+                if (is_string($v) && strlen(trim((string) $v)) > 0) {
+                    // Normaliza formatos como "R$ 1.234,56" ou "1.234,56"
+                    $normalized = str_replace(['R$', ' ', '\\u00A0', '\\xc2\\xa0'], ['', '', '', ''], $v);
+                    // Remove separador de milhares
+                    $normalized = str_replace('.', '', $normalized);
+                    // Troca vírgula decimal por ponto
+                    $normalized = str_replace(',', '.', $normalized);
+                    $num = floatval($normalized);
+                    if ($num > 0) {
+                        $total += $num;
+                    }
+                }
+            }
+        }
+
         // Tenta setar o valor total no contexto atual ou pai
         $set('valor_total', $total);
         $set('../../valor_total', $total);
