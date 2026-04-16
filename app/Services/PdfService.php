@@ -148,7 +148,7 @@ class PdfService
                 if (str_contains($src, '/tenancy/assets/')) {
                     $basename = basename(parse_url($src, PHP_URL_PATH));
                     if (function_exists('tenant') && tenant('id')) {
-                        $tenantPath = storage_path("tenant" . tenant('id') . "/app/public/" . $basename);
+                        $tenantPath = storage_path("app/public/" . $basename);
                     }
                 }
 
