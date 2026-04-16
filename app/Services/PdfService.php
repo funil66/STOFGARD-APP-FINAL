@@ -142,6 +142,26 @@ class PdfService
             }
 
             try {
+                $tenantPath = null;
+                if (str_contains($src, '/tenancy/assets/')) {
+                    $basename = basename(parse_url($src, PHP_URL_PATH));
+                    if (function_exists('tenant') && tenant('id')) {
+                        $tenantPath = storage_path("tenant" . tenant('id') . "/app/public/" . $basename);
+                    }
+                }
+
+                if ($tenantPath && is_file($tenantPath)) {
+                    $mimeTemplate = "image/jpeg";
+                    if (str_ends_with(strtolower($tenantPath), '.svg')) $mimeTemplate = 'image/svg+xml';
+                    elseif (str_ends_with(strtolower($tenantPath), '.png')) $mimeTemplate = 'image/png';
+                    elseif (str_ends_with(strtolower($tenantPath), '.webp')) $mimeTemplate = 'image/webp';
+                    elseif (str_ends_with(strtolower($tenantPath), '.gif')) $mimeTemplate = 'image/gif';
+                    
+                    $content = file_get_contents($tenantPath);
+                    $base64 = 'data:' . $mimeTemplate . ';base64,' . base64_encode($content);
+                    return str_replace($src, $base64, $originalImgTag);
+                }
+
                 $path = null;
                 if (str_starts_with($src, '/')) {
                     $path = public_path(ltrim($src, '/'));
