@@ -117,7 +117,9 @@ class PdfService
             if (json_last_error() === JSON_ERROR_NONE && isset($data['url'])) {
                 $url = $data['url'];
                 $path = parse_url($url, PHP_URL_PATH) ?? '';
-                if (preg_match('/\.(svg|png|jpg|jpeg|webp)$/i', $path)) {
+                $contentType = $data['contentType'] ?? '';
+                
+                if (str_starts_with($contentType, 'image/') || preg_match('/\.(svg|png|jpg|jpeg|webp|eps|ai|bmp|gif)$/i', $path)) {
                     return '<img src="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" style="max-width: 100%;" />';
                 }
             }
@@ -151,15 +153,20 @@ class PdfService
                 }
 
                 if ($tenantPath && is_file($tenantPath)) {
-                    $mimeTemplate = "image/jpeg";
-                    if (str_ends_with(strtolower($tenantPath), '.svg')) $mimeTemplate = 'image/svg+xml';
-                    elseif (str_ends_with(strtolower($tenantPath), '.png')) $mimeTemplate = 'image/png';
-                    elseif (str_ends_with(strtolower($tenantPath), '.webp')) $mimeTemplate = 'image/webp';
-                    elseif (str_ends_with(strtolower($tenantPath), '.gif')) $mimeTemplate = 'image/gif';
+                    $mimeTemplate = @mime_content_type($tenantPath);
+                    if (!$mimeTemplate) {
+                        $mimeTemplate = "image/jpeg";
+                        if (str_ends_with(strtolower($tenantPath), '.svg')) $mimeTemplate = 'image/svg+xml';
+                        elseif (str_ends_with(strtolower($tenantPath), '.png')) $mimeTemplate = 'image/png';
+                        elseif (str_ends_with(strtolower($tenantPath), '.webp')) $mimeTemplate = 'image/webp';
+                        elseif (str_ends_with(strtolower($tenantPath), '.gif')) $mimeTemplate = 'image/gif';
+                    }
                     
-                    $content = file_get_contents($tenantPath);
-                    $base64 = 'data:' . $mimeTemplate . ';base64,' . base64_encode($content);
-                    return str_replace($src, $base64, $originalImgTag);
+                    $content = @file_get_contents($tenantPath);
+                    if ($content !== false) {
+                        $base64 = 'data:' . $mimeTemplate . ';base64,' . base64_encode($content);
+                        return str_replace($src, $base64, $originalImgTag);
+                    }
                 }
 
                 $path = null;
@@ -195,15 +202,20 @@ class PdfService
                 }
 
                 if ($path && is_file($path)) {
-                    $mimeTemplate = "image/jpeg";
-                    if (str_ends_with(strtolower($path), '.svg')) $mimeTemplate = 'image/svg+xml';
-                    elseif (str_ends_with(strtolower($path), '.png')) $mimeTemplate = 'image/png';
-                    elseif (str_ends_with(strtolower($path), '.webp')) $mimeTemplate = 'image/webp';
-                    elseif (str_ends_with(strtolower($path), '.gif')) $mimeTemplate = 'image/gif';
+                    $mimeTemplate = @mime_content_type($path);
+                    if (!$mimeTemplate) {
+                        $mimeTemplate = "image/jpeg";
+                        if (str_ends_with(strtolower($path), '.svg')) $mimeTemplate = 'image/svg+xml';
+                        elseif (str_ends_with(strtolower($path), '.png')) $mimeTemplate = 'image/png';
+                        elseif (str_ends_with(strtolower($path), '.webp')) $mimeTemplate = 'image/webp';
+                        elseif (str_ends_with(strtolower($path), '.gif')) $mimeTemplate = 'image/gif';
+                    }
                     
-                    $content = file_get_contents($path);
-                    $base64 = 'data:' . $mimeTemplate . ';base64,' . base64_encode($content);
-                    return str_replace($src, $base64, $originalImgTag);
+                    $content = @file_get_contents($path);
+                    if ($content !== false) {
+                        $base64 = 'data:' . $mimeTemplate . ';base64,' . base64_encode($content);
+                        return str_replace($src, $base64, $originalImgTag);
+                    }
                 }
             } catch (\Exception $e) {
                 return $originalImgTag;
