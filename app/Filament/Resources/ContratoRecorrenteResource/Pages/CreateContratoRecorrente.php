@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\ContratoRecorrenteResource\Pages;
 
 use App\Filament\Resources\ContratoRecorrenteResource;
-use App\Services\AsaasService;
+use App\Services\AsaasGatewayService;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Notifications\Notification;
 
@@ -17,7 +17,7 @@ class CreateContratoRecorrente extends CreateRecord
         $record = $this->record;
 
         try {
-            $asaasService = app(AsaasService::class);
+            $asaasService = app(AsaasGatewayService::class);
             
             // Busca dados do cliente para a integração
             $cliente = $record->cliente;

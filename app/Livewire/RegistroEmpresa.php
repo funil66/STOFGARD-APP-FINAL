@@ -4,7 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Tenant;
 use App\Models\User;
-use App\Services\AsaasService;
+use App\Services\AsaasGatewayService;
 use App\Services\EmailCodeService;
 use App\Services\PayPalService;
 use App\Services\TenantTemplateProvisioner;
@@ -250,7 +250,7 @@ class RegistroEmpresa extends Component
         }
 
         try {
-            $asaas = app(AsaasService::class);
+            $asaas = app(AsaasGatewayService::class);
 
             $cliente = $asaas->buscarClientePorReferencia($tenant->id);
 

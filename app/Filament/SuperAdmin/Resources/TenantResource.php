@@ -3,7 +3,7 @@
 namespace App\Filament\SuperAdmin\Resources;
 
 use App\Models\Tenant;
-use App\Services\AsaasService;
+use App\Services\AsaasGatewayService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -506,7 +506,7 @@ class TenantResource extends Resource
                                 throw new \RuntimeException('ASAAS_API_KEY não está configurada no ambiente ativo.');
                             }
 
-                            $asaas = app(AsaasService::class);
+                            $asaas = app(AsaasGatewayService::class);
 
                             // 1. Cria cliente no Asaas
                             $cliente = $asaas->criarCliente([
@@ -563,7 +563,7 @@ class TenantResource extends Resource
                     ->visible(fn(Tenant $record) => !empty($record->gateway_subscription_id))
                     ->action(function (Tenant $record) {
                         try {
-                            app(AsaasService::class)->cancelarAssinatura($record->gateway_subscription_id);
+                            app(AsaasGatewayService::class)->cancelarAssinatura($record->gateway_subscription_id);
 
                             $record->update([
                                 'gateway_subscription_id' => null,

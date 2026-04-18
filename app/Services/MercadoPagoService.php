@@ -4,7 +4,7 @@ namespace App\Services;
 
 /**
  * MercadoPagoService — Stub para integração Mercado Pago.
- * TODO: Implementar quando solicitado. Segue a mesma interface que AsaasTenantService.
+ * TODO: Implementar quando solicitado. Segue a mesma interface que AsaasGatewayService.
  */
 class MercadoPagoService
 {

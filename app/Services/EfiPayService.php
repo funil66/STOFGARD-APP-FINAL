@@ -4,7 +4,7 @@ namespace App\Services;
 
 /**
  * EfiPayService — Stub para integração EFI/Gerencianet.
- * TODO: Implementar quando solicitado. Segue a mesma interface que AsaasTenantService.
+ * TODO: Implementar quando solicitado. Segue a mesma interface que AsaasGatewayService.
  */
 class EfiPayService
 {

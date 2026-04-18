@@ -119,7 +119,7 @@ class GatewayService
 
         try {
             $service = match ($config->gateway_provider) {
-                'asaas' => new AsaasTenantService($token),
+                'asaas' => new AsaasGatewayService($token),
                 'efipay' => new EfiPayService($token),
                 'mercadopago' => new MercadoPagoService($token),
                 default => null,
