@@ -12,7 +12,7 @@
 /chrome-bin
 
 # Ignore scripts containing credentials
-/scripts/
+
 
 # SQL backups
 *.sql
