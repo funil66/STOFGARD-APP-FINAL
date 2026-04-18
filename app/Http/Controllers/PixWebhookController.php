@@ -1,74 +1,33 @@
 <?php
+// ⚠️ THIS FILE IS DEPRECATED AND SCHEDULED FOR DELETION
+// Legacy PIX webhook - the real controller is at:
+//   App\Http\Controllers\Webhooks\PixWebhookController
+//   Route: POST api/webhooks/pix/{webhookToken}
+//
+// DELETE THIS FILE: rm app/Http/Controllers/PixWebhookController.php
 
 namespace App\Http\Controllers;
 
-use App\Services\PixService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
+/**
+ * @deprecated Use App\Http\Controllers\Webhooks\PixWebhookController instead
+ */
 class PixWebhookController extends Controller
 {
-    /**
-     * Processa notificação de pagamento PIX da EFI
-     */
     public function handle(Request $request)
     {
-        if (!config('payments.legacy_pix_webhook_enabled', false)) {
-            return response()->json([
-                'status' => 'disabled',
-                'message' => 'Webhook legado desativado. Use /api/webhooks/pix/{webhookToken}.',
-            ], 410);
-        }
-
-        Log::info('Webhook PIX recebido', [
-            'payload' => $request->all(),
-            'headers' => $request->headers->all(),
-        ]);
-
-        try {
-            $pixService = new PixService;
-            $result = $pixService->processarWebhook($request->all());
-
-            if ($result) {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Webhook processado com sucesso',
-                ], 200);
-            }
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Falha ao processar webhook',
-            ], 400);
-
-        } catch (\Exception $e) {
-            Log::error('Erro ao processar webhook PIX', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'status' => 'deprecated',
+            'message' => 'Este endpoint foi descontinuado. Use POST /api/webhooks/pix/{webhookToken}',
+        ], 410);
     }
 
-    /**
-     * Endpoint para verificar status do webhook (útil para testes)
-     */
     public function status()
     {
-        if (!config('payments.legacy_pix_webhook_enabled', false)) {
-            return response()->json([
-                'status' => 'disabled',
-                'timestamp' => now()->toIso8601String(),
-            ], 410);
-        }
-
         return response()->json([
-            'status' => 'online',
-            'timestamp' => now()->toIso8601String(),
-        ]);
+            'status' => 'deprecated',
+            'message' => 'Este endpoint foi descontinuado.',
+        ], 410);
     }
 }

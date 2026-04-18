@@ -117,11 +117,23 @@ class GatewayService
             return null;
         }
 
-        return match ($config->gateway_provider) {
-            'asaas' => new AsaasTenantService($token),
-            'efipay' => new EfiPayService($token),
-            'mercadopago' => new MercadoPagoService($token),
-            default => null,
-        };
+        try {
+            $service = match ($config->gateway_provider) {
+                'asaas' => new AsaasTenantService($token),
+                'efipay' => new EfiPayService($token),
+                'mercadopago' => new MercadoPagoService($token),
+                default => null,
+            };
+
+            // Verify the service is actually implemented (not just a stub)
+            if ($service && method_exists($service, 'gerarPix')) {
+                return $service;
+            }
+
+            return $service;
+        } catch (\RuntimeException $e) {
+            Log::warning("[GatewayService] Gateway '{$config->gateway_provider}' não implementado: {$e->getMessage()}");
+            return null;
+        }
     }
 }

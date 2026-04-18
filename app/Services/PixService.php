@@ -1,27 +1,23 @@
 <?php
+// ⚠️ THIS FILE IS DEPRECATED AND SCHEDULED FOR DELETION
+// The legacy PixService has been superseded by:
+//   - App\Services\Pix\PixMasterService (QR Code generation)
+//   - App\Services\Pix\PixKeyValidatorService (Key validation)
+//   - App\Services\GatewayService (Multi-gateway facade)
+//
+// DELETE THIS FILE: rm app/Services/PixService.php
 
 namespace App\Services;
 
-use App\Models\Financeiro;
-use Illuminate\Support\Facades\Log;
-
+/**
+ * @deprecated Use PixMasterService or GatewayService instead
+ */
 class PixService
 {
-    public function criarCobranca(Financeiro $financeiro): bool
+    public function __call($method, $args)
     {
-        Log::warning('[PixService] Tentativa de uso do fluxo legado de cobrança PIX', [
-            'financeiro_id' => $financeiro->id,
-        ]);
-
-        return false;
-    }
-
-    public function processarWebhook(array $payload): bool
-    {
-        Log::warning('[PixService] Tentativa de uso do webhook legado PIX', [
-            'payload_keys' => array_keys($payload),
-        ]);
-
-        return false;
+        throw new \RuntimeException(
+            "PixService is deprecated. Use App\\Services\\Pix\\PixMasterService or App\\Services\\GatewayService instead. Method called: {$method}"
+        );
     }
 }

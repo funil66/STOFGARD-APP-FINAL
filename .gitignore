@@ -31,7 +31,11 @@ public/test-*.html
 # Credentials
 DEV_CREDENTIALS.md
 .env.prod
+.env.production
 .env.staging
+
+# Legacy scripts archive
+_archive/
 
 # Local artifacts
 storage/serve.pid
@@ -49,3 +53,4 @@ mudancas_*.txt
 frankenphp
 frankenphp-worker.php
 /public/storage
+.env.production

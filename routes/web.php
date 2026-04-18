@@ -4,7 +4,6 @@ use App\Http\Controllers\CadastroPdfController;
 use App\Http\Controllers\GoogleCalendarController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\PagamentoController;
-use App\Http\Controllers\PixWebhookController;
 use App\Http\Controllers\SuperAdmin\TenantUserController;
 use App\Http\Controllers\Auth\JwtSessionBridgeController;
 use App\Http\Controllers\Auth\EmpresaPasswordResetController;
@@ -236,14 +235,7 @@ Route::get('/pagamento/{hash}', [PagamentoController::class, 'pix'])
 Route::get('/pagamento/{hash}/verificar', [PagamentoController::class, 'verificarStatus'])
     ->name('pagamento.verificar');
 
-// Webhook PIX legado (desativado por padrão no controller)
-Route::middleware('throttle:60,1')->group(function () {
-    Route::post('/webhook/pix', [PixWebhookController::class, 'handle'])
-        ->name('webhook.pix');
-    Route::get('/webhook/pix/status', [PixWebhookController::class, 'status'])
-        ->name('webhook.pix.status');
-});
-// PIX status endpoint removed — use api/webhooks/pix instead
+// Webhook PIX legado removido — use api/webhooks/pix/{webhookToken} (Webhooks\PixWebhookController)
 
 // NOTE: public debug PDF route removed for security. If you need a local-only test, use
 // `scripts/generate-pdf.js` with debug HTML files under `storage/debug` or run the

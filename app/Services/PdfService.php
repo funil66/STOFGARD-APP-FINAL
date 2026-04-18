@@ -177,10 +177,11 @@ class PdfService
                     $tmpPath = public_path(ltrim($parsedUrl['path'] ?? '', '/'));
 
                     if (!is_file($tmpPath)) {
+                        $verifySsl = app()->environment('production', 'staging');
                         $context = stream_context_create([
                             "ssl" => [
-                                "verify_peer" => false,
-                                "verify_peer_name" => false,
+                                "verify_peer" => $verifySsl,
+                                "verify_peer_name" => $verifySsl,
                             ],
                         ]);
                         $content = @file_get_contents($src, false, $context);

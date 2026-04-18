@@ -261,7 +261,15 @@ class PixKeyValidatorService
     }
 
     /**
-     * Valida DDD brasileiro
+     * Valida DDD brasileiro (public API for reuse across services)
+     */
+    public static function isDddValido(string $ddd): bool
+    {
+        return self::validarDDD($ddd);
+    }
+
+    /**
+     * Valida DDD brasileiro (internal)
      */
     private static function validarDDD(string $ddd): bool
     {
