@@ -33,6 +33,11 @@ DEV_CREDENTIALS.md
 .env.prod
 .env.production
 .env.staging
+.env.save
+
+# One-off scripts (never commit to main)
+commit_correcoes.sh
+correcoes_criticas.sh
 
 # Legacy scripts archive
 _archive/
