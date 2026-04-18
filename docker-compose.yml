@@ -1,7 +1,7 @@
 services:
   browserless:
     container_name: browserless
-    image: browserless/chrome:latest
+    image: browserless/chrome:1.60-chrome
     restart: unless-stopped
     environment:
       - TOKEN=localtoken
