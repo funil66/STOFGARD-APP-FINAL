@@ -1,118 +1,51 @@
 #!/bin/bash
-# ============================================
-# AUTONOMIA ILIMITADA — Commit das Correções
-# ============================================
-# Execute com: bash commit_correcoes.sh
-# Deve ser rodado na raiz do projeto
-# ============================================
-
 set -e
+cd /home/funil/dev/autonomia
 
-PROJECT_DIR="/home/funil/dev/autonomia"
-
-if [ ! -f "artisan" ]; then
-    echo "❌ ERRO: Este script deve ser rodado na raiz do projeto Laravel."
-    echo "   Execute: cd $PROJECT_DIR && bash commit_correcoes.sh"
-    exit 1
-fi
-
-echo "========================================"
-echo "  AUTONOMIA ILIMITADA — Git Commit"
-echo "========================================"
-echo ""
-
-# Configurar identidade git (necessário após trocar de máquina/container)
-echo "📋 Configurando identidade Git..."
+echo "=== Configurando Git ==="
 git config user.email "allissonsousa.adv@gmail.com"
 git config user.name "Allisson Sousa"
-echo "  ✅ Identidade configurada"
-
-# Limpar arquivos temporários restantes
-echo ""
-echo "🧹 Limpando arquivos temporários..."
-
-# Arquivo swap do nano
-if [ -f "..env.swp" ]; then
-    rm -f "..env.swp"
-    echo "  🗑️  ..env.swp removido"
-fi
-
-# debug2.php (já arquivado)
-if [ -f "debug2.php" ]; then
-    mv debug2.php _archive/legacy-scripts/
-    echo "  📦 debug2.php → _archive/"
-fi
-
-# stofgard-worker.conf legado
-if [ -f "stofgard-worker.conf" ]; then
-    mv stofgard-worker.conf _archive/legacy-scripts/
-    echo "  📦 stofgard-worker.conf → _archive/"
-fi
-
-# correcoes_criticas.sh (cumpriu seu papel)
-if [ -f "correcoes_criticas.sh" ]; then
-    mv correcoes_criticas.sh _archive/
-    echo "  📦 correcoes_criticas.sh → _archive/"
-fi
 
 echo ""
-echo "📝 Stageing das alterações..."
+echo "=== Deletando stubs deprecated ==="
+rm -f app/Services/PixService.php
+rm -f app/Services/Pagamento/PixGatewayService.php
+echo "  ✅ PixService.php deletado"
+echo "  ✅ PixGatewayService.php deletado"
+
+echo ""
+echo "=== Staging ==="
 git add -A
-echo "  ✅ Staged"
-
-echo ""
-echo "📊 Resumo das alterações:"
 git diff --cached --stat
 
 echo ""
-echo "🚀 Fazendo commit..."
-git commit -m "security+cleanup: credenciais rotacionadas, scripts arquivados, supervisord e redis corrigidos
+echo "=== Commit ==="
+git commit -m "security+cleanup: fix webhook forgery bypass, delete deprecated PIX stubs
 
-=== SEGURANÇA ===
-- .env: credenciais atualizadas (DB_DATABASE=autonomia, DB_USERNAME=Funil)
-- .env: MYSQL_ROOT_PASSWORD e REDIS_PASSWORD definidos
-- .env.prod e .env.production removidos do tracking Git
-- .gitignore: .env.production e _archive/ adicionados
-- docker-compose: credenciais MySQL via env vars (sem hardcode)
-- docker-compose: Redis com autenticação via REDIS_PASSWORD
-- supervisord: PHP-FPM no lugar de php artisan serve como root
-- PdfService: SSL verify_peer=true em producao/staging
+SECURITY (critical):
+- AsaasWebhookController: token agora é OBRIGATÓRIO — se ASAAS_WEBHOOK_TOKEN
+  estiver vazio no .env, webhooks são rejeitados com 503 (antes passavam)
+- AsaasWebhookController: comparação via hash_equals() (timing-safe)
+- PixWebhookController: removido fallback que fazia scan de TODOS os tenants
+  ativos (vetor de DoS e timing attack)
 
-=== CÓDIGO MORTO REMOVIDO ===
-- PixService.php: deprecated (throws RuntimeException)
-- PixGatewayService.php: deprecated (throws RuntimeException)
-- PixWebhookController.php legado: 410 Gone stub
-- routes/web.php: rotas legadas de webhook PIX removidas
-
-=== QUALIDADE ===
-- GatewayService: guard para gateways não implementados (EfiPay/MercadoPago)
-- PixMasterService: DDDs consolidados via PixKeyValidatorService::isDddValido()
-- PixKeyValidatorService: novo método público isDddValido()
-
-=== LIMPEZA ===
-- 89+ scripts de fix/patch arquivados em _archive/legacy-scripts/
-- debug2.php, stofgard-worker.conf movidos para _archive/
-- ..env.swp (nano swap) removido
-- Arquivos orfaos da raiz removidos (out.html, orcamento.blade.php, etc)"
+CLEANUP:
+- DELETADO app/Services/PixService.php (stub deprecated, 22 linhas)
+- DELETADO app/Services/Pagamento/PixGatewayService.php (stub deprecated, 22 linhas)
+- PagamentoController: PixService → GatewayService
+- RenderOrcamentoHtml: PixService → PixMasterService (método real gerarQrCode)
+- GerarCobrancaPixJob: PixGatewayService → GatewayService"
 
 echo ""
-echo "========================================"
-echo "✅ COMMIT CONCLUÍDO!"
-echo "========================================"
-echo ""
-
-# Push
-echo "🚀 Enviando para o repositório remoto..."
+echo "=== Push ==="
 git push
-echo "  ✅ Push concluído!"
 
 echo ""
-echo "========================================"
-echo "✅ TUDO CONCLUÍDO!"
-echo "========================================"
+echo "========================================="
+echo "✅ DONE"
 echo ""
-echo "⚠️  AINDA PENDENTE (manual):"
-echo "   1. php artisan key:generate --force  (rotacionar APP_KEY)"
-echo "   2. Pinnar versão do browserless/chrome no docker-compose.yml"
-echo "   3. Renomear StofgardSystem → AutonomiaSistema (branding)"
-echo ""
+echo "Verificação:"
+echo "  grep -r 'PixService' app/ --include='*.php' | grep -v PixMasterService | grep -v PixKeyValidator"
+echo "  grep -r 'PixGatewayService' app/ --include='*.php'"
+echo "  (ambos devem retornar zero linhas)"
+echo "========================================="

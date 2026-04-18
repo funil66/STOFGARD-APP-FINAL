@@ -52,7 +52,7 @@
 - CRM e Cadastros Ilimitados
 - Orçamentos e OS (limite de 30/mês)
 - Agendamento manual
-- PDF simples (com marca d'água STOFGARD / Autonomia Ilimitada)
+- PDF simples (com marca d'água AUTONOMIA / Autonomia Ilimitada)
 - ❌ **Bloqueado:** WhatsApp automático, GPS, Portal do Cliente, Kanban.
 
 ### 🥈 TIER 2: PRO (O Carro-Chefe) - *Para quem quer ganhar tempo*

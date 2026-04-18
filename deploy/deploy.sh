@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-echo "🚀 Iniciando Deploy do Stofgard..."
+echo "🚀 Iniciando Deploy do Autonomia..."
 
 COMPOSE_FILE=""
 

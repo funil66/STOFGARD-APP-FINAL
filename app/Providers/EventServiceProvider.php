@@ -7,5 +7,8 @@ class EventServiceProvider extends ServiceProvider {
         Attempting::class => [
             \App\Listeners\DebugLoginQuery::class,
         ],
+        \Laravel\Horizon\Events\LongWaitDetected::class => [
+            \App\Listeners\HorizonLongWaitDetectedListener::class,
+        ],
     ];
 }

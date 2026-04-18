@@ -199,7 +199,7 @@ class TabelaPrecoResource extends Resource
             ])
             ->actions(
                 array_merge(
-                    \App\Support\Filament\StofgardTable::defaultActions(
+                    \App\Support\Filament\AutonomiaTable::defaultActions(
                         view: true,
                         edit: true,
                         delete: true,

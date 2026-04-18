@@ -68,7 +68,7 @@ class ConfigSeed extends Seeder
             ],
             [
                 'key' => 'empresa_email',
-                'value' => 'contato@stofgard.com.br',
+                'value' => 'contato@autonomia.com.br',
             ],
             [
                 'key' => 'empresa_endereco',

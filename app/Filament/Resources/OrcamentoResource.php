@@ -700,7 +700,7 @@ class OrcamentoResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->actions(
-                \App\Support\Filament\StofgardTable::defaultActions(
+                \App\Support\Filament\AutonomiaTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,

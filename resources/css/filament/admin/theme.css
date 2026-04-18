@@ -1,5 +1,5 @@
 /* =====================================================
-   STOFGARD 2026 - Filament Admin Theme
+   AUTONOMIA 2026 - Filament Admin Theme
    Central theme file for all color/layout variables
    ===================================================== */
 
@@ -8,7 +8,7 @@
 
 :root {
   --brand-primary: #2563eb;
-  /* Stofgard royal blue */
+  /* Autonomia royal blue */
   --brand-secondary: #06b6d4;
   /* ciano */
   --brand-gray: #64748b;

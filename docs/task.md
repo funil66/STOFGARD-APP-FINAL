@@ -42,7 +42,7 @@
 
 - [x] Critical Fixes & Security Review
     - [x] Fix `PdfGeneratorService::salvarPdf` (Binary content vs Object)
-    - [x] Verify `StofgardSystem` security (No hardcoded ID 1 found)
+    - [x] Verify `AutonomiaSystem` security (No hardcoded ID 1 found)
 
 - [x] Storage & Media Optimization
     - [x] Verify `config/filesystems.php` (Public Disk)

@@ -45,6 +45,7 @@ RUN apt-get update && apt-get install -y \
     fontconfig \
     mariadb-client \
     chromium \
+    nginx \
     # Clean up
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -84,7 +85,9 @@ WORKDIR /var/www
 
 # Copy custom configurations
 COPY deploy/php.ini /usr/local/etc/php/conf.d/custom.ini
-COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY deploy/nginx/nginx-site.conf /etc/nginx/sites-available/default
+RUN rm -f /etc/nginx/sites-enabled/default && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+# Supervisord config will be mounted via docker-compose
 
 # Copy application code
 COPY . /var/www
@@ -102,6 +105,6 @@ RUN npm install && npm run build
 # Switch back to root for supervisor
 USER root
 
-# Expose port 9000 and start supervisor (which runs php-fpm)
-EXPOSE 9000
+# Expose port 80 (nginx) and start supervisor
+EXPOSE 80
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

@@ -16,13 +16,13 @@ class AdminUserSeeder extends Seeder
         $admins = [
             [
                 'name' => 'Allisson Gonçalves de Sousa',
-                'email' => 'allisson@stofgard.com.br',
+                'email' => 'allisson@autonomia.com.br',
                 'password' => Hash::make('admin'),
                 'is_admin' => true,
             ],
             [
                 'name' => 'Maria de Jesus Silva',
-                'email' => 'maria@stofgard.com.br',
+                'email' => 'maria@autonomia.com.br',
                 'password' => Hash::make('admin'),
                 'is_admin' => true,
             ],

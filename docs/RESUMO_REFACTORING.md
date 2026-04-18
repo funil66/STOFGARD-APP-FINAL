@@ -6,7 +6,7 @@
 - ❌ **Removido:** `auth()->id() ?? 1` (fallback inseguro)
 - ✅ **Implementado:** Validação obrigatória de `userId` ou exception
 - **Arquivos Afetados:**
-  - `app/Services/StofgardSystem.php`
+  - `app/Services/AutonomiaSystem.php`
   - `app/Services/OrdemServicoService.php`
   - `app/Models/OrdemServico.php`
   - `app/Filament/Resources/ProdutoResource/RelationManagers/MovimentacoesRelationManager.php`
@@ -25,7 +25,7 @@
 ### 3. **Separação de Responsabilidades (SRP)**
 - ✅ **Criado:** `PdfGeneratorService` (geração de PDFs isolada)
 - ✅ **Expandido:** `EstoqueService` (movimentação de estoque completa)
-- ✅ **Refatorado:** `StofgardSystem` (apenas orquestração de workflow)
+- ✅ **Refatorado:** `AutonomiaSystem` (apenas orquestração de workflow)
 
 ### 4. **Externalização de Configurações**
 - ✅ **Movido para `config/services.php`:**
@@ -46,7 +46,7 @@
 
 | Métrica | Antes | Depois | Delta |
 |---------|-------|--------|-------|
-| **God Classes** | 1 (StofgardSystem) | 0 | -100% |
+| **God Classes** | 1 (AutonomiaSystem) | 0 | -100% |
 | **Hardcoded Values** | 8 | 0 | -100% |
 | **Audit Vulnerabilities** | 4 | 0 | -100% |
 | **New Services** | 0 | 2 | +200% |
@@ -58,7 +58,7 @@
 
 ### Métodos com Nova Assinatura:
 
-#### StofgardSystem::aprovarOrcamento()
+#### AutonomiaSystem::aprovarOrcamento()
 ```php
 // ANTES
 aprovarOrcamento(Orcamento $orcamento)

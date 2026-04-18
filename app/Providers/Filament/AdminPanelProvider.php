@@ -28,7 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login(\App\Filament\Pages\Auth\CustomLogin::class)
             ->brandName(config('app.name', 'Autonomia'))
-            // ->brandLogo(asset('images/logo.png')) // Removido: estava fixando a logo antiga da Stofgard
+            // ->brandLogo(asset('images/logo.png')) // Removido: estava fixando a logo antiga da Autonomia
             // ->brandLogoHeight('3rem')
             ->favicon(asset('images/favicon.ico'))
             ->colors([

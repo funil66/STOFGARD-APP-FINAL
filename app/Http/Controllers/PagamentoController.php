@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Financeiro;
-use App\Services\PixService;
+use App\Services\GatewayService;
 use Illuminate\Support\Facades\Log;
 
 class PagamentoController extends Controller
@@ -29,14 +29,21 @@ class PagamentoController extends Controller
                 return view('pagamento.pago', compact('financeiro'));
             }
 
-            // Se PIX expirado ou não existe, gerar novo
+            // Se PIX expirado ou não existe, gerar novo via GatewayService
             if (empty($financeiro->pix_txid) ||
                 $financeiro->pix_status === 'expirado' ||
                 ($financeiro->pix_expiracao && $financeiro->pix_expiracao->isPast())) {
 
-                $pixService = new PixService;
-                $pixService->criarCobranca($financeiro);
-                $financeiro->refresh();
+                if (GatewayService::estaConfigurado()) {
+                    $resultado = GatewayService::gerarPix($financeiro->orcamento);
+                    $financeiro->update([
+                        'pix_txid' => $resultado['cobranca_id'] ?? null,
+                        'pix_copia_cola' => $resultado['pix_copia_cola'] ?? null,
+                        'pix_qrcode_base64' => $resultado['qr_code_base64'] ?? null,
+                        'pix_status' => 'ativo',
+                    ]);
+                    $financeiro->refresh();
+                }
             }
 
             return view('pagamento.pix', compact('financeiro'));

@@ -59,10 +59,10 @@ $userId = $userId ?? auth()->id();
 ### 3. **Desacoplamento: God Service → SRP**
 
 **Antes:**
-- `StofgardSystem` fazia: Transação, PDF, Estoque, Notificação (Violação do SRP)
+- `AutonomiaSystem` fazia: Transação, PDF, Estoque, Notificação (Violação do SRP)
 
 **Depois:**
-- `StofgardSystem` → Orquestração de Workflow
+- `AutonomiaSystem` → Orquestração de Workflow
 - `PdfGeneratorService` → Geração de PDFs (Spatie Laravel PDF)
 - `EstoqueService` → Gestão de Movimentações
 
@@ -91,7 +91,7 @@ use Barryvdh\DomPDF\Facade\Pdf;  // ❌ Import errado
 ```
 
 **Solução:**
-- Removido método `renderPdf()` de `StofgardSystem.php`
+- Removido método `renderPdf()` de `AutonomiaSystem.php`
 - Criado `PdfGeneratorService` usando **Spatie Laravel PDF** (Browsershot/Chromium)
 - Import correto: `use Spatie\LaravelPdf\Facades\Pdf;`
 
@@ -210,12 +210,12 @@ composer require league/flysystem-aws-s3-v3
 
 **Antes:**
 ```php
-StofgardSystem::aprovarOrcamento(Orcamento $orcamento);
+AutonomiaSystem::aprovarOrcamento(Orcamento $orcamento);
 ```
 
 **Depois:**
 ```php
-StofgardSystem::aprovarOrcamento(
+AutonomiaSystem::aprovarOrcamento(
     Orcamento $orcamento,
     ?int $userId = null,               // Novo parâmetro obrigatório via CLI
     int $prazoVencimentoDias = 30,
@@ -227,8 +227,8 @@ StofgardSystem::aprovarOrcamento(
 ### Exemplo de Atualização (Jobs/Commands):
 ```php
 // Em um Job ou Command
-$stofgard = app(StofgardSystem::class);
-$stofgard->aprovarOrcamento(
+$autonomia = app(AutonomiaSystem::class);
+$autonomia->aprovarOrcamento(
     $orcamento,
     userId: 1,  // ID do usuário sistema ou responsável
     prazoVencimentoDias: 15  // Customizar prazo

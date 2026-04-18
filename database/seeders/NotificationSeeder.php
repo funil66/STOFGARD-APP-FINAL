@@ -13,7 +13,7 @@ class NotificationSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::where('email', 'admin@stofgard.com')->first();
+        $admin = User::where('email', 'admin@autonomia.com')->first();
 
         if ($admin) {
             // Notificação de boas-vindas usando o sistema nativo do Laravel

@@ -20,7 +20,7 @@ class TenantTemplateProvisioner
 
     public function apply(Tenant $targetTenant): void
     {
-        $templateDomain = (string) env('TENANT_TEMPLATE_DOMAIN', 'controle.stofgard.com.br');
+        $templateDomain = (string) env('TENANT_TEMPLATE_DOMAIN', 'controle.autonomia.com.br');
 
         if ($templateDomain === '') {
             return;

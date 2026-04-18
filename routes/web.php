@@ -81,12 +81,12 @@ Route::post('/redefinir-senha', [EmpresaPasswordResetController::class, 'reset']
     ->name('empresa.password.reset.update');
 
 // --- FASE 1: VITRINE PÚBLICA (Link na Bio) ---
-// URL: stofgard.com.br/v/{slug-do-tenant}
+// URL: autonomia.com.br/v/{slug-do-tenant}
 Route::get('/v/{slug}', [\App\Http\Controllers\PublicProfileController::class, 'show'])
     ->name('tenant.profile');
 
 // --- FASE 2: AGENDAMENTO PÚBLICO (Clone Calendly) ---
-// URL: stofgard.com.br/agendar/{slug-do-tenant}
+// URL: autonomia.com.br/agendar/{slug-do-tenant}
 Route::prefix('agendar')->name('agendamento.')->group(function () {
     Route::get('/{slug}', [\App\Http\Controllers\AgendamentoPublicoController::class, 'show'])
         ->name('publico');

@@ -22,8 +22,19 @@ class AsaasWebhookController extends Controller
         $token = $request->header('asaas-access-token');
         $expectedToken = config('services.asaas.webhook_token');
 
-        if ($expectedToken && $token !== $expectedToken) {
-            Log::warning('[AsaasWebhook] Token inválido recebido', ['ip' => $request->ip()]);
+        // Token DEVE estar configurado — sem token = serviço indisponível
+        if (empty($expectedToken)) {
+            Log::critical('[AsaasWebhook] ASAAS_WEBHOOK_TOKEN não configurado! Webhook rejeitado por segurança.', [
+                'ip' => $request->ip(),
+            ]);
+            return response()->json(['error' => 'Service unavailable'], 503);
+        }
+
+        if (!hash_equals($expectedToken, $token ?? '')) {
+            Log::warning('[AsaasWebhook] Token inválido recebido', [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 

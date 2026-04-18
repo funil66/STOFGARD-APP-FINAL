@@ -10,7 +10,7 @@ O seeder contém **todas as configurações necessárias** para restaurar o sist
 - Nome: AUTONOMIA ILIMITADA HIGIENIZAÇÃO E IMPERMEABILIZAÇÃO
 - CNPJ: 58.794.846/0001-20
 - Telefone: (16) 99753-9698
-- Email: contato@stofgard.com.br
+- Email: contato@autonomia.com.br
 - Endereço completo
 - Logo personalizada
 

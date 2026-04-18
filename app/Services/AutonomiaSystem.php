@@ -16,7 +16,7 @@ use App\Models\OrdemServico;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
 
-class StofgardSystem
+class AutonomiaSystem
 {
     public function __construct(
         private EstoqueService $estoqueService

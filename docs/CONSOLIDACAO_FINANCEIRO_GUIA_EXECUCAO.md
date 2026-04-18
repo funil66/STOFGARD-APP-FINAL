@@ -12,10 +12,10 @@
 
 ```bash
 # MySQL/MariaDB
-mysqldump -u root -p stofgard_db > backup_pre_consolidacao_$(date +%Y%m%d_%H%M%S).sql
+mysqldump -u root -p autonomia_db > backup_pre_consolidacao_$(date +%Y%m%d_%H%M%S).sql
 
 # PostgreSQL
-pg_dump stofgard_db > backup_pre_consolidacao_$(date +%Y%m%d_%H%M%S).sql
+pg_dump autonomia_db > backup_pre_consolidacao_$(date +%Y%m%d_%H%M%S).sql
 ```
 
 ### 2. **Verificar Estado Atual**
@@ -309,10 +309,10 @@ php artisan migrate:rollback --step=5
 
 ```bash
 # MySQL/MariaDB
-mysql -u root -p stofgard_db < backup_pre_consolidacao_YYYYMMDD_HHMMSS.sql
+mysql -u root -p autonomia_db < backup_pre_consolidacao_YYYYMMDD_HHMMSS.sql
 
 # PostgreSQL
-psql stofgard_db < backup_pre_consolidacao_YYYYMMDD_HHMMSS.sql
+psql autonomia_db < backup_pre_consolidacao_YYYYMMDD_HHMMSS.sql
 ```
 
 ---

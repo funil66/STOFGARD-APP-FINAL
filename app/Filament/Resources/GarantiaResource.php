@@ -233,7 +233,7 @@ class GarantiaResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions(
-                \App\Support\Filament\StofgardTable::defaultActions(
+                \App\Support\Filament\AutonomiaTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,

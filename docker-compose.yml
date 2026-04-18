@@ -23,14 +23,14 @@ services:
     networks:
       - autonomia-public
 
-  autonomia-stofgard:
-    container_name: autonomia-stofgard
+  autonomia-autonomia:
+    container_name: autonomia-autonomia
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
       - "8002:80"
     volumes:
-      - ${STOFGARD_PATH:-./external/STOFGARD}:/usr/share/nginx/html:ro
+      - ${AUTONOMIA_PATH:-./external/AUTONOMIA}:/usr/share/nginx/html:ro
     networks:
       - autonomia-public
 
@@ -54,7 +54,7 @@ services:
     env_file:
       - ${AUTONOMIA_ENV_FILE:-.env}
     volumes:
-      - ./deploy/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf:ro
+      - ./deploy/supervisord-app.conf:/etc/supervisor/conf.d/supervisord.conf:ro
     restart: unless-stopped
     ports:
       - "8004:80"
@@ -64,6 +64,34 @@ services:
       - "traefik.http.routers.autonomia-app.entrypoints=websecure"
       - "traefik.http.routers.autonomia-app.tls.certresolver=cloudflare"
       - "traefik.http.services.autonomia-app.loadbalancer.server.port=80"
+    networks:
+      - proxy_public
+      - autonomia-public
+
+  autonomia-worker:
+    container_name: autonomia-worker
+    build:
+      context: ${AUTONOMIA_APP_PATH:-.}
+      dockerfile: deploy/Dockerfile
+    env_file:
+      - ${AUTONOMIA_ENV_FILE:-.env}
+    volumes:
+      - ./deploy/supervisord-worker.conf:/etc/supervisor/conf.d/supervisord.conf:ro
+    restart: unless-stopped
+    networks:
+      - proxy_public
+      - autonomia-public
+
+  autonomia-scheduler:
+    container_name: autonomia-scheduler
+    build:
+      context: ${AUTONOMIA_APP_PATH:-.}
+      dockerfile: deploy/Dockerfile
+    env_file:
+      - ${AUTONOMIA_ENV_FILE:-.env}
+    volumes:
+      - ./deploy/supervisord-scheduler.conf:/etc/supervisor/conf.d/supervisord.conf:ro
+    restart: unless-stopped
     networks:
       - proxy_public
       - autonomia-public

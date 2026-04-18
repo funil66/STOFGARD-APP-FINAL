@@ -302,7 +302,7 @@ FileDownloadController faz stream seguro
 ],
 ```
 
-### stofgard-worker.conf (Supervisor)
+### autonomia-worker.conf (Supervisor)
 ```ini
 command=php /var/www/html/artisan queue:work redis --queue=high,default,low --sleep=1
 ```

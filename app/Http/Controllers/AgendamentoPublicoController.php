@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 /**
  * AgendamentoPublicoController — Página pública de agendamento tipo Calendly.
- * URL: stofgard.com.br/agendar/{slug}
+ * URL: autonomia.com.br/agendar/{slug}
  *
  * Flow:
  * 1. Cliente acessa a URL pública

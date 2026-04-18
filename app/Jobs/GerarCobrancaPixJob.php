@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use App\Services\Pagamento\PixGatewayService;
+use App\Services\GatewayService;
 use App\Jobs\SendWhatsAppJob;
 use Illuminate\Support\Facades\Log;
 
@@ -31,10 +31,19 @@ class GerarCobrancaPixJob implements ShouldQueue
     public function handle()
     {
         try {
-            $gateway = new PixGatewayService();
-            $dadosPix = $gateway->gerarCobrancaPix($this->valorCobranca, $this->documentoReferencia, $this->nomeCliente);
+            if (!GatewayService::estaConfigurado()) {
+                Log::warning('[GerarCobrancaPix] Gateway não configurado para este tenant');
+                return;
+            }
 
-            if ($dadosPix['success']) {
+            // Monta dados para o gateway
+            $dadosPix = GatewayService::gerarPix((object) [
+                'valor_total' => $this->valorCobranca,
+                'numero' => $this->documentoReferencia,
+            ]);
+
+            // GatewayService retorna: pix_copia_cola, qr_code_base64, link_pagamento, cobranca_id
+            if (!empty($dadosPix['pix_copia_cola']) && empty($dadosPix['fallback_manual'])) {
                 // Template configurável — lê de Settings, fallback para texto padrão
                 $template = settings('texto_cobranca_pix');
 
@@ -53,16 +62,17 @@ class GerarCobrancaPixJob implements ShouldQueue
                         $this->nomeCliente,
                         $this->documentoReferencia,
                         number_format($this->valorCobranca, 2, ',', '.'),
-                        $dadosPix['link_visualizacao'],
+                        $dadosPix['link_pagamento'] ?? '',
                         $dadosPix['pix_copia_cola'],
                     ],
                     $template
                 );
 
-                // Despacha pro WhatsApp Job que já temos rodando nas trincheiras
                 SendWhatsAppJob::dispatch($this->telefoneCliente, $mensagem);
 
-                Log::info("✅ Fogo no buraco! PIX gerado e Zap despachado para {$this->nomeCliente}.");
+                Log::info("[GerarCobrancaPix] PIX gerado e WhatsApp despachado para {$this->nomeCliente}");
+            } else {
+                Log::warning("[GerarCobrancaPix] Gateway retornou fallback manual — WhatsApp não enviado");
             }
         } catch (\Exception $e) {
             Log::error("💣 A C4 Falhou na cobrança: " . $e->getMessage());

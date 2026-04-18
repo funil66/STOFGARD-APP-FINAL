@@ -34,7 +34,7 @@ class WhatsappChat extends Component
 
         // 2. Parâmetros da Evolution API (.env required)
         $apiUrl = env('EVOLUTION_API_URL', 'http://localhost:8080');
-        $instance = env('EVOLUTION_INSTANCE', 'stofgard');
+        $instance = env('EVOLUTION_INSTANCE', 'autonomia');
         $apikey = env('EVOLUTION_API_KEY', 'sua-api-key-global');
 
         try {

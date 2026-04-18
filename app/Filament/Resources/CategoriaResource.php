@@ -185,7 +185,7 @@ class CategoriaResource extends Resource
                     ->falseLabel('Apenas inativos'),
             ])
             ->actions(
-                \App\Support\Filament\StofgardTable::defaultActions(
+                \App\Support\Filament\AutonomiaTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,

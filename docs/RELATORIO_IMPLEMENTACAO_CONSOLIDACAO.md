@@ -145,7 +145,7 @@
 
 1. **Backup Completo do Banco de Dados**
    ```bash
-   mysqldump -u root -p stofgard_db > backup_$(date +%Y%m%d).sql
+   mysqldump -u root -p autonomia_db > backup_$(date +%Y%m%d).sql
    ```
 
 2. **Criar Ambiente de Staging**

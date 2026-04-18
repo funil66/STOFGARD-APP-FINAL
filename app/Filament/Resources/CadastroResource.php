@@ -14,7 +14,7 @@ use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use App\Support\Filament\StofgardTable;
+use App\Support\Filament\AutonomiaTable;
 use Filament\Infolists\Components\Livewire;
 
 class CadastroResource extends Resource
@@ -449,7 +449,7 @@ class CadastroResource extends Resource
                     ->visibleFrom('lg'),
             ])
             ->actions(
-                StofgardTable::defaultActions(
+                AutonomiaTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,
@@ -500,7 +500,7 @@ class CadastroResource extends Resource
                 )
             )
             ->bulkActions(
-                StofgardTable::defaultBulkActions([
+                AutonomiaTable::defaultBulkActions([
                     // Tables\Actions\DeleteBulkAction::make(), // Já incluído no default
                 ])
             );

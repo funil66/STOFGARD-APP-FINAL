@@ -3,7 +3,7 @@
 namespace App\Filament\Actions;
 
 use App\Models\Orcamento;
-use App\Services\StofgardSystem;
+use App\Services\AutonomiaSystem;
 use Filament\Actions\Action; // For page actions
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -102,7 +102,7 @@ class OrcamentoActions
     public static function handleAprovar(Orcamento $record, array $data): void
     {
         try {
-            $stofgard = app(StofgardSystem::class);
+            $autonomia = app(AutonomiaSystem::class);
 
             // Extract Date and Time from DateTimePicker
             $dataServico = null;
@@ -114,7 +114,7 @@ class OrcamentoActions
                 $horaInicio = $carbonData->format('H:i');
             }
 
-            $stofgard->aprovarOrcamento($record, auth()->id(), [
+            $autonomia->aprovarOrcamento($record, auth()->id(), [
                 'data_servico' => $dataServico,
                 'hora_inicio' => $horaInicio,
                 'hora_fim' => $data['hora_fim'] ?? null,

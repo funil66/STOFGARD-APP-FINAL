@@ -16,7 +16,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use App\Support\Filament\StofgardTable;
+use App\Support\Filament\AutonomiaTable;
 use Throwable;
 
 class AgendaResource extends Resource
@@ -391,7 +391,7 @@ class AgendaResource extends Resource
                     }),
             ])
             ->actions(
-                StofgardTable::defaultActions(
+                AutonomiaTable::defaultActions(
                     view: true,
                     edit: true,
                     delete: true,
@@ -402,8 +402,8 @@ class AgendaResource extends Resource
                             ->tooltip('Marcar Concluído')
                             ->icon('heroicon-o-check-circle')
                             ->color('success')
-                            // ->iconButton() // Removed iconButton to fit better in dropdown or keep if preferred, but StofgardTable handles basic ones. Custom ones can stay as is.
-                            // Actually, StofgardTable merges extraActions. If we want them in the dropdown, we just pass them.
+                            // ->iconButton() // Removed iconButton to fit better in dropdown or keep if preferred, but AutonomiaTable handles basic ones. Custom ones can stay as is.
+                            // Actually, AutonomiaTable merges extraActions. If we want them in the dropdown, we just pass them.
                             ->visible(fn(Agenda $record) => !in_array($record->status, ['concluido', 'cancelado']))
                             ->requiresConfirmation()
                             ->action(function (Agenda $record) {
@@ -434,7 +434,7 @@ class AgendaResource extends Resource
                 )
             )
             ->bulkActions(
-                StofgardTable::defaultBulkActions([
+                AutonomiaTable::defaultBulkActions([
                     Tables\Actions\BulkAction::make('marcar_concluido')
                         ->label('Marcar como Concluído')
                         ->icon('heroicon-o-check-circle')

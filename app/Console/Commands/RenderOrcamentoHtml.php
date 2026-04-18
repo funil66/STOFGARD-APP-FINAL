@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Orcamento;
-use App\Services\PixService;
+use App\Services\Pix\PixMasterService;
 
 class RenderOrcamentoHtml extends Command
 {
@@ -32,19 +32,21 @@ class RenderOrcamentoHtml extends Command
         $orc->load(['cliente', 'itens.tabelaPreco', 'parceiro']);
         app(\App\Actions\Financeiro\CalculateOrcamentoTotalsAction::class)->execute($orc);
 
-        $pixService = app(PixService::class);
+        $pixService = app(PixMasterService::class);
         $chavePix = \App\Services\ConfiguracaoService::financeiro('pix_chave') ?: env('PIX_CHAVE');
 
         $qrCodeBase64 = null;
+        $payload = null;
         if ($chavePix && $orc->valor_total > 0) {
-            $payload = $pixService->gerarPayloadPix(
+            $resultado = $pixService->gerarQrCode(
                 $chavePix,
-                $orc->valor_total,
                 \App\Services\ConfiguracaoService::empresa('razao_social', 'Autonomia Ilimitada'),
                 \App\Services\ConfiguracaoService::empresa('cidade', 'Ribeirao Preto'),
-                $orc->id
+                (string) $orc->id,
+                $orc->valor_total
             );
-            $qrCodeBase64 = $pixService->gerarQrCodeBase64($payload);
+            $payload = $resultado['payload_pix'];
+            $qrCodeBase64 = $resultado['qr_code_img'];
         }
 
         if (empty($qrCodeBase64) && $orc->forma_pagamento === 'pix' && empty($orc->pix_qrcode_base64)) {

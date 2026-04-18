@@ -77,7 +77,7 @@ APP_DEBUG=false
 APP_URL=https://seu-dominio.com.br
 
 # Admin (usado pelo seeder)
-FILAMENT_ADMIN_EMAIL=allisson@stofgard.com.br
+FILAMENT_ADMIN_EMAIL=allisson@autonomia.com.br
 FILAMENT_ADMIN_PASSWORD=SenhaForteAqui123!
 
 # PDF Generation
@@ -88,8 +88,8 @@ NPM_BINARY=/usr/bin/npm
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=stofgard_prod
-DB_USERNAME=stofgard_user
+DB_DATABASE=autonomia_prod
+DB_USERNAME=autonomia_user
 DB_PASSWORD=SenhaSeguraDoMySQL
 
 # Session
@@ -109,10 +109,10 @@ REDIS_PORT=6379
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.seuservidor.com
 MAIL_PORT=587
-MAIL_USERNAME=naoresponda@stofgard.com.br
+MAIL_USERNAME=naoresponda@autonomia.com.br
 MAIL_PASSWORD=SenhaDoEmail
 MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=naoresponda@stofgard.com.br
+MAIL_FROM_ADDRESS=naoresponda@autonomia.com.br
 MAIL_FROM_NAME="${APP_NAME}"
 
 # OpenWeather

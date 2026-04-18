@@ -264,6 +264,6 @@ class SimpleDataSeeder extends Seeder
         $this->command->newLine();
         $this->command->info('✅ Sistema populado e pronto para uso!');
         $this->command->line('🌐 Acesse: http://localhost/admin');
-        $this->command->line('👤 Login: admin@stofgard.com / admin123');
+        $this->command->line('👤 Login: admin@autonomia.com / admin123');
     }
 }

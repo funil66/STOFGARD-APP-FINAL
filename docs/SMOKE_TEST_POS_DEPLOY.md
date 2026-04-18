@@ -15,7 +15,7 @@ Este roteiro valida o fluxo de aquisição e cobrança após deploy, com foco no
 Executar na VPS:
 
 ```bash
-cd /var/www/stofgard
+cd /var/www/autonomia
 php artisan optimize:clear
 php artisan config:cache
 php artisan route:cache

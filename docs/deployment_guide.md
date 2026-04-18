@@ -31,11 +31,11 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ### 3. Post-Deployment Steps
-After the containers are running, execute these commands inside the `stofgard-app` container:
+After the containers are running, execute these commands inside the `autonomia-app` container:
 
 ```bash
 # Enter the container
-docker exec -it stofgard-app bash
+docker exec -it autonomia-app bash
 
 # Run migrations
 php artisan migrate --force

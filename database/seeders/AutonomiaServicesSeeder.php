@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\Produto;
 use Illuminate\Database\Seeder;
 
-class StofgardServicesSeeder extends Seeder
+class AutonomiaServicesSeeder extends Seeder
 {
     public function run(): void
     {

@@ -1,4 +1,4 @@
-# Deploy Standalone Docker (sistema.stofgard.com.br)
+# Deploy Standalone Docker (sistema.autonomia.com.br)
 
 ## Objetivo
 Subir uma instância autônoma do aplicativo, em modo single-tenant, sem super-admin e sem billing SaaS de tenants.
@@ -45,8 +45,8 @@ docker compose -f docker-compose.standalone.yml --env-file .env.standalone exec 
 
 ## 5) Smoke tests
 ```bash
-curl -fsS https://sistema.stofgard.com.br/up
-curl -i -X POST https://sistema.stofgard.com.br/ping
+curl -fsS https://sistema.autonomia.com.br/up
+curl -i -X POST https://sistema.autonomia.com.br/ping
 
 docker compose -f docker-compose.standalone.yml --env-file .env.standalone exec app php artisan route:list | grep -E 'super-admin|registro.empresa|webhooks.asaas'
 ```
@@ -54,7 +54,7 @@ docker compose -f docker-compose.standalone.yml --env-file .env.standalone exec 
 Resultado esperado do grep: vazio.
 
 ## 5.1) Cloudflare Tunnel (serviço do host)
-Mapeie `sistema.stofgard.com.br` para `http://localhost:8010` no arquivo de ingress do host (`/etc/cloudflared/config.yml`) e reinicie o serviço:
+Mapeie `sistema.autonomia.com.br` para `http://localhost:8010` no arquivo de ingress do host (`/etc/cloudflared/config.yml`) e reinicie o serviço:
 
 ```bash
 sudo systemctl restart cloudflared

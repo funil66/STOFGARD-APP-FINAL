@@ -79,7 +79,7 @@ sudo ./provision-server.sh
 
 ## 2️⃣ Configuração do Nginx
 
-Crie o arquivo `/etc/nginx/sites-available/stofgard`:
+Crie o arquivo `/etc/nginx/sites-available/autonomia`:
 
 ```nginx
 server {
@@ -96,7 +96,7 @@ server {
     listen [::]:443 ssl http2;
     server_name seudominio.com.br www.seudominio.com.br;
 
-    root /var/www/stofgard/public;
+    root /var/www/autonomia/public;
     index index.php index.html;
 
     # SSL (configurado pelo Certbot)
@@ -106,8 +106,8 @@ server {
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     # Logs
-    access_log /var/log/nginx/stofgard_access.log;
-    error_log /var/log/nginx/stofgard_error.log;
+    access_log /var/log/nginx/autonomia_access.log;
+    error_log /var/log/nginx/autonomia_error.log;
 
     # Gzip
     gzip on;
@@ -151,7 +151,7 @@ server {
 Ative a configuração:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/stofgard /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/autonomia /etc/nginx/sites-enabled/
 sudo rm /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
@@ -169,12 +169,12 @@ sudo certbot --nginx -d seudominio.com.br -d www.seudominio.com.br
 
 ## 4️⃣ Configuração do Supervisor
 
-Crie `/etc/supervisor/conf.d/stofgard-worker.conf`:
+Crie `/etc/supervisor/conf.d/autonomia-worker.conf`:
 
 ```ini
-[program:stofgard-worker]
+[program:autonomia-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/stofgard/artisan queue:work database --sleep=3 --tries=3 --max-time=3600
+command=php /var/www/autonomia/artisan queue:work database --sleep=3 --tries=3 --max-time=3600
 autostart=true
 autorestart=true
 stopasgroup=true
@@ -182,16 +182,16 @@ killasgroup=true
 user=www-data
 numprocs=2
 redirect_stderr=true
-stdout_logfile=/var/www/stofgard/storage/logs/worker.log
+stdout_logfile=/var/www/autonomia/storage/logs/worker.log
 stopwaitsecs=3600
 
-[program:stofgard-schedule]
-command=/bin/bash -c "while true; do php /var/www/stofgard/artisan schedule:run --verbose --no-interaction; sleep 60; done"
+[program:autonomia-schedule]
+command=/bin/bash -c "while true; do php /var/www/autonomia/artisan schedule:run --verbose --no-interaction; sleep 60; done"
 autostart=true
 autorestart=true
 user=www-data
 redirect_stderr=true
-stdout_logfile=/var/www/stofgard/storage/logs/schedule.log
+stdout_logfile=/var/www/autonomia/storage/logs/schedule.log
 ```
 
 Aplique:
@@ -209,11 +209,11 @@ sudo supervisorctl start all
 ```bash
 # Clonar repositório
 cd /var/www
-sudo git clone https://github.com/seu-usuario/stofgard.git stofgard
-cd stofgard
+sudo git clone https://github.com/seu-usuario/autonomia.git autonomia
+cd autonomia
 
 # Permissões
-sudo chown -R www-data:www-data /var/www/stofgard
+sudo chown -R www-data:www-data /var/www/autonomia
 sudo chmod -R 775 storage bootstrap/cache
 
 # Instalar dependências
@@ -262,7 +262,7 @@ POST /api/webhooks/pix/{webhookToken}
 
 ## 6️⃣ Script de Deploy Automático
 
-Crie `/var/www/stofgard/deploy.sh`:
+Crie `/var/www/autonomia/deploy.sh`:
 
 ```bash
 #!/bin/bash
@@ -270,7 +270,7 @@ Crie `/var/www/stofgard/deploy.sh`:
 
 set -e
 
-cd /var/www/stofgard
+cd /var/www/autonomia
 
 echo "🔄 Entrando em manutenção..."
 php artisan down
@@ -296,7 +296,7 @@ php artisan icons:cache
 
 echo "🔄 Reiniciando workers..."
 php artisan queue:restart
-sudo supervisorctl restart stofgard-worker:*
+sudo supervisorctl restart autonomia-worker:*
 
 echo "✅ Saindo de manutenção..."
 php artisan up
@@ -320,7 +320,7 @@ sudo crontab -u www-data -e
 
 ```cron
 # AUTONOMIA ILIMITADA - Scheduler Laravel
-* * * * * cd /var/www/stofgard && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/autonomia && php artisan schedule:run >> /dev/null 2>&1
 
 # Renovação SSL (mensal)
 0 0 1 * * certbot renew --quiet
@@ -332,7 +332,7 @@ sudo crontab -u www-data -e
 
 ```bash
 # Testar ambiente
-cd /var/www/stofgard
+cd /var/www/autonomia
 php artisan iron:check
 
 # Testar backup
@@ -354,7 +354,7 @@ Após o deploy, rode o checklist completo e o script rápido:
 - Checklist manual: [docs/SMOKE_TEST_POS_DEPLOY.md](docs/SMOKE_TEST_POS_DEPLOY.md)
 
 ```bash
-cd /var/www/stofgard
+cd /var/www/autonomia
 chmod +x scripts/post_deploy_smoke.sh
 ./scripts/post_deploy_smoke.sh
 ```

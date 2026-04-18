@@ -194,20 +194,13 @@ class PixWebhookController extends Controller
      */
     private function findTenantIdByWebhookToken(string $webhookToken): ?string
     {
-        // Usamos DB direto pois configuracoes é tabela do tenant — precisamos varrer tenants
-        // O webhook_token fica armazenado no landlord DB via dados do tenant (settings JSON)
+        // Busca direta pelo webhook_token no JSON data do tenant
         $tenant = \App\Models\Tenant::whereJsonContains('data->webhook_token', $webhookToken)->first();
 
         if (!$tenant) {
-            // Fallback: busca no data/settings se armazenado diferente
-            $allTenants = \App\Models\Tenant::where('is_active', true)->get();
-
-            foreach ($allTenants as $t) {
-                $settings = $t->data ?? [];
-                if (($settings['webhook_token'] ?? null) === $webhookToken) {
-                    return $t->id;
-                }
-            }
+            Log::warning('[PixWebhook] Nenhum tenant encontrado para webhook_token', [
+                'token_prefix' => substr($webhookToken, 0, 8),
+            ]);
         }
 
         return $tenant?->id;
