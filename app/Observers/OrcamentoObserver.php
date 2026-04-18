@@ -124,6 +124,18 @@ class OrcamentoObserver
                     $orcamento->id
                 );
             }
+
+            // Notificação proativa via WhatsApp com fallback para Sentry
+            if ($celular = $orcamento->cliente?->celular) {
+                try {
+                    $msg = "🎉 *Boas Notícias!*\n\nSeu orçamento *#{$orcamento->numero_orcamento}* foi APROVADO no sistema.\n\nEm breve nossa equipe iniciará a Ordem de Serviço.";
+                    \App\Jobs\SendWhatsAppJob::dispatch($celular, $msg);
+                    Log::info("Notificação de Orçamento {$orcamento->id} despachada.");
+                } catch (\Exception $e) {
+                    report($e);
+                    Log::error("Falha ao despachar Zap de Orçamento: " . $e->getMessage());
+                }
+            }
         }
 
         // Só sincroniza os demais dados se já foi aprovado e tem registros vinculados

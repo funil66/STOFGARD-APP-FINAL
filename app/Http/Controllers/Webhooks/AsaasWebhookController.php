@@ -7,159 +7,83 @@ use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-/**
- * AsaasWebhookController — Processa webhooks do Asaas para o Super Admin.
- * Gerencia eventos de pagamento de assinaturas dos Tenants.
- *
- * Rota: POST api/webhooks/asaas
- * Header obrigatório: asaas-access-token (validado contra config('services.asaas.webhook_token'))
- */
 class AsaasWebhookController extends Controller
 {
     public function handle(Request $request)
     {
-        // Valida o token de autenticação do webhook
-        $token = $request->header('asaas-access-token');
-        $expectedToken = config('services.asaas.webhook_token');
+        // Fail-fast: Token deve existir no ambiente
+        $expectedToken = config('payments.asaas_webhook_token');
+        abort_unless(!empty($expectedToken), 503, 'Webhook authentication not configured');
 
-        // Token DEVE estar configurado — sem token = serviço indisponível
-        if (empty($expectedToken)) {
-            Log::critical('[AsaasWebhook] ASAAS_WEBHOOK_TOKEN não configurado! Webhook rejeitado por segurança.', [
+        // Mitigação contra Forgery e Timing Attacks
+        $token = $request->header('asaas-access-token', '');
+        if (!hash_equals($expectedToken, $token)) {
+            Log::warning('[SecOps] Tentativa de falsificação no Webhook Asaas', [
                 'ip' => $request->ip(),
+                'user_agent' => $request->userAgent()
             ]);
-            return response()->json(['error' => 'Service unavailable'], 503);
-        }
-
-        if (!hash_equals($expectedToken, $token ?? '')) {
-            Log::warning('[AsaasWebhook] Token inválido recebido', [
-                'ip' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
-            return response()->json(['error' => 'Unauthorized'], 401);
+            abort(401, 'Unauthorized');
         }
 
         $event = $request->input('event');
         $payment = $request->input('payment', []);
-
-        Log::info('[AsaasWebhook] Evento recebido', ['event' => $event, 'payment_id' => $payment['id'] ?? null]);
 
         match ($event) {
             'PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED' => $this->pagamentoRecebido($payment),
             'PAYMENT_OVERDUE' => $this->pagamentoAtrasado($payment),
             'PAYMENT_DELETED', 'PAYMENT_REFUNDED' => $this->pagamentoCancelado($payment),
             'SUBSCRIPTION_DELETED' => $this->assinaturaCancelada($request->input('subscription', [])),
-            default => Log::info("[AsaasWebhook] Evento não tratado: {$event}"),
+            default => Log::info("[AsaasWebhook] Evento ignorado: {$event}"),
         };
 
         return response()->json(['status' => 'ok']);
     }
 
-    /**
-     * Pagamento da assinatura confirmado → ativa o tenant e atualiza vencimento.
-     */
     private function pagamentoRecebido(array $payment): void
     {
-        $tenant = $this->findTenantBySubscription($payment);
-
-        if (!$tenant) {
-            return;
+        if ($tenant = $this->findTenantBySubscription($payment)) {
+            $tenant->update([
+                'status_pagamento' => 'ativo',
+                'is_active' => true,
+                'data_vencimento' => now()->addMonth()->format('Y-m-d'),
+            ]);
+            Log::info("[AsaasWebhook] Tenant {$tenant->id} ativado via webhook.");
         }
-
-        $tenant->update([
-            'status_pagamento' => 'ativo',
-            'is_active' => true,
-            'data_vencimento' => now()->addMonth()->format('Y-m-d'),
-        ]);
-
-        Log::info("[AsaasWebhook] Tenant ativado após pagamento", ['tenant_id' => $tenant->id]);
     }
 
-    /**
-     * Pagamento atrasado → marca como inadimplente (bloqueio ocorre via Job schedule).
-     */
     private function pagamentoAtrasado(array $payment): void
     {
-        $tenant = $this->findTenantBySubscription($payment);
-
-        if (!$tenant) {
-            return;
+        if ($tenant = $this->findTenantBySubscription($payment)) {
+            $tenant->update(['status_pagamento' => 'inadimplente']);
         }
-
-        $tenant->update([
-            'status_pagamento' => 'inadimplente',
-        ]);
-
-        Log::warning("[AsaasWebhook] Tenant marcado como inadimplente", ['tenant_id' => $tenant->id]);
     }
 
-    /**
-     * Pagamento cancelado/estornado → verifica se precisa suspender.
-     */
     private function pagamentoCancelado(array $payment): void
     {
-        $tenant = $this->findTenantBySubscription($payment);
-
-        if (!$tenant) {
-            return;
+        if ($tenant = $this->findTenantBySubscription($payment)) {
+            $tenant->update(['status_pagamento' => 'inadimplente']);
         }
-
-        $tenant->update([
-            'status_pagamento' => 'inadimplente',
-        ]);
-
-        Log::info("[AsaasWebhook] Pagamento cancelado para tenant", ['tenant_id' => $tenant->id]);
     }
 
-    /**
-     * Assinatura deletada pelo cliente → suspende o tenant.
-     */
     private function assinaturaCancelada(array $subscription): void
     {
-        $subscriptionId = $subscription['id'] ?? null;
-
-        if (!$subscriptionId) {
-            return;
+        if ($tenant = Tenant::where('gateway_subscription_id', $subscription['id'] ?? null)->first()) {
+            $tenant->update([
+                'status_pagamento' => 'cancelado',
+                'is_active' => false,
+                'gateway_subscription_id' => null,
+            ]);
         }
-
-        $tenant = Tenant::where('gateway_subscription_id', $subscriptionId)->first();
-
-        if (!$tenant) {
-            return;
-        }
-
-        $tenant->update([
-            'status_pagamento' => 'cancelado',
-            'is_active' => false,
-            'gateway_subscription_id' => null,
-        ]);
-
-        Log::info("[AsaasWebhook] Assinatura cancelada, tenant suspenso", ['tenant_id' => $tenant->id]);
     }
 
-    /**
-     * Encontra o tenant pelo ID do cliente ou da assinatura no Asaas.
-     */
     private function findTenantBySubscription(array $payment): ?Tenant
     {
-        // Busca pelo ID da assinatura associada ao pagamento
-        $subscriptionId = $payment['subscription'] ?? null;
-
-        if ($subscriptionId) {
-            $tenant = Tenant::where('gateway_subscription_id', $subscriptionId)->first();
-            if ($tenant) {
-                return $tenant;
-            }
+        if (!empty($payment['subscription'])) {
+            return Tenant::where('gateway_subscription_id', $payment['subscription'])->first();
         }
-
-        // Fallback: busca pelo ID do cliente no Asaas
-        $customerId = $payment['customer'] ?? null;
-
-        if ($customerId) {
-            return Tenant::where('gateway_customer_id', $customerId)->first();
+        if (!empty($payment['customer'])) {
+            return Tenant::where('gateway_customer_id', $payment['customer'])->first();
         }
-
-        Log::warning('[AsaasWebhook] Tenant não encontrado para payment', ['payment' => $payment]);
-
         return null;
     }
 }

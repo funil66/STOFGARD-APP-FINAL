@@ -117,6 +117,20 @@ class OrdemServicoObserver
                 ]);
             }
         }
+
+        // Notificação proativa de aprovação
+        if ($os->wasChanged('status') && $os->status === 'aprovado') {
+            if ($celular = $os->cliente?->celular) {
+                try {
+                    $msg = "🛠️ *Sua Ordem de Serviço foi Autorizada!*\n\nA OS *#{$os->numero_os}* já está em andamento. Avisaremos assim que for concluída!";
+                    \App\Jobs\SendWhatsAppJob::dispatch($celular, $msg);
+                    Log::info("Notificação de OS {$os->id} despachada.");
+                } catch (\Exception $e) {
+                    report($e);
+                    Log::error("Falha ao despachar Zap de OS: " . $e->getMessage());
+                }
+            }
+        }
     }
 
     /**
