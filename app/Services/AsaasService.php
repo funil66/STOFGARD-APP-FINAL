@@ -72,6 +72,57 @@ class AsaasService
     // =========================================================================
 
     /**
+     * Cria uma assinatura recorrente no Asaas garantindo que o cliente exista.
+     * Método adicionado para orquestração automática da FASE 2.
+     *
+     * @param array  $dadosCliente  Dados do cliente (name, email, cpf_cnpj, tenant_id, billingType, descricao)
+     * @param float  $valor         Valor da assinatura
+     * @param string $ciclo         Ciclo da cobrança (MONTHLY, YEARLY, etc)
+     */
+    public function createSubscription(array $dadosCliente, float $valor, string $ciclo = 'MONTHLY'): array
+    {
+        // 1. Verifica se o cliente já existe no Asaas usando o tenant_id
+        $tenantId = $dadosCliente['tenant_id'] ?? ($dadosCliente['id'] ?? null);
+        $clienteAsaas = null;
+
+        if ($tenantId) {
+            $clienteAsaas = $this->buscarClientePorReferencia((string) $tenantId);
+        }
+
+        // 2. Se não existir, cria o cliente na hora
+        if (!$clienteAsaas) {
+            $clienteAsaas = $this->criarCliente($dadosCliente);
+        }
+
+        $customerId = $clienteAsaas['id'];
+        $billingType = strtoupper($dadosCliente['billingType'] ?? 'PIX');
+
+        if (!in_array($billingType, ['CREDIT_CARD', 'PIX', 'BOLETO'], true)) {
+            $billingType = 'PIX';
+        }
+
+        // 3. Cria a assinatura no Asaas
+        $response = $this->request('POST', '/subscriptions', [
+            'customer' => $customerId,
+            'billingType' => $billingType,
+            'value' => $valor,
+            'nextDueDate' => now()->addDays(1)->format('Y-m-d'),
+            'cycle' => strtoupper($ciclo),
+            'description' => $dadosCliente['descricao'] ?? "Assinatura Autonomia - {$ciclo}",
+            'externalReference' => $tenantId,
+        ]);
+
+        Log::info('[AsaasService] Nova assinatura criada via createSubscription', [
+            'customer' => $customerId,
+            'cycle' => $ciclo,
+            'value' => $valor,
+            'billingType' => $billingType
+        ]);
+
+        return $response;
+    }
+
+    /**
      * Cria uma assinatura recorrente mensal no Asaas.
      *
      * @param string $customerId  ID do cliente no Asaas

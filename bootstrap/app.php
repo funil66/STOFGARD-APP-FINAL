@@ -26,7 +26,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'livewire/*',
-            'super-admin/*'
+            'super-admin/*',
+            'webhook/asaas',
+            'api/webhooks/asaas',
+            'api/webhooks/pix',
+            'webhook/pix'
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\VerifyCsrfToken::class,

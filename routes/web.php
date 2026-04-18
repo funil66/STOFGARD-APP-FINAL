@@ -8,6 +8,7 @@ use App\Http\Controllers\SuperAdmin\TenantUserController;
 use App\Http\Controllers\Auth\JwtSessionBridgeController;
 use App\Http\Controllers\Auth\EmpresaPasswordResetController;
 use Illuminate\Support\Facades\Route;
+use App\Livewire\Portal\CheckoutOrcamento;
 
 /*
 |--------------------------------------------------------------------------
@@ -122,6 +123,9 @@ Route::prefix('cliente')->name('cliente.')->group(function () {
             ->where('opcao', '[ABC]');
     });
 });
+
+// Checkout Transparente do Orçamento
+Route::get('/pagar/orcamento/{uuid}', CheckoutOrcamento::class)->name('portal.orcamento.checkout');
 
 // --- DESENVOLVIMENTO LOCAL ---
 if (app()->isLocal()) {
