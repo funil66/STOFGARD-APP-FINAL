@@ -1,0 +1,46 @@
+name: 🧪 CI - Esteira de Tortura (Pest PHP)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  tests:
+    name: 🏃 Run Tests (Docker Isolated)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, dom, filter, libxml, bcmath, redis
+          coverage: none
+
+      - name: 🐳 Subir containers de Teste (MySQL & Redis)
+        run: docker-compose -f docker-compose.test.yml up -d
+
+      - name: ⏳ Aguardar MySQL ficar pronto
+        run: |
+          while ! mysqladmin ping -h"127.0.0.1" -P"33060" -uroot -ppassword --silent; do
+            sleep 1
+          done
+
+      - name: 📦 Instalar Dependências (Composer)
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: ⚙️ Preparar Ambiente (.env)
+        run: |
+          cp .env.testing .env
+          php artisan key:generate --env=testing
+
+      - name: 🗄️ Rodar Migrations
+        run: php artisan migrate:fresh --env=testing
+
+      - name: 🧪 Executar a Esteira de Tortura (Pest PHP)
+        run: php artisan test --env=testing

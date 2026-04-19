@@ -1,0 +1,25 @@
+services:
+  mysql_test:
+    image: mysql:8.0
+    container_name: mysql_test
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: autonomia_testing
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "33060:3306"
+    networks:
+      - testing-network
+
+  redis_test:
+    image: redis:alpine
+    container_name: redis_test
+    restart: unless-stopped
+    ports:
+      - "63790:6379"
+    networks:
+      - testing-network
+
+networks:
+  testing-network:
+    driver: bridge
