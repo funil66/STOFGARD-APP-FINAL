@@ -27,9 +27,19 @@ jobs:
 
       - name: ⏳ Aguardar MySQL ficar pronto
         run: |
-          while ! mysqladmin ping -h"127.0.0.1" -P"33060" -uroot -ppassword --silent; do
-            sleep 1
+          MAX_TRIES=60
+          COUNT=0
+          while ! docker exec mysql_test mysqladmin ping -uroot -ppassword --silent; do
+            sleep 2
+            COUNT=$((COUNT+1))
+            if [ $COUNT -ge $MAX_TRIES ]; then
+              echo "❌ Timeout: MySQL demorou muito pra subir ou crashou!"
+              docker logs mysql_test
+              exit 1
+            fi
+            echo "Aguardando o motor do banco de dados... ($COUNT/$MAX_TRIES)"
           done
+          echo "✅ MySQL tá na linha de frente e pronto pra guerra!"
 
       - name: 📦 Instalar Dependências (Composer)
         run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
