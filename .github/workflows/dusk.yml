@@ -69,7 +69,7 @@ jobs:
           php artisan key:generate
           php artisan migrate --force
 
-      - name: Diagnostics: system & Chrome info
+      - name: "Diagnostics: system & Chrome info"
         run: |
           echo "--- Uname ---" && uname -a
           echo "--- distro ---" && lsb_release -a || true
