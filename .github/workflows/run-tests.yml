@@ -9,7 +9,7 @@ on:
 jobs:
   tests:
     name: 🏃 Run Tests (Docker Isolated)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: 📥 Checkout do Código
